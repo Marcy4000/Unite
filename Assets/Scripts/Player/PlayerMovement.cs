@@ -50,7 +50,22 @@ public class PlayerMovement : MonoBehaviour
             characterController.Move(dashDirection * Time.deltaTime * (dashDistance / dashDuration));
         }
 
+        SnapToGround();
+
         HandleAnimations();
+    }
+
+    void SnapToGround()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.down, out hit))
+        {
+            float distanceToGround = hit.distance;
+            if (distanceToGround > 0.01f) // Adjust this threshold as needed
+            {
+                characterController.Move(Vector3.down * (distanceToGround - 0.01f)); // Snap to ground
+            }
+        }
     }
 
     public void StartDash()

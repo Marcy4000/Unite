@@ -91,6 +91,7 @@ public class PlayerManager : MonoBehaviour
         maxScoreTime = ScoringSystem.CalculateApproximateScoreTime(currentEnergy);
         playerMovement.CanMove = false;
         scoreTimer = 0;
+        BattleUIManager.instance.SetEnergyBallState(true);
     }
 
     private void HandleScoring()
@@ -115,6 +116,7 @@ public class PlayerManager : MonoBehaviour
         scoreTimer = 0;
         playerMovement.CanMove = true;
         BattleUIManager.instance.UpdateScoreGauge(scoreTimer, maxScoreTime);
+        BattleUIManager.instance.SetEnergyBallState(false);
     }
 
     private void ScorePoints()

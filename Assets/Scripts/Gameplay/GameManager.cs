@@ -8,13 +8,17 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
-    public float gameTime = 600f; // 10 minutes in seconds
-    public TMP_Text timerText;
-    public int blueTeamScore = 0;
-    public int orangeTeamScore = 0;
+    [SerializeField] private TMP_Text timerText;
+    private float gameTime = 600f; // 10 minutes in seconds
+    private int blueTeamScore = 0;
+    private int orangeTeamScore = 0;
 
     private PlayerManager[] players;
     private GoalZone[] goalZones;
+
+    public float GameTime => gameTime;
+    public int BlueTeamScore => blueTeamScore;
+    public int OrangeTeamScore => orangeTeamScore;
 
     private bool gameEnded = false;
 
@@ -89,6 +93,7 @@ public class GameManager : MonoBehaviour
         {
             blueTeamScore += amount;
         }
+        BattleUIManager.instance.ShowScore(amount, orangeTeam);
     }
 
     void EndGame()

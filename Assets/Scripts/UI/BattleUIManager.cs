@@ -10,6 +10,7 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private UniteMoveUI uniteMoveUI;
     [SerializeField] private MoveLearnPanel moveLearnPanel;
     [SerializeField] private EnergyUI energyUI;
+    [SerializeField] private ScoreUI blueScoreUI, orangeScoreUI;
 
     private void Awake()
     {
@@ -18,6 +19,23 @@ public class BattleUIManager : MonoBehaviour
             Destroy(instance.gameObject);
         }
         instance = this;
+    }
+
+    public void ShowScore(int amount, bool orangeTeam)
+    {
+        if (orangeTeam)
+        {
+            orangeScoreUI.ShowScore(amount);
+        }
+        else
+        {
+            blueScoreUI.ShowScore(amount);
+        }
+    }
+
+    public void SetEnergyBallState(bool isPressed)
+    {
+        energyUI.SetBallPressed(isPressed);
     }
 
     public void InitializeMoveLearnPanel(MoveAsset[] moves)

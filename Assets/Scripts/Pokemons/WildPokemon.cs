@@ -8,6 +8,10 @@ public class WildPokemon : MonoBehaviour
     [SerializeField] private int expYield = 250;
     [SerializeField] private int energyYield = 5;
 
+    public Pokemon Pokemon => pokemon;
+    public int ExpYield { get => expYield; set => expYield = value; }
+    public int EnergyYield { get => energyYield; set => energyYield = value; }
+
     private void Awake()
     {
         pokemon = GetComponent<Pokemon>();
@@ -19,6 +23,10 @@ public class WildPokemon : MonoBehaviour
     {
         info.attacker.GainExperience(expYield);
         info.attacker.GetComponent<PlayerManager>().GainEnergy(energyYield);
+        if (info.attacker.GetComponent<PlayerManager>())
+        {
+            info.attacker.GetComponent<PlayerManager>().MovesController.IncrementUniteCharge(5000);
+        }
         Destroy(gameObject);
     }
 }

@@ -24,6 +24,7 @@ public class GoalZone : MonoBehaviour
     {
         StartCoroutine(GoalZoneHealing());
         scoreText.color = orangeTeam ? Color.yellow : Color.blue;
+        scoreText.text = $"{maxScore - currentScore}/{maxScore}";
     }
 
     private void OnTriggerEnter(Collider other)

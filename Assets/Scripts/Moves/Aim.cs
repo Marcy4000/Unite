@@ -29,6 +29,7 @@ public class Aim : MonoBehaviour
         autoAimIndicator.SetActive(false);
         circleIndicator.SetActive(false);
         dashIndicator.SetActive(false);
+        indicatorHolders.transform.SetParent(null);
     }
 
     private void Update()
