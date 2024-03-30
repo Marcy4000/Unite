@@ -80,6 +80,15 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Score"",
+                    ""type"": ""Button"",
+                    ""id"": ""49a3dcf1-80bd-4793-a6d3-ee8f5a870fae"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -146,6 +155,17 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""UniteMove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""27031f69-af24-45cd-ba30-7865a3f9be2f"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Score"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -230,6 +250,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_Movement_BasicAttack = m_Movement.FindAction("BasicAttack", throwIfNotFound: true);
         m_Movement_AimMove = m_Movement.FindAction("AimMove", throwIfNotFound: true);
         m_Movement_UniteMove = m_Movement.FindAction("UniteMove", throwIfNotFound: true);
+        m_Movement_Score = m_Movement.FindAction("Score", throwIfNotFound: true);
         // LearnMove
         m_LearnMove = asset.FindActionMap("LearnMove", throwIfNotFound: true);
         m_LearnMove_Move1 = m_LearnMove.FindAction("Move1", throwIfNotFound: true);
@@ -302,6 +323,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Movement_BasicAttack;
     private readonly InputAction m_Movement_AimMove;
     private readonly InputAction m_Movement_UniteMove;
+    private readonly InputAction m_Movement_Score;
     public struct MovementActions
     {
         private @PlayerControls m_Wrapper;
@@ -312,6 +334,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         public InputAction @BasicAttack => m_Wrapper.m_Movement_BasicAttack;
         public InputAction @AimMove => m_Wrapper.m_Movement_AimMove;
         public InputAction @UniteMove => m_Wrapper.m_Movement_UniteMove;
+        public InputAction @Score => m_Wrapper.m_Movement_Score;
         public InputActionMap Get() { return m_Wrapper.m_Movement; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -339,6 +362,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @UniteMove.started += instance.OnUniteMove;
             @UniteMove.performed += instance.OnUniteMove;
             @UniteMove.canceled += instance.OnUniteMove;
+            @Score.started += instance.OnScore;
+            @Score.performed += instance.OnScore;
+            @Score.canceled += instance.OnScore;
         }
 
         private void UnregisterCallbacks(IMovementActions instance)
@@ -361,6 +387,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @UniteMove.started -= instance.OnUniteMove;
             @UniteMove.performed -= instance.OnUniteMove;
             @UniteMove.canceled -= instance.OnUniteMove;
+            @Score.started -= instance.OnScore;
+            @Score.performed -= instance.OnScore;
+            @Score.canceled -= instance.OnScore;
         }
 
         public void RemoveCallbacks(IMovementActions instance)
@@ -448,6 +477,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         void OnBasicAttack(InputAction.CallbackContext context);
         void OnAimMove(InputAction.CallbackContext context);
         void OnUniteMove(InputAction.CallbackContext context);
+        void OnScore(InputAction.CallbackContext context);
     }
     public interface ILearnMoveActions
     {

@@ -9,6 +9,7 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private MoveUI[] moveUIs;
     [SerializeField] private UniteMoveUI uniteMoveUI;
     [SerializeField] private MoveLearnPanel moveLearnPanel;
+    [SerializeField] private EnergyUI energyUI;
 
     private void Awake()
     {
@@ -32,6 +33,16 @@ public class BattleUIManager : MonoBehaviour
     public void ReferenceController(MovesController controller)
     {
         uniteMoveUI.AssignController(controller);
+    }
+
+    public void UpdateEnergyUI(int currEnergy, int maxEnergy)
+    {
+        energyUI.UpdateEnergyUI(currEnergy, maxEnergy);
+    }
+
+    public void UpdateScoreGauge(float currTime, float maxTime)
+    {
+        energyUI.UpdateScoreGauge(currTime, maxTime);
     }
 
     public void InitializeMoveUI(MoveAsset move)

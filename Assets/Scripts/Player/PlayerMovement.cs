@@ -12,9 +12,12 @@ public class PlayerMovement : MonoBehaviour
     private CharacterController characterController;
     private PlayerControls controls;
     private Pokemon pokemon;
+    private bool canMove = true;
 
     private bool isDashing = false;
     private Vector3 dashDirection;
+
+    public bool CanMove { get => canMove; set => canMove = value; }
 
     void Start()
     {
@@ -28,6 +31,11 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        if (!canMove)
+        {
+            return;
+        }
+
         if (!isDashing)
         {
             inputMovement = new Vector3(controls.Movement.Move.ReadValue<Vector2>().x, 0, controls.Movement.Move.ReadValue<Vector2>().y);

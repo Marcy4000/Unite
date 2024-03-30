@@ -38,22 +38,17 @@ public class Pokemon : MonoBehaviour
     private void Awake()
     {
         InitializePokemon();
-        StartCoroutine(PassiveExp());
     }
 
-    private IEnumerator PassiveExp()
+    public void GainPassiveExp(int amount)
     {
-        while (true)
+        if (baseStats.IsLevelBeforeEvo(currentLevel))
         {
-            yield return new WaitForSeconds(1f);
-            if (baseStats.IsLevelBeforeEvo(currentLevel))
-            {
-                StoreExperience(6);
-            }
-            else
-            {
-                GainExperience(6);
-            }
+            StoreExperience(6);
+        }
+        else
+        {
+            GainExperience(6);
         }
     }
 
