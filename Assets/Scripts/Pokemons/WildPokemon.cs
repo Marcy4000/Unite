@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class WildPokemon : MonoBehaviour
+public class WildPokemon : NetworkBehaviour
 {
     private Pokemon pokemon;
     [SerializeField] private int expYield = 250;
@@ -12,7 +13,7 @@ public class WildPokemon : MonoBehaviour
     public int ExpYield { get => expYield; set => expYield = value; }
     public int EnergyYield { get => energyYield; set => energyYield = value; }
 
-    private void Awake()
+    public override void OnNetworkSpawn()
     {
         pokemon = GetComponent<Pokemon>();
         pokemon.OnDeath += Die;
@@ -27,6 +28,19 @@ public class WildPokemon : MonoBehaviour
         {
             info.attacker.GetComponent<PlayerManager>().MovesController.IncrementUniteCharge(5000);
         }
-        Destroy(gameObject);
+        if (IsServer)
+        {
+            gameObject.GetComponent<NetworkObject>().Despawn(true);
+        }
+        else
+        {
+            DespawnRPC();
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void DespawnRPC()
+    {
+        gameObject.GetComponent<NetworkObject>().Despawn(true);
     }
 }

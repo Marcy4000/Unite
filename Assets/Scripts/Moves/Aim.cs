@@ -1,10 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.ShaderGraph;
+using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.UIElements;
 
-public class Aim : MonoBehaviour
+public class Aim : NetworkBehaviour
 {
     public static Aim Instance { get; private set; }
     [SerializeField] private LayerMask targetMask;
@@ -15,11 +14,13 @@ public class Aim : MonoBehaviour
     [SerializeField]private float coneAngle = 60f; // Cone angle for the sure hit aim
     private float coneDistance = 10f;
 
-    private void Awake()
+    private void Start()
     {
-        if (Instance != null)
+        if (!IsOwner)
         {
-            Destroy(gameObject);
+            Destroy(indicatorHolders);
+            Destroy(this);
+            return;
         }
         Instance = this;
 

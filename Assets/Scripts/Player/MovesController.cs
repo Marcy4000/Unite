@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class MovesController : MonoBehaviour
+public class MovesController : NetworkBehaviour
 {
     [SerializeField] private MoveAsset lockedMove;
     public Transform projectileSpawnPoint; // Define the spawn point for the projectile
@@ -44,6 +45,11 @@ public class MovesController : MonoBehaviour
         pokemon = GetComponent<Pokemon>();
         playerMovement = GetComponent<PlayerMovement>();
 
+        if (!IsOwner)
+        {
+            return;
+        }
+
         pokemon.OnLevelChange += CheckIfCanLearnMove;
         MoveLearnPanel.onSelectedMove += LearnMove;
 
@@ -70,6 +76,11 @@ public class MovesController : MonoBehaviour
 
     private void Update()
     {
+        if (!IsOwner)
+        {
+            return;
+        }
+
         Aim.Instance.ShowBasicAtk(controls.Movement.BasicAttack.IsPressed(), attackRadius);
 
         if (controls.Movement.BasicAttack.WasPressedThisFrame())
@@ -129,7 +140,7 @@ public class MovesController : MonoBehaviour
     {
         for (int i = 0; i < pokemon.BaseStats.LearnableMoves.Length; i++)
         {
-            if (pokemon.CurrentLevel == pokemon.BaseStats.LearnableMoves[i].level)
+            if (pokemon.CurrentLevel.Value == pokemon.BaseStats.LearnableMoves[i].level)
             {
                 BattleUIManager.instance.InitializeMoveLearnPanel(pokemon.BaseStats.LearnableMoves[i].moves);
                 //LearnMove(pokemon.BaseStats.LearnableMoves[i].moves[0]);

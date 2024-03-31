@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private float moveSpeed = 10f;
     [SerializeField] private Animator cinderace;
@@ -19,31 +20,29 @@ public class PlayerMovement : MonoBehaviour
 
     public bool CanMove { get => canMove; set => canMove = value; }
 
-    void Start()
+    public override void OnNetworkSpawn()
     {
         characterController = GetComponent<CharacterController>();
         pokemon = GetComponent<Pokemon>();
         pokemon.OnEvolution += AssignNewAnimator;
-        AssignNewAnimator();
-        controls = new PlayerControls();
-        controls.asset.Enable();
+        if (IsOwner)
+        {
+            controls = new PlayerControls();
+            controls.asset.Enable();
+        }
+        canMove = IsOwner;
     }
 
     void Update()
     {
-        if (!canMove)
+        if (!canMove || !IsOwner)
         {
             return;
         }
 
         if (!isDashing)
         {
-            inputMovement = new Vector3(controls.Movement.Move.ReadValue<Vector2>().x, 0, controls.Movement.Move.ReadValue<Vector2>().y);
-            characterController.Move(inputMovement.normalized * Time.deltaTime * moveSpeed);
-            if (inputMovement.magnitude != 0)
-            {
-                transform.rotation = Quaternion.LookRotation(inputMovement);
-            }
+            Move(controls.Movement.Move.ReadValue<Vector2>());
         }
         else
         {
@@ -53,6 +52,16 @@ public class PlayerMovement : MonoBehaviour
         SnapToGround();
 
         HandleAnimations();
+    }
+
+    private void Move(Vector2 playerInput)
+    {
+        inputMovement = new Vector3(playerInput.x, 0, playerInput.y);
+        characterController.Move(inputMovement.normalized * moveSpeed * Time.deltaTime);
+        if (inputMovement.magnitude != 0)
+        {
+            transform.rotation = Quaternion.LookRotation(inputMovement);
+        }
     }
 
     void SnapToGround()

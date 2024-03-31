@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class WildPokemonSpawner : MonoBehaviour
+public class WildPokemonSpawner : NetworkBehaviour
 {
     [SerializeField] private GameObject pokemon;
     [SerializeField] private int expYield = 250;
@@ -11,7 +12,7 @@ public class WildPokemonSpawner : MonoBehaviour
     [SerializeField] private float cooldown;
     [SerializeField] private bool canRespawn;
     [SerializeField] private bool isObjective;
-    [SerializeField] private bool isSpawned;
+    [SerializeField] private bool isSpawnedOnMap;
 
     private float timer;
     private bool spawnedFirstTime = false;
@@ -22,18 +23,23 @@ public class WildPokemonSpawner : MonoBehaviour
     public float Cooldown => cooldown;
     public bool CanRespawn => canRespawn;
     public bool IsObjective => isObjective;
-    public bool IsSpawned => isSpawned;
+    public bool IsSpawnedOnMap => isSpawnedOnMap;
 
     private void Update()
     {
-        if (GameManager.instance.GameTime <= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
+        if (!IsServer)
+        {
+            return;
+        }
+
+        if (GameManager.instance.GameTime.Value <= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
         {
             SpawnPokemon();
             spawnedFirstTime = true;
             firstSpawnTime = Mathf.NegativeInfinity;
         }
 
-        if (!canRespawn || isSpawned || !spawnedFirstTime)
+        if (!canRespawn || isSpawnedOnMap || !spawnedFirstTime)
         {
             return;
         }
@@ -47,21 +53,23 @@ public class WildPokemonSpawner : MonoBehaviour
 
     public void SpawnPokemon()
     {
-        if (isSpawned)
+        if (isSpawnedOnMap)
         {
             return;
         }
 
         WildPokemon wildPokemon = Instantiate(pokemon, transform.position, Quaternion.identity, transform).GetComponent<WildPokemon>();
+        var instanceNetworkObject = wildPokemon.GetComponent<NetworkObject>();
+        instanceNetworkObject.Spawn();
         wildPokemon.EnergyYield = energyYield;
         wildPokemon.ExpYield = expYield;
         wildPokemon.Pokemon.OnDeath += HandlePokemonDeath;
-        isSpawned = true;
+        isSpawnedOnMap = true;
     }
 
     private void HandlePokemonDeath(DamageInfo info)
     {
-        isSpawned = false;
+        isSpawnedOnMap = false;
         timer = cooldown;
     }
 }

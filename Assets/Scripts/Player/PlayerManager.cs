@@ -1,10 +1,12 @@
+using Cinemachine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerManager : MonoBehaviour
+public class PlayerManager : NetworkBehaviour
 {
     private Pokemon pokemon;
     private MovesController movesController;
@@ -51,6 +53,12 @@ public class PlayerManager : MonoBehaviour
     private void Start()
     {
         UpdateEnergyGraphic();
+        if (IsOwner)
+        {
+            CinemachineVirtualCamera virtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
+            virtualCamera.Follow = transform;
+            virtualCamera.LookAt = transform;
+        }
     }
 
     private void Update()
@@ -121,7 +129,7 @@ public class PlayerManager : MonoBehaviour
 
     private void ScorePoints()
     {
-        GameManager.instance.GoalScored(orangeTeam, currentEnergy);
+        GameManager.instance.GoalScoredRpc(orangeTeam, currentEnergy);
         onGoalScored?.Invoke(currentEnergy);
         GivePokemonExperience();
         ResetEnergy();
@@ -142,7 +150,7 @@ public class PlayerManager : MonoBehaviour
 
     private void OnPokemonLevelUp()
     {
-        switch (pokemon.CurrentLevel)
+        switch (pokemon.CurrentLevel.Value)
         {
             case 8:
                 ChangeMaxEnergy(40);

@@ -3,24 +3,32 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using System;
+using Unity.Netcode;
 
-public class GameManager : MonoBehaviour
+public enum GameState
+{
+    Waiting,
+    Playing,
+    Ended
+}
+
+public class GameManager : NetworkBehaviour
 {
     public static GameManager instance;
 
     [SerializeField] private TMP_Text timerText;
-    private float gameTime = 600f; // 10 minutes in seconds
-    private int blueTeamScore = 0;
-    private int orangeTeamScore = 0;
+    private NetworkVariable<float> gameTime = new NetworkVariable<float>(600f);
+    private NetworkVariable<int> blueTeamScore = new NetworkVariable<int>(0);
+    private NetworkVariable<int> orangeTeamScore = new NetworkVariable<int>(0);
 
     private PlayerManager[] players;
     private GoalZone[] goalZones;
 
-    public float GameTime => gameTime;
-    public int BlueTeamScore => blueTeamScore;
-    public int OrangeTeamScore => orangeTeamScore;
+    public NetworkVariable<float> GameTime => gameTime;
+    public int BlueTeamScore => blueTeamScore.Value;
+    public int OrangeTeamScore => orangeTeamScore.Value;
 
-    private bool gameEnded = false;
+    private GameState gameState = GameState.Playing;
 
     public event Action<int> onUpdatePassiveExp;
 
@@ -49,10 +57,10 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator HandlePassiveExp()
     {
-        while (!gameEnded)
+        while (gameState == GameState.Playing)
         {
             yield return new WaitForSeconds(1f);
-            if (gameTime > 480)
+            if (gameTime.Value > 480)
             {
                 onUpdatePassiveExp?.Invoke(4);
             }
@@ -65,10 +73,13 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if (!gameEnded)
+        if (gameState == GameState.Playing)
         {
-            gameTime -= Time.deltaTime;
-            if (gameTime <= 0f)
+            if (IsServer)
+            {
+                gameTime.Value -= Time.deltaTime;
+            }
+            if (gameTime.Value <= 0f)
             {
                 EndGame();
             }
@@ -78,27 +89,34 @@ public class GameManager : MonoBehaviour
 
     void UpdateTimerText()
     {
-        int minutes = Mathf.FloorToInt(gameTime / 60f);
-        int seconds = Mathf.FloorToInt(gameTime % 60f);
+        int minutes = Mathf.FloorToInt(gameTime.Value / 60f);
+        int seconds = Mathf.FloorToInt(gameTime.Value % 60f);
         timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
     }
 
-    public void GoalScored(bool orangeTeam, int amount=1)
+    [Rpc(SendTo.Server)]
+    public void GoalScoredRpc(bool orangeTeam, int amount=1)
     {
         if (orangeTeam)
         {
-            orangeTeamScore += amount;
+            orangeTeamScore.Value += amount;
         }
         else
         {
-            blueTeamScore += amount;
+            blueTeamScore.Value += amount;
         }
+        ShowGoalScoredRpc(amount, orangeTeam);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShowGoalScoredRpc(int amount, bool orangeTeam)
+    {
         BattleUIManager.instance.ShowScore(amount, orangeTeam);
     }
 
     void EndGame()
     {
-        gameEnded = true;
+        gameState = GameState.Ended;
         // Display end game UI, show winner, etc.
     }
 }

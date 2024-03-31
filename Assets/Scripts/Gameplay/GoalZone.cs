@@ -1,30 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 
-public class GoalZone : MonoBehaviour
+public class GoalZone : NetworkBehaviour
 {
     [SerializeField] private int maxScore;
     [SerializeField] private bool orangeTeam;
     [SerializeField] private int goalTier;
     [SerializeField] private TMP_Text scoreText;
     private bool isActive;
-    private int currentScore;
+    private NetworkVariable<int> currentScore = new NetworkVariable<int>();
 
     public bool IsActive { get => isActive; set => isActive = value; }
-    public int CurrentScore { get => currentScore; set => currentScore = value; }
+    public int CurrentScore { get => currentScore.Value; set => currentScore.Value = value; }
     public int MaxScore { get => maxScore; }
     public int GoalTier { get => goalTier; }
     public bool OrangeTeam { get => orangeTeam; }
 
     private List<PlayerManager> playerManagerList = new List<PlayerManager>();
 
-    private void Start()
+
+    public override void OnNetworkSpawn()
     {
-        StartCoroutine(GoalZoneHealing());
+        if (IsServer)
+        {
+            StartCoroutine(GoalZoneHealing());
+        }
         scoreText.color = orangeTeam ? Color.yellow : Color.blue;
-        scoreText.text = $"{maxScore - currentScore}/{maxScore}";
+        scoreText.text = $"{maxScore - currentScore.Value}/{maxScore}";
     }
 
     private void OnTriggerEnter(Collider other)
@@ -66,12 +71,22 @@ public class GoalZone : MonoBehaviour
 
     private void OnScore(int amount)
     {
-        currentScore += amount;
-        scoreText.text = $"{maxScore-currentScore}/{maxScore}";
-        if (currentScore >= maxScore)
+        if (IsServer) {
+            currentScore.Value += amount;
+        } else {
+            SetCurrentScoreRPC(currentScore.Value + amount);
+        }
+        scoreText.text = $"{maxScore-currentScore.Value}/{maxScore}";
+        if (currentScore.Value >= maxScore)
         {
             DestroyGoalZone();
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SetCurrentScoreRPC(int amount)
+    {
+        currentScore.Value = amount;
     }
 
     private void DestroyGoalZone()

@@ -28,27 +28,27 @@ public class HPBar : MonoBehaviour
 
     public void UpdateUI()
     {
-        if (hpBar.fillAmount > (pokemon.CurrentHp / pokemon.GetMaxHp()))
+        if (hpBar.fillAmount > (pokemon.CurrentHp.Value / pokemon.GetMaxHp()))
         {
             StopAllCoroutines();
-            StartCoroutine(UpdateHP(pokemon.CurrentHp / pokemon.GetMaxHp()));
+            StartCoroutine(UpdateHP(pokemon.CurrentHp.Value / pokemon.GetMaxHp()));
         }
         else
         {
-            hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
+            hpBar.fillAmount = (float)pokemon.CurrentHp.Value / pokemon.GetMaxHp();
         }
-        shieldBar.fillAmount = (float)pokemon.ShieldHp / pokemon.GetMaxHp();
+        shieldBar.fillAmount = (float)pokemon.ShieldHp.Value / pokemon.GetMaxHp();
     }
 
     private void UpdateLevel()
     {
-        lvText.text = $"{pokemon.CurrentLevel + 1}";
+        lvText.text = $"{pokemon.CurrentLevel.Value + 1}";
     }
 
     private void UpdateExp()
     {
-        float normalizedExp = (float)pokemon.CurrentExp / pokemon.BaseStats.GetExpForNextLevel(pokemon.CurrentLevel);
-        float normalizedStoredExp = (float)pokemon.StoredExp / pokemon.BaseStats.GetExpForNextLevel(pokemon.CurrentLevel);
+        float normalizedExp = (float)pokemon.CurrentExp.Value / pokemon.BaseStats.GetExpForNextLevel(pokemon.CurrentLevel.Value);
+        float normalizedStoredExp = (float)pokemon.StoredExp.Value / pokemon.BaseStats.GetExpForNextLevel(pokemon.CurrentLevel.Value);
         normalizedStoredExp += normalizedExp;
         if (normalizedExp < 0)
         {
@@ -67,7 +67,7 @@ public class HPBar : MonoBehaviour
         float changeAmt = curHp - newHp;
 
         damageBar.fillAmount = curHp;
-        hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
+        hpBar.fillAmount = (float)pokemon.CurrentHp.Value / pokemon.GetMaxHp();
 
         yield return new WaitForSeconds(1f);
 
