@@ -148,7 +148,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2af2e69055f68e94aa29e80140ce9f0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseStats: {fileID: 11400000, guid: 26d7a222984c1e14eab8e5e7bef19593, type: 2}
   damagePrefab: {fileID: 4424315286788905445, guid: c7441dfa30daa4c4a9a2b2b15cdb9a96,
     type: 3}
 --- !u!114 &3756715907443232056
@@ -168,10 +167,6 @@ MonoBehaviour:
   homingProjectilePrefab: {fileID: 2520708872315271836, guid: 5950280d66c36474c95552d55d4a1e1b,
     type: 3}
   attackRadius: 10
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 192
-  maxEnemies: 10
   uniteMoveCharge: 0
 --- !u!114 &1221305268478256571
 MonoBehaviour:
@@ -194,6 +189,10 @@ MonoBehaviour:
   dashIndicator: {fileID: 6485103791368656011}
   basicAtkIndicator: {fileID: 9119103749529770630}
   coneAngle: 60
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 192
+  maxEnemies: 10
 --- !u!114 &7007301446556512728
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -206,6 +205,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61c341a1f6b0a5b4aacbd90143ef7929, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  selectedPokemon: {fileID: 11400000, guid: 26d7a222984c1e14eab8e5e7bef19593, type: 2}
 --- !u!114 &-9127133029249662645
 MonoBehaviour:
   m_ObjectHideFlags: 0

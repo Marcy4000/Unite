@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -30,6 +31,7 @@ public class GoalZone : NetworkBehaviour
         }
         scoreText.color = orangeTeam ? Color.yellow : Color.blue;
         scoreText.text = $"{maxScore - currentScore.Value}/{maxScore}";
+        currentScore.OnValueChanged += UpdateGraphicsRPC;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -76,11 +78,6 @@ public class GoalZone : NetworkBehaviour
         } else {
             SetCurrentScoreRPC(currentScore.Value + amount);
         }
-        scoreText.text = $"{maxScore-currentScore.Value}/{maxScore}";
-        if (currentScore.Value >= maxScore)
-        {
-            DestroyGoalZone();
-        }
     }
 
     [Rpc(SendTo.Server)]
@@ -89,8 +86,22 @@ public class GoalZone : NetworkBehaviour
         currentScore.Value = amount;
     }
 
+    private void UpdateGraphicsRPC(int previous, int current)
+    {
+        scoreText.text = $"{maxScore - current}/{maxScore}";
+        if (current >= maxScore)
+        {
+            DestroyGoalZone();
+        }
+    }
+
     private void DestroyGoalZone()
     {
+        foreach (var player in playerManagerList)
+        {
+            player.onGoalScored -= OnScore;
+            player.CanScore = false;
+        }
         gameObject.SetActive(false);
     }
 }

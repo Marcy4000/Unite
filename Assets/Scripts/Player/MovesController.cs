@@ -10,8 +10,6 @@ public class MovesController : NetworkBehaviour
     public Transform projectileSpawnPoint; // Define the spawn point for the projectile
     public GameObject homingProjectilePrefab; // Reference to the homing projectile prefab
     public float attackRadius = 10f; // Radius to search for enemies
-    public LayerMask enemyLayer; // Layer mask for enemies
-    public int maxEnemies = 10; // Maximum number of enemies to detect
     [SerializeField]private int uniteMoveCharge = 0;
     private int uniteMoveMaxCharge = 10000;
 
@@ -22,13 +20,11 @@ public class MovesController : NetworkBehaviour
 
     private Pokemon pokemon;
     private PlayerControls controls;
-    private PlayerMovement playerMovement;
-    private Collider[] collidersBuffer; // Buffer to store colliders
-    private Collider playerCollider; // Collider of the player character
+    private PlayerManager playerManager;
 
     public PlayerControls Controls => controls;
     public Pokemon Pokemon => pokemon;
-    public PlayerMovement PlayerMovement => playerMovement;
+    public PlayerMovement PlayerMovement => playerManager.PlayerMovement;
     public int UniteMoveCharge => uniteMoveCharge;
 
     void Start()
@@ -36,14 +32,8 @@ public class MovesController : NetworkBehaviour
         controls = new PlayerControls();
         controls.asset.Enable();
 
-        // Initialize the colliders buffer
-        collidersBuffer = new Collider[maxEnemies];
-
-        // Get the collider of the player character
-        playerCollider = GetComponent<Collider>();
-
         pokemon = GetComponent<Pokemon>();
-        playerMovement = GetComponent<PlayerMovement>();
+        playerManager = GetComponent<PlayerManager>();
 
         if (!IsOwner)
         {
@@ -80,6 +70,11 @@ public class MovesController : NetworkBehaviour
         {
             return;
         }
+
+        if (playerManager.PlayerState != PlayerState.Alive)
+        {
+            return;
+        }   
 
         Aim.Instance.ShowBasicAtk(controls.Movement.BasicAttack.IsPressed(), attackRadius);
 
@@ -247,26 +242,7 @@ public class MovesController : NetworkBehaviour
 
     private void PerformBasicAttack()
     {
-        // Find enemies within the attack radius using OverlapSphereNonAlloc
-        int numEnemies = Physics.OverlapSphereNonAlloc(transform.position, attackRadius, collidersBuffer, enemyLayer);
-
-        GameObject closestEnemy = null;
-        float closestDistance = Mathf.Infinity;
-
-        // Iterate through detected enemies
-        for (int i = 0; i < numEnemies; i++)
-        {
-            // Skip the player character's collider
-            if (collidersBuffer[i] == playerCollider)
-                continue;
-
-            float distance = Vector3.Distance(transform.position, collidersBuffer[i].transform.position);
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestEnemy = collidersBuffer[i].gameObject;
-            }
-        }
+        GameObject closestEnemy = Aim.Instance.AimInCircle(attackRadius);
 
         // If an enemy is found, launch a homing projectile towards it
         if (closestEnemy != null)

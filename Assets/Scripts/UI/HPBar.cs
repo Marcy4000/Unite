@@ -43,12 +43,13 @@ public class HPBar : MonoBehaviour
     private void UpdateLevel()
     {
         lvText.text = $"{pokemon.CurrentLevel.Value + 1}";
+        UpdateExp();
     }
 
     private void UpdateExp()
     {
-        float normalizedExp = (float)pokemon.CurrentExp.Value / pokemon.BaseStats.GetExpForNextLevel(pokemon.CurrentLevel.Value);
-        float normalizedStoredExp = (float)pokemon.StoredExp.Value / pokemon.BaseStats.GetExpForNextLevel(pokemon.CurrentLevel.Value);
+        float normalizedExp = (float)pokemon.LocalExp / pokemon.BaseStats.GetExpForNextLevel(pokemon.LocalLevel);
+        float normalizedStoredExp = (float)pokemon.LocalStoredExp / pokemon.BaseStats.GetExpForNextLevel(pokemon.LocalLevel);
         normalizedStoredExp += normalizedExp;
         if (normalizedExp < 0)
         {

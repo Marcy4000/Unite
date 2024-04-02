@@ -4,6 +4,7 @@ using UnityEngine;
 using TMPro;
 using System;
 using Unity.Netcode;
+using System.Linq;
 
 public enum GameState
 {
@@ -21,67 +22,86 @@ public class GameManager : NetworkBehaviour
     private NetworkVariable<int> blueTeamScore = new NetworkVariable<int>(0);
     private NetworkVariable<int> orangeTeamScore = new NetworkVariable<int>(0);
 
-    private PlayerManager[] players;
+    private List<PlayerManager> players = new List<PlayerManager>();
     private GoalZone[] goalZones;
 
     public NetworkVariable<float> GameTime => gameTime;
     public int BlueTeamScore => blueTeamScore.Value;
     public int OrangeTeamScore => orangeTeamScore.Value;
 
-    private GameState gameState = GameState.Playing;
+    private NetworkVariable<GameState> gameState = new NetworkVariable<GameState>(GameState.Waiting);
 
     public event Action<int> onUpdatePassiveExp;
+    public event Action<GameState> onGameStateChanged;
 
     private void Awake()
     {
         instance = this;
     }
 
-    void Start()
+    public override void OnNetworkSpawn()
     {
         UpdateTimerText();
 
-        goalZones = FindObjectsOfType<GoalZone>();
-
-        players = FindObjectsOfType<PlayerManager>();
-        foreach (var player in players)
+        gameState.OnValueChanged += (previous, current) =>
         {
-            if (player.Pokemon.Type != PokemonType.Player)
-                continue;
-
-            onUpdatePassiveExp += player.Pokemon.GainPassiveExp;
-        }
+            onGameStateChanged?.Invoke(current);
+        };
+        goalZones = FindObjectsOfType<GoalZone>();
 
         StartCoroutine(HandlePassiveExp());
     }
 
+    public void StartGame()
+    {
+        if (IsServer)
+        {
+            gameState.Value = GameState.Playing;
+        }
+    }
+
+    public void AddPlayer(PlayerManager player)
+    {
+        players.Add(player);
+        onUpdatePassiveExp += player.Pokemon.GainPassiveExp;
+    }
+
+    public void RemovePlayer(PlayerManager player)
+    {
+        players.Remove(player);
+        onUpdatePassiveExp -= player.Pokemon.GainPassiveExp;
+    }
+
     private IEnumerator HandlePassiveExp()
     {
-        while (gameState == GameState.Playing)
+        while (true)
         {
             yield return new WaitForSeconds(1f);
-            if (gameTime.Value > 480)
+            if (gameState.Value == GameState.Playing)
             {
-                onUpdatePassiveExp?.Invoke(4);
-            }
-            else
-            {
-                onUpdatePassiveExp?.Invoke(6);
+                if (gameTime.Value > 480)
+                {
+                    onUpdatePassiveExp?.Invoke(4);
+                }
+                else
+                {
+                    onUpdatePassiveExp?.Invoke(6);
+                }
             }
         }
     }
 
     void Update()
     {
-        if (gameState == GameState.Playing)
+        if (gameState.Value == GameState.Playing)
         {
             if (IsServer)
             {
                 gameTime.Value -= Time.deltaTime;
-            }
-            if (gameTime.Value <= 0f)
-            {
-                EndGame();
+                if (gameTime.Value <= 0f)
+                {
+                    EndGame();
+                }
             }
             UpdateTimerText();
         }
@@ -116,7 +136,7 @@ public class GameManager : NetworkBehaviour
 
     void EndGame()
     {
-        gameState = GameState.Ended;
+        gameState.Value = GameState.Ended;
         // Display end game UI, show winner, etc.
     }
 }

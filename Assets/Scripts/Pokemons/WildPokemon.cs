@@ -8,6 +8,7 @@ public class WildPokemon : NetworkBehaviour
     private Pokemon pokemon;
     [SerializeField] private int expYield = 250;
     [SerializeField] private int energyYield = 5;
+    [SerializeField] private PokemonBase pokemonBase;
 
     public Pokemon Pokemon => pokemon;
     public int ExpYield { get => expYield; set => expYield = value; }
@@ -16,6 +17,7 @@ public class WildPokemon : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         pokemon = GetComponent<Pokemon>();
+        pokemon.SetNewPokemon(pokemonBase);
         pokemon.OnDeath += Die;
         pokemon.Type = PokemonType.Wild;
     }

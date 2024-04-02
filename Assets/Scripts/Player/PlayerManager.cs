@@ -6,6 +6,13 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+public enum PlayerState
+{
+    Alive,
+    Dead,
+    Scoring
+}
+
 public class PlayerManager : NetworkBehaviour
 {
     private Pokemon pokemon;
@@ -14,7 +21,10 @@ public class PlayerManager : NetworkBehaviour
     private Aim aim;
     private PlayerControls playerControls;
 
-    private bool orangeTeam;
+    [SerializeField] private PokemonBase selectedPokemon;
+
+    private NetworkVariable<bool> orangeTeam = new NetworkVariable<bool>();
+    private NetworkVariable<PlayerState> playerState = new NetworkVariable<PlayerState>(PlayerState.Alive);
     private int maxEnergyCarry;
     private int currentEnergy;
 
@@ -24,9 +34,12 @@ public class PlayerManager : NetworkBehaviour
     public Pokemon Pokemon { get => pokemon; }
     public MovesController MovesController { get => movesController; }
     public Aim Aim { get => aim; }
+    public PlayerMovement PlayerMovement { get => playerMovement; }
     public bool IsScoring { get => isScoring; }
 
-    public bool OrangeTeam { get => orangeTeam; set => orangeTeam = value; }
+    public PlayerState PlayerState { get => playerState.Value; }
+
+    public bool OrangeTeam { get => orangeTeam.Value; }
     public int MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
     public int CurrentEnergy { get => currentEnergy; set => currentEnergy = value; }
     public bool CanScore { get => canScore; set => canScore = value; }
@@ -35,6 +48,8 @@ public class PlayerManager : NetworkBehaviour
 
     public event Action<int> onGoalScored;
 
+    private Vector3 deathPosition = new Vector3(0, -20, 0);
+
     private void Awake()
     {
         pokemon = GetComponent<Pokemon>();
@@ -42,27 +57,100 @@ public class PlayerManager : NetworkBehaviour
         aim = GetComponent<Aim>();
         playerMovement = GetComponent<PlayerMovement>();
 
-        playerControls = new PlayerControls();
-        playerControls.asset.Enable();
-
         maxEnergyCarry = 30;
-
-        pokemon.OnLevelChange += OnPokemonLevelUp;
+        canScore = false;
+        currentEnergy = 0;
     }
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
-        UpdateEnergyGraphic();
+        pokemon.SetNewPokemon(selectedPokemon);
+        orangeTeam.OnValueChanged += (previous, current) =>
+        {
+            aim.TeamToIgnore = current;
+        };
         if (IsOwner)
         {
             CinemachineVirtualCamera virtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
             virtualCamera.Follow = transform;
             virtualCamera.LookAt = transform;
+            playerControls = new PlayerControls();
+            playerControls.asset.Enable();
+            pokemon.OnLevelChange += OnPokemonLevelUp;
+            pokemon.OnDeath += OnPokemonDeath;
         }
+        UpdateEnergyGraphic();
+    }
+
+    private void OnPokemonDeath(DamageInfo info)
+    {
+        transform.position = deathPosition;
+        playerMovement.CanMove = false;
+        ChangeCurrentState(PlayerState.Dead);
+    }
+
+    public void ChangeCurrentTeam(bool isOrange)
+    {
+        if (IsServer) {
+            orangeTeam.Value = isOrange;
+        } else {
+            ChangeCurrentTeamRpc(isOrange);
+        }
+    }
+
+    public void Respawn()
+    {
+        ChangeCurrentState(PlayerState.Alive);
+        pokemon.HealDamage(pokemon.GetMaxHp());
+        playerMovement.CanMove = true;
+        Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+        transform.position = new Vector3(spawnpoint.position.x, spawnpoint.position.y, spawnpoint.position.z);
+        transform.rotation = spawnpoint.rotation;
+    }
+
+    [Rpc(SendTo.Server)]
+    private void ChangeCurrentStateRpc(PlayerState newState)
+    {
+        playerState.Value = newState;
+    }
+
+    public void ChangeCurrentState(PlayerState newState)
+    {
+        if (IsServer)
+        {
+            playerState.Value = newState;
+        }
+        else
+        {
+            ChangeCurrentStateRpc(newState);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void ChangeCurrentTeamRpc(bool isOrange)
+    {
+        orangeTeam.Value = isOrange;
     }
 
     private void Update()
     {
+        if (!IsOwner)
+        {
+            return;
+        }
+
+        if (playerState.Value != PlayerState.Alive)
+        {
+            return;
+        }
+
+        if (playerState.Value != PlayerState.Dead && transform.position.y == deathPosition.y)
+        {
+            Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+            transform.position = new Vector3(spawnpoint.position.x, spawnpoint.position.y, spawnpoint.position.z);
+            transform.rotation = spawnpoint.rotation;
+        }
+
         if (playerControls.Movement.Score.WasPressedThisFrame())
         {
             StartScoring();
@@ -120,6 +208,11 @@ public class PlayerManager : NetworkBehaviour
 
     private void EndScoring()
     {
+        if (!isScoring)
+        {
+            return;
+        }
+
         isScoring = false;
         scoreTimer = 0;
         playerMovement.CanMove = true;
@@ -129,7 +222,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void ScorePoints()
     {
-        GameManager.instance.GoalScoredRpc(orangeTeam, currentEnergy);
+        GameManager.instance.GoalScoredRpc(OrangeTeam, currentEnergy);
         onGoalScored?.Invoke(currentEnergy);
         GivePokemonExperience();
         ResetEnergy();
@@ -155,7 +248,7 @@ public class PlayerManager : NetworkBehaviour
             case 8:
                 ChangeMaxEnergy(40);
                 break;
-            case 12:
+            case 11:
                 ChangeMaxEnergy(50);
                 break;
         }

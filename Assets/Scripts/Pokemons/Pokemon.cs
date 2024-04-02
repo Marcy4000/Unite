@@ -6,13 +6,16 @@ using UnityEngine.InputSystem;
 
 public class Pokemon : NetworkBehaviour
 {
-    [SerializeField] private PokemonBase baseStats;
     [SerializeField] private GameObject damagePrefab;
+    private PokemonBase baseStats;
     private NetworkVariable<int> currentHp = new NetworkVariable<int>();
     private NetworkVariable<int> shieldHp = new NetworkVariable<int>();
     private NetworkVariable<int> currentLevel = new NetworkVariable<int>();
     private NetworkVariable<int> currentExp = new NetworkVariable<int>();
     private NetworkVariable<int> storedExp = new NetworkVariable<int>();
+    private int localExp;
+    private int localStoredExp;
+    private int localLevel;
 
     private PokemonType type;
 
@@ -23,6 +26,10 @@ public class Pokemon : NetworkBehaviour
     public NetworkVariable<int> CurrentLevel { get { return currentLevel; } }
     public NetworkVariable<int> CurrentExp { get { return currentExp; } }
     public NetworkVariable<int> StoredExp { get { return storedExp; } }
+
+    public int LocalExp { get { return localExp; } }
+    public int LocalStoredExp { get { return localStoredExp; } }
+    public int LocalLevel { get { return localLevel; } }
 
     public PokemonType Type { get { return type; } set { type = value; } }
 
@@ -36,33 +43,71 @@ public class Pokemon : NetworkBehaviour
     public event Action OnEvolution;
     public event Action<DamageInfo> OnDeath;
 
-    public override void OnNetworkSpawn()
-    {
-        InitializePokemon();
-    }
-
     public void GainPassiveExp(int amount)
     {
-        if (baseStats.IsLevelBeforeEvo(currentLevel.Value))
+        if (!IsOwner)
         {
-            StoreExperience(6);
+            return;
+        }
+
+        if (baseStats.IsLevelBeforeEvo(localLevel))
+        {
+            StoreExperience(amount);
         }
         else
         {
-            GainExperience(6);
+            GainExperience(amount);
         }
+    }
+
+    public void SetNewPokemon(PokemonBase pokemonBase)
+    {
+        baseStats = pokemonBase;
+        InitializePokemon();
     }
 
     public void InitializePokemon()
     {
-        currentHp.Value = GetMaxHp();
-        shieldHp.Value = 0;
-        currentExp.Value = 0;
-        currentHp.OnValueChanged += (previous, current) => OnHpOrShieldChange?.Invoke();
+        localExp = 0;
+        if (IsServer) {
+            currentHp.Value = GetMaxHp();
+            shieldHp.Value = 0;
+            currentExp.Value = 0;
+        } else {
+            SetCurrentHPServerRPC(GetMaxHp());
+            SetCurrentEXPServerRPC(0);
+            SetShieldServerRPC(0);
+        }
+        currentHp.OnValueChanged += CurrentHpChanged;
         shieldHp.OnValueChanged += (previous, current) => OnHpOrShieldChange?.Invoke();
-        currentExp.OnValueChanged += (previous, current) => OnExpChange?.Invoke();
-        currentLevel.OnValueChanged += (previous, current) => OnLevelChange?.Invoke();
+        storedExp.OnValueChanged += StoredExpChanged;
+        currentExp.OnValueChanged += CurrentExpValueChanged;
+        currentLevel.OnValueChanged += CurrentLevelChanged;
         CheckEvolution();
+    }
+
+    private void CurrentHpChanged(int previous, int current)
+    {
+        OnHpOrShieldChange?.Invoke();
+    }
+
+    private void CurrentExpValueChanged(int previous, int current)
+    {
+        localExp = current;
+        OnExpChange?.Invoke();
+    }
+
+    private void CurrentLevelChanged(int previous, int current)
+    {
+        localLevel = current;
+        CheckEvolution();
+        OnLevelChange?.Invoke();
+    }
+
+    private void StoredExpChanged(int previous, int current)
+    {
+        localStoredExp = current;
+        OnExpChange?.Invoke();
     }
 
     public int GetMaxHp()
@@ -72,6 +117,11 @@ public class Pokemon : NetworkBehaviour
 
     private void Update()
     {
+        if (!IsOwner)
+        {
+            return;
+        }
+
         if (Keyboard.current.tKey.wasPressedThisFrame)
         {
             TakeDamage(new DamageInfo(this, 3.45f, 32, 820, DamageType.Physical));
@@ -217,27 +267,32 @@ public class Pokemon : NetworkBehaviour
         }
 
         // If there's stored experience, convert it first
-        int currExp = currentExp.Value;
-
-        if (storedExp.Value > 0)
+        if (localStoredExp > 0)
         {
-            int convertedExp = Mathf.Min(amount, storedExp.Value);
-            if (IsServer) {
-                storedExp.Value -= convertedExp;
-            } else {
-                SetStoredExpServerRPC(storedExp.Value - convertedExp);
-            }
+            int convertedExp = Mathf.Min(amount, localStoredExp);
+            localStoredExp -= convertedExp;
             amount -= convertedExp;
-            currExp += convertedExp;
+            localExp += convertedExp;
         }
 
         // Gain real experience
-        SetCurrentEXPServerRPC(currExp + amount);
+        
+        localExp += amount;
 
         // Check for level up
-        while (currentExp.Value >= baseStats.GetExpForNextLevel(currentLevel.Value) && currentLevel.Value < 14)
+        while (localExp >= baseStats.GetExpForNextLevel(localLevel) && localLevel < 14)
         {
             LevelUp();
+        }
+
+        if (IsServer) {
+            currentExp.Value = localExp;
+            storedExp.Value = localStoredExp;
+            currentLevel.Value = localLevel;
+        } else {
+            SetCurrentEXPServerRPC(localExp);
+            SetStoredExpServerRPC(localStoredExp);
+            SetCurrentLevelServerRPC(localLevel);
         }
     }
 
@@ -248,16 +303,9 @@ public class Pokemon : NetworkBehaviour
             return;
         }
 
-        if (IsServer) {
-            currentExp.Value -= baseStats.GetExpForNextLevel(currentLevel.Value);
-            currentLevel.Value++;
-        } else {
-            SetCurrentEXPServerRPC(currentExp.Value - baseStats.GetExpForNextLevel(currentLevel.Value));
-            SetCurrentLevelServerRPC(currentLevel.Value + 1);
-        }
-        PokemonEvolution evolution = baseStats.IsNewEvoLevel(currentLevel.Value);
-        CheckEvolution();
-        Debug.Log("Level Up! Current Level: " + currentLevel);
+        localExp -= baseStats.GetExpForNextLevel(localLevel);
+        localLevel++;
+        Debug.Log("Level Up! Current Level: " + currentLevel.Value);
         // You can add additional logic here upon leveling up
     }
 
@@ -293,12 +341,16 @@ public class Pokemon : NetworkBehaviour
 
     public void StoreExperience(int amount)
     {
-        storedExp.Value += amount;
+        if (IsServer) {
+            storedExp.Value += amount;
+        } else {
+            SetStoredExpServerRPC(storedExp.Value + amount);
+        }
     }
 
     private void CheckEvolution()
     {
-        PokemonEvolution evolution = baseStats.IsNewEvoLevel(currentLevel.Value);
+        PokemonEvolution evolution = baseStats.IsNewEvoLevel(localLevel);
         if (evolution != null)
         {
             Evolve(evolution);

@@ -11,6 +11,8 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private MoveLearnPanel moveLearnPanel;
     [SerializeField] private EnergyUI energyUI;
     [SerializeField] private ScoreUI blueScoreUI, orangeScoreUI;
+    [SerializeField] private DeathScreenUI deathScreenUI;
+    [SerializeField] private KillNotificationUI killNotificationUI;
 
     private void Awake()
     {
@@ -41,6 +43,26 @@ public class BattleUIManager : MonoBehaviour
     public void InitializeMoveLearnPanel(MoveAsset[] moves)
     {
         moveLearnPanel.EnqueueNewMove(moves);
+    }
+
+    public void ShowKill(DamageInfo info, bool orangeTeam)
+    {
+        killNotificationUI.ShowKill(info, orangeTeam);
+    }
+
+    public void ShowDeathScreen()
+    {
+        deathScreenUI.gameObject.SetActive(true);
+    }
+
+    public void HideDeathScreen()
+    {
+        deathScreenUI.gameObject.SetActive(false);
+    }
+
+    public void UpdateDeathScreenTimer(int time)
+    {
+        deathScreenUI.UpdateTimerText(time);
     }
 
     public void ShowMoveCooldown(int id, float time)

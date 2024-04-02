@@ -13,16 +13,28 @@ public class Aim : NetworkBehaviour
     private PlayerControls controls;
     [SerializeField]private float coneAngle = 60f; // Cone angle for the sure hit aim
     private float coneDistance = 10f;
+    private Collider[] collidersBuffer; // Buffer to store colliders
+    private Collider playerCollider; // Collider of the player character
+    public int maxEnemies = 10; // Maximum number of enemies to detect
+    private bool teamToIgnore;
+
+    public bool TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; } 
 
     private void Start()
     {
         if (!IsOwner)
         {
             Destroy(indicatorHolders);
-            Destroy(this);
+            enabled = false;
             return;
         }
         Instance = this;
+
+        // Initialize the colliders buffer
+        collidersBuffer = new Collider[maxEnemies];
+
+        // Get the collider of the player character
+        playerCollider = GetComponent<Collider>();
 
         playerTransform = transform;
         controls = new PlayerControls();
@@ -74,6 +86,41 @@ public class Aim : NetworkBehaviour
         basicAtkIndicator.transform.localScale = new Vector3(radius / 2.5f, 1, radius / 2.5f);
     }
 
+    public GameObject AimInCircle(float attackRadius)
+    {
+        // Find enemies within the attack radius using OverlapSphereNonAlloc
+        int numEnemies = Physics.OverlapSphereNonAlloc(transform.position, attackRadius, collidersBuffer, targetMask);
+
+        GameObject closestEnemy = null;
+        float closestDistance = Mathf.Infinity;
+
+        // Iterate through detected enemies
+        for (int i = 0; i < numEnemies; i++)
+        {
+            // Skip the player character's collider
+            if (collidersBuffer[i] == playerCollider)
+                continue;
+
+            if (collidersBuffer[i].CompareTag("Player"))
+            {
+                var playerManager = collidersBuffer[i].GetComponent<PlayerManager>();
+                if (playerManager.OrangeTeam == teamToIgnore)
+                {
+                    continue;
+                }
+            }
+
+            float distance = Vector3.Distance(transform.position, collidersBuffer[i].transform.position);
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestEnemy = collidersBuffer[i].gameObject;
+            }
+        }
+
+        return closestEnemy;
+    }
+
     public GameObject SureHitAim()
     {
         // Rotate aiming direction based on right stick input
@@ -103,6 +150,15 @@ public class Aim : NetworkBehaviour
                 if (hit.collider.gameObject == gameObject)
                 {
                     continue;
+                }
+
+                if (hit.collider.CompareTag("Player"))
+                {
+                    var playerManager = hit.collider.gameObject.GetComponent<PlayerManager>();
+                    if (playerManager.OrangeTeam == teamToIgnore)
+                    {
+                        continue;
+                    }
                 }
                 return hit.collider.gameObject;
                 // Handle targeting here, such as highlighting the target

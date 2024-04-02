@@ -1,6 +1,7 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class HomingProjectile : MonoBehaviour
+public class HomingProjectile : NetworkBehaviour
 {
     public float speed = 5f;
     public float rotationSpeed = 5f;
