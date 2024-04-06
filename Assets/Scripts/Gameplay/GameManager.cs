@@ -5,6 +5,7 @@ using TMPro;
 using System;
 using Unity.Netcode;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 public enum GameState
 {
@@ -18,7 +19,7 @@ public class GameManager : NetworkBehaviour
     public static GameManager instance;
 
     [SerializeField] private TMP_Text timerText;
-    private NetworkVariable<float> gameTime = new NetworkVariable<float>(60f);
+    private NetworkVariable<float> gameTime = new NetworkVariable<float>(600f);
     private NetworkVariable<int> blueTeamScore = new NetworkVariable<int>(0);
     private NetworkVariable<int> orangeTeamScore = new NetworkVariable<int>(0);
 
@@ -37,6 +38,20 @@ public class GameManager : NetworkBehaviour
     private void Awake()
     {
         instance = this;
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        if (sceneName.Equals("RemoatStadium"))
+        {
+            StartGame();
+        }
+    }
+
+    private void OnDisable()
+    {
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
     }
 
     public override void OnNetworkSpawn()

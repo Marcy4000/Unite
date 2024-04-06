@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class PlayerMovement : NetworkBehaviour
 {
-    [SerializeField] private float moveSpeed = 10f;
+    [SerializeField] private float moveSpeed = 4.1f;
     [SerializeField] private Animator cinderace;
     [SerializeField] private float dashDistance = 5f; // Set your desired dash distance
     [SerializeField] private float dashDuration = 0.2f; // Set your desired dash duration

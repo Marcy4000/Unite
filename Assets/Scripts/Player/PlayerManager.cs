@@ -234,6 +234,7 @@ public class PlayerManager : NetworkBehaviour
         GameManager.instance.GoalScoredRpc(OrangeTeam, currentEnergy);
         onGoalScored?.Invoke(currentEnergy);
         GivePokemonExperience();
+        movesController.IncrementUniteCharge(12000);
         ResetEnergy();
         EndScoring();
     }
@@ -289,6 +290,9 @@ public class PlayerManager : NetworkBehaviour
 
     public void UpdateEnergyGraphic()
     {
-        BattleUIManager.instance.UpdateEnergyUI(currentEnergy, maxEnergyCarry);
+        if (IsOwner)
+        {
+            BattleUIManager.instance.UpdateEnergyUI(currentEnergy, maxEnergyCarry);
+        }
     }
 }

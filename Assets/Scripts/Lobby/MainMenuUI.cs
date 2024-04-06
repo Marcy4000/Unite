@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using Unity.Tutorials.Core.Editor;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,7 +23,7 @@ public class MainMenuUI : MonoBehaviour
 
         lobbyIdField.onEndEdit.AddListener((string lobbyId) =>
         {
-            if (lobbyId.IsNullOrWhiteSpace())
+            if (string.IsNullOrWhiteSpace(lobbyId))
             {
                 return;
             }
