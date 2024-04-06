@@ -1,0 +1,295 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay;
+using Unity.Services.Authentication;
+using Unity.Services.Core;
+using Unity.Services.Lobbies;
+using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class LobbyController : MonoBehaviour
+{
+    public static LobbyController instance { get; private set; }
+
+    private MainMenuUI lobbyUI;
+    private const string LobbyNamePrefix = "PartyLobby";
+    private int maxPartyMembers = 10;
+    private Player localPlayer;
+    private Lobby partyLobby;
+
+    private float lobbyHeartBeatTimer = 15.0f;
+    private float lobbyUpdateTimer = 1.1f;
+
+    private string testPlayerName;
+
+    public Lobby Lobby => partyLobby;
+    public Player Player => localPlayer;
+
+    public event Action<Lobby> onLobbyUpdate;
+
+    private void Awake()
+    {
+        if (instance != null && this != instance)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        testPlayerName = $"TestPlayer {UnityEngine.Random.Range(0, 1000)}";
+        lobbyUI = FindObjectOfType<MainMenuUI>();
+
+        InitializeUnityAuthentication();
+
+        SceneManager.sceneLoaded += (scene, mode) =>
+        {
+            if (scene.name == "LobbyScene")
+            {
+                lobbyUI = FindObjectOfType<MainMenuUI>();
+            }
+        };
+    }
+
+    private void Update()
+    {
+        HandleLobbyHeartBeat();
+
+        HandleLobbyPollForUpdates();
+    }
+
+    private async void InitializeUnityAuthentication()
+    {
+        if (UnityServices.State != ServicesInitializationState.Initialized)
+        {
+            InitializationOptions options = new InitializationOptions();
+            options.SetProfile(UnityEngine.Random.Range(0,1000).ToString());
+
+            await UnityServices.InitializeAsync(options);
+
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+
+            localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>
+            {
+                {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, testPlayerName)},
+                {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")}
+            });
+        }
+    }
+
+    private async void HandleLobbyHeartBeat()
+    {
+        if (partyLobby != null)
+        {
+            lobbyHeartBeatTimer -= Time.deltaTime;
+            if (lobbyHeartBeatTimer <= 0)
+            {
+                lobbyHeartBeatTimer = 15.0f;
+                await LobbyService.Instance.SendHeartbeatPingAsync(partyLobby.Id);
+            }
+        }
+    }   
+
+    private async void HandleLobbyPollForUpdates()
+    {
+        if (partyLobby != null)
+        {
+            lobbyUpdateTimer -= Time.deltaTime;
+            if (lobbyUpdateTimer <= 0)
+            {
+                lobbyUpdateTimer = 1.1f;
+                partyLobby = await LobbyService.Instance.GetLobbyAsync(partyLobby.Id);
+                onLobbyUpdate?.Invoke(Lobby);
+            }
+        }
+    }
+
+    private async Task<JoinAllocation> JoinRelay(string joinCode)
+    {
+        try
+        {
+            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
+            return joinAllocation;
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.LogError(e);
+            return default;
+        }
+    }
+
+    public async void CreateLobby()
+    {
+        try
+        {
+            lobbyUI.ShowLoadingScreen();
+            var partyLobbyOptions = new CreateLobbyOptions()
+            {
+                IsPrivate = true,
+                Player = localPlayer,
+            };
+            var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
+            partyLobby = await LobbyService.Instance.CreateLobbyAsync(partyLobbyName, maxPartyMembers, partyLobbyOptions);
+            Debug.Log($"Joined lobby: {partyLobby.Name}, code: {partyLobby.LobbyCode}");
+
+            Allocation allocation = await AllocateRelay();
+
+            string relayJoinCode = await GetRelayJoinCode(allocation);
+
+            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, new UpdateLobbyOptions()
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    {"RelayJoinCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)}
+                }
+            });
+
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, "dtls"));
+
+            NetworkManager.Singleton.StartHost();
+            lobbyUI.ShowLobbyUI();
+            lobbyUI.HideLoadingScreen();
+        }
+        catch (LobbyServiceException e)
+        {
+            lobbyUI.HideLoadingScreen();
+            Debug.LogError($"Failed to create party lobby: {e.Message}");
+        }
+    }
+
+    public async void TryLobbyJoin(string joinCode)
+    {
+        try
+        {
+            lobbyUI.ShowLoadingScreen();
+            var joinOptions = new JoinLobbyByCodeOptions()
+            {
+                Player = localPlayer
+            };
+
+            partyLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(joinCode, joinOptions);
+
+            JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
+
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+            Debug.Log($"Joined lobby: {partyLobby.Name}");
+            NetworkManager.Singleton.StartClient();
+            lobbyUI.ShowLobbyUI();
+            lobbyUI.HideLoadingScreen();
+        }
+        catch (LobbyServiceException e)
+        {
+            lobbyUI.HideLoadingScreen();
+            Debug.LogError($"Failed to join party lobby: {e.Message}");
+        }
+    }
+
+    private async void UpdatePlayerData(UpdatePlayerOptions options)
+    {
+        try
+        {
+            var lobby = await LobbyService.Instance.UpdatePlayerAsync(Lobby.Id, localPlayer.Id, options);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    private async Task<string> GetRelayJoinCode(Allocation allocation)
+    {
+        try
+        {
+            var relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            Debug.Log($"Relay join code: {relayJoinCode}");
+            return relayJoinCode;
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.LogError(e);
+            return default;
+        }
+    }
+
+    public void PlayerSwitchTeam()
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+
+        if (options.Data["PlayerTeam"].Value == "Blue")
+        {
+            options.Data["PlayerTeam"].Value = "Orange";
+        }
+        else
+        {
+            options.Data["PlayerTeam"].Value = "Blue";
+        }
+
+        UpdatePlayerData(options);
+
+        Debug.Log($"Switched team to {localPlayer.Data["PlayerTeam"].Value}");
+    }
+
+    private async Task<Allocation> AllocateRelay()
+    {
+        try
+        {
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPartyMembers-1);
+
+            return allocation;
+        }
+        catch (RelayServiceException e)
+        {
+            Debug.LogError(e);
+
+            return default;
+        }
+    }
+
+    public async void LeaveLobby()
+    {
+        lobbyUI.ShowLoadingScreen();
+        await RemoveFromParty(localPlayer.Id);
+        partyLobby = null;
+        NetworkManager.Singleton.Shutdown();
+        lobbyUI.ShowMainMenuUI();
+        lobbyUI.HideLoadingScreen();
+    }
+
+    private async void LeaveLobbyNoGUI()
+    {
+        await RemoveFromParty(localPlayer.Id);
+        partyLobby = null;
+        NetworkManager.Singleton.Shutdown();
+    }
+
+    private async Task RemoveFromParty(string playerID)
+    {
+        try
+        {
+            await LobbyService.Instance.RemovePlayerAsync(partyLobby.Id, playerID);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    public void StartGame()
+    {
+        NetworkManager.Singleton.SceneManager.LoadScene("RemoatStadium", UnityEngine.SceneManagement.LoadSceneMode.Single);
+    }
+
+    public void ReturnToLobby()
+    {
+        LeaveLobbyNoGUI();
+        SceneManager.LoadSceneAsync("LobbyScene");
+    }
+}

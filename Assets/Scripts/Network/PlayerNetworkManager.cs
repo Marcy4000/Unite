@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.Services.Authentication;
+using Unity.Services.Lobbies;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerNetworkManager : NetworkBehaviour
 {
@@ -11,7 +16,16 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        GameManager.instance.onGameStateChanged += HandleGameStateChanged;
+        //GameManager.instance.onGameStateChanged += HandleGameStateChanged;
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        if (sceneName.Equals("RemoatStadium"))
+        {
+            GameManager.instance.onGameStateChanged += HandleGameStateChanged;
+        }
     }
 
     private void Update()
@@ -47,15 +61,17 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         if (IsOwner && IsServer)
         {
-            Transform spawnpoint = NetworkManagerUI.instance.teamToggle.isOn ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+            bool currentTeam = LobbyController.instance.Player.Data["PlayerTeam"].Value == "Orange";
+            Transform spawnpoint = currentTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
             spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);
             var spawnedPlayerNetworkObject = spawnedPlayer.GetComponent<NetworkObject>();
             spawnedPlayerNetworkObject.SpawnAsPlayerObject(OwnerClientId);
-            OnPlayerSpawnedRpc(spawnedPlayerNetworkObject.NetworkObjectId, NetworkManagerUI.instance.teamToggle.isOn);
+            OnPlayerSpawnedRpc(spawnedPlayerNetworkObject.NetworkObjectId, currentTeam);
         }
         else if (IsOwner && !IsServer)
         {
-            SpawnPlayerRpc(OwnerClientId, NetworkManagerUI.instance.teamToggle.isOn);
+            bool currentTeam = LobbyController.instance.Player.Data["PlayerTeam"].Value == "Orange";
+            SpawnPlayerRpc(OwnerClientId, currentTeam);
         }
     }
 
@@ -91,8 +107,14 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void OnPlayerDeath(DamageInfo info)
     {
-        BattleUIManager.instance.ShowKill(info, !playerManager.OrangeTeam);
+        ShowKillRpc(info, !playerManager.OrangeTeam);
         BattleUIManager.instance.ShowDeathScreen();
         deathTimer = 5f;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShowKillRpc(DamageInfo info, bool orangeTeam)
+    {
+        BattleUIManager.instance.ShowKill(info, orangeTeam);
     }
 }

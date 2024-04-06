@@ -247,20 +247,22 @@ public class MovesController : NetworkBehaviour
         // If an enemy is found, launch a homing projectile towards it
         if (closestEnemy != null)
         {
-            LaunchHomingProjectile(closestEnemy.transform, new DamageInfo(pokemon, 1, 0, 0, DamageType.Physical));
+            LaunchHomingProjectileRpc(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, new DamageInfo(pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical));
         }
     }
 
-    public void LaunchHomingProjectile(Transform target, DamageInfo info)
+    [Rpc(SendTo.Server)]
+    public void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info)
     {
         // Instantiate homing projectile
         GameObject homingProjectile = Instantiate(homingProjectilePrefab, projectileSpawnPoint.position, Quaternion.identity);
+        homingProjectile.GetComponent<NetworkObject>().Spawn();
 
         // Set target for homing projectile
         HomingProjectile homingScript = homingProjectile.GetComponent<HomingProjectile>();
         if (homingScript != null)
         {
-            homingScript.SetTarget(target, info);
+            homingScript.SetTarget(targetId, info);
         }
     }
 

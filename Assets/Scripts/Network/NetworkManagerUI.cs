@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,7 +13,11 @@ public class NetworkManagerUI : MonoBehaviour
     [SerializeField] private Button hostButton;
     [SerializeField] private Button clientButton;
     [SerializeField] private Button startGameButton;
-    [SerializeField] public Toggle teamToggle;
+
+    [SerializeField] private GameObject scoreBoard;
+    [SerializeField] private Image blueBar, orangeBar;
+    [SerializeField] private TMP_Text blueScore, orangeScore;
+    [SerializeField] private Button returnLobbyButton;
 
     private void Awake()
     {
@@ -32,5 +37,61 @@ public class NetworkManagerUI : MonoBehaviour
         {
             NetworkManager.Singleton.StartClient();
         });
+
+        returnLobbyButton.onClick.AddListener(() =>
+        {
+            LobbyController.instance.ReturnToLobby();
+        });
+    }
+
+    public void DebugShowScore()
+    {
+        scoreBoard.SetActive(true);
+        blueBar.fillAmount = 0f;
+        orangeBar.fillAmount = 0f;
+        blueScore.text = "0";
+        orangeScore.text = "0";
+
+        returnLobbyButton.gameObject.SetActive(NetworkManager.Singleton.IsHost);
+
+        StartCoroutine(ShowScoreRoutine());
+    }
+
+    private IEnumerator ShowScoreRoutine()
+    {
+        bool finished = false;
+        int blueScoreValue = 0;
+        int orangeScoreValue = 0;
+
+        int maxScore = GameManager.instance.BlueTeamScore;
+        if (GameManager.instance.OrangeTeamScore > maxScore)
+        {
+            maxScore = GameManager.instance.OrangeTeamScore;
+        }
+
+        while (!finished)
+        {
+            if (blueScoreValue < GameManager.instance.BlueTeamScore)
+            {
+                blueScoreValue = Mathf.Min(GameManager.instance.BlueTeamScore, blueScoreValue + 5);
+            }
+
+            if (orangeScoreValue < GameManager.instance.OrangeTeamScore)
+            {
+                orangeScoreValue = Mathf.Min(GameManager.instance.OrangeTeamScore, orangeScoreValue + 5);
+            }
+
+            blueBar.fillAmount = (float)blueScoreValue / maxScore;
+            orangeBar.fillAmount = (float)orangeScoreValue / maxScore;
+            blueScore.text = blueScoreValue.ToString();
+            orangeScore.text = orangeScoreValue.ToString();
+
+            if (blueScoreValue == GameManager.instance.BlueTeamScore && orangeScoreValue == GameManager.instance.OrangeTeamScore)
+            {
+                finished = true;
+            }
+
+            yield return new WaitForSeconds(0.1f);
+        }
     }
 }

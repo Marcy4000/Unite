@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class CinderEmber : MoveBase
@@ -11,13 +12,13 @@ public class CinderEmber : MoveBase
     {
         name = "Ember";
         cooldown = 6.0f;
-        damageInfo = new DamageInfo(null, 1, 7, 135, DamageType.Physical);
+        damageInfo = new DamageInfo(0, 1, 7, 135, DamageType.Physical);
     }
 
     public override void Start(MovesController controller)
     {
         base.Start(controller);
-        damageInfo.attacker = controller.Pokemon;
+        damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
         Aim.Instance.InitializeAutoAim(8, 60);
     }
 
@@ -34,7 +35,7 @@ public class CinderEmber : MoveBase
     {
         if (target != null && isActive)
         {
-            movesController.LaunchHomingProjectile(target.transform, damageInfo);
+            movesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideAutoAim();

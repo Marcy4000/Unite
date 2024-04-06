@@ -24,11 +24,19 @@ public class WildPokemon : NetworkBehaviour
 
     private void Die(DamageInfo info)
     {
-        info.attacker.GainExperience(expYield);
-        info.attacker.GetComponent<PlayerManager>().GainEnergy(energyYield);
-        if (info.attacker.GetComponent<PlayerManager>())
+        GiveExpRpc(info.attackerId);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void GiveExpRpc(ulong attackerID)
+    {
+        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
+
+        attacker.GainExperience(expYield);
+        attacker.GetComponent<PlayerManager>().GainEnergy(energyYield);
+        if (attacker.GetComponent<PlayerManager>())
         {
-            info.attacker.GetComponent<PlayerManager>().MovesController.IncrementUniteCharge(5000);
+            attacker.GetComponent<PlayerManager>().MovesController.IncrementUniteCharge(5000);
         }
         if (IsServer)
         {

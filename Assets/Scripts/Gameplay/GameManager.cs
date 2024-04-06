@@ -18,7 +18,7 @@ public class GameManager : NetworkBehaviour
     public static GameManager instance;
 
     [SerializeField] private TMP_Text timerText;
-    private NetworkVariable<float> gameTime = new NetworkVariable<float>(600f);
+    private NetworkVariable<float> gameTime = new NetworkVariable<float>(60f);
     private NetworkVariable<int> blueTeamScore = new NetworkVariable<int>(0);
     private NetworkVariable<int> orangeTeamScore = new NetworkVariable<int>(0);
 
@@ -43,13 +43,19 @@ public class GameManager : NetworkBehaviour
     {
         UpdateTimerText();
 
-        gameState.OnValueChanged += (previous, current) =>
-        {
-            onGameStateChanged?.Invoke(current);
-        };
+        gameState.OnValueChanged += GameStateChanged;
         goalZones = FindObjectsOfType<GoalZone>();
 
         StartCoroutine(HandlePassiveExp());
+    }
+
+    private void GameStateChanged(GameState previous, GameState current)
+    {
+        onGameStateChanged?.Invoke(current);
+        if (current == GameState.Ended)
+        {
+            NetworkManagerUI.instance.DebugShowScore();
+        }
     }
 
     public void StartGame()
@@ -100,6 +106,7 @@ public class GameManager : NetworkBehaviour
                 gameTime.Value -= Time.deltaTime;
                 if (gameTime.Value <= 0f)
                 {
+                    gameTime.Value = 0f;
                     EndGame();
                 }
             }

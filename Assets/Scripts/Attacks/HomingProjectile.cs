@@ -9,17 +9,22 @@ public class HomingProjectile : NetworkBehaviour
     private Transform target;
     private DamageInfo damageInfo;
 
-    public void SetTarget(Transform newTarget, DamageInfo info)
+    public void SetTarget(ulong newTarget, DamageInfo info)
     {
-        target = newTarget;
+        target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[newTarget].transform;
         damageInfo = info;
     }
 
     void Update()
     {
+        if (!IsOwner)
+        {
+            return;
+        }
+
         if (target == null)
         {
-            Destroy(gameObject); // Destroy the projectile if the target is lost
+            GetComponent<NetworkObject>().Despawn(true);
             return;
         }
 
@@ -34,6 +39,11 @@ public class HomingProjectile : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!IsOwner)
+        {
+            return;
+        }
+
         if (other.gameObject == target.gameObject)
         {
             // Deal damage to the target

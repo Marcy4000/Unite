@@ -42,6 +42,9 @@ public class Pokemon : NetworkBehaviour
     public event Action OnExpChange;
     public event Action OnEvolution;
     public event Action<DamageInfo> OnDeath;
+    public event Action<DamageInfo> OnDamageTaken;
+
+    private DamageInfo lastHit;
 
     public void GainPassiveExp(int amount)
     {
@@ -88,6 +91,10 @@ public class Pokemon : NetworkBehaviour
 
     private void CurrentHpChanged(int previous, int current)
     {
+        if (current <= 0)
+        {
+            OnDeath?.Invoke(lastHit);
+        }
         OnHpOrShieldChange?.Invoke();
     }
 
@@ -124,7 +131,7 @@ public class Pokemon : NetworkBehaviour
 
         if (Keyboard.current.tKey.wasPressedThisFrame)
         {
-            TakeDamage(new DamageInfo(this, 3.45f, 32, 820, DamageType.Physical));
+            TakeDamage(new DamageInfo(NetworkObjectId, 3.45f, 32, 820, DamageType.Physical));
         }
         if (Keyboard.current.yKey.wasPressedThisFrame)
         {
@@ -148,23 +155,25 @@ public class Pokemon : NetworkBehaviour
 
     public void TakeDamage(DamageInfo damage)
     {
+        lastHit = damage;
         int atkStat;
+        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
 
         switch (damage.type)
         {
             case DamageType.True:
             case DamageType.Physical:
-                atkStat = damage.attacker.baseStats.Attack[damage.attacker.CurrentLevel.Value];
+                atkStat = attacker.baseStats.Attack[attacker.CurrentLevel.Value];
                 break;
             case DamageType.Special:
-                atkStat = damage.attacker.baseStats.SpAttack[damage.attacker.CurrentLevel.Value];
+                atkStat = attacker.baseStats.SpAttack[attacker.CurrentLevel.Value];
                 break;
             default:
                 atkStat = 0;
                 break;
         }
 
-        int attackDamage = Mathf.FloorToInt(damage.ratio * atkStat + damage.slider * damage.attacker.CurrentLevel.Value + damage.baseDmg);
+        int attackDamage = Mathf.FloorToInt(damage.ratio * atkStat + damage.slider * attacker.CurrentLevel.Value + damage.baseDmg);
         int defStat;
         switch (damage.type)
         {
@@ -215,12 +224,23 @@ public class Pokemon : NetworkBehaviour
             } else {
                 SetCurrentHPServerRPC(0);
             }
-            // Implement defeat logic if needed
-            OnDeath?.Invoke(damage);
         }
 
+        OnDamageTakenRpc(damage);
+        ClientDamageRpc(actualDamage, damage);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ClientDamageRpc(int actualDamage, DamageInfo damage)
+    {
         DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
         indicator.ShowDamage(actualDamage, damage.type);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void OnDamageTakenRpc(DamageInfo damage)
+    {
+        OnDamageTaken?.Invoke(damage);
     }
 
     public void HealDamage(int amount)

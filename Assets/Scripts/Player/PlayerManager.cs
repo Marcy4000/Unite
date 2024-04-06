@@ -78,8 +78,17 @@ public class PlayerManager : NetworkBehaviour
             playerControls.asset.Enable();
             pokemon.OnLevelChange += OnPokemonLevelUp;
             pokemon.OnDeath += OnPokemonDeath;
+            pokemon.OnDamageTaken += OnPokemonDamage;
         }
         UpdateEnergyGraphic();
+    }
+
+    private void OnPokemonDamage(DamageInfo info)
+    {
+        if (isScoring)
+        {
+            EndScoring();
+        }
     }
 
     private void OnPokemonDeath(DamageInfo info)
