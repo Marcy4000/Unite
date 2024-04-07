@@ -58,6 +58,14 @@ public class LobbyController : MonoBehaviour
         };
     }
 
+    private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        if (sceneName == "RemoatStadium")
+        {
+            LoadingScreen.Instance.HideLoadingScreen();
+        }
+    }
+
     private void Update()
     {
         HandleLobbyHeartBeat();
@@ -79,7 +87,8 @@ public class LobbyController : MonoBehaviour
             localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>
             {
                 {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, testPlayerName)},
-                {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")}
+                {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
+                {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Cinderace")}
             });
         }
     }
@@ -88,6 +97,11 @@ public class LobbyController : MonoBehaviour
     {
         if (partyLobby != null)
         {
+            if (partyLobby.HostId != localPlayer.Id)
+            {
+                return;
+            }
+
             lobbyHeartBeatTimer -= Time.deltaTime;
             if (lobbyHeartBeatTimer <= 0)
             {
@@ -106,6 +120,7 @@ public class LobbyController : MonoBehaviour
             {
                 lobbyUpdateTimer = 1.1f;
                 partyLobby = await LobbyService.Instance.GetLobbyAsync(partyLobby.Id);
+                localPlayer = partyLobby.Players.Find(player => player.Id == localPlayer.Id);
                 onLobbyUpdate?.Invoke(Lobby);
             }
         }
@@ -154,6 +169,7 @@ public class LobbyController : MonoBehaviour
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, "dtls"));
 
             NetworkManager.Singleton.StartHost();
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
             lobbyUI.ShowLobbyUI();
             lobbyUI.HideLoadingScreen();
         }
@@ -181,6 +197,7 @@ public class LobbyController : MonoBehaviour
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
             Debug.Log($"Joined lobby: {partyLobby.Name}");
             NetworkManager.Singleton.StartClient();
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
             lobbyUI.ShowLobbyUI();
             lobbyUI.HideLoadingScreen();
         }
@@ -237,6 +254,16 @@ public class LobbyController : MonoBehaviour
         Debug.Log($"Switched team to {localPlayer.Data["PlayerTeam"].Value}");
     }
 
+    public void ChangePlayerCharacter(string characterName)
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["SelectedCharacter"].Value = characterName;
+        Debug.Log($"Changed character to {options.Data["SelectedCharacter"]}");
+
+        UpdatePlayerData(options);
+    }
+
     private async Task<Allocation> AllocateRelay()
     {
         try
@@ -258,6 +285,7 @@ public class LobbyController : MonoBehaviour
         lobbyUI.ShowLoadingScreen();
         await RemoveFromParty(localPlayer.Id);
         partyLobby = null;
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
         NetworkManager.Singleton.Shutdown();
         lobbyUI.ShowMainMenuUI();
         lobbyUI.HideLoadingScreen();
@@ -267,6 +295,7 @@ public class LobbyController : MonoBehaviour
     {
         await RemoveFromParty(localPlayer.Id);
         partyLobby = null;
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
         NetworkManager.Singleton.Shutdown();
     }
 
@@ -284,7 +313,12 @@ public class LobbyController : MonoBehaviour
 
     public void StartGame()
     {
-        NetworkManager.Singleton.SceneManager.LoadScene("RemoatStadium", UnityEngine.SceneManagement.LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene("CharacterSelect", LoadSceneMode.Single);
+    }
+
+    public void LoadRemoat()
+    {
+        NetworkManager.Singleton.SceneManager.LoadScene("RemoatStadium", LoadSceneMode.Single);
     }
 
     public void ReturnToLobby()

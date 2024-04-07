@@ -1,0 +1,57 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class CharactersList : MonoBehaviour
+{
+    public static CharactersList instance { get; private set; }
+
+    [SerializeField] private CharacterInfo[] characters;
+    [SerializeField] private Sprite[] backgrounds;
+
+    public CharacterInfo[] Characters => characters;
+
+    private void Awake()
+    {
+        if (instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    public CharacterInfo GetCharacterFromString(string characterName)
+    {
+        foreach (var character in characters)
+        {
+            if (character.pokemonName == characterName)
+            {
+                return character;
+            }
+        }
+
+        return null;
+    }
+
+    public Sprite GetBackgroundFromClass(PokemonClass pClass)
+    {
+        switch (pClass)
+        {
+            case PokemonClass.Attacker:
+                return backgrounds[0];
+            case PokemonClass.Defender:
+                return backgrounds[1];
+            case PokemonClass.Supporter:
+                return backgrounds[2];
+            case PokemonClass.AllRounder:
+                return backgrounds[3];
+            case PokemonClass.Speedster:
+                return backgrounds[4];
+            default:
+                return null;
+        }
+    }
+}

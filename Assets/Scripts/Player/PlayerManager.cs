@@ -20,6 +20,8 @@ public class PlayerManager : NetworkBehaviour
     private PlayerMovement playerMovement;
     private Aim aim;
     private PlayerControls playerControls;
+    private AnimationManager animationManager;
+    [SerializeField] private HPBar hpBar;
 
     [SerializeField] private PokemonBase selectedPokemon;
 
@@ -56,6 +58,7 @@ public class PlayerManager : NetworkBehaviour
         movesController = GetComponent<MovesController>();
         aim = GetComponent<Aim>();
         playerMovement = GetComponent<PlayerMovement>();
+        animationManager = GetComponent<AnimationManager>();
 
         maxEnergyCarry = 30;
         canScore = false;
@@ -64,7 +67,10 @@ public class PlayerManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        pokemon.SetNewPokemon(selectedPokemon);
+        if (IsOwner)
+        {
+            ChangeSelectedPokemonRpc(LobbyController.instance.Player.Data["SelectedCharacter"].Value);
+        }
         orangeTeam.OnValueChanged += (previous, current) =>
         {
             aim.TeamToIgnore = current;
@@ -80,7 +86,23 @@ public class PlayerManager : NetworkBehaviour
             pokemon.OnDeath += OnPokemonDeath;
             pokemon.OnDamageTaken += OnPokemonDamage;
         }
+        pokemon.OnEvolution += HandleEvolution;
         UpdateEnergyGraphic();
+    }
+
+    private void HandleEvolution()
+    {
+        animationManager.AssignAnimator(pokemon.ActiveModel.GetComponentInChildren<Animator>());
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    public void ChangeSelectedPokemonRpc(string pokemonName)
+    {
+        PokemonBase newPokemon = CharactersList.instance.GetCharacterFromString(pokemonName).pokemon;
+        selectedPokemon = newPokemon;
+        pokemon.SetNewPokemon(selectedPokemon);
+        hpBar.SetPokemon(pokemon);
+        HandleEvolution();
     }
 
     private void OnPokemonDamage(DamageInfo info)

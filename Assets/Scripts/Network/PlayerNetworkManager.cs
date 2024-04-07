@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,6 +12,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     [SerializeField] private GameObject playerPrefab;
     private GameObject spawnedPlayer;
     private PlayerManager playerManager;
+    private Player localPlayer;
 
     private float deathTimer = 5f;
 
@@ -18,6 +20,16 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         //GameManager.instance.onGameStateChanged += HandleGameStateChanged;
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+        if (IsOwner)
+        {
+            localPlayer = LobbyController.instance.Player;
+            LobbyController.instance.onLobbyUpdate += HandleLobbyUpdate;
+        }
+    }
+
+    private void HandleLobbyUpdate(Lobby lobby)
+    {
+        localPlayer = lobby.Players.Find(x => x.Id == localPlayer.Id);
     }
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)

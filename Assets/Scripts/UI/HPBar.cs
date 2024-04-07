@@ -10,11 +10,6 @@ public class HPBar : MonoBehaviour
     [SerializeField] private TMP_Text lvText;
     [SerializeField] private Pokemon pokemon;
 
-    private void Start()
-    {
-        SetPokemon(pokemon);
-    }
-
     public void SetPokemon(Pokemon pokemon)
     {
         this.pokemon = pokemon;

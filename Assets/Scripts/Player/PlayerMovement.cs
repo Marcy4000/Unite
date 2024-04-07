@@ -6,14 +6,15 @@ using UnityEngine;
 public class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private float moveSpeed = 4.1f;
-    [SerializeField] private Animator cinderace;
     [SerializeField] private float dashDistance = 5f; // Set your desired dash distance
     [SerializeField] private float dashDuration = 0.2f; // Set your desired dash duration
+    [SerializeField] private AnimationManager animationManager;
     private Vector3 inputMovement;
     private CharacterController characterController;
     private PlayerControls controls;
     private Pokemon pokemon;
     private bool canMove = true;
+    private bool lastValue = true;
 
     private bool isDashing = false;
     private Vector3 dashDirection;
@@ -23,8 +24,8 @@ public class PlayerMovement : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         characterController = GetComponent<CharacterController>();
+        animationManager = GetComponent<AnimationManager>();
         pokemon = GetComponent<Pokemon>();
-        pokemon.OnEvolution += AssignNewAnimator;
         if (IsOwner)
         {
             controls = new PlayerControls();
@@ -107,18 +108,18 @@ public class PlayerMovement : NetworkBehaviour
         isDashing = false;
     }
 
-    private void AssignNewAnimator()
-    {
-        cinderace = pokemon.ActiveModel.GetComponentInChildren<Animator>();
-    }
-
     private void HandleAnimations()
     {
-        if (cinderace == null)
+        if (animationManager.IsAnimatorNull())
         {
             return;
         }
 
-        cinderace.SetBool("Walking", inputMovement.magnitude == 0);
+        bool isMoving = inputMovement.magnitude != 0;
+        if (isMoving != lastValue)
+        {
+            animationManager.SetBool("Walking", isMoving);
+            lastValue = isMoving;
+        }
     }
 }
