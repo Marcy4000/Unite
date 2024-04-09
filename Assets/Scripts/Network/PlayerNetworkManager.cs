@@ -36,7 +36,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         if (sceneName.Equals("RemoatStadium"))
         {
-            GameManager.instance.onGameStateChanged += HandleGameStateChanged;
+            GameManager.Instance.onGameStateChanged += HandleGameStateChanged;
         }
     }
 
@@ -108,7 +108,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                 spawnedPlayer = player.gameObject;
                 playerManager = player;
                 player.ChangeCurrentTeam(orangeTeam);
-                GameManager.instance.AddPlayer(player);
+                GameManager.Instance.AddPlayer(player);
                 if (IsOwner)
                 {
                     player.Pokemon.OnDeath += OnPlayerDeath;
@@ -127,6 +127,6 @@ public class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowKillRpc(DamageInfo info, bool orangeTeam)
     {
-        BattleUIManager.instance.ShowKill(info, orangeTeam);
+        BattleUIManager.instance.ShowKill(info, orangeTeam, playerManager.Pokemon);
     }
 }

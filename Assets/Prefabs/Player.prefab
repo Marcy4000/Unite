@@ -42,8 +42,8 @@ GameObject:
   - component: {fileID: 8951543959911697966}
   - component: {fileID: 2778060706575338526}
   - component: {fileID: -5705656141782938460}
-  - component: {fileID: 4998705875817249785}
   - component: {fileID: 5423260597100407693}
+  - component: {fileID: 4998705875817249785}
   - component: {fileID: 3756715907443232056}
   - component: {fileID: 1221305268478256571}
   - component: {fileID: 7007301446556512728}
@@ -121,6 +121,20 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+--- !u!114 &5423260597100407693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4792010055295409146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2af2e69055f68e94aa29e80140ce9f0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damagePrefab: {fileID: 4424315286788905445, guid: c7441dfa30daa4c4a9a2b2b15cdb9a96,
+    type: 3}
 --- !u!114 &4998705875817249785
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -137,20 +151,6 @@ MonoBehaviour:
   dashDistance: 5
   dashDuration: 0.2
   animationManager: {fileID: 0}
---- !u!114 &5423260597100407693
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4792010055295409146}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2af2e69055f68e94aa29e80140ce9f0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  damagePrefab: {fileID: 4424315286788905445, guid: c7441dfa30daa4c4a9a2b2b15cdb9a96,
-    type: 3}
 --- !u!114 &3756715907443232056
 MonoBehaviour:
   m_ObjectHideFlags: 0

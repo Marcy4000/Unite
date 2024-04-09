@@ -10,6 +10,8 @@ using UnityEngine.SceneManagement;
 
 public class CharacterSelectController : NetworkBehaviour
 {
+    private const float SELECTION_TIME = 30f;
+
     [SerializeField] private GameObject playerIconPrefab;
     [SerializeField] private Transform playerIconsHolder;
 
@@ -21,7 +23,7 @@ public class CharacterSelectController : NetworkBehaviour
 
     [SerializeField] private TMP_Text timerText;
 
-    private NetworkVariable<float> selectionTimer = new NetworkVariable<float>(30f);
+    private NetworkVariable<float> selectionTimer = new NetworkVariable<float>(SELECTION_TIME);
     private bool isLoading = false;
     private bool startTimer = false;
 
@@ -39,7 +41,14 @@ public class CharacterSelectController : NetworkBehaviour
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        startTimer = true;
+        if (sceneName == "CharacterSelect")
+        {
+            if (IsServer)
+            {
+                selectionTimer.Value = SELECTION_TIME;
+                startTimer = true;
+            }
+        }
     }
 
     public override void OnNetworkSpawn()
@@ -97,7 +106,7 @@ public class CharacterSelectController : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowLoadingScreenRpc()
     {
-        LoadingScreen.Instance.ShowLoadingScreen();
+        LoadingScreen.Instance.ShowMatchLoadingScreen();
     }
 
     private void ChangeCharacter(CharacterInfo character)

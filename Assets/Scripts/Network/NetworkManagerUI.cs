@@ -63,22 +63,22 @@ public class NetworkManagerUI : MonoBehaviour
         int blueScoreValue = 0;
         int orangeScoreValue = 0;
 
-        int maxScore = GameManager.instance.BlueTeamScore;
-        if (GameManager.instance.OrangeTeamScore > maxScore)
+        int maxScore = GameManager.Instance.BlueTeamScore;
+        if (GameManager.Instance.OrangeTeamScore > maxScore)
         {
-            maxScore = GameManager.instance.OrangeTeamScore;
+            maxScore = GameManager.Instance.OrangeTeamScore;
         }
 
         while (!finished)
         {
-            if (blueScoreValue < GameManager.instance.BlueTeamScore)
+            if (blueScoreValue < GameManager.Instance.BlueTeamScore)
             {
-                blueScoreValue = Mathf.Min(GameManager.instance.BlueTeamScore, blueScoreValue + 5);
+                blueScoreValue = Mathf.Min(GameManager.Instance.BlueTeamScore, blueScoreValue + 5);
             }
 
-            if (orangeScoreValue < GameManager.instance.OrangeTeamScore)
+            if (orangeScoreValue < GameManager.Instance.OrangeTeamScore)
             {
-                orangeScoreValue = Mathf.Min(GameManager.instance.OrangeTeamScore, orangeScoreValue + 5);
+                orangeScoreValue = Mathf.Min(GameManager.Instance.OrangeTeamScore, orangeScoreValue + 5);
             }
 
             blueBar.fillAmount = (float)blueScoreValue / maxScore;
@@ -86,7 +86,7 @@ public class NetworkManagerUI : MonoBehaviour
             blueScore.text = blueScoreValue.ToString();
             orangeScore.text = orangeScoreValue.ToString();
 
-            if (blueScoreValue == GameManager.instance.BlueTeamScore && orangeScoreValue == GameManager.instance.OrangeTeamScore)
+            if (blueScoreValue == GameManager.Instance.BlueTeamScore && orangeScoreValue == GameManager.Instance.OrangeTeamScore)
             {
                 finished = true;
             }

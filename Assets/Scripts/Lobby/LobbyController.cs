@@ -58,12 +58,26 @@ public class LobbyController : MonoBehaviour
         };
     }
 
-    private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    public void StartGame(string playerName)
     {
-        if (sceneName == "RemoatStadium")
+        if (UnityServices.State != ServicesInitializationState.Initialized)
         {
-            LoadingScreen.Instance.HideLoadingScreen();
+            return;
         }
+
+        ChangePlayerName(playerName);
+        StartCoroutine(LoadLobbyAsync());
+    }
+
+    private IEnumerator LoadLobbyAsync()
+    {
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+        var task = SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
+        while (!task.isDone)
+        {
+            yield return null;
+        }
+        LoadingScreen.Instance.HideGenericLoadingScreen();
     }
 
     private void Update()
@@ -144,7 +158,7 @@ public class LobbyController : MonoBehaviour
     {
         try
         {
-            lobbyUI.ShowLoadingScreen();
+            LoadingScreen.Instance.ShowGenericLoadingScreen();
             var partyLobbyOptions = new CreateLobbyOptions()
             {
                 IsPrivate = true,
@@ -169,13 +183,12 @@ public class LobbyController : MonoBehaviour
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, "dtls"));
 
             NetworkManager.Singleton.StartHost();
-            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
             lobbyUI.ShowLobbyUI();
-            lobbyUI.HideLoadingScreen();
+            LoadingScreen.Instance.HideGenericLoadingScreen();
         }
         catch (LobbyServiceException e)
         {
-            lobbyUI.HideLoadingScreen();
+            LoadingScreen.Instance.HideGenericLoadingScreen();
             Debug.LogError($"Failed to create party lobby: {e.Message}");
         }
     }
@@ -184,7 +197,7 @@ public class LobbyController : MonoBehaviour
     {
         try
         {
-            lobbyUI.ShowLoadingScreen();
+            LoadingScreen.Instance.ShowGenericLoadingScreen();
             var joinOptions = new JoinLobbyByCodeOptions()
             {
                 Player = localPlayer
@@ -197,13 +210,12 @@ public class LobbyController : MonoBehaviour
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
             Debug.Log($"Joined lobby: {partyLobby.Name}");
             NetworkManager.Singleton.StartClient();
-            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
             lobbyUI.ShowLobbyUI();
-            lobbyUI.HideLoadingScreen();
+            LoadingScreen.Instance.HideGenericLoadingScreen();
         }
         catch (LobbyServiceException e)
         {
-            lobbyUI.HideLoadingScreen();
+            LoadingScreen.Instance.HideGenericLoadingScreen();
             Debug.LogError($"Failed to join party lobby: {e.Message}");
         }
     }
@@ -212,7 +224,7 @@ public class LobbyController : MonoBehaviour
     {
         try
         {
-            var lobby = await LobbyService.Instance.UpdatePlayerAsync(Lobby.Id, localPlayer.Id, options);
+            await LobbyService.Instance.UpdatePlayerAsync(Lobby.Id, localPlayer.Id, options);
         }
         catch (LobbyServiceException e)
         {
@@ -264,6 +276,16 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerData(options);
     }
 
+    public void ChangePlayerName(string newName)
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["PlayerName"].Value = newName;
+        Debug.Log($"Changed name to {options.Data["PlayerName"]}");
+
+        UpdatePlayerData(options);
+    }
+
     private async Task<Allocation> AllocateRelay()
     {
         try
@@ -282,20 +304,18 @@ public class LobbyController : MonoBehaviour
 
     public async void LeaveLobby()
     {
-        lobbyUI.ShowLoadingScreen();
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
         await RemoveFromParty(localPlayer.Id);
         partyLobby = null;
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
         NetworkManager.Singleton.Shutdown();
         lobbyUI.ShowMainMenuUI();
-        lobbyUI.HideLoadingScreen();
+        LoadingScreen.Instance.HideGenericLoadingScreen();
     }
 
     private async void LeaveLobbyNoGUI()
     {
         await RemoveFromParty(localPlayer.Id);
         partyLobby = null;
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
         NetworkManager.Singleton.Shutdown();
     }
 

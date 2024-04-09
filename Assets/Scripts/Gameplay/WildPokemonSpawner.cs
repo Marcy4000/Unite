@@ -32,7 +32,7 @@ public class WildPokemonSpawner : NetworkBehaviour
             return;
         }
 
-        if (GameManager.instance.GameTime.Value <= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
+        if (GameManager.Instance.GameTime.Value <= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
         {
             SpawnPokemon();
             spawnedFirstTime = true;

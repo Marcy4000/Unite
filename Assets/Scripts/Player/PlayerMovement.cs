@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -26,12 +27,25 @@ public class PlayerMovement : NetworkBehaviour
         characterController = GetComponent<CharacterController>();
         animationManager = GetComponent<AnimationManager>();
         pokemon = GetComponent<Pokemon>();
+        pokemon.OnEvolution += UpdateAnimations;
+        pokemon.OnLevelChange += HandleLevelUp;
+        pokemon.OnPokemonInitialized += HandlePokemonInitialized;
         if (IsOwner)
         {
             controls = new PlayerControls();
             controls.asset.Enable();
         }
         canMove = IsOwner;
+    }
+
+    private void HandlePokemonInitialized()
+    {
+        moveSpeed = pokemon.BaseStats.Speed[0] / 500f;
+    }
+
+    private void HandleLevelUp()
+    {
+        moveSpeed = pokemon.BaseStats.Speed[pokemon.LocalLevel]/500f;
     }
 
     void Update()
@@ -118,8 +132,29 @@ public class PlayerMovement : NetworkBehaviour
         bool isMoving = inputMovement.magnitude != 0;
         if (isMoving != lastValue)
         {
-            animationManager.SetBool("Walking", isMoving);
+            UpdateAnimations(isMoving);
             lastValue = isMoving;
         }
+    }
+
+    private void UpdateAnimations()
+    {
+        if (animationManager.IsAnimatorNull())
+        {
+            return;
+        }
+
+        bool isMoving = inputMovement.magnitude != 0;
+        animationManager.SetBool("Walking", isMoving);
+    }
+
+    private void UpdateAnimations(bool isMoving)
+    {
+        if (animationManager.IsAnimatorNull())
+        {
+            return;
+        }
+
+        animationManager.SetBool("Walking", isMoving);
     }
 }

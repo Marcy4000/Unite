@@ -12,7 +12,6 @@ public class MainMenuUI : MonoBehaviour
 
     [SerializeField] private GameObject[] lobbyUIs;
     [SerializeField] private PartyScreenUI partyScreenUI;
-    [SerializeField] private GameObject loadingScreen;
 
     private void Start()
     {
@@ -60,15 +59,5 @@ public class MainMenuUI : MonoBehaviour
     public void UpdatePartyScreenUI()
     {
         partyScreenUI.UpdatePlayers(LobbyController.instance.Lobby);
-    }
-
-    public void ShowLoadingScreen()
-    {
-        loadingScreen.SetActive(true);
-    }
-
-    public void HideLoadingScreen()
-    {
-        loadingScreen.SetActive(false);
     }
 }

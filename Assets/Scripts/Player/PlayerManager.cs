@@ -253,7 +253,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void ScorePoints()
     {
-        GameManager.instance.GoalScoredRpc(OrangeTeam, currentEnergy);
+        GameManager.Instance.GoalScoredRpc(OrangeTeam, currentEnergy);
         onGoalScored?.Invoke(currentEnergy);
         GivePokemonExperience();
         movesController.IncrementUniteCharge(12000);

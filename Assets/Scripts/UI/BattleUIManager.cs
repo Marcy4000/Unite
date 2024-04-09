@@ -45,9 +45,9 @@ public class BattleUIManager : MonoBehaviour
         moveLearnPanel.EnqueueNewMove(moves);
     }
 
-    public void ShowKill(DamageInfo info, bool orangeTeam)
+    public void ShowKill(DamageInfo info, bool orangeTeam, Pokemon killed)
     {
-        killNotificationUI.ShowKill(info, orangeTeam);
+        killNotificationUI.ShowKill(info, orangeTeam, killed);
     }
 
     public void ShowDeathScreen()

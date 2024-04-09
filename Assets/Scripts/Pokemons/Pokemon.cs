@@ -21,6 +21,8 @@ public class Pokemon : NetworkBehaviour
 
     private GameObject activeModel;
 
+    private Sprite portrait;
+
     public NetworkVariable<int> CurrentHp { get { return currentHp; } }
     public NetworkVariable<int> ShieldHp { get { return shieldHp; } }
     public NetworkVariable<int> CurrentLevel { get { return currentLevel; } }
@@ -37,12 +39,15 @@ public class Pokemon : NetworkBehaviour
 
     public GameObject ActiveModel { get { return activeModel; } }
 
+    public Sprite Portrait { get { return portrait; } }
+
     public event Action OnHpOrShieldChange;
     public event Action OnLevelChange;
     public event Action OnExpChange;
     public event Action OnEvolution;
     public event Action<DamageInfo> OnDeath;
     public event Action<DamageInfo> OnDamageTaken;
+    public event Action OnPokemonInitialized;
 
     private DamageInfo lastHit;
 
@@ -87,6 +92,7 @@ public class Pokemon : NetworkBehaviour
         currentExp.OnValueChanged += CurrentExpValueChanged;
         currentLevel.OnValueChanged += CurrentLevelChanged;
         CheckEvolution();
+        OnPokemonInitialized?.Invoke();
     }
 
     private void CurrentHpChanged(int previous, int current)
@@ -384,6 +390,7 @@ public class Pokemon : NetworkBehaviour
             Destroy(activeModel);
         }
         activeModel = Instantiate(evolution.newModel, transform.position, transform.rotation, transform);
+        portrait = evolution.newSprite;
         OnEvolution?.Invoke();
     }
 }

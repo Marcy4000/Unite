@@ -16,7 +16,7 @@ public enum GameState
 
 public class GameManager : NetworkBehaviour
 {
-    public static GameManager instance;
+    public static GameManager Instance;
 
     [SerializeField] private TMP_Text timerText;
     private NetworkVariable<float> gameTime = new NetworkVariable<float>(600f);
@@ -37,21 +37,28 @@ public class GameManager : NetworkBehaviour
 
     private void Awake()
     {
-        instance = this;
+        Instance = this;
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
     }
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
         if (sceneName.Equals("RemoatStadium"))
         {
-            StartGame();
+            StartCoroutine(StartGameDelayed());
         }
     }
 
-    private void OnDisable()
+    private IEnumerator StartGameDelayed()
     {
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        yield return new WaitForSeconds(2f);
+        LoadingScreen.Instance.HideMatchLoadingScreen();
+        StartGame();
     }
 
     public override void OnNetworkSpawn()

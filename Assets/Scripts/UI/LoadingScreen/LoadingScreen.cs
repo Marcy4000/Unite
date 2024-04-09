@@ -10,6 +10,7 @@ public class LoadingScreen : MonoBehaviour
     [SerializeField] private GameObject playerPrefab;
     [SerializeField] private Transform blueTeamSpawn, orangeTeamSpawn;
     [SerializeField] private GameObject holder;
+    [SerializeField] private GameObject loadingScreen;
 
     private void Awake()
     {
@@ -20,18 +21,29 @@ public class LoadingScreen : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        holder.SetActive(false);
+        HideGenericLoadingScreen();
+        HideMatchLoadingScreen();
     }
 
-    public void ShowLoadingScreen()
+    public void ShowMatchLoadingScreen()
     {
         InitializeLoadingScreen();
         holder.SetActive(true);
     }
 
-    public void HideLoadingScreen()
+    public void HideMatchLoadingScreen()
     {
         holder.SetActive(false);
+    }
+
+    public void ShowGenericLoadingScreen()
+    {
+        loadingScreen.SetActive(true);
+    }
+
+    public void HideGenericLoadingScreen()
+    {
+        loadingScreen.SetActive(false);
     }
 
     private void InitializeLoadingScreen()
