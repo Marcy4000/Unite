@@ -2,23 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ScoreUI : MonoBehaviour
 {
-    [SerializeField] private GameObject normalBG, bigBG;
+    [SerializeField] private GameObject normalBG, bigBG, holder;
     [SerializeField] private TMP_Text scoreText;
+    [SerializeField] private Image portrait;
 
     private void Start()
     {
         normalBG.SetActive(false);
         bigBG.SetActive(false);
-        scoreText.gameObject.SetActive(false);
+        holder.SetActive(false);
     }
 
-    public void ShowScore(int amount)
+    public void ShowScore(int amount, Sprite portrait)
     {
-        scoreText.gameObject.SetActive(true);
+        holder.SetActive(true);
         scoreText.text = amount.ToString();
+        this.portrait.sprite = portrait;
         if (amount >= 50)
         {
             bigBG.SetActive(true);
@@ -36,6 +39,6 @@ public class ScoreUI : MonoBehaviour
         yield return new WaitForSeconds(2f);
         normalBG.SetActive(false);
         bigBG.SetActive(false);
-        scoreText.gameObject.SetActive(false);
+        holder.SetActive(false);
     }
 }

@@ -7,12 +7,12 @@ public class WildPokemon : NetworkBehaviour
 {
     private Pokemon pokemon;
     [SerializeField] private int expYield = 250;
-    [SerializeField] private int energyYield = 5;
+    [SerializeField] private short energyYield = 5;
     [SerializeField] private PokemonBase pokemonBase;
 
     public Pokemon Pokemon => pokemon;
     public int ExpYield { get => expYield; set => expYield = value; }
-    public int EnergyYield { get => energyYield; set => energyYield = value; }
+    public short EnergyYield { get => energyYield; set => energyYield = value; }
 
     public override void OnNetworkSpawn()
     {

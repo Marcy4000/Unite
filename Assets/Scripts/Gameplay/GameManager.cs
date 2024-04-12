@@ -144,23 +144,25 @@ public class GameManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void GoalScoredRpc(bool orangeTeam, int amount=1)
+    public void GoalScoredRpc(ScoreInfo info)
     {
-        if (orangeTeam)
+        PlayerManager scorer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].GetComponent<PlayerManager>();
+        if (scorer.OrangeTeam)
         {
-            orangeTeamScore.Value += amount;
+            orangeTeamScore.Value += info.scoredPoints;
         }
         else
         {
-            blueTeamScore.Value += amount;
+            blueTeamScore.Value += info.scoredPoints;
         }
-        ShowGoalScoredRpc(amount, orangeTeam);
+        ShowGoalScoredRpc(info);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void ShowGoalScoredRpc(int amount, bool orangeTeam)
+    private void ShowGoalScoredRpc(ScoreInfo info)
     {
-        BattleUIManager.instance.ShowScore(amount, orangeTeam);
+        PlayerManager scorer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].GetComponent<PlayerManager>();
+        BattleUIManager.instance.ShowScore(info.scoredPoints, scorer.OrangeTeam, scorer.Pokemon.Portrait);
     }
 
     void EndGame()

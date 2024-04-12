@@ -9,7 +9,6 @@ public class MovesController : NetworkBehaviour
     [SerializeField] private MoveAsset lockedMove;
     public Transform projectileSpawnPoint; // Define the spawn point for the projectile
     public GameObject homingProjectilePrefab; // Reference to the homing projectile prefab
-    public float attackRadius = 10f; // Radius to search for enemies
     [SerializeField]private int uniteMoveCharge = 0;
     private int uniteMoveMaxCharge = 10000;
 
@@ -17,6 +16,7 @@ public class MovesController : NetworkBehaviour
     private float[] moveCooldowns = new float[2];
 
     private MoveBase uniteMove;
+    private BasicAttackBase basicAttack;
 
     private Pokemon pokemon;
     private PlayerControls controls;
@@ -52,6 +52,7 @@ public class MovesController : NetworkBehaviour
         }
 
         CheckIfCanLearnMove();
+        LearnBasicAttack(BasicAttacksDatabase.GetBasitAttatck(pokemon.BaseStats.PokemonName));
         StartCoroutine(PassiveUniteCharge());
     }
 
@@ -76,11 +77,11 @@ public class MovesController : NetworkBehaviour
             return;
         }   
 
-        Aim.Instance.ShowBasicAtk(controls.Movement.BasicAttack.IsPressed(), attackRadius);
+        Aim.Instance.ShowBasicAtk(controls.Movement.BasicAttack.IsPressed(), basicAttack.range);
 
         if (controls.Movement.BasicAttack.WasPressedThisFrame())
         {
-            PerformBasicAttack();
+            basicAttack.Perform();
         }
 
         if (controls.Movement.MoveA.WasPressedThisFrame())
@@ -199,7 +200,8 @@ public class MovesController : NetworkBehaviour
                 if (moves[i] == move)
                 {
                     moveCooldowns[i] = moves[i].cooldown;
-                    BattleUIManager.instance.ShowMoveCooldown(i, moves[i].cooldown);
+                    moveCooldowns[i] -= moveCooldowns[i] * pokemon.BaseStats.Cdr[pokemon.CurrentLevel.Value] / 100f;
+                    BattleUIManager.instance.ShowMoveCooldown(i, moveCooldowns[i]);
                 }
             }
         }
@@ -207,6 +209,12 @@ public class MovesController : NetworkBehaviour
         {
             uniteMoveCharge = 0;
         }
+    }
+
+    public void LearnBasicAttack(BasicAttackBase basicAttack)
+    {
+        this.basicAttack = basicAttack;
+        this.basicAttack.Initialize(playerManager);
     }
 
     public void LearnMove(MoveAsset move)
@@ -240,22 +248,31 @@ public class MovesController : NetworkBehaviour
         BattleUIManager.instance.InitializeMoveUI(move);
     }
 
-    private void PerformBasicAttack()
-    {
-        GameObject closestEnemy = Aim.Instance.AimInCircle(attackRadius);
-
-        // If an enemy is found, launch a homing projectile towards it
-        if (closestEnemy != null)
-        {
-            LaunchHomingProjectileRpc(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, new DamageInfo(pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical));
-        }
-    }
-
     [Rpc(SendTo.Server)]
     public void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info)
     {
         // Instantiate homing projectile
         GameObject homingProjectile = Instantiate(homingProjectilePrefab, projectileSpawnPoint.position, Quaternion.identity);
+        homingProjectile.GetComponent<NetworkObject>().Spawn();
+
+        // Set target for homing projectile
+        HomingProjectile homingScript = homingProjectile.GetComponent<HomingProjectile>();
+        if (homingScript != null)
+        {
+            homingScript.SetTarget(targetId, info);
+        }
+    }
+
+    public void LaunchProjectileFromPath(ulong targetId, DamageInfo info, string resourcePath)
+    {
+        LaunchHomingProjectileRpc(targetId, info, resourcePath);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info, string resourcePath)
+    {
+        // Instantiate homing projectile
+        GameObject homingProjectile = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), projectileSpawnPoint.position, Quaternion.identity) as GameObject;
         homingProjectile.GetComponent<NetworkObject>().Spawn();
 
         // Set target for homing projectile

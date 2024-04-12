@@ -24,7 +24,8 @@ public class AeosEnergy : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
-            playerManager.GainEnergy(isBigEnergy ? 5 : 1);
+            short energy = (short)(isBigEnergy ? 5 : 1);
+            playerManager.GainEnergy(energy);
             Destroy(gameObject);
         }
     }

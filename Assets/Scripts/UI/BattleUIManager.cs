@@ -23,15 +23,15 @@ public class BattleUIManager : MonoBehaviour
         instance = this;
     }
 
-    public void ShowScore(int amount, bool orangeTeam)
+    public void ShowScore(int amount, bool orangeTeam, Sprite portrait)
     {
         if (orangeTeam)
         {
-            orangeScoreUI.ShowScore(amount);
+            orangeScoreUI.ShowScore(amount, portrait);
         }
         else
         {
-            blueScoreUI.ShowScore(amount);
+            blueScoreUI.ShowScore(amount, portrait);
         }
     }
 

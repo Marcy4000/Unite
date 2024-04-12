@@ -7,11 +7,15 @@ public class CinderEmber : MoveBase
 {
     private GameObject target;
     private DamageInfo damageInfo;
+    private float distance;
+    private float angle;
 
     public CinderEmber()
     {
         name = "Ember";
         cooldown = 6.0f;
+        distance = 8f;
+        angle = 60f;
         damageInfo = new DamageInfo(0, 1, 7, 135, DamageType.Physical);
     }
 
@@ -19,7 +23,7 @@ public class CinderEmber : MoveBase
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeAutoAim(8, 60);
+        Aim.Instance.InitializeAutoAim(distance, angle);
     }
 
     public override void Update()

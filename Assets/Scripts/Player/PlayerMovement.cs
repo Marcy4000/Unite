@@ -40,12 +40,12 @@ public class PlayerMovement : NetworkBehaviour
 
     private void HandlePokemonInitialized()
     {
-        moveSpeed = pokemon.BaseStats.Speed[0] / 500f;
+        moveSpeed = pokemon.BaseStats.Speed[0] / 1000f;
     }
 
     private void HandleLevelUp()
     {
-        moveSpeed = pokemon.BaseStats.Speed[pokemon.LocalLevel]/500f;
+        moveSpeed = pokemon.BaseStats.Speed[pokemon.LocalLevel]/1000f;
     }
 
     void Update()
@@ -97,7 +97,7 @@ public class PlayerMovement : NetworkBehaviour
         if (!isDashing)
         {
             isDashing = true;
-            dashDirection = transform.forward; // Dash forward relative to player's current facing direction
+            dashDirection = transform.forward;
 
             // Start dash cooldown coroutine
             StartCoroutine(DashCooldown());
@@ -109,7 +109,7 @@ public class PlayerMovement : NetworkBehaviour
         if (!isDashing)
         {
             isDashing = true;
-            this.dashDirection = dashDirection; // Dash forward relative to player's current facing direction
+            this.dashDirection = dashDirection;
 
             // Start dash cooldown coroutine
             StartCoroutine(DashCooldown());

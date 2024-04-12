@@ -91,6 +91,7 @@ public class LobbyController : MonoBehaviour
     {
         if (UnityServices.State != ServicesInitializationState.Initialized)
         {
+            LoadingScreen.Instance.ShowGenericLoadingScreen();
             InitializationOptions options = new InitializationOptions();
             options.SetProfile(UnityEngine.Random.Range(0,1000).ToString());
 
@@ -104,6 +105,8 @@ public class LobbyController : MonoBehaviour
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Cinderace")}
             });
+
+            LoadingScreen.Instance.HideGenericLoadingScreen();
         }
     }
 

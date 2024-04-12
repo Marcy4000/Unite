@@ -112,7 +112,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1877069007
+  GlobalObjectIdHash: 146106589
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -167,7 +167,6 @@ MonoBehaviour:
   projectileSpawnPoint: {fileID: 1680879720234257031}
   homingProjectilePrefab: {fileID: 2520708872315271836, guid: 5950280d66c36474c95552d55d4a1e1b,
     type: 3}
-  attackRadius: 10
   uniteMoveCharge: 0
 --- !u!114 &1221305268478256571
 MonoBehaviour:
@@ -410,7 +409,7 @@ PrefabInstance:
     - target: {fileID: 2272932390172605352, guid: 3bc8f848c2a52f14aa68a600d46cff24,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 73.94
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2272932390172605352, guid: 3bc8f848c2a52f14aa68a600d46cff24,
         type: 3}
@@ -461,6 +460,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: AimIndicators
+      objectReference: {fileID: 0}
+    - target: {fileID: 4039963370116841866, guid: 3bc8f848c2a52f14aa68a600d46cff24,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

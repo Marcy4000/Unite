@@ -27,8 +27,8 @@ public class PlayerManager : NetworkBehaviour
 
     private NetworkVariable<bool> orangeTeam = new NetworkVariable<bool>();
     private NetworkVariable<PlayerState> playerState = new NetworkVariable<PlayerState>(PlayerState.Alive);
-    private int maxEnergyCarry;
-    private int currentEnergy;
+    private short maxEnergyCarry;
+    private short currentEnergy;
 
     private bool canScore;
     private bool isScoring = false;
@@ -37,13 +37,14 @@ public class PlayerManager : NetworkBehaviour
     public MovesController MovesController { get => movesController; }
     public Aim Aim { get => aim; }
     public PlayerMovement PlayerMovement { get => playerMovement; }
+    public AnimationManager AnimationManager { get => animationManager; }
     public bool IsScoring { get => isScoring; }
 
     public PlayerState PlayerState { get => playerState.Value; }
 
     public bool OrangeTeam { get => orangeTeam.Value; }
-    public int MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
-    public int CurrentEnergy { get => currentEnergy; set => currentEnergy = value; }
+    public short MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
+    public short CurrentEnergy { get => currentEnergy; set => currentEnergy = value; }
     public bool CanScore { get => canScore; set => canScore = value; }
 
     private float scoreTimer, maxScoreTime;
@@ -51,6 +52,7 @@ public class PlayerManager : NetworkBehaviour
     public event Action<int> onGoalScored;
 
     private Vector3 deathPosition = new Vector3(0, -20, 0);
+    private Coroutine stopMovementCoroutine;
 
     private void Awake()
     {
@@ -88,6 +90,22 @@ public class PlayerManager : NetworkBehaviour
         }
         pokemon.OnEvolution += HandleEvolution;
         UpdateEnergyGraphic();
+    }
+
+    public void StopMovementForTime(float time)
+    {
+        if (stopMovementCoroutine != null)
+        {
+            StopCoroutine(stopMovementCoroutine);
+        }
+        stopMovementCoroutine = StartCoroutine(StopMovementForTimeCoroutine(time));
+    }
+
+    private IEnumerator StopMovementForTimeCoroutine(float time)
+    {
+        playerMovement.CanMove = false;
+        yield return new WaitForSeconds(time);
+        playerMovement.CanMove = true;
     }
 
     private void HandleEvolution()
@@ -253,7 +271,8 @@ public class PlayerManager : NetworkBehaviour
 
     private void ScorePoints()
     {
-        GameManager.Instance.GoalScoredRpc(OrangeTeam, currentEnergy);
+        ScoreInfo score = new ScoreInfo(currentEnergy, NetworkObjectId);
+        GameManager.Instance.GoalScoredRpc(score);
         onGoalScored?.Invoke(currentEnergy);
         GivePokemonExperience();
         movesController.IncrementUniteCharge(12000);
@@ -286,15 +305,15 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
-    public void GainEnergy(int amount=1)
+    public void GainEnergy(short amount=1)
     {
-        currentEnergy = Mathf.Clamp(currentEnergy + amount, 0, maxEnergyCarry);
+        currentEnergy = (short)Mathf.Clamp(currentEnergy + amount, 0, maxEnergyCarry);
         UpdateEnergyGraphic();
     } 
 
-    public void LoseEnergy(int amount=1)
+    public void LoseEnergy(short amount=1)
     {
-        currentEnergy = Mathf.Clamp(currentEnergy - amount, 0, maxEnergyCarry);
+        currentEnergy = (short)Mathf.Clamp(currentEnergy - amount, 0, maxEnergyCarry);
         UpdateEnergyGraphic();
     }
 
@@ -304,7 +323,7 @@ public class PlayerManager : NetworkBehaviour
         UpdateEnergyGraphic();
     }
 
-    public void ChangeMaxEnergy(int amount)
+    public void ChangeMaxEnergy(short amount)
     {
         maxEnergyCarry = amount;
         UpdateEnergyGraphic();

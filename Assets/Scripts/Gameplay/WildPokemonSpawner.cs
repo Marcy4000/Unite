@@ -7,7 +7,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 {
     [SerializeField] private GameObject pokemon;
     [SerializeField] private int expYield = 250;
-    [SerializeField] private int energyYield = 5;
+    [SerializeField] private short energyYield = 5;
     [SerializeField] private float firstSpawnTime = 600f;
     [SerializeField] private float cooldown;
     [SerializeField] private bool canRespawn;
