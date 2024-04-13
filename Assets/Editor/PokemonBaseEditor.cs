@@ -44,6 +44,8 @@ public class PokemonBaseEditor : Editor
             pokemonBase.LifeSteal[i-1] = int.Parse(values[8]);
             pokemonBase.AtkSpeed[i-1] = float.Parse(values[9]);
             pokemonBase.Speed[i-1] = int.Parse(values[10]);
+
+            pokemonBase.AtkSpeed[i-1] /= 100f;
         }
 
         EditorUtility.SetDirty(pokemonBase);

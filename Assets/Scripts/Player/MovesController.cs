@@ -27,6 +27,23 @@ public class MovesController : NetworkBehaviour
     public PlayerMovement PlayerMovement => playerManager.PlayerMovement;
     public int UniteMoveCharge => uniteMoveCharge;
 
+    private float basicAttackCooldown = 0;
+
+    private AttackSpeedCooldown[] cooldownTable = new AttackSpeedCooldown[]
+{
+        new AttackSpeedCooldown { threshold = 8.11f, cooldown = 0.93333f },
+        new AttackSpeedCooldown { threshold = 16.42f, cooldown = 0.86667f },
+        new AttackSpeedCooldown { threshold = 26.11f, cooldown = 0.8f },
+        new AttackSpeedCooldown { threshold = 37.56f, cooldown = 0.73333f },
+        new AttackSpeedCooldown { threshold = 51.29f, cooldown = 0.66667f },
+        new AttackSpeedCooldown { threshold = 68.8f, cooldown = 0.6f },
+        new AttackSpeedCooldown { threshold = 89.04f, cooldown = 0.53333f },
+        new AttackSpeedCooldown { threshold = 115.99f, cooldown = 0.46667f },
+        new AttackSpeedCooldown { threshold = 151.91f, cooldown = 0.4f },
+        new AttackSpeedCooldown { threshold = 202.5f, cooldown = 0.33333f },
+        new AttackSpeedCooldown { threshold = 285f, cooldown = 0.26667f },
+};
+
     void Start()
     {
         controls = new PlayerControls();
@@ -79,9 +96,14 @@ public class MovesController : NetworkBehaviour
 
         Aim.Instance.ShowBasicAtk(controls.Movement.BasicAttack.IsPressed(), basicAttack.range);
 
-        if (controls.Movement.BasicAttack.WasPressedThisFrame())
+        if (controls.Movement.BasicAttack.IsPressed())
         {
-            basicAttack.Perform();
+            TryPerformingBasicAttack();
+        }
+
+        if (basicAttackCooldown > 0)
+        {
+            basicAttackCooldown -= Time.deltaTime;
         }
 
         if (controls.Movement.MoveA.WasPressedThisFrame())
@@ -142,6 +164,16 @@ public class MovesController : NetworkBehaviour
                 //LearnMove(pokemon.BaseStats.LearnableMoves[i].moves[0]);
             }
         }
+    }
+
+    private void TryPerformingBasicAttack()
+    {
+        if (basicAttackCooldown > 0)
+        {
+            return;
+        }
+        basicAttack.Perform();
+        basicAttackCooldown = GetAtkSpeedCooldown();
     }
 
     public void TryUsingMove(int index)
@@ -287,4 +319,26 @@ public class MovesController : NetworkBehaviour
     {
         uniteMoveCharge = Mathf.Clamp(uniteMoveCharge + amount, 0, uniteMoveMaxCharge);
     }
+
+    public float GetAtkSpeedCooldown()
+    {
+        float atkSpeed = pokemon.BaseStats.AtkSpeed[pokemon.CurrentLevel.Value];
+
+        foreach (var entry in cooldownTable)
+        {
+            if (atkSpeed <= entry.threshold)
+            {
+                return entry.cooldown;
+            }
+        }
+
+        // Default cooldown value if no threshold is matched
+        return 1f;
+    }
+}
+
+public struct AttackSpeedCooldown
+{
+    public float threshold;
+    public float cooldown;
 }
