@@ -21,6 +21,6 @@ public class BootSceneController : MonoBehaviour
         {
             return;
         }
-        LobbyController.instance.StartGame(playerNameInputField.text);
+        LobbyController.Instance.StartGame(playerNameInputField.text);
     }
 }

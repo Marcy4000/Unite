@@ -19,18 +19,18 @@ public class PlayerSelectionIcon : MonoBehaviour
     {
         assignedPlayer = player;
         playerNameText.text = player.Data["PlayerName"].Value;
-        if (assignedPlayer.Id == LobbyController.instance.Player.Id)
+        if (assignedPlayer.Id == LobbyController.Instance.Player.Id)
         {
             playerNameText.color = Color.yellow;
         }
         characterIcon.gameObject.SetActive(false);
-        LobbyController.instance.onLobbyUpdate += UpdatePlayerData;
-        UpdatePlayerData(LobbyController.instance.Lobby);
+        LobbyController.Instance.onLobbyUpdate += UpdatePlayerData;
+        UpdatePlayerData(LobbyController.Instance.Lobby);
     }
 
     private void OnDisable()
     {
-        LobbyController.instance.onLobbyUpdate -= UpdatePlayerData;
+        LobbyController.Instance.onLobbyUpdate -= UpdatePlayerData;
     }
 
     private void UpdatePlayerData(Lobby lobby)

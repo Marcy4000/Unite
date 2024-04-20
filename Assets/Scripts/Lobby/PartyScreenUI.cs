@@ -18,12 +18,12 @@ public class PartyScreenUI : MonoBehaviour
 
     private void OnEnable()
     {
-        LobbyController.instance.onLobbyUpdate += UpdatePlayers;
+        LobbyController.Instance.onLobbyUpdate += UpdatePlayers;
     }
 
     private void OnDisable()
     {
-        LobbyController.instance.onLobbyUpdate -= UpdatePlayers;
+        LobbyController.Instance.onLobbyUpdate -= UpdatePlayers;
     }
 
     public void InitializeUI(Lobby lobby)
@@ -101,12 +101,12 @@ public class PartyScreenUI : MonoBehaviour
 
     public void TestStartGame()
     {
-        LobbyController.instance.StartGame();
+        LobbyController.Instance.StartGame();
     }
 
     public void SwitchTeam()
     {
-        LobbyController.instance.PlayerSwitchTeam();
+        LobbyController.Instance.PlayerSwitchTeam();
     }
 
     public void ClearUI()

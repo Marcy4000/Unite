@@ -19,7 +19,7 @@ public class CinderEmber : MoveBase
         damageInfo = new DamageInfo(0, 1, 7, 135, DamageType.Physical);
     }
 
-    public override void Start(MovesController controller)
+    public override void Start(PlayerManager controller)
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
@@ -39,7 +39,11 @@ public class CinderEmber : MoveBase
     {
         if (target != null && isActive)
         {
-            movesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
+            playerManager.MovesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
+            playerManager.AnimationManager.PlayAnimation($"ani_spell1_bat_0815");
+            playerManager.StopMovementForTime(0.4f);
+            playerManager.transform.LookAt(target.transform);
+            playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideAutoAim();

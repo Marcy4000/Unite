@@ -22,8 +22,8 @@ public class PlayerNetworkManager : NetworkBehaviour
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
         if (IsOwner)
         {
-            localPlayer = LobbyController.instance.Player;
-            LobbyController.instance.onLobbyUpdate += HandleLobbyUpdate;
+            localPlayer = LobbyController.Instance.Player;
+            LobbyController.Instance.onLobbyUpdate += HandleLobbyUpdate;
         }
     }
 
@@ -73,7 +73,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         if (IsOwner && IsServer)
         {
-            bool currentTeam = LobbyController.instance.Player.Data["PlayerTeam"].Value == "Orange";
+            bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
             Transform spawnpoint = currentTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
             spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);
             var spawnedPlayerNetworkObject = spawnedPlayer.GetComponent<NetworkObject>();
@@ -82,7 +82,7 @@ public class PlayerNetworkManager : NetworkBehaviour
         }
         else if (IsOwner && !IsServer)
         {
-            bool currentTeam = LobbyController.instance.Player.Data["PlayerTeam"].Value == "Orange";
+            bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
             SpawnPlayerRpc(OwnerClientId, currentTeam);
         }
     }

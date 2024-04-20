@@ -14,8 +14,8 @@ public class CinderBasicAtk : BasicAttackBase
     public override void Initialize(PlayerManager manager)
     {
         base.Initialize(manager);
-        range = 9f;
-        attackPrefab = "CinderBasicAtk";
+        range = 7f;
+        attackPrefab = "BasicAtk/CinderBasicAtk";
         normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical);
         boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.3f, 0, 0, DamageType.Physical);
     }

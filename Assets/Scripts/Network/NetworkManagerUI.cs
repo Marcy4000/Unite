@@ -40,7 +40,7 @@ public class NetworkManagerUI : MonoBehaviour
 
         returnLobbyButton.onClick.AddListener(() =>
         {
-            LobbyController.instance.ReturnToLobby();
+            LobbyController.Instance.ReturnToLobby();
         });
     }
 

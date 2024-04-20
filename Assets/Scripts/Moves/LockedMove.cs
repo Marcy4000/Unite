@@ -10,7 +10,7 @@ public class LockedMove : MoveBase
         cooldown = 0;
     }
 
-    public override void Start(MovesController controller)
+    public override void Start(PlayerManager controller)
     {
         Debug.Log("This move is not learned yet.");
     }

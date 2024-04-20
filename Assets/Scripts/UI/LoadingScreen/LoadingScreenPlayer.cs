@@ -22,6 +22,6 @@ public class LoadingScreenPlayer : MonoBehaviour
         pokemonName.text = info.pokemonName;
         bool orangeTeam = player.Data["PlayerTeam"].Value == "Orange";
         playerBar.sprite = orangeTeam ? orangeSprite : blueSprite;
-        localPlayerImage.SetActive(player.Id == LobbyController.instance.Player.Id);
+        localPlayerImage.SetActive(player.Id == LobbyController.Instance.Player.Id);
     }
 }

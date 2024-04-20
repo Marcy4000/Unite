@@ -16,7 +16,7 @@ using UnityEngine.SceneManagement;
 
 public class LobbyController : MonoBehaviour
 {
-    public static LobbyController instance { get; private set; }
+    public static LobbyController Instance { get; private set; }
 
     private MainMenuUI lobbyUI;
     private const string LobbyNamePrefix = "PartyLobby";
@@ -36,12 +36,12 @@ public class LobbyController : MonoBehaviour
 
     private void Awake()
     {
-        if (instance != null && this != instance)
+        if (Instance != null && this != Instance)
         {
             Destroy(gameObject);
             return;
         }
-        instance = this;
+        Instance = this;
         DontDestroyOnLoad(gameObject);
 
         testPlayerName = $"TestPlayer {UnityEngine.Random.Range(0, 1000)}";
@@ -166,6 +166,11 @@ public class LobbyController : MonoBehaviour
             {
                 IsPrivate = true,
                 Player = localPlayer,
+                Data = new Dictionary<string, DataObject>
+                {
+                    {"BlueTeamScore", new DataObject(DataObject.VisibilityOptions.Member, "0")},
+                    {"OrangeTeamScore", new DataObject(DataObject.VisibilityOptions.Member, "0")}
+                }
             };
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
             partyLobby = await LobbyService.Instance.CreateLobbyAsync(partyLobbyName, maxPartyMembers, partyLobbyOptions);
@@ -289,6 +294,31 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerData(options);
     }
 
+    public async void UpdateLobbyScores(int blueTeamScore, int orangeTeamScore)
+    {
+        UpdateLobbyOptions options = new UpdateLobbyOptions();
+
+        options.HostId = partyLobby.HostId;
+        options.MaxPlayers = partyLobby.MaxPlayers;
+        options.IsPrivate = partyLobby.IsPrivate;
+        options.Name = partyLobby.Name;
+
+        options.Data = new Dictionary<string, DataObject>
+        {
+            {"BlueTeamScore", new DataObject(DataObject.VisibilityOptions.Member, blueTeamScore.ToString())},
+            {"OrangeTeamScore", new DataObject(DataObject.VisibilityOptions.Member, orangeTeamScore.ToString())}
+        };
+
+        try
+        {
+            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, options);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
     private async Task<Allocation> AllocateRelay()
     {
         try
@@ -342,6 +372,12 @@ public class LobbyController : MonoBehaviour
     public void LoadRemoat()
     {
         NetworkManager.Singleton.SceneManager.LoadScene("RemoatStadium", LoadSceneMode.Single);
+    }
+
+    public void LoadResultsScreen()
+    {
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+        NetworkManager.Singleton.SceneManager.LoadScene("GameResults", LoadSceneMode.Single);
     }
 
     public void ReturnToLobby()

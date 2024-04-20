@@ -20,6 +20,7 @@ public class WildPokemon : NetworkBehaviour
         pokemon.SetNewPokemon(pokemonBase);
         pokemon.OnDeath += Die;
         pokemon.Type = PokemonType.Wild;
+        NetworkObject.DestroyWithScene = true;
     }
 
     private void Die(DamageInfo info)

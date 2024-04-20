@@ -77,7 +77,7 @@ public class LoadingScreen : MonoBehaviour
     private Player[] GetTeamPlayers(bool orangeTeam)
     {
         List<Player> teamPlayers = new List<Player>();
-        foreach (var player in LobbyController.instance.Lobby.Players)
+        foreach (var player in LobbyController.Instance.Lobby.Players)
         {
             if (player.Data["PlayerTeam"].Value == (orangeTeam ? "Orange" : "Blue"))
             {

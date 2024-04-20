@@ -71,7 +71,7 @@ public class PlayerManager : NetworkBehaviour
     {
         if (IsOwner)
         {
-            ChangeSelectedPokemonRpc(LobbyController.instance.Player.Data["SelectedCharacter"].Value);
+            ChangeSelectedPokemonRpc(LobbyController.Instance.Player.Data["SelectedCharacter"].Value);
         }
         orangeTeam.OnValueChanged += (previous, current) =>
         {
@@ -88,6 +88,7 @@ public class PlayerManager : NetworkBehaviour
             pokemon.OnDeath += OnPokemonDeath;
             pokemon.OnDamageTaken += OnPokemonDamage;
         }
+        NetworkObject.DestroyWithScene = true;
         pokemon.OnEvolution += HandleEvolution;
         UpdateEnergyGraphic();
     }
@@ -106,6 +107,7 @@ public class PlayerManager : NetworkBehaviour
         playerMovement.CanMove = false;
         yield return new WaitForSeconds(time);
         playerMovement.CanMove = true;
+        animationManager.SetTrigger("Transition");
     }
 
     private void HandleEvolution()

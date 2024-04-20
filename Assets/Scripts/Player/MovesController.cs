@@ -186,7 +186,7 @@ public class MovesController : NetworkBehaviour
         if (moveCooldowns[index] > 0)
             return;
 
-        moves[index].Start(this);
+        moves[index].Start(playerManager);
     }
 
     public void TryUsingUniteMove()
@@ -194,7 +194,7 @@ public class MovesController : NetworkBehaviour
         if (uniteMoveCharge < uniteMoveMaxCharge)
             return;
 
-        uniteMove.Start(this);
+        uniteMove.Start(playerManager);
     }
 
     public void TryFinishingUniteMove()
@@ -312,6 +312,21 @@ public class MovesController : NetworkBehaviour
         if (homingScript != null)
         {
             homingScript.SetTarget(targetId, info);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void LaunchMoveForwardProjRpc(Vector2 dir, DamageInfo info, float maxDistance ,string resourcePath)
+    {
+        // Instantiate homing projectile
+        GameObject moveForwardsProjectile = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), projectileSpawnPoint.position, Quaternion.identity) as GameObject;
+        moveForwardsProjectile.GetComponent<NetworkObject>().Spawn();
+
+        // Set target for homing projectile
+        MoveForwardProjectile forwardsScript = moveForwardsProjectile.GetComponent<MoveForwardProjectile>();
+        if (forwardsScript != null)
+        {
+            forwardsScript.SetDirection(dir, info, maxDistance);
         }
     }
 

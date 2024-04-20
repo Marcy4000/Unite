@@ -8,16 +8,16 @@ public class MoveBase
 {
     public string name;
     public float cooldown;
-    public MovesController movesController;
+    public PlayerManager playerManager;
     public bool isActive = false;
 
     public bool wasMoveSuccessful = false;
 
     public event Action<MoveBase> onMoveOver;
 
-    public virtual void Start(MovesController controller)
+    public virtual void Start(PlayerManager controller)
     {
-        movesController = controller;
+        playerManager = controller;
         isActive = true;
         wasMoveSuccessful = false;
         Debug.Log("Executing move: " + name);
@@ -44,6 +44,12 @@ public static class MoveDatabase
                 return new CinderEmber();
             case AvailableMoves.CinderLowSweep:
                 return new CinderLowSweep();
+            case AvailableMoves.CinderPyroball:
+                return new CinderPyroball();
+            case AvailableMoves.CinderFlameCharge:
+                return new CinderFlameCharge();
+            case AvailableMoves.CinderFeint:
+                return new CinderFeint();
             case AvailableMoves.BlazingBycicleKick:
                 return new BlazingBycicleKick();
             default:
@@ -57,5 +63,8 @@ public enum AvailableMoves
     LockedMove,
     CinderEmber,
     CinderLowSweep,
+    CinderPyroball,
+    CinderFlameCharge,
+    CinderFeint,
     BlazingBycicleKick
 }

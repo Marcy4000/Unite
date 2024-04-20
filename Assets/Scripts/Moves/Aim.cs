@@ -7,7 +7,7 @@ public class Aim : NetworkBehaviour
 {
     public static Aim Instance { get; private set; }
     [SerializeField] private LayerMask targetMask;
-    [SerializeField] private GameObject autoAimIndicator, indicatorHolders, circleIndicator, dashIndicator;
+    [SerializeField] private GameObject autoAimIndicator, indicatorHolders, circleIndicator, dashIndicator, skillShotLine;
     [SerializeField] private GameObject basicAtkIndicator;
     private Transform playerTransform;
     private PlayerControls controls;
@@ -42,6 +42,7 @@ public class Aim : NetworkBehaviour
         autoAimIndicator.SetActive(false);
         circleIndicator.SetActive(false);
         dashIndicator.SetActive(false);
+        skillShotLine.SetActive(false);
         indicatorHolders.transform.SetParent(null);
     }
 
@@ -74,9 +75,23 @@ public class Aim : NetworkBehaviour
         circleIndicator.transform.localScale = new Vector3(coneDistance / 2.5f, 1, coneDistance / 2.5f);
     }
 
+    public void InitializeSkillshotAimAim(float distance)
+    {
+        skillShotLine.SetActive(true);
+        circleIndicator.SetActive(true);
+        skillShotLine.transform.localScale = new Vector3(1f, 1f, distance / 2.5f);
+        circleIndicator.transform.localScale = new Vector3(distance / 2.5f, 1f, distance / 2.5f);
+    }
+
     public void HideDashAim()
     {
         dashIndicator.SetActive(false);
+        circleIndicator.SetActive(false);
+    }
+
+    public void HideSkillshotAim()
+    {
+        skillShotLine.SetActive(false);
         circleIndicator.SetActive(false);
     }
 
@@ -177,6 +192,19 @@ public class Aim : NetworkBehaviour
         Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
 
         dashIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
+
+        return aimDirection;
+    }
+
+    public Vector3 SkillshotAim()
+    {
+        // Rotate aiming direction based on right stick input
+        float horizontalInput = controls.Movement.AimMove.ReadValue<Vector2>().x;
+        float verticalInput = controls.Movement.AimMove.ReadValue<Vector2>().y;
+
+        Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
+
+        skillShotLine.transform.rotation = Quaternion.LookRotation(aimDirection);
 
         return aimDirection;
     }

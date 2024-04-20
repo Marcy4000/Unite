@@ -36,6 +36,12 @@ public class AnimationManager : NetworkBehaviour
 
     public void SetTrigger(string name)
     {
+        SetTriggerRpc(name);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    public void SetTriggerRpc(string name)
+    {
         if (IsAnimatorNull())
             return;
         animator.SetTrigger(name);
@@ -59,6 +65,7 @@ public class AnimationManager : NetworkBehaviour
         SetIntRpc(name, value);
     }
 
+    [Rpc(SendTo.ClientsAndHost)]
     private void SetIntRpc(string name, int value)
     {
         if (IsAnimatorNull())

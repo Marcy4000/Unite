@@ -17,7 +17,7 @@ public class MainMenuUI : MonoBehaviour
     {
         startLobbyButton.onClick.AddListener(() =>
         {
-            LobbyController.instance.CreateLobby();
+            LobbyController.Instance.CreateLobby();
         });
 
         lobbyIdField.onEndEdit.AddListener((string lobbyId) =>
@@ -26,12 +26,12 @@ public class MainMenuUI : MonoBehaviour
             {
                 return;
             }
-            LobbyController.instance.TryLobbyJoin(lobbyId.ToUpper());
+            LobbyController.Instance.TryLobbyJoin(lobbyId.ToUpper());
         });
 
         exitLobbyButton.onClick.AddListener(() =>
         {
-            LobbyController.instance.LeaveLobby();
+            LobbyController.Instance.LeaveLobby();
         });
 
         ShowMainMenuUI();
@@ -44,7 +44,7 @@ public class MainMenuUI : MonoBehaviour
             lobbyUI.SetActive(false);
         }
         lobbyUIs[1].SetActive(true);
-        partyScreenUI.InitializeUI(LobbyController.instance.Lobby);
+        partyScreenUI.InitializeUI(LobbyController.Instance.Lobby);
     }
 
     public void ShowMainMenuUI()
@@ -58,6 +58,6 @@ public class MainMenuUI : MonoBehaviour
 
     public void UpdatePartyScreenUI()
     {
-        partyScreenUI.UpdatePlayers(LobbyController.instance.Lobby);
+        partyScreenUI.UpdatePlayers(LobbyController.Instance.Lobby);
     }
 }

@@ -15,7 +15,7 @@ public class BlazingBycicleKick : MoveBase
         damageInfo = new DamageInfo(0, 2.47f, 14, 670, DamageType.Physical);
     }
 
-    public override void Start(MovesController controller)
+    public override void Start(PlayerManager controller)
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
@@ -35,7 +35,7 @@ public class BlazingBycicleKick : MoveBase
     {
         if (target != null && isActive)
         {
-            movesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
+            playerManager.MovesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideAutoAim();

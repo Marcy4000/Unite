@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 
 public class CharacterSelectController : NetworkBehaviour
 {
-    private const float SELECTION_TIME = 30f;
+    private const float SELECTION_TIME = 10f;
 
     [SerializeField] private GameObject playerIconPrefab;
     [SerializeField] private Transform playerIconsHolder;
@@ -53,14 +53,14 @@ public class CharacterSelectController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        currentLobby = LobbyController.instance.Lobby;
+        currentLobby = LobbyController.Instance.Lobby;
 
-        Player[] localTeamPlayers = GetTeamPlayers(LobbyController.instance.Player.Data["PlayerTeam"].Value == "Orange");
+        Player[] localTeamPlayers = GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
         foreach (var player in localTeamPlayers)
         {
             GameObject playerIcon = Instantiate(playerIconPrefab, playerIconsHolder);
             playerIcon.GetComponent<PlayerSelectionIcon>().Initialize(player);
-            if (player.Id == LobbyController.instance.Player.Id)
+            if (player.Id == LobbyController.Instance.Player.Id)
             {
                 SpawnPokemon(CharactersList.instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value));
             }
@@ -96,7 +96,7 @@ public class CharacterSelectController : NetworkBehaviour
                 if (selectionTimer.Value <= 0 && !isLoading)
                 {
                     ShowLoadingScreenRpc();
-                    LobbyController.instance.LoadRemoat();
+                    LobbyController.Instance.LoadRemoat();
                     isLoading = true;
                 }
             }
@@ -111,7 +111,7 @@ public class CharacterSelectController : NetworkBehaviour
 
     private void ChangeCharacter(CharacterInfo character)
     {
-        LobbyController.instance.ChangePlayerCharacter(character.pokemonName);
+        LobbyController.Instance.ChangePlayerCharacter(character.pokemonName);
         SpawnPokemon(character);
     }
 

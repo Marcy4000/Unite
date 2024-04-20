@@ -6,6 +6,7 @@ using System;
 using Unity.Netcode;
 using System.Linq;
 using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 
 public enum GameState
 {
@@ -76,7 +77,7 @@ public class GameManager : NetworkBehaviour
         onGameStateChanged?.Invoke(current);
         if (current == GameState.Ended)
         {
-            NetworkManagerUI.instance.DebugShowScore();
+            //NetworkManagerUI.instance.DebugShowScore();
         }
     }
 
@@ -131,6 +132,11 @@ public class GameManager : NetworkBehaviour
                     gameTime.Value = 0f;
                     EndGame();
                 }
+
+                if (Keyboard.current.oKey.wasPressedThisFrame)
+                {
+                    gameTime.Value = 0f;
+                }
             }
             UpdateTimerText();
         }
@@ -156,6 +162,7 @@ public class GameManager : NetworkBehaviour
             blueTeamScore.Value += info.scoredPoints;
         }
         ShowGoalScoredRpc(info);
+        LobbyController.Instance.UpdateLobbyScores(BlueTeamScore, OrangeTeamScore);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -168,6 +175,7 @@ public class GameManager : NetworkBehaviour
     void EndGame()
     {
         gameState.Value = GameState.Ended;
+        LobbyController.Instance.LoadResultsScreen();
         // Display end game UI, show winner, etc.
     }
 }
