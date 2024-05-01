@@ -385,4 +385,30 @@ public class LobbyController : MonoBehaviour
         LeaveLobbyNoGUI();
         SceneManager.LoadSceneAsync("LobbyScene");
     }
+
+    public Player GetPlayerByID(string playerID)
+    {
+        foreach (var player in partyLobby.Players)
+        {
+            if (player.Id == playerID)
+            {
+                return player;
+            }
+        }
+
+        return null;
+    }
+
+    public Player[] GetTeamPlayers(bool orangeTeam)
+    {
+        List<Player> teamPlayers = new List<Player>();
+        foreach (var player in partyLobby.Players)
+        {
+            if (player.Data["PlayerTeam"].Value == (orangeTeam ? "Orange" : "Blue"))
+            {
+                teamPlayers.Add(player);
+            }
+        }
+        return teamPlayers.ToArray();
+    }
 }

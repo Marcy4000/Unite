@@ -27,8 +27,6 @@ public class CharacterSelectController : NetworkBehaviour
     private bool isLoading = false;
     private bool startTimer = false;
 
-    private Lobby currentLobby;
-
     private void OnEnable()
     {
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
@@ -53,9 +51,7 @@ public class CharacterSelectController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        currentLobby = LobbyController.Instance.Lobby;
-
-        Player[] localTeamPlayers = GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
+        Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
         foreach (var player in localTeamPlayers)
         {
             GameObject playerIcon = Instantiate(playerIconPrefab, playerIconsHolder);
@@ -113,19 +109,6 @@ public class CharacterSelectController : NetworkBehaviour
     {
         LobbyController.Instance.ChangePlayerCharacter(character.pokemonName);
         SpawnPokemon(character);
-    }
-
-    private Player[] GetTeamPlayers(bool orangeTeam)
-    {
-        List<Player> teamPlayers = new List<Player>();
-        foreach (var player in currentLobby.Players)
-        {
-            if (player.Data["PlayerTeam"].Value == (orangeTeam ? "Orange" : "Blue"))
-            {
-                teamPlayers.Add(player);
-            }
-        }
-        return teamPlayers.ToArray();
     }
 
     private void SpawnPokemon(CharacterInfo character)

@@ -31,6 +31,8 @@ public class GameManager : NetworkBehaviour
     public int BlueTeamScore => blueTeamScore.Value;
     public int OrangeTeamScore => orangeTeamScore.Value;
 
+    public List<PlayerManager> Players => players;
+
     private NetworkVariable<GameState> gameState = new NetworkVariable<GameState>(GameState.Waiting);
 
     public event Action<int> onUpdatePassiveExp;

@@ -10,6 +10,10 @@ public class ScoreUI : MonoBehaviour
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private Image portrait;
 
+    private Queue<ScoreUIInfo> scoreQueue = new Queue<ScoreUIInfo>();
+
+    private bool isShowingScore;
+
     private void Start()
     {
         normalBG.SetActive(false);
@@ -17,12 +21,17 @@ public class ScoreUI : MonoBehaviour
         holder.SetActive(false);
     }
 
-    public void ShowScore(int amount, Sprite portrait)
+    public void EnqueueScore(ScoreUIInfo info)
+    {
+        scoreQueue.Enqueue(info);
+    }
+
+    private void ShowScore(ScoreUIInfo info)
     {
         holder.SetActive(true);
-        scoreText.text = amount.ToString();
-        this.portrait.sprite = portrait;
-        if (amount >= 50)
+        scoreText.text = info.amount.ToString();
+        portrait.sprite = info.portrait;
+        if (info.amount >= 50)
         {
             bigBG.SetActive(true);
         }
@@ -34,11 +43,36 @@ public class ScoreUI : MonoBehaviour
         StartCoroutine(HideScore());
     }
 
+    private void Update()
+    {
+        if (!isShowingScore)
+        {
+            if (scoreQueue.Count > 0)
+            {
+                ShowScore(scoreQueue.Dequeue());
+            }
+        }
+    }
+
     private IEnumerator HideScore()
     {
-        yield return new WaitForSeconds(2f);
+        isShowingScore = true;
+        yield return new WaitForSeconds(2.5f);
         normalBG.SetActive(false);
         bigBG.SetActive(false);
         holder.SetActive(false);
+        isShowingScore = false;
+    }
+}
+
+public class ScoreUIInfo
+{
+    public int amount;
+    public Sprite portrait;
+
+    public ScoreUIInfo(int amount, Sprite portrait)
+    {
+        this.amount = amount;
+        this.portrait = portrait;
     }
 }

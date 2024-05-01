@@ -239,6 +239,7 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ClientDamageRpc(int actualDamage, DamageInfo damage)
     {
+        lastHit = damage;
         DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
         indicator.ShowDamage(actualDamage, damage.type);
     }

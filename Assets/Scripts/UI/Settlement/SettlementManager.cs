@@ -60,7 +60,7 @@ public class SettlementManager : MonoBehaviour
         int blueScoreValue = 0;
         int orangeScoreValue = 0;
 
-
+        yield return new WaitForSeconds(1.5f);
 
         while (!finished)
         {

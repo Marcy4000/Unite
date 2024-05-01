@@ -2,7 +2,9 @@ using Cinemachine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -33,6 +35,8 @@ public class PlayerManager : NetworkBehaviour
     private bool canScore;
     private bool isScoring = false;
 
+    private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm:NetworkVariableWritePermission.Owner);
+
     public Pokemon Pokemon { get => pokemon; }
     public MovesController MovesController { get => movesController; }
     public Aim Aim { get => aim; }
@@ -46,6 +50,8 @@ public class PlayerManager : NetworkBehaviour
     public short MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
     public short CurrentEnergy { get => currentEnergy; set => currentEnergy = value; }
     public bool CanScore { get => canScore; set => canScore = value; }
+
+    public Player LobbyPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
 
     private float scoreTimer, maxScoreTime;
 
@@ -62,6 +68,11 @@ public class PlayerManager : NetworkBehaviour
         playerMovement = GetComponent<PlayerMovement>();
         animationManager = GetComponent<AnimationManager>();
 
+        lobbyPlayerId.OnValueChanged += (previous, current) =>
+        {
+            hpBar.UpdatePlayerName(LobbyController.Instance.GetPlayerByID(current.ToString()).Data["PlayerName"].Value);
+        };
+
         maxEnergyCarry = 30;
         canScore = false;
         currentEnergy = 0;
@@ -71,6 +82,7 @@ public class PlayerManager : NetworkBehaviour
     {
         if (IsOwner)
         {
+            lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
             ChangeSelectedPokemonRpc(LobbyController.Instance.Player.Data["SelectedCharacter"].Value);
         }
         orangeTeam.OnValueChanged += (previous, current) =>
@@ -123,6 +135,10 @@ public class PlayerManager : NetworkBehaviour
         pokemon.SetNewPokemon(selectedPokemon);
         hpBar.SetPokemon(pokemon);
         HandleEvolution();
+        if (LobbyPlayer.Data["PlayerName"].Value != null)
+        {
+            hpBar.UpdatePlayerName(LobbyPlayer.Data["PlayerName"].Value);
+        }
     }
 
     private void OnPokemonDamage(DamageInfo info)

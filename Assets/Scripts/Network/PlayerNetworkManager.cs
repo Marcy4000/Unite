@@ -114,7 +114,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                     player.Pokemon.OnDeath += OnPlayerDeath;
                 }
             }
-        }   
+        }
     }
 
     private void OnPlayerDeath(DamageInfo info)
@@ -127,6 +127,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowKillRpc(DamageInfo info, bool orangeTeam)
     {
+        Debug.LogWarning("Called");
         BattleUIManager.instance.ShowKill(info, orangeTeam, playerManager.Pokemon);
     }
 }

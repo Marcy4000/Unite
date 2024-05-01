@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class HPBar : MonoBehaviour
 {
     [SerializeField] private Image hpBar, shieldBar, damageBar, expBar, storedExpBar;
-    [SerializeField] private TMP_Text lvText;
+    [SerializeField] private TMP_Text lvText, playerNameText;
     [SerializeField] private Pokemon pokemon;
 
     public void SetPokemon(Pokemon pokemon)
@@ -19,6 +19,11 @@ public class HPBar : MonoBehaviour
         UpdateUI();
         UpdateLevel();
         UpdateExp();
+    }
+
+    public void UpdatePlayerName(string playerName)
+    {
+        playerNameText.text = playerName;
     }
 
     public void UpdateUI()

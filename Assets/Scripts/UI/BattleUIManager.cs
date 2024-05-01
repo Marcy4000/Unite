@@ -25,13 +25,15 @@ public class BattleUIManager : MonoBehaviour
 
     public void ShowScore(int amount, bool orangeTeam, Sprite portrait)
     {
+        ScoreUIInfo scoreInfo = new ScoreUIInfo(amount, portrait);
+
         if (orangeTeam)
         {
-            orangeScoreUI.ShowScore(amount, portrait);
+            orangeScoreUI.EnqueueScore(scoreInfo);
         }
         else
         {
-            blueScoreUI.ShowScore(amount, portrait);
+            blueScoreUI.EnqueueScore(scoreInfo);
         }
     }
 
@@ -47,7 +49,8 @@ public class BattleUIManager : MonoBehaviour
 
     public void ShowKill(DamageInfo info, bool orangeTeam, Pokemon killed)
     {
-        killNotificationUI.ShowKill(info, orangeTeam, killed);
+        KillInfo killInfo = new KillInfo(info, orangeTeam, killed);
+        killNotificationUI.EnqueueKill(killInfo);
     }
 
     public void ShowDeathScreen()

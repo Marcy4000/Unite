@@ -35,5 +35,10 @@ public class PlayerInfoUI : MonoBehaviour
         {
             playerBGImage.sprite = orangeBG;
         }
+
+        if (player.Id == LobbyController.Instance.Player.Id)
+        {
+            playerNameText.color = Color.yellow;
+        }
     }
 }
