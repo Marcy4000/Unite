@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -12,6 +13,9 @@ public class SettlementManager : MonoBehaviour
 
     [SerializeField] private TMP_Text blueScoreText;
     [SerializeField] private TMP_Text orangeScoreText;
+
+    [SerializeField] private GameObject timerObject;
+    [SerializeField] private TMP_Text timerText;
 
     [SerializeField] private Button returnLobbyButton;
 
@@ -40,8 +44,8 @@ public class SettlementManager : MonoBehaviour
         gameInfoUI.gameObject.SetActive(false);
 
 
-        blueScoreValue = int.Parse(LobbyController.Instance.Lobby.Data["BlueTeamScore"].Value);
-        orangeScoreValue = int.Parse(LobbyController.Instance.Lobby.Data["OrangeTeamScore"].Value);
+        blueScoreValue = LobbyController.Instance.GameResults.BlueTeamScore;
+        orangeScoreValue = LobbyController.Instance.GameResults.OrangeTeamScore;
 
         int maxScore = blueScoreValue;
         if (orangeScoreValue > maxScore)
@@ -60,25 +64,46 @@ public class SettlementManager : MonoBehaviour
         int blueScoreValue = 0;
         int orangeScoreValue = 0;
 
+        GameResults gameResults = LobbyController.Instance.GameResults;
+
         yield return new WaitForSeconds(1.5f);
+
+        float timer = gameResults.TotalGameTime;
+        Debug.Log($"Total Game Time: {timer}");
 
         while (!finished)
         {
-            if (blueScoreValue < this.blueScoreValue)
+            for (int i = gameResults.BlueTeamScores.Count-1; i >= 0; i--)
             {
-                blueScoreValue = Mathf.Min(this.blueScoreValue, blueScoreValue + 5);
+                if (gameResults.BlueTeamScores[i].time >= timer)
+                {
+                    blueScoreValue += gameResults.BlueTeamScores[i].ScoredPoints;
+                    Debug.Log($"Blue Score {gameResults.BlueTeamScores[i].ScoredPoints} + At Time {gameResults.BlueTeamScores[i].time} (Current time: {timer})");
+                    gameResults.BlueTeamScores.RemoveAt(i);
+                }
             }
 
-            if (orangeScoreValue < this.orangeScoreValue)
+            for (int i = gameResults.OrangeTeamScores.Count - 1; i >= 0; i--)
             {
-                orangeScoreValue = Mathf.Min(this.orangeScoreValue, orangeScoreValue + 5);
+                if (gameResults.OrangeTeamScores[i].time >= timer)
+                {
+                    orangeScoreValue += gameResults.OrangeTeamScores[i].ScoredPoints;
+                    Debug.Log($"Orange Score {gameResults.OrangeTeamScores[i].ScoredPoints} + At Time {gameResults.OrangeTeamScores[i].time} (Current time: {timer})");
+                    gameResults.OrangeTeamScores.RemoveAt(i);
+                }
             }
+
+            timer -= Time.deltaTime * 1000f;
+
+            UpdateTimerText(timer);
 
             resultBarsUI.SetBars(blueScoreValue, orangeScoreValue);
 
-            if (blueScoreValue == this.blueScoreValue && orangeScoreValue == this.orangeScoreValue)
+            if (timer <= 0)
             {
                 finished = true;
+                timer = 0;
+                UpdateTimerText(timer);
                 yield return new WaitForSeconds(1f);
                 OnShowScoreEnded();
             }
@@ -87,6 +112,12 @@ public class SettlementManager : MonoBehaviour
         }
     }
 
+    void UpdateTimerText(float timer)
+    {
+        int minutes = Mathf.FloorToInt(timer / 60f);
+        int seconds = Mathf.FloorToInt(timer % 60f);
+        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+    }
 
     private void OnShowScoreEnded()
     {
@@ -95,6 +126,8 @@ public class SettlementManager : MonoBehaviour
 
         blueScoreText.gameObject.SetActive(true);
         orangeScoreText.gameObject.SetActive(true);
+
+        timerObject.SetActive(false);
 
         blueScoreText.text = blueScoreValue.ToString();
         orangeScoreText.text = orangeScoreValue.ToString();

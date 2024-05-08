@@ -9,19 +9,26 @@ public class GoalZone : NetworkBehaviour
 {
     [SerializeField] private int maxScore;
     [SerializeField] private bool orangeTeam;
+    [SerializeField] private int healAmount;
     [SerializeField] private int goalTier;
+    [SerializeField] private int goalLaneId;
     [SerializeField] private TMP_Text scoreText;
-    private bool isActive;
+    [SerializeField] private GameObject orangeModel, blueModel;
+
+    private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
+
     private NetworkVariable<int> currentScore = new NetworkVariable<int>();
 
-    public bool IsActive { get => isActive; set => isActive = value; }
+    public bool IsActive { get => isActive.Value; }
     public int CurrentScore { get => currentScore.Value; set => currentScore.Value = value; }
     public int MaxScore { get => maxScore; }
     public int GoalTier { get => goalTier; }
+    public int GoalLaneId { get => goalLaneId; }
     public bool OrangeTeam { get => orangeTeam; }
 
     private List<PlayerManager> playerManagerList = new List<PlayerManager>();
 
+    public event Action<int, int> onGoalZoneDestroyed;
 
     public override void OnNetworkSpawn()
     {
@@ -30,8 +37,13 @@ public class GoalZone : NetworkBehaviour
             StartCoroutine(GoalZoneHealing());
         }
         scoreText.color = orangeTeam ? Color.yellow : Color.blue;
+        Destroy(orangeTeam ? blueModel : orangeModel);
         scoreText.text = $"{maxScore - currentScore.Value}/{maxScore}";
-        currentScore.OnValueChanged += UpdateGraphicsRPC;
+        currentScore.OnValueChanged += UpdateGraphics;
+        if (goalTier == 0)
+        {
+            scoreText.gameObject.SetActive(false);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -40,7 +52,7 @@ public class GoalZone : NetworkBehaviour
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
             playerManagerList.Add(playerManager);
-            playerManager.CanScore = playerManager.OrangeTeam != orangeTeam;
+            playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
             playerManager.onGoalScored += OnScore;
         }
     }
@@ -64,7 +76,7 @@ public class GoalZone : NetworkBehaviour
             {
                 if (player.OrangeTeam == orangeTeam)
                 {
-                    player.Pokemon.HealDamage(200);
+                    player.Pokemon.HealDamage(healAmount);
                 }
             }
             yield return new WaitForSeconds(1.5f);
@@ -86,7 +98,7 @@ public class GoalZone : NetworkBehaviour
         currentScore.Value = amount;
     }
 
-    private void UpdateGraphicsRPC(int previous, int current)
+    private void UpdateGraphics(int previous, int current)
     {
         scoreText.text = $"{maxScore - current}/{maxScore}";
         if (current >= maxScore)
@@ -103,5 +115,24 @@ public class GoalZone : NetworkBehaviour
             player.CanScore = false;
         }
         gameObject.SetActive(false);
+        onGoalZoneDestroyed?.Invoke(goalLaneId, goalTier);
+    }
+
+    public void SetIsActive(bool value)
+    {
+        if (IsServer)
+        {
+            isActive.Value = value;
+        }
+        else
+        {
+            SetIsActiveRPC(value);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SetIsActiveRPC(bool value)
+    {
+        isActive.Value = value;
     }
 }

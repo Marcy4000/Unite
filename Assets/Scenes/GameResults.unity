@@ -517,6 +517,8 @@ MonoBehaviour:
   gameInfoUI: {fileID: 331055512}
   blueScoreText: {fileID: 2067393785}
   orangeScoreText: {fileID: 1808826177}
+  timerObject: {fileID: 1730965127}
+  timerText: {fileID: 242577613}
   returnLobbyButton: {fileID: 1684278305}
 --- !u!1 &242577611
 GameObject:
@@ -1485,12 +1487,12 @@ MonoBehaviour:
   m_RequiresColorTexture: 0
   m_Version: 2
   m_TaaSettings:
-    quality: 3
-    frameInfluence: 0.1
-    jitterScale: 1
-    mipBias: 0
-    varianceClampScale: 0.9
-    contrastAdaptiveSharpening: 0
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
 --- !u!1 &1339014404
 GameObject:
   m_ObjectHideFlags: 0
@@ -2050,7 +2052,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1730965128
 RectTransform:
   m_ObjectHideFlags: 0

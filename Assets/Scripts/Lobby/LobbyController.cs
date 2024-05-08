@@ -29,8 +29,12 @@ public class LobbyController : MonoBehaviour
 
     private string testPlayerName;
 
+    private GameResults gameResults;
+
     public Lobby Lobby => partyLobby;
     public Player Player => localPlayer;
+
+    public GameResults GameResults { get => gameResults; set => gameResults = value;}
 
     public event Action<Lobby> onLobbyUpdate;
 
@@ -376,7 +380,6 @@ public class LobbyController : MonoBehaviour
 
     public void LoadResultsScreen()
     {
-        LoadingScreen.Instance.ShowGenericLoadingScreen();
         NetworkManager.Singleton.SceneManager.LoadScene("GameResults", LoadSceneMode.Single);
     }
 

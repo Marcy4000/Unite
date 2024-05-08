@@ -19,13 +19,17 @@ public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
 
+    private const float MAX_GAME_TIME = 600f;
+
     [SerializeField] private TMP_Text timerText;
-    private NetworkVariable<float> gameTime = new NetworkVariable<float>(600f);
+    private NetworkVariable<float> gameTime = new NetworkVariable<float>(MAX_GAME_TIME);
     private NetworkVariable<int> blueTeamScore = new NetworkVariable<int>(0);
     private NetworkVariable<int> orangeTeamScore = new NetworkVariable<int>(0);
 
     private List<PlayerManager> players = new List<PlayerManager>();
-    private GoalZone[] goalZones;
+    private LaneManager[] lanes;
+
+    private GameResults gameResults = new GameResults();
 
     public NetworkVariable<float> GameTime => gameTime;
     public int BlueTeamScore => blueTeamScore.Value;
@@ -69,7 +73,7 @@ public class GameManager : NetworkBehaviour
         UpdateTimerText();
 
         gameState.OnValueChanged += GameStateChanged;
-        goalZones = FindObjectsOfType<GoalZone>();
+        lanes = FindObjectsOfType<LaneManager>();
 
         StartCoroutine(HandlePassiveExp());
     }
@@ -132,7 +136,7 @@ public class GameManager : NetworkBehaviour
                 if (gameTime.Value <= 0f)
                 {
                     gameTime.Value = 0f;
-                    EndGame();
+                    EndGameRPC();
                 }
 
                 if (Keyboard.current.oKey.wasPressedThisFrame)
@@ -172,12 +176,30 @@ public class GameManager : NetworkBehaviour
     {
         PlayerManager scorer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].GetComponent<PlayerManager>();
         BattleUIManager.instance.ShowScore(info.scoredPoints, scorer.OrangeTeam, scorer.Pokemon.Portrait);
+        if (scorer.OrangeTeam)
+        {
+            gameResults.OrangeTeamScores.Add(new ResultScoreInfo(info.scoredPoints, scorer.LobbyPlayer.Id, gameTime.Value));
+        }
+        else
+        {
+            gameResults.BlueTeamScores.Add(new ResultScoreInfo(info.scoredPoints, scorer.LobbyPlayer.Id, gameTime.Value));
+        }
     }
 
-    void EndGame()
+    [Rpc(SendTo.ClientsAndHost)]
+    void EndGameRPC()
     {
-        gameState.Value = GameState.Ended;
-        LobbyController.Instance.LoadResultsScreen();
+        if (IsServer)
+        {
+            gameState.Value = GameState.Ended;
+            LobbyController.Instance.LoadResultsScreen();
+        }
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+        gameResults.BlueTeamWon = blueTeamScore.Value > orangeTeamScore.Value;
+        gameResults.BlueTeamScore = blueTeamScore.Value;
+        gameResults.OrangeTeamScore = orangeTeamScore.Value;
+        gameResults.TotalGameTime = MAX_GAME_TIME - gameTime.Value;
+        LobbyController.Instance.GameResults = gameResults;
         // Display end game UI, show winner, etc.
     }
 }
