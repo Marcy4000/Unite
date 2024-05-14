@@ -47,6 +47,8 @@ public class SettlementManager : MonoBehaviour
         blueScoreValue = LobbyController.Instance.GameResults.BlueTeamScore;
         orangeScoreValue = LobbyController.Instance.GameResults.OrangeTeamScore;
 
+        UpdateTimerText(LobbyController.Instance.GameResults.TotalGameTime);
+
         int maxScore = blueScoreValue;
         if (orangeScoreValue > maxScore)
         {
@@ -93,7 +95,7 @@ public class SettlementManager : MonoBehaviour
                 }
             }
 
-            timer -= Time.deltaTime * 1000f;
+            timer -= Time.deltaTime * 150f;
 
             UpdateTimerText(timer);
 
@@ -108,7 +110,7 @@ public class SettlementManager : MonoBehaviour
                 OnShowScoreEnded();
             }
 
-            yield return new WaitForSeconds(0.05f);
+            yield return null;
         }
     }
 
@@ -116,7 +118,7 @@ public class SettlementManager : MonoBehaviour
     {
         int minutes = Mathf.FloorToInt(timer / 60f);
         int seconds = Mathf.FloorToInt(timer % 60f);
-        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+        timerText.text = string.Format("{0:00}m {1:00}s", minutes, seconds);
     }
 
     private void OnShowScoreEnded()

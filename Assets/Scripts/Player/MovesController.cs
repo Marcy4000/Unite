@@ -69,7 +69,7 @@ public class MovesController : NetworkBehaviour
         }
 
         CheckIfCanLearnMove();
-        LearnBasicAttack(BasicAttacksDatabase.GetBasitAttatck(pokemon.BaseStats.PokemonName));
+        LearnBasicAttack(BasicAttacksDatabase.GetBasitAttack(pokemon.BaseStats.PokemonName));
         StartCoroutine(PassiveUniteCharge());
     }
 
@@ -232,7 +232,7 @@ public class MovesController : NetworkBehaviour
                 if (moves[i] == move)
                 {
                     moveCooldowns[i] = moves[i].cooldown;
-                    moveCooldowns[i] -= moveCooldowns[i] * pokemon.BaseStats.Cdr[pokemon.CurrentLevel.Value] / 100f;
+                    moveCooldowns[i] -= moveCooldowns[i] * pokemon.GetCDR() / 100f;
                     BattleUIManager.instance.ShowMoveCooldown(i, moveCooldowns[i]);
                 }
             }
@@ -337,7 +337,7 @@ public class MovesController : NetworkBehaviour
 
     public float GetAtkSpeedCooldown()
     {
-        float atkSpeed = pokemon.BaseStats.AtkSpeed[pokemon.CurrentLevel.Value];
+        float atkSpeed = pokemon.GetAtkSpeed();
 
         foreach (var entry in cooldownTable)
         {

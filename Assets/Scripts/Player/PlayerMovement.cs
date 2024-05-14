@@ -28,8 +28,9 @@ public class PlayerMovement : NetworkBehaviour
         animationManager = GetComponent<AnimationManager>();
         pokemon = GetComponent<Pokemon>();
         pokemon.OnEvolution += UpdateAnimations;
-        pokemon.OnLevelChange += HandleLevelUp;
-        pokemon.OnPokemonInitialized += HandlePokemonInitialized;
+        pokemon.OnLevelChange += UpdateSpeed;
+        pokemon.OnPokemonInitialized += UpdateSpeed;
+        pokemon.OnStatChange += UpdateSpeed;
         if (IsOwner)
         {
             controls = new PlayerControls();
@@ -38,14 +39,9 @@ public class PlayerMovement : NetworkBehaviour
         canMove = IsOwner;
     }
 
-    private void HandlePokemonInitialized()
+    private void UpdateSpeed()
     {
-        moveSpeed = pokemon.BaseStats.Speed[0] / 1000f;
-    }
-
-    private void HandleLevelUp()
-    {
-        moveSpeed = pokemon.BaseStats.Speed[pokemon.LocalLevel]/1000f;
+        moveSpeed = pokemon.GetSpeed() / 1000f;
     }
 
     void Update()

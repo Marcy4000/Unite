@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class MoveUI : MonoBehaviour
 {
     [SerializeField] private Image moveIcon;
-    [SerializeField] private GameObject cdLine;
+    [SerializeField] private GameObject cdLine, cdBg;
     [SerializeField] private TMP_Text cdText, moveName;
 
     private Coroutine cooldownCoroutine;
@@ -16,6 +16,7 @@ public class MoveUI : MonoBehaviour
     {
         cdLine.SetActive(false);
         cdText.gameObject.SetActive(false);
+        cdBg.SetActive(false);
     }
 
     public void Initialize(MoveAsset move)
@@ -36,6 +37,7 @@ public class MoveUI : MonoBehaviour
     {
         cdLine.SetActive(true);
         cdText.gameObject.SetActive(true);
+        cdBg.SetActive(true);
 
         float timer = cooldownDuration;
 
@@ -54,5 +56,6 @@ public class MoveUI : MonoBehaviour
 
         cdLine.SetActive(false);
         cdText.gameObject.SetActive(false);
+        cdBg.SetActive(false);
     }
 }

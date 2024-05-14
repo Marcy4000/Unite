@@ -21,7 +21,7 @@ public class BasicAttackBase
 
 public static class BasicAttacksDatabase
 {
-    public static BasicAttackBase GetBasitAttatck(string pokemonName)
+    public static BasicAttackBase GetBasitAttack(string pokemonName)
     {
        pokemonName = pokemonName.ToLower();
         switch (pokemonName)

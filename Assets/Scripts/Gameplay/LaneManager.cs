@@ -72,6 +72,8 @@ public class LaneManager : NetworkBehaviour
 
     private void OnGoalZoneDestroyed(int laneID, int tier)
     {
+        BattleUIManager.instance.UpdateGoalState(orangeTeam);
+
         if (!IsServer)
         {
             return;
@@ -103,7 +105,7 @@ public class LaneManager : NetworkBehaviour
         {
             if (fluxZone.LaneID == laneID && fluxZone.Tier == tier)
             {
-                fluxZone.gameObject.SetActive(false);
+                fluxZone.SetIsActive(false);
             }
         }
     }

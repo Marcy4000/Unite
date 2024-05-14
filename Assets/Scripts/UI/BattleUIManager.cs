@@ -13,6 +13,7 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private ScoreUI blueScoreUI, orangeScoreUI;
     [SerializeField] private DeathScreenUI deathScreenUI;
     [SerializeField] private KillNotificationUI killNotificationUI;
+    [SerializeField] private GoalStateUI goalStateUI;
 
     private void Awake()
     {
@@ -86,6 +87,11 @@ public class BattleUIManager : MonoBehaviour
     public void UpdateScoreGauge(float currTime, float maxTime)
     {
         energyUI.UpdateScoreGauge(currTime, maxTime);
+    }
+
+    public void UpdateGoalState(bool orangeTeam)
+    {
+        goalStateUI.UpdateGoalState(orangeTeam);
     }
 
     public void InitializeMoveUI(MoveAsset move)

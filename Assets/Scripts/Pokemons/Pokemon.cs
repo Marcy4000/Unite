@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -23,6 +24,9 @@ public class Pokemon : NetworkBehaviour
 
     private Sprite portrait;
 
+    private NetworkList<StatChange> statChanges;
+    private List<float> statTimers = new List<float>();
+
     public NetworkVariable<int> CurrentHp { get { return currentHp; } }
     public NetworkVariable<int> ShieldHp { get { return shieldHp; } }
     public NetworkVariable<int> CurrentLevel { get { return currentLevel; } }
@@ -41,6 +45,8 @@ public class Pokemon : NetworkBehaviour
 
     public Sprite Portrait { get { return portrait; } }
 
+    public NetworkList<StatChange> StatChanges { get { return statChanges; } }
+
     public event Action OnHpOrShieldChange;
     public event Action OnLevelChange;
     public event Action OnExpChange;
@@ -49,7 +55,14 @@ public class Pokemon : NetworkBehaviour
     public event Action<DamageInfo> OnDamageTaken;
     public event Action OnPokemonInitialized;
 
+    public event Action OnStatChange;
+
     private DamageInfo lastHit;
+
+    private void Awake()
+    {
+        statChanges = new NetworkList<StatChange>();
+    }
 
     public void GainPassiveExp(int amount)
     {
@@ -91,6 +104,7 @@ public class Pokemon : NetworkBehaviour
         storedExp.OnValueChanged += StoredExpChanged;
         currentExp.OnValueChanged += CurrentExpValueChanged;
         currentLevel.OnValueChanged += CurrentLevelChanged;
+        statChanges.OnListChanged += OnStatListChanged;
         CheckEvolution();
         OnPokemonInitialized?.Invoke();
     }
@@ -128,8 +142,256 @@ public class Pokemon : NetworkBehaviour
         return baseStats.MaxHp[currentLevel.Value];
     }
 
+    public int GetAttack()
+    {
+        int trueAtk = baseStats.Attack[currentLevel.Value];
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Attack)
+            {
+                trueAtk = change.IsBuff? trueAtk + change.Amount : trueAtk - change.Amount;
+            }
+        }
+        return Mathf.Clamp(trueAtk, 0, 9999);
+    }
+
+    public int GetDefense()
+    {
+        int trueDef = baseStats.Defense[currentLevel.Value];
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Defense)
+            {
+                trueDef = change.IsBuff ? trueDef + change.Amount : trueDef - change.Amount;
+            }
+        }
+        return Mathf.Clamp(trueDef, 0, 9999);
+    }
+
+    public int GetSpAttack()
+    {
+        int trueSpAtk = baseStats.SpAttack[currentLevel.Value];
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.SpAttack)
+            {
+                trueSpAtk = change.IsBuff ? trueSpAtk + change.Amount : trueSpAtk - change.Amount;
+            }
+        }
+        return Mathf.Clamp(trueSpAtk, 0, 9999);
+    }
+
+    public int GetSpDefense()
+    {
+        int trueSpDef = baseStats.SpDefense[currentLevel.Value];
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.SpDefense)
+            {
+                trueSpDef = change.IsBuff ? trueSpDef + change.Amount : trueSpDef - change.Amount;
+            }
+        }
+        return Mathf.Clamp(trueSpDef, 0, 9999);
+    }
+
+    public int GetCritRate()
+    {
+        int trueCrit = baseStats.CritRate[currentLevel.Value];
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.CritRate)
+            {
+                trueCrit = change.IsBuff ? trueCrit + change.Amount : trueCrit - change.Amount;
+            }
+        }
+        return Mathf.Clamp(trueCrit, 0, 9999);
+    }
+
+    public int GetCDR()
+    {
+        int trueCDR = baseStats.Cdr[currentLevel.Value];
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Cdr)
+            {
+                trueCDR = change.IsBuff ? trueCDR + change.Amount : trueCDR - change.Amount;
+            }
+        }
+        return Mathf.Clamp(trueCDR, 0, 9999);
+    }
+
+    public int GetLifeSteal()
+    {
+        int trueLifeSteal = baseStats.LifeSteal[currentLevel.Value];
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.LifeSteal)
+            {
+                trueLifeSteal = change.IsBuff ? trueLifeSteal + change.Amount : trueLifeSteal - change.Amount;
+            }
+        }
+        return Mathf.Clamp(trueLifeSteal, 0, 9999);
+    }
+
+    public float GetAtkSpeed()
+    {
+        float trueAtkSpeed = baseStats.AtkSpeed[currentLevel.Value];
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.AtkSpeed)
+            {
+                trueAtkSpeed = change.IsBuff ? trueAtkSpeed + change.Amount : trueAtkSpeed - change.Amount;
+            }
+        }
+        return trueAtkSpeed;
+    }
+
+    public int GetSpeed()
+    {
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Speed && !change.Percentage)
+            {
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Speed && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueSpeed = baseStats.Speed[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueSpeed = Mathf.RoundToInt(trueSpeed * (1f + percentModifierSum / 100f));
+
+        // Movement speed efficacy tax
+        if (trueSpeed < 0)
+        {
+            trueSpeed = 0;
+        }
+        else if (trueSpeed < 2500)
+        {
+            trueSpeed = Mathf.RoundToInt(trueSpeed * 0.5f + 1250);
+        }
+        else if (trueSpeed > 5000 && trueSpeed <= 5750) // No taxation for speeds between 2500 and 5000
+        {
+            trueSpeed = Mathf.RoundToInt((trueSpeed - 5000) * 0.8f + 5000);
+        }
+        else // trueSpeed > 5750
+        {
+            trueSpeed = Mathf.RoundToInt((trueSpeed - 5750) * 0.5f + (5750 - 5000) * 0.8f + 5000);
+        }
+
+        // Cap Effective MS to 9000
+        trueSpeed = Mathf.Clamp(trueSpeed, 1250, 9000);
+
+        return trueSpeed;
+    }
+
+    public void AddStatChange(StatChange change)
+    {
+        if (IsServer)
+        {
+            statChanges.Add(change);
+            if (change.IsTimed)
+            {
+                statTimers.Add(change.Duration);
+            }
+            else
+            {
+                statTimers.Add(-1);
+            }
+            OnStatChange?.Invoke();
+        }
+        else
+        {
+            AddStatChangeRPC(change);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void AddStatChangeRPC(StatChange change)
+    {
+        statChanges.Add(change);
+        if (change.IsTimed)
+        {
+            statTimers.Add(change.Duration);
+        }
+        else
+        {
+            statTimers.Add(-1);
+        }
+    }
+
+    public void RemoveStatChangeWithID(short id)
+    {
+        if (IsServer)
+        {
+            for (int i = 0; i < statChanges.Count; i++)
+            {
+                if (statChanges[i].ID == id)
+                {
+                    statChanges.RemoveAt(i);
+                    statTimers.RemoveAt(i);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            RemoveStatChangeWithIDRPC(id);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void RemoveStatChangeWithIDRPC(short id)
+    {
+        for (int i = 0; i < statChanges.Count; i++)
+        {
+            if (statChanges[i].ID == id)
+            {
+                statChanges.RemoveAt(i);
+                statTimers.RemoveAt(i);
+                return;
+            }
+        }
+    }
+
+    private void OnStatListChanged(NetworkListEvent<StatChange> changeEvent)
+    {
+        OnStatChange?.Invoke();
+    }
+
     private void Update()
     {
+        if (IsServer)
+        {
+            for (int i = statChanges.Count; i > 0; i--)
+            {
+                int index = i - 1;
+                StatChange change = statChanges[index];
+                if (change.IsTimed)
+                {
+                    statTimers[index] -= Time.deltaTime;
+                    if (statTimers[index] <= 0)
+                    {
+                        statChanges.RemoveAt(index);
+                        statTimers.RemoveAt(index);
+                    }
+                }
+            }
+        }
+
         if (!IsOwner)
         {
             return;
@@ -157,6 +419,11 @@ public class Pokemon : NetworkBehaviour
         {
             GainExperience(100);
         }
+
+        if (Keyboard.current.lKey.wasPressedThisFrame)
+        {
+            AddStatChange(new StatChange(1000, Stat.Speed, 5, true, false, false, 0));
+        }
     }
 
     public void TakeDamage(DamageInfo damage)
@@ -169,10 +436,10 @@ public class Pokemon : NetworkBehaviour
         {
             case DamageType.True:
             case DamageType.Physical:
-                atkStat = attacker.baseStats.Attack[attacker.CurrentLevel.Value];
+                atkStat = attacker.GetAttack();
                 break;
             case DamageType.Special:
-                atkStat = attacker.baseStats.SpAttack[attacker.CurrentLevel.Value];
+                atkStat = attacker.GetSpAttack();
                 break;
             default:
                 atkStat = 0;
@@ -184,10 +451,10 @@ public class Pokemon : NetworkBehaviour
         switch (damage.type)
         {
             case DamageType.Physical:
-                defStat = baseStats.Defense[currentLevel.Value];
+                defStat = GetDefense();
                 break;
             case DamageType.Special:
-                defStat = baseStats.SpDefense[currentLevel.Value];
+                defStat = GetSpDefense();
                 break;
             case DamageType.True:
             default:

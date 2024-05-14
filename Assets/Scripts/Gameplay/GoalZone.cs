@@ -15,6 +15,8 @@ public class GoalZone : NetworkBehaviour
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private GameObject orangeModel, blueModel;
 
+    private StatChange statChange = new StatChange(60, Stat.Speed, 0, false, true, true, 1);
+
     private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
 
     private NetworkVariable<int> currentScore = new NetworkVariable<int>();
@@ -54,6 +56,10 @@ public class GoalZone : NetworkBehaviour
             playerManagerList.Add(playerManager);
             playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
             playerManager.onGoalScored += OnScore;
+            if (playerManager.OrangeTeam == orangeTeam)
+            {
+                playerManager.Pokemon.AddStatChange(statChange);
+            }
         }
     }
 
@@ -64,6 +70,10 @@ public class GoalZone : NetworkBehaviour
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
             playerManager.CanScore = false;
             playerManager.onGoalScored -= OnScore;
+            if (playerManager.OrangeTeam == orangeTeam)
+            {
+                playerManager.Pokemon.RemoveStatChangeWithID(1);
+            }
             playerManagerList.Remove(playerManager);
         }
     }
