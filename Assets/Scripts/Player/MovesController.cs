@@ -316,7 +316,7 @@ public class MovesController : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void LaunchMoveForwardProjRpc(Vector2 dir, DamageInfo info, float maxDistance ,string resourcePath)
+    public void LaunchMoveForwardProjRpc(Vector2 dir, DamageInfo info, float maxDistance, string resourcePath)
     {
         // Instantiate homing projectile
         GameObject moveForwardsProjectile = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), projectileSpawnPoint.position, Quaternion.identity) as GameObject;

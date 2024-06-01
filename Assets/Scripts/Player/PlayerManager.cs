@@ -35,6 +35,8 @@ public class PlayerManager : NetworkBehaviour
     private bool canScore;
     private bool isScoring = false;
 
+    private string resourcePath = "Objects/AeosEnergy";
+
     private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm:NetworkVariableWritePermission.Owner);
 
     public Pokemon Pokemon { get => pokemon; }
@@ -151,6 +153,8 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonDeath(DamageInfo info)
     {
+        SpawnEnergy(currentEnergy);
+        ResetEnergy();
         transform.position = deathPosition;
         playerMovement.CanMove = false;
         ChangeCurrentState(PlayerState.Dead);
@@ -327,7 +331,7 @@ public class PlayerManager : NetworkBehaviour
     {
         currentEnergy = (short)Mathf.Clamp(currentEnergy + amount, 0, maxEnergyCarry);
         UpdateEnergyGraphic();
-    } 
+    }
 
     public void LoseEnergy(short amount=1)
     {
@@ -347,11 +351,46 @@ public class PlayerManager : NetworkBehaviour
         UpdateEnergyGraphic();
     }
 
+    public bool IsEnergyFull()
+    {
+        return currentEnergy == maxEnergyCarry;
+    }
+
+    public short AvailableEnergy()
+    {
+        return (short)(maxEnergyCarry - currentEnergy);
+    }
+
     public void UpdateEnergyGraphic()
     {
         if (IsOwner)
         {
             BattleUIManager.instance.UpdateEnergyUI(currentEnergy, maxEnergyCarry);
         }
+    }
+
+    private void SpawnEnergy(short amount)
+    {
+        int numFives = amount / 5;
+        int remainderOnes = amount % 5;
+
+        for (int i = 0; i < numFives; i++)
+        {
+            SpawnEnergyRpc(true);
+        }
+
+        for (int i = 0; i < remainderOnes; i++)
+        {
+            SpawnEnergyRpc(false);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SpawnEnergyRpc(bool isBig)
+    {
+        Vector3 offset = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f));
+        GameObject energy = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), transform.position + offset, Quaternion.identity) as GameObject;
+        energy.GetComponent<AeosEnergy>().LocalBigEnergy = isBig;
+        energy.GetComponent<NetworkObject>().Spawn();
     }
 }
