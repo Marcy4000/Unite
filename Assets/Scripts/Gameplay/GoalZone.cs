@@ -56,7 +56,7 @@ public class GoalZone : NetworkBehaviour
             playerManagerList.Add(playerManager);
             playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
             playerManager.onGoalScored += OnScore;
-            if (playerManager.OrangeTeam == orangeTeam)
+            if (playerManager.OrangeTeam == orangeTeam && IsServer)
             {
                 playerManager.Pokemon.AddStatChange(statChange);
             }
@@ -70,7 +70,7 @@ public class GoalZone : NetworkBehaviour
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
             playerManager.CanScore = false;
             playerManager.onGoalScored -= OnScore;
-            if (playerManager.OrangeTeam == orangeTeam)
+            if (playerManager.OrangeTeam == orangeTeam && IsServer)
             {
                 playerManager.Pokemon.RemoveStatChangeWithID(1);
             }

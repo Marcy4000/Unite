@@ -7,9 +7,11 @@ public class CharactersList : MonoBehaviour
     public static CharactersList instance { get; private set; }
 
     [SerializeField] private CharacterInfo[] characters;
+    [SerializeField] private WildPokemonInfo[] wildPokemons;
     [SerializeField] private Sprite[] backgrounds;
 
     public CharacterInfo[] Characters => characters;
+    public WildPokemonInfo[] WildPokemons => wildPokemons;
 
     private void Awake()
     {

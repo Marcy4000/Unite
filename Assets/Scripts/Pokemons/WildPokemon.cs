@@ -7,20 +7,20 @@ using UnityEngine;
 public class WildPokemon : NetworkBehaviour
 {
     private Pokemon pokemon;
-    [SerializeField] private int expYield = 250;
-    [SerializeField] private short energyYield = 5;
-    [SerializeField] private PokemonBase pokemonBase;
+    [SerializeField] private WildPokemonInfo wildPokemonInfo;
+    [SerializeField] private HPBar hpBar;
 
     private string resourcePath = "Objects/AeosEnergy";
 
     public Pokemon Pokemon => pokemon;
-    public int ExpYield { get => expYield; set => expYield = value; }
-    public short EnergyYield { get => energyYield; set => energyYield = value; }
+    public WildPokemonInfo WildPokemonInfo { get => wildPokemonInfo; set { wildPokemonInfo = value; } }
+    public int ExpYield { get => wildPokemonInfo.ExpYield; }
+    public short EnergyYield { get => wildPokemonInfo.EnergyYield; }
 
     public override void OnNetworkSpawn()
     {
         pokemon = GetComponent<Pokemon>();
-        pokemon.SetNewPokemon(pokemonBase);
+        //pokemon.SetNewPokemon(wildPokemonInfo.PokemonBase);
         pokemon.Type = PokemonType.Wild;
         NetworkObject.DestroyWithScene = true;
         if (IsServer)
@@ -39,8 +39,7 @@ public class WildPokemon : NetworkBehaviour
     {
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
 
-        attacker.GainExperience(expYield);
-        GiveAttackerEnergy(attacker.GetComponent<PlayerManager>());
+        attacker.GainExperience(wildPokemonInfo.ExpYield);
         if (attacker.GetComponent<PlayerManager>())
         {
             attacker.GetComponent<PlayerManager>().MovesController.IncrementUniteCharge(5000);
@@ -48,20 +47,21 @@ public class WildPokemon : NetworkBehaviour
 
         if (IsServer)
         {
+            GiveAttackerEnergy(attacker.GetComponent<PlayerManager>());
             gameObject.GetComponent<NetworkObject>().Despawn(true);
         }
     }
 
     private void GiveAttackerEnergy(PlayerManager attacker)
     {
-        if (attacker.AvailableEnergy() >= energyYield)
+        if (attacker.AvailableEnergy() >= wildPokemonInfo.EnergyYield)
         {
-            attacker.GainEnergy(energyYield);
+            attacker.GainEnergyRPC(wildPokemonInfo.EnergyYield);
         }
         else
         {
-            SpawnEnergy((short)(energyYield - attacker.AvailableEnergy()));
-            attacker.GainEnergy(attacker.AvailableEnergy());
+            SpawnEnergy((short)(wildPokemonInfo.EnergyYield - attacker.AvailableEnergy()));
+            attacker.GainEnergyRPC(attacker.AvailableEnergy());
         }
     }
 
@@ -88,5 +88,17 @@ public class WildPokemon : NetworkBehaviour
         GameObject energy = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), transform.position + offset, Quaternion.identity) as GameObject;
         energy.GetComponent<AeosEnergy>().LocalBigEnergy = isBig;
         energy.GetComponent<NetworkObject>().Spawn();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    public void SetWildPokemonInfoRPC(short infoID)
+    {
+        wildPokemonInfo = CharactersList.instance.WildPokemons[infoID];
+        pokemon = GetComponent<Pokemon>();
+        pokemon.SetNewPokemon(wildPokemonInfo.PokemonBase);
+        pokemon.Type = PokemonType.Wild;
+        hpBar.SetPokemon(pokemon);
+        hpBar.UpdatePlayerName("");
+        hpBar.InitializeEnergyUI(PokemonType.Wild);
     }
 }

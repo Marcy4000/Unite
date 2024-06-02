@@ -30,7 +30,7 @@ public class PlayerManager : NetworkBehaviour
     private NetworkVariable<bool> orangeTeam = new NetworkVariable<bool>();
     private NetworkVariable<PlayerState> playerState = new NetworkVariable<PlayerState>(PlayerState.Alive);
     private short maxEnergyCarry;
-    private short currentEnergy;
+    private NetworkVariable<short> currentEnergy = new NetworkVariable<short>();
 
     private bool canScore;
     private bool isScoring = false;
@@ -50,7 +50,7 @@ public class PlayerManager : NetworkBehaviour
 
     public bool OrangeTeam { get => orangeTeam.Value; }
     public short MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
-    public short CurrentEnergy { get => currentEnergy; set => currentEnergy = value; }
+    public short CurrentEnergy { get => currentEnergy.Value; }
     public bool CanScore { get => canScore; set => canScore = value; }
 
     public Player LobbyPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
@@ -77,7 +77,10 @@ public class PlayerManager : NetworkBehaviour
 
         maxEnergyCarry = 30;
         canScore = false;
-        currentEnergy = 0;
+        if (IsServer)
+        {
+            currentEnergy.Value = 0;
+        }
     }
 
     public override void OnNetworkSpawn()
@@ -90,6 +93,7 @@ public class PlayerManager : NetworkBehaviour
         orangeTeam.OnValueChanged += (previous, current) =>
         {
             aim.TeamToIgnore = current;
+            hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
         };
         if (IsOwner)
         {
@@ -104,6 +108,13 @@ public class PlayerManager : NetworkBehaviour
         }
         NetworkObject.DestroyWithScene = true;
         pokemon.OnEvolution += HandleEvolution;
+        currentEnergy.OnValueChanged += OnEnergyAmountChange;
+        UpdateEnergyGraphic();
+    }
+
+    private void OnEnergyAmountChange(short prev, short curr)
+    {
+        hpBar.UpdateEnergyAmount(curr);
         UpdateEnergyGraphic();
     }
 
@@ -141,6 +152,7 @@ public class PlayerManager : NetworkBehaviour
         {
             hpBar.UpdatePlayerName(LobbyPlayer.Data["PlayerName"].Value);
         }
+        hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
     }
 
     private void OnPokemonDamage(DamageInfo info)
@@ -153,8 +165,8 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonDeath(DamageInfo info)
     {
-        SpawnEnergy(currentEnergy);
-        ResetEnergy();
+        SpawnEnergy(currentEnergy.Value);
+        ResetEnergyRPC();
         transform.position = deathPosition;
         playerMovement.CanMove = false;
         ChangeCurrentState(PlayerState.Dead);
@@ -239,23 +251,23 @@ public class PlayerManager : NetworkBehaviour
 
         if (Keyboard.current.nKey.wasPressedThisFrame)
         {
-            GainEnergy(5);
+            GainEnergyRPC(5);
         }
         if (Keyboard.current.mKey.wasPressedThisFrame)
         {
-            LoseEnergy(5);
+            LoseEnergyRPC(5);
         }
     }
 
     private void StartScoring()
     {
-        if (!canScore || currentEnergy == 0)
+        if (!canScore || currentEnergy.Value == 0)
         {
             return;
         }
 
         isScoring = true;
-        maxScoreTime = ScoringSystem.CalculateApproximateScoreTime(currentEnergy);
+        maxScoreTime = ScoringSystem.CalculateApproximateScoreTime(currentEnergy.Value);
         playerMovement.CanMove = false;
         scoreTimer = 0;
         BattleUIManager.instance.SetEnergyBallState(true);
@@ -293,24 +305,24 @@ public class PlayerManager : NetworkBehaviour
 
     private void ScorePoints()
     {
-        ScoreInfo score = new ScoreInfo(currentEnergy, NetworkObjectId);
+        ScoreInfo score = new ScoreInfo(currentEnergy.Value, NetworkObjectId);
         GameManager.Instance.GoalScoredRpc(score);
-        onGoalScored?.Invoke(currentEnergy);
+        onGoalScored?.Invoke(currentEnergy.Value);
         GivePokemonExperience();
         movesController.IncrementUniteCharge(12000);
-        ResetEnergy();
+        ResetEnergyRPC();
         EndScoring();
     }
 
     private void GivePokemonExperience()
     {
-        if (currentEnergy == 2)
+        if (currentEnergy.Value == 2)
         {
             pokemon.GainExperience(50);
         }
-        else if (currentEnergy > 2)
+        else if (currentEnergy.Value > 2)
         {
-            pokemon.GainExperience(10 * currentEnergy + 40);
+            pokemon.GainExperience(10 * currentEnergy.Value + 40);
         }
     }
 
@@ -327,22 +339,22 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
-    public void GainEnergy(short amount=1)
+    [Rpc(SendTo.Server)]
+    public void GainEnergyRPC(short amount=1)
     {
-        currentEnergy = (short)Mathf.Clamp(currentEnergy + amount, 0, maxEnergyCarry);
-        UpdateEnergyGraphic();
+        currentEnergy.Value = (short)Mathf.Clamp(currentEnergy.Value + amount, 0, maxEnergyCarry);
     }
 
-    public void LoseEnergy(short amount=1)
+    [Rpc(SendTo.Server)]
+    public void LoseEnergyRPC(short amount=1)
     {
-        currentEnergy = (short)Mathf.Clamp(currentEnergy - amount, 0, maxEnergyCarry);
-        UpdateEnergyGraphic();
+        currentEnergy.Value = (short)Mathf.Clamp(currentEnergy.Value - amount, 0, maxEnergyCarry);
     }
 
-    public void ResetEnergy()
+    [Rpc(SendTo.Server)]
+    public void ResetEnergyRPC()
     {
-        currentEnergy = 0;
-        UpdateEnergyGraphic();
+        currentEnergy.Value = 0;
     }
 
     public void ChangeMaxEnergy(short amount)
@@ -353,19 +365,19 @@ public class PlayerManager : NetworkBehaviour
 
     public bool IsEnergyFull()
     {
-        return currentEnergy == maxEnergyCarry;
+        return currentEnergy.Value == maxEnergyCarry;
     }
 
     public short AvailableEnergy()
     {
-        return (short)(maxEnergyCarry - currentEnergy);
+        return (short)(maxEnergyCarry - currentEnergy.Value);
     }
 
     public void UpdateEnergyGraphic()
     {
         if (IsOwner)
         {
-            BattleUIManager.instance.UpdateEnergyUI(currentEnergy, maxEnergyCarry);
+            BattleUIManager.instance.UpdateEnergyUI(currentEnergy.Value, maxEnergyCarry);
         }
     }
 

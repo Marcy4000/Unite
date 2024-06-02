@@ -6,8 +6,7 @@ using UnityEngine;
 public class WildPokemonSpawner : NetworkBehaviour
 {
     [SerializeField] private GameObject pokemon;
-    [SerializeField] private int expYield = 250;
-    [SerializeField] private short energyYield = 5;
+    [SerializeField] private short wildPokemonID;
     [SerializeField] private float firstSpawnTime = 600f;
     [SerializeField] private float cooldown;
     [SerializeField] private bool canRespawn;
@@ -18,8 +17,6 @@ public class WildPokemonSpawner : NetworkBehaviour
     private bool spawnedFirstTime = false;
 
     public GameObject Pokemon => pokemon;
-    public int ExpYield => expYield;
-    public int EnergyYield => energyYield;
     public float Cooldown => cooldown;
     public bool CanRespawn => canRespawn;
     public bool IsObjective => isObjective;
@@ -61,8 +58,7 @@ public class WildPokemonSpawner : NetworkBehaviour
         WildPokemon wildPokemon = Instantiate(pokemon, transform.position, Quaternion.identity, transform).GetComponent<WildPokemon>();
         var instanceNetworkObject = wildPokemon.GetComponent<NetworkObject>();
         instanceNetworkObject.Spawn();
-        wildPokemon.EnergyYield = energyYield;
-        wildPokemon.ExpYield = expYield;
+        wildPokemon.SetWildPokemonInfoRPC(wildPokemonID);
         wildPokemon.Pokemon.OnDeath += HandlePokemonDeath;
         isSpawnedOnMap = true;
     }

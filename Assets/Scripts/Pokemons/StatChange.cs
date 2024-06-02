@@ -54,6 +54,7 @@ public struct StatChange : INetworkSerializable, IEquatable<StatChange>
         serializer.SerializeValue(ref Duration);
         serializer.SerializeValue(ref IsTimed);
         serializer.SerializeValue(ref IsBuff);
+        serializer.SerializeValue(ref Percentage);
         serializer.SerializeValue(ref ID);
     }
 }

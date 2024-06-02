@@ -104,6 +104,11 @@ public class PartyScreenUI : MonoBehaviour
         LobbyController.Instance.StartGame();
     }
 
+    public void CopyLobbyID()
+    {
+        GUIUtility.systemCopyBuffer = lobbyCodeText.text.Split(' ')[2];
+    }
+
     public void SwitchTeam()
     {
         LobbyController.Instance.PlayerSwitchTeam();

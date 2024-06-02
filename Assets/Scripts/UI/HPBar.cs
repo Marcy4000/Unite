@@ -6,9 +6,10 @@ using UnityEngine.UI;
 
 public class HPBar : MonoBehaviour
 {
-    [SerializeField] private Image hpBar, shieldBar, damageBar, expBar, storedExpBar;
-    [SerializeField] private TMP_Text lvText, playerNameText;
+    [SerializeField] private Image hpBar, shieldBar, damageBar, expBar, storedExpBar, energyBG;
+    [SerializeField] private TMP_Text lvText, playerNameText, energyText;
     [SerializeField] private Pokemon pokemon;
+    [SerializeField] private Sprite orangeEnergyBG, blueEnergyBG;
 
     public void SetPokemon(Pokemon pokemon)
     {
@@ -24,6 +25,43 @@ public class HPBar : MonoBehaviour
     public void UpdatePlayerName(string playerName)
     {
         playerNameText.text = playerName;
+    }
+
+    public void InitializeEnergyUI(PokemonType type, bool orangeTeam=false, bool hideUI=false)
+    {
+        if (hideUI)
+        {
+            energyBG.gameObject.SetActive(false);
+            energyText.gameObject.SetActive(false);
+            return;
+        }
+
+        switch (type)
+        {
+            case PokemonType.Player:
+                if (orangeTeam)
+                {
+                    energyBG.sprite = orangeEnergyBG;
+                }
+                else
+                {
+                    energyBG.sprite = blueEnergyBG;
+                }
+                energyText.text = "0";
+                break;
+            case PokemonType.Wild:
+            case PokemonType.Objective:
+                energyBG.gameObject.SetActive(false);
+                energyText.gameObject.SetActive(false);
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void UpdateEnergyAmount(short amount)
+    {
+        energyText.text = amount.ToString();
     }
 
     public void UpdateUI()
