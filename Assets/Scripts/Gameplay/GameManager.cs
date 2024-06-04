@@ -21,11 +21,14 @@ public class GameManager : NetworkBehaviour
     public static GameManager Instance;
 
     private const float MAX_GAME_TIME = 600f;
+    private const float FINAL_STRETCH_TIME = 120f;
 
-    [SerializeField] private TMP_Text timerText;
+
     private NetworkVariable<float> gameTime = new NetworkVariable<float>(MAX_GAME_TIME);
     private NetworkVariable<int> blueTeamScore = new NetworkVariable<int>(0);
     private NetworkVariable<int> orangeTeamScore = new NetworkVariable<int>(0);
+
+    private NetworkVariable<bool> finalStretch = new NetworkVariable<bool>(false);
 
     private List<PlayerManager> players = new List<PlayerManager>();
     private LaneManager[] lanes;
@@ -35,6 +38,7 @@ public class GameManager : NetworkBehaviour
     public NetworkVariable<float> GameTime => gameTime;
     public int BlueTeamScore => blueTeamScore.Value;
     public int OrangeTeamScore => orangeTeamScore.Value;
+    public bool FinalStretch => finalStretch.Value;
 
     public List<PlayerManager> Players => players;
 
@@ -42,6 +46,7 @@ public class GameManager : NetworkBehaviour
 
     public event Action<int> onUpdatePassiveExp;
     public event Action<GameState> onGameStateChanged;
+    public event Action onFinalStretch;
 
     private void Awake()
     {
@@ -76,9 +81,14 @@ public class GameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        UpdateTimerText();
-
         gameState.OnValueChanged += GameStateChanged;
+        finalStretch.OnValueChanged += (prev, curr) =>
+        {
+            if (curr)
+            {
+                onFinalStretch?.Invoke();
+            }
+        };
         lanes = FindObjectsOfType<LaneManager>();
 
         StartCoroutine(HandlePassiveExp());
@@ -143,28 +153,33 @@ public class GameManager : NetworkBehaviour
                 {
                     gameTime.Value = 0f;
                     EndGameRPC();
+                } else if (gameTime.Value <= FINAL_STRETCH_TIME && !finalStretch.Value)
+                {
+                    finalStretch.Value = true;
                 }
 
                 if (Keyboard.current.oKey.wasPressedThisFrame)
                 {
                     gameTime.Value = 0f;
                 }
+                if (Keyboard.current.iKey.wasPressedThisFrame)
+                {
+                    gameTime.Value = 140f;
+                }
             }
-            UpdateTimerText();
         }
-    }
-
-    void UpdateTimerText()
-    {
-        int minutes = Mathf.FloorToInt(gameTime.Value / 60f);
-        int seconds = Mathf.FloorToInt(gameTime.Value % 60f);
-        timerText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
     }
 
     [Rpc(SendTo.Server)]
     public void GoalScoredRpc(ScoreInfo info)
     {
         PlayerManager scorer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].GetComponent<PlayerManager>();
+
+        if (FinalStretch)
+        {
+            info.scoredPoints = (short)Mathf.FloorToInt(info.scoredPoints * 2f);
+        }
+
         if (scorer.OrangeTeam)
         {
             orangeTeamScore.Value += info.scoredPoints;

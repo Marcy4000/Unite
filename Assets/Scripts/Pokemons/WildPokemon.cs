@@ -8,7 +8,7 @@ public class WildPokemon : NetworkBehaviour
 {
     private Pokemon pokemon;
     [SerializeField] private WildPokemonInfo wildPokemonInfo;
-    [SerializeField] private HPBar hpBar;
+    [SerializeField] private HPBarWild hpBar;
 
     private string resourcePath = "Objects/AeosEnergy";
 
@@ -91,14 +91,13 @@ public class WildPokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    public void SetWildPokemonInfoRPC(short infoID)
+    public void SetWildPokemonInfoRPC(short infoID, bool isObjective = false)
     {
         wildPokemonInfo = CharactersList.instance.WildPokemons[infoID];
         pokemon = GetComponent<Pokemon>();
         pokemon.SetNewPokemon(wildPokemonInfo.PokemonBase);
-        pokemon.Type = PokemonType.Wild;
+        pokemon.Type = isObjective ? PokemonType.Objective : PokemonType.Wild;
         hpBar.SetPokemon(pokemon);
-        hpBar.UpdatePlayerName("");
-        hpBar.InitializeEnergyUI(PokemonType.Wild);
+        hpBar.InitializeEnergyUI(EnergyYield);
     }
 }

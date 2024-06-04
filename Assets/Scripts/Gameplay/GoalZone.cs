@@ -95,6 +95,11 @@ public class GoalZone : NetworkBehaviour
 
     private void OnScore(int amount)
     {
+        if (GameManager.Instance.FinalStretch)
+        {
+            amount *= 2;
+        }
+
         if (IsServer) {
             currentScore.Value += amount;
         } else {
