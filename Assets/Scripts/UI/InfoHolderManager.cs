@@ -18,7 +18,7 @@ public class InfoHolderManager : MonoBehaviour
 
     private void HandleGameStateChanged(GameState state)
     {
-        if (state == GameState.Playing)
+        if (state == GameState.Initialising)
         {
             StartCoroutine(InitializeUI());
         }

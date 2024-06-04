@@ -11,6 +11,7 @@ using UnityEngine.InputSystem;
 public enum GameState
 {
     Waiting,
+    Initialising,
     Playing,
     Ended
 }
@@ -63,7 +64,12 @@ public class GameManager : NetworkBehaviour
 
     private IEnumerator StartGameDelayed()
     {
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(0.1f);
+        if (IsServer)
+        {
+            gameState.Value = GameState.Initialising;
+        }
+        yield return new WaitForSeconds(1.9f);
         LoadingScreen.Instance.HideMatchLoadingScreen();
         StartGame();
     }

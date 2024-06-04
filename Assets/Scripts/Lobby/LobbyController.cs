@@ -283,7 +283,7 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerOptions options = new UpdatePlayerOptions();
         options.Data = localPlayer.Data;
         options.Data["SelectedCharacter"].Value = characterName;
-        Debug.Log($"Changed character to {options.Data["SelectedCharacter"]}");
+        Debug.Log($"Changed character to {options.Data["SelectedCharacter"].Value}");
 
         UpdatePlayerData(options);
     }

@@ -431,6 +431,8 @@ public class Pokemon : NetworkBehaviour
         lastHit = damage;
         int atkStat;
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
+        int localHp = currentHp.Value;
+        int localShield = shieldHp.Value;
 
         switch (damage.type)
         {
@@ -464,39 +466,38 @@ public class Pokemon : NetworkBehaviour
 
         int actualDamage = Mathf.FloorToInt((float)attackDamage * 600 / (600 + defStat));
 
-        if (shieldHp.Value > 0)
+        if (localShield > 0)
         {
-            if (shieldHp.Value >= actualDamage)
+            if (localShield >= actualDamage)
             {
-                RemoveShield(actualDamage);
+                localShield -= actualDamage;
             }
             else
             {
-                actualDamage -= shieldHp.Value;
-                RemoveShield(shieldHp.Value);
-                if (IsServer) {
-                    currentHp.Value -= actualDamage;
-                } else {
-                    SetCurrentHPServerRPC(currentHp.Value - actualDamage);
-                }
+                actualDamage -= localShield;
+                localShield = 0;
+                localHp -= actualDamage;
             }
         }
         else
         {
-            if (IsServer) {
-                currentHp.Value -= actualDamage;
-            } else {
-                SetCurrentHPServerRPC(currentHp.Value - actualDamage);
-            }
+            localHp -= actualDamage;
         }
 
-        if (currentHp.Value <= 0)
+        if (localHp <= 0)
         {
-            if (IsServer) {
-                currentHp.Value = 0;
-            } else {
-                SetCurrentHPServerRPC(0);
-            }
+            localHp = 0;
+        }
+
+        if (IsServer)
+        {
+            currentHp.Value = localHp;
+            shieldHp.Value = localShield;
+        }
+        else
+        {
+            SetCurrentHPServerRPC(localHp);
+            SetShieldServerRPC(localShield);
         }
 
         OnDamageTakenRpc(damage);
@@ -550,6 +551,23 @@ public class Pokemon : NetworkBehaviour
         else
         {
             SetShieldServerRPC(Mathf.Max(shieldHp.Value - amount, 0));
+        }
+    }
+
+    public void SetShield(int amount)
+    {
+        if (amount < 0)
+        {
+            return;
+        }
+
+        if (IsServer)
+        {
+            shieldHp.Value = amount;
+        }
+        else
+        {
+            SetShieldServerRPC(amount);
         }
     }
 

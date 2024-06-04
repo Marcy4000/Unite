@@ -63,7 +63,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void HandleGameStateChanged(GameState state)
     {
-        if (state == GameState.Playing && spawnedPlayer == null)
+        if (state == GameState.Initialising && spawnedPlayer == null)
         {
             SpawnPlayerObject();
         }
@@ -71,16 +71,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     public void SpawnPlayerObject()
     {
-        if (IsOwner && IsServer)
-        {
-            bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
-            Transform spawnpoint = currentTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
-            spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);
-            var spawnedPlayerNetworkObject = spawnedPlayer.GetComponent<NetworkObject>();
-            spawnedPlayerNetworkObject.SpawnAsPlayerObject(OwnerClientId);
-            OnPlayerSpawnedRpc(spawnedPlayerNetworkObject.NetworkObjectId, currentTeam);
-        }
-        else if (IsOwner && !IsServer)
+        if (IsOwner)
         {
             bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
             SpawnPlayerRpc(OwnerClientId, currentTeam);
@@ -127,7 +118,6 @@ public class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowKillRpc(DamageInfo info, bool orangeTeam)
     {
-        Debug.LogWarning("Called");
         BattleUIManager.instance.ShowKill(info, orangeTeam, playerManager.Pokemon);
     }
 }
