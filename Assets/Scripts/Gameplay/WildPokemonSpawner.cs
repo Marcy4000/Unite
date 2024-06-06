@@ -55,7 +55,7 @@ public class WildPokemonSpawner : NetworkBehaviour
             return;
         }
 
-        WildPokemon wildPokemon = Instantiate(pokemon, transform.position, Quaternion.identity, transform).GetComponent<WildPokemon>();
+        WildPokemon wildPokemon = Instantiate(pokemon, transform.position, transform.rotation, transform).GetComponent<WildPokemon>();
         var instanceNetworkObject = wildPokemon.GetComponent<NetworkObject>();
         instanceNetworkObject.Spawn();
         wildPokemon.SetWildPokemonInfoRPC(wildPokemonID, isObjective);

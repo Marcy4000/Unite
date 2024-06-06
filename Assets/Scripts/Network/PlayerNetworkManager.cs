@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.Services.Authentication;
-using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -103,6 +100,9 @@ public class PlayerNetworkManager : NetworkBehaviour
                 if (IsOwner)
                 {
                     player.Pokemon.OnDeath += OnPlayerDeath;
+                    Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+                    player.transform.position = spawnpoint.position;
+                    player.transform.rotation = spawnpoint.rotation;
                 }
             }
         }
