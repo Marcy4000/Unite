@@ -38,8 +38,11 @@ public class HPBarWild : MonoBehaviour
     {
         if (hpBar.fillAmount > (pokemon.CurrentHp.Value / pokemon.GetMaxHp()))
         {
-            StopAllCoroutines();
-            StartCoroutine(UpdateHP(pokemon.CurrentHp.Value / pokemon.GetMaxHp()));
+            if (isActiveAndEnabled)
+            {
+                StopAllCoroutines();
+                StartCoroutine(UpdateHP(pokemon.CurrentHp.Value / pokemon.GetMaxHp()));
+            }
         }
         else
         {

@@ -733,7 +733,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1170937111759431908}
   - component: {fileID: 465118228800274891}
-  - component: {fileID: 498653664316711916}
   - component: {fileID: 4228491251216674212}
   m_Layer: 0
   m_Name: UI Camera
@@ -808,14 +807,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!81 &498653664316711916
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1034718560855965885}
-  m_Enabled: 1
 --- !u!114 &4228491251216674212
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5978,6 +5969,7 @@ GameObject:
   - component: {fileID: 4875538998575447315}
   - component: {fileID: 192574509815934230}
   - component: {fileID: 1898651808153052223}
+  - component: {fileID: 2580661035840669875}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -6139,6 +6131,20 @@ MonoBehaviour:
   m_CameraActivatedEvent:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2580661035840669875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7095902209758968253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9419b6f76e04b824d866b5551ea1f3ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  virtualCamera: {fileID: 1100196091475963234}
+  panSpeed: 15
 --- !u!1 &7191363383206477398
 GameObject:
   m_ObjectHideFlags: 0

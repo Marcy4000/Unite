@@ -9,6 +9,7 @@ public class WildPokemon : NetworkBehaviour
     private Pokemon pokemon;
     [SerializeField] private WildPokemonInfo wildPokemonInfo;
     [SerializeField] private HPBarWild hpBar;
+    private Vision vision;
 
     private string resourcePath = "Objects/AeosEnergy";
 
@@ -20,13 +21,25 @@ public class WildPokemon : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         pokemon = GetComponent<Pokemon>();
+        vision = GetComponentInChildren<Vision>();
+        vision.HasATeam = false;
+        vision.IsVisible = true;
         //pokemon.SetNewPokemon(wildPokemonInfo.PokemonBase);
         pokemon.Type = PokemonType.Wild;
+        pokemon.OnEvolution += AssignVisionObjects;
         NetworkObject.DestroyWithScene = true;
         if (IsServer)
         {
             pokemon.OnDeath += Die;
         }
+    }
+
+    private void AssignVisionObjects()
+    {
+        vision.ResetObjects();
+        vision.AddObject(pokemon.ActiveModel);
+        vision.AddObject(hpBar.gameObject);
+        vision.SetVisibility(false);
     }
 
     private void Die(DamageInfo info)

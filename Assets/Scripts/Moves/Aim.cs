@@ -113,7 +113,7 @@ public class Aim : NetworkBehaviour
         for (int i = 0; i < numEnemies; i++)
         {
             // Skip the player character's collider
-            if (collidersBuffer[i] == playerCollider)
+            if (collidersBuffer[i] == playerCollider || collidersBuffer[i].CompareTag("VisionController"))
                 continue;
 
             if (collidersBuffer[i].CompareTag("Player"))

@@ -23,6 +23,8 @@ public class PlayerManager : NetworkBehaviour
     private Aim aim;
     private PlayerControls playerControls;
     private AnimationManager animationManager;
+    private Vision vision;
+    [SerializeField] private VisionController visionController;
     [SerializeField] private HPBar hpBar;
 
     [SerializeField] private PokemonBase selectedPokemon;
@@ -44,6 +46,8 @@ public class PlayerManager : NetworkBehaviour
     public Aim Aim { get => aim; }
     public PlayerMovement PlayerMovement { get => playerMovement; }
     public AnimationManager AnimationManager { get => animationManager; }
+    public VisionController VisionController { get => visionController; }
+    public Vision Vision { get => vision; }
     public bool IsScoring { get => isScoring; }
 
     public PlayerState PlayerState { get => playerState.Value; }
@@ -69,6 +73,7 @@ public class PlayerManager : NetworkBehaviour
         aim = GetComponent<Aim>();
         playerMovement = GetComponent<PlayerMovement>();
         animationManager = GetComponent<AnimationManager>();
+        vision = GetComponent<Vision>();
 
         lobbyPlayerId.OnValueChanged += (previous, current) =>
         {
@@ -90,26 +95,58 @@ public class PlayerManager : NetworkBehaviour
             lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
             ChangeSelectedPokemonRpc(LobbyController.Instance.Player.Data["SelectedCharacter"].Value);
         }
+
+        bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+
         orangeTeam.OnValueChanged += (previous, current) =>
         {
             aim.TeamToIgnore = current;
-            hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
+            visionController.TeamToIgnore = current;
+            vision.CurrentTeam = current;
+            vision.HasATeam = true;
+            vision.IsVisible = true;
+            hpBar.InitializeEnergyUI(PokemonType.Player, current, IsOwner);
+            if (IsOwner)
+            {
+                visionController.IsEnabled = true;
+                vision.SetVisibility(true);
+            }
+            else
+            {
+                visionController.IsEnabled = currentTeam == current;
+                vision.SetVisibility(currentTeam == current);
+            }
         };
+
+        hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
+        vision.HasATeam = true;
+        vision.IsVisible = true;
+
         if (IsOwner)
         {
-            CinemachineVirtualCamera virtualCamera = FindObjectOfType<CinemachineVirtualCamera>();
-            virtualCamera.Follow = transform;
-            virtualCamera.LookAt = transform;
+            CameraController cameraController = FindObjectOfType<CameraController>();
+            cameraController.Initialize(transform);
             playerControls = new PlayerControls();
             playerControls.asset.Enable();
             pokemon.OnLevelChange += OnPokemonLevelUp;
             pokemon.OnDeath += OnPokemonDeath;
             pokemon.OnDamageTaken += OnPokemonDamage;
+            visionController.IsEnabled = true;
         }
+        else
+        {
+            visionController.IsEnabled = currentTeam == OrangeTeam;
+        }
+
+
         NetworkObject.DestroyWithScene = true;
+
         pokemon.OnEvolution += HandleEvolution;
         currentEnergy.OnValueChanged += OnEnergyAmountChange;
+
         UpdateEnergyGraphic();
+        AssignVisionObjects();
+        vision.SetVisibility(currentTeam == OrangeTeam);
     }
 
     private void OnEnergyAmountChange(short prev, short curr)
@@ -137,7 +174,16 @@ public class PlayerManager : NetworkBehaviour
 
     private void HandleEvolution()
     {
+        pokemon.ActiveModel.GetComponentInChildren<Animator>().keepAnimatorStateOnDisable = true;
         animationManager.AssignAnimator(pokemon.ActiveModel.GetComponentInChildren<Animator>());
+        AssignVisionObjects();
+    }
+
+    private void AssignVisionObjects()
+    {
+        vision.ResetObjects();
+        vision.AddObject(pokemon.ActiveModel);
+        vision.AddObject(hpBar.gameObject);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -152,7 +198,6 @@ public class PlayerManager : NetworkBehaviour
         {
             hpBar.UpdatePlayerName(LobbyPlayer.Data["PlayerName"].Value);
         }
-        hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
     }
 
     private void OnPokemonDamage(DamageInfo info)

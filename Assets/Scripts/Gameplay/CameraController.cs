@@ -1,0 +1,70 @@
+using UnityEngine;
+using Cinemachine;
+
+public class CameraController : MonoBehaviour
+{
+    [SerializeField] private CinemachineVirtualCamera virtualCamera;
+    [SerializeField] private float panSpeed = 10f;
+
+    private Vector2 moveInput;
+    private bool isPanning;
+    private Transform cameraTransform;
+    private Transform playerTransform;
+
+    private PlayerControls playerControls;
+
+    public CinemachineVirtualCamera VirtualCamera => virtualCamera;
+    public bool IsPanning => isPanning;
+
+    void Start()
+    {
+        playerControls = new PlayerControls();
+        playerControls.asset.Enable();
+
+        if (virtualCamera != null)
+        {
+            cameraTransform = virtualCamera.transform;
+        }
+    }
+
+    public void Initialize(Transform playerTransform)
+    {
+        this.playerTransform = playerTransform;
+        if (virtualCamera != null)
+        {
+            virtualCamera.Follow = playerTransform;
+            virtualCamera.LookAt = playerTransform;
+        }
+    }
+
+    void Update()
+    {
+        if (playerControls.PanCamera.ShouldPan.WasPressedThisFrame())
+        {
+            isPanning = true;
+            virtualCamera.Follow = null;
+            virtualCamera.LookAt = null;
+        }
+        else if (playerControls.PanCamera.ShouldPan.WasReleasedThisFrame())
+        {
+            isPanning = false;
+            virtualCamera.Follow = playerTransform;
+            virtualCamera.LookAt = playerTransform;
+        }
+
+        if (isPanning)
+        {
+            moveInput = playerControls.PanCamera.CameraMove.ReadValue<Vector2>();
+            PanCamera();
+        }
+    }
+
+    private void PanCamera()
+    {
+        if (cameraTransform != null)
+        {
+            Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
+            cameraTransform.Translate(moveDirection * panSpeed * Time.deltaTime, Space.World);
+        }
+    }
+}

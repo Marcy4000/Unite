@@ -216,6 +216,54 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "PanCamera",
+            "id": "ee14e434-0ddb-4d07-bfaa-02d2310a261c",
+            "actions": [
+                {
+                    "name": "ShouldPan",
+                    "type": "Button",
+                    "id": "11e9b821-25c4-4a49-a03e-46e687923812",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "CameraMove",
+                    "type": "Value",
+                    "id": "7b9a8600-bd2f-4b20-8639-795a1d2a270d",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "a6fc8ad2-1ba0-4987-8a10-16f3597592a2",
+                    "path": "<Gamepad>/leftShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ShouldPan",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e1432835-1e41-4624-b5bb-3a5a8cb9ada8",
+                    "path": "<Gamepad>/rightStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CameraMove",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []

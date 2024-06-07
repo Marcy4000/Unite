@@ -238,6 +238,54 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""PanCamera"",
+            ""id"": ""ee14e434-0ddb-4d07-bfaa-02d2310a261c"",
+            ""actions"": [
+                {
+                    ""name"": ""ShouldPan"",
+                    ""type"": ""Button"",
+                    ""id"": ""11e9b821-25c4-4a49-a03e-46e687923812"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""CameraMove"",
+                    ""type"": ""Value"",
+                    ""id"": ""7b9a8600-bd2f-4b20-8639-795a1d2a270d"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""a6fc8ad2-1ba0-4987-8a10-16f3597592a2"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ShouldPan"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e1432835-1e41-4624-b5bb-3a5a8cb9ada8"",
+                    ""path"": ""<Gamepad>/rightStick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CameraMove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": []
@@ -256,6 +304,10 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_LearnMove_Move1 = m_LearnMove.FindAction("Move1", throwIfNotFound: true);
         m_LearnMove_Move2 = m_LearnMove.FindAction("Move2", throwIfNotFound: true);
         m_LearnMove_Move3 = m_LearnMove.FindAction("Move3", throwIfNotFound: true);
+        // PanCamera
+        m_PanCamera = asset.FindActionMap("PanCamera", throwIfNotFound: true);
+        m_PanCamera_ShouldPan = m_PanCamera.FindAction("ShouldPan", throwIfNotFound: true);
+        m_PanCamera_CameraMove = m_PanCamera.FindAction("CameraMove", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -469,6 +521,60 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         }
     }
     public LearnMoveActions @LearnMove => new LearnMoveActions(this);
+
+    // PanCamera
+    private readonly InputActionMap m_PanCamera;
+    private List<IPanCameraActions> m_PanCameraActionsCallbackInterfaces = new List<IPanCameraActions>();
+    private readonly InputAction m_PanCamera_ShouldPan;
+    private readonly InputAction m_PanCamera_CameraMove;
+    public struct PanCameraActions
+    {
+        private @PlayerControls m_Wrapper;
+        public PanCameraActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
+        public InputAction @ShouldPan => m_Wrapper.m_PanCamera_ShouldPan;
+        public InputAction @CameraMove => m_Wrapper.m_PanCamera_CameraMove;
+        public InputActionMap Get() { return m_Wrapper.m_PanCamera; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(PanCameraActions set) { return set.Get(); }
+        public void AddCallbacks(IPanCameraActions instance)
+        {
+            if (instance == null || m_Wrapper.m_PanCameraActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_PanCameraActionsCallbackInterfaces.Add(instance);
+            @ShouldPan.started += instance.OnShouldPan;
+            @ShouldPan.performed += instance.OnShouldPan;
+            @ShouldPan.canceled += instance.OnShouldPan;
+            @CameraMove.started += instance.OnCameraMove;
+            @CameraMove.performed += instance.OnCameraMove;
+            @CameraMove.canceled += instance.OnCameraMove;
+        }
+
+        private void UnregisterCallbacks(IPanCameraActions instance)
+        {
+            @ShouldPan.started -= instance.OnShouldPan;
+            @ShouldPan.performed -= instance.OnShouldPan;
+            @ShouldPan.canceled -= instance.OnShouldPan;
+            @CameraMove.started -= instance.OnCameraMove;
+            @CameraMove.performed -= instance.OnCameraMove;
+            @CameraMove.canceled -= instance.OnCameraMove;
+        }
+
+        public void RemoveCallbacks(IPanCameraActions instance)
+        {
+            if (m_Wrapper.m_PanCameraActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        public void SetCallbacks(IPanCameraActions instance)
+        {
+            foreach (var item in m_Wrapper.m_PanCameraActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_PanCameraActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    public PanCameraActions @PanCamera => new PanCameraActions(this);
     public interface IMovementActions
     {
         void OnMove(InputAction.CallbackContext context);
@@ -484,5 +590,10 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         void OnMove1(InputAction.CallbackContext context);
         void OnMove2(InputAction.CallbackContext context);
         void OnMove3(InputAction.CallbackContext context);
+    }
+    public interface IPanCameraActions
+    {
+        void OnShouldPan(InputAction.CallbackContext context);
+        void OnCameraMove(InputAction.CallbackContext context);
     }
 }
