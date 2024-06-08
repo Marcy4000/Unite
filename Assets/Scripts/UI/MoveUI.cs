@@ -22,7 +22,7 @@ public class MoveUI : MonoBehaviour
     public void Initialize(MoveAsset move)
     {
         moveIcon.sprite = move.icon;
-        moveName.text = MoveDatabase.GetMove(move.move).name;
+        moveName.text = MoveDatabase.GetMove(move.move).Name;
     }
 
     public void StartCooldown(float cooldownDuration)

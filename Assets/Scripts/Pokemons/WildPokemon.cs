@@ -67,6 +67,11 @@ public class WildPokemon : NetworkBehaviour
 
     private void GiveAttackerEnergy(PlayerManager attacker)
     {
+        if (attacker == null)
+        {
+            return;
+        }
+
         if (attacker.AvailableEnergy() >= wildPokemonInfo.EnergyYield)
         {
             attacker.GainEnergyRPC(wildPokemonInfo.EnergyYield);

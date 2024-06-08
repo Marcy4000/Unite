@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public class MoveBase
+public abstract class MoveBase
 {
-    public string name;
-    public float cooldown;
+    public string Name;
+    public float Cooldown;
     public PlayerManager playerManager;
-    public bool isActive = false;
+    public bool IsActive = false;
 
     public bool wasMoveSuccessful = false;
 
@@ -18,9 +18,9 @@ public class MoveBase
     public virtual void Start(PlayerManager controller)
     {
         playerManager = controller;
-        isActive = true;
+        IsActive = true;
         wasMoveSuccessful = false;
-        Debug.Log("Executing move: " + name);
+        Debug.Log("Executing move: " + Name);
     }
 
     public virtual void Update(){
@@ -28,7 +28,11 @@ public class MoveBase
 
     public virtual void Finish(){
         onMoveOver?.Invoke(this);
-        isActive = false;
+        IsActive = false;
+    }
+
+    public virtual void Cancel(){
+        IsActive = false;
     }
 }
 

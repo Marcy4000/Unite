@@ -6,8 +6,8 @@ public class CinderFeint : MoveBase
 {
     public CinderFeint()
     {
-        name = "Feint";
-        cooldown = 9.0f;
+        Name = "Feint";
+        Cooldown = 9.0f;
     }
 
     public override void Start(PlayerManager controller)

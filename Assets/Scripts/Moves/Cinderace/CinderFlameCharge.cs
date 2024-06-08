@@ -10,8 +10,8 @@ public class CinderFlameCharge : MoveBase
 
     public CinderFlameCharge()
     {
-        name = "Flame Charge";
-        cooldown = 5.0f;
+        Name = "Flame Charge";
+        Cooldown = 5.0f;
         damageInfo = new DamageInfo(0, 0.47f, 3, 130, DamageType.Physical);
     }
 
@@ -19,13 +19,13 @@ public class CinderFlameCharge : MoveBase
     {
         base.Start(controller);
         Aim.Instance.InitializeDashAim(5f);
-        Debug.Log($"Executed {name}!");
+        Debug.Log($"Executed {Name}!");
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
     }
 
     public override void Update()
     {
-        if (!isActive)
+        if (!IsActive)
         {
             return;
         }
@@ -34,11 +34,20 @@ public class CinderFlameCharge : MoveBase
 
     public override void Finish()
     {
-        playerManager.PlayerMovement.StartDash(direction);
-        playerManager.AnimationManager.PlayAnimation($"ani_spell2a_bat_0815");
-        playerManager.transform.rotation = Quaternion.LookRotation(direction);
-        wasMoveSuccessful = true;
+        if (IsActive)
+        {
+            playerManager.PlayerMovement.StartDash(direction);
+            playerManager.AnimationManager.PlayAnimation($"ani_spell2a_bat_0815");
+            playerManager.transform.rotation = Quaternion.LookRotation(direction);
+            wasMoveSuccessful = true;
+        }
         Aim.Instance.HideDashAim();
         base.Finish();
+    }
+
+    public override void Cancel()
+    {
+        base.Cancel();
+        Aim.Instance.HideDashAim();
     }
 }

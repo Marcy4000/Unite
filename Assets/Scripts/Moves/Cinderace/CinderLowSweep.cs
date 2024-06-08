@@ -9,8 +9,8 @@ public class CinderLowSweep : MoveBase
 
     public CinderLowSweep()
     {
-        name = "Low Sweep";
-        cooldown = 7.5f;
+        Name = "Low Sweep";
+        Cooldown = 7.5f;
         damageInfo = new DamageInfo(0, 0.36f, 3, 100, DamageType.Physical);
     }
 
@@ -24,7 +24,7 @@ public class CinderLowSweep : MoveBase
 
     public override void Update()
     {
-        if (!isActive)
+        if (!IsActive)
         {
             return;
         }
@@ -33,11 +33,20 @@ public class CinderLowSweep : MoveBase
 
     public override void Finish()
     {
-        playerManager.PlayerMovement.StartDash(direction);
-        playerManager.AnimationManager.PlayAnimation($"ani_spell2_bat_0815");
-        playerManager.transform.rotation = Quaternion.LookRotation(direction);
-        wasMoveSuccessful = true;
+        if (IsActive)
+        {
+            playerManager.PlayerMovement.StartDash(direction);
+            playerManager.AnimationManager.PlayAnimation($"ani_spell2_bat_0815");
+            playerManager.transform.rotation = Quaternion.LookRotation(direction);
+            wasMoveSuccessful = true;
+        }
         Aim.Instance.HideDashAim();
         base.Finish();
+    }
+
+    public override void Cancel()
+    {
+        base.Cancel();
+        Aim.Instance.HideDashAim();
     }
 }

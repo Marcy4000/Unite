@@ -11,8 +11,8 @@ public class CinderPyroball : MoveBase
 
     public CinderPyroball()
     {
-        name = "Pyroball";
-        cooldown = 5.0f;
+        Name = "Pyroball";
+        Cooldown = 5.0f;
         distance = 8f;
         damageInfo = new DamageInfo(0, 3.45f, 32, 820, DamageType.Physical);
     }
@@ -26,7 +26,7 @@ public class CinderPyroball : MoveBase
 
     public override void Update()
     {
-        if (!isActive)
+        if (!IsActive)
         {
             return;
         }
@@ -35,7 +35,7 @@ public class CinderPyroball : MoveBase
 
     public override void Finish()
     {
-        if (direction.magnitude != 0)
+        if (direction.magnitude != 0 && IsActive)
         {
             Vector2 direction = new Vector2(this.direction.x, this.direction.z);
             playerManager.MovesController.LaunchMoveForwardProjRpc(direction, damageInfo, distance, "Moves/CinderPyroball");
@@ -45,7 +45,13 @@ public class CinderPyroball : MoveBase
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideSkillshotAim();
-        Debug.Log($"Finished {name}!");
+        Debug.Log($"Finished {Name}!");
         base.Finish();
+    }
+
+    public override void Cancel()
+    {
+        base.Cancel();
+        Aim.Instance.HideSkillshotAim();
     }
 }

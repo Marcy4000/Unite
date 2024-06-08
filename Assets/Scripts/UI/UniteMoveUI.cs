@@ -30,7 +30,7 @@ public class UniteMoveUI : MonoBehaviour
     {
         moveIcon.gameObject.SetActive(true);
         moveIcon.sprite = move.icon;
-        moveName.text = MoveDatabase.GetMove(move.move).name;
+        moveName.text = MoveDatabase.GetMove(move.move).Name;
         uniteMaxCharge = move.uniteEnergyCost;
     }
 

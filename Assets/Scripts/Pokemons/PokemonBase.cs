@@ -8,9 +8,6 @@ public class PokemonBase : ScriptableObject
     [TextArea]
     [SerializeField] string description;
 
-    [SerializeField] GameObject model;
-    [SerializeField] Sprite icon;
-
     [SerializeField] int[] maxHp = new int[15];
     [SerializeField] int[] attack = new int[15];
     [SerializeField] int[] defense = new int[15];
@@ -22,15 +19,14 @@ public class PokemonBase : ScriptableObject
     [SerializeField] float[] atkSpeed = new float[15];
     [SerializeField] int[] speed = new int[15];
 
+    [SerializeField] AvailablePassives passive;
+
     [SerializeField] LearnableMove[] learnableMoves;
 
     [SerializeField] PokemonEvolution[] evolutions;
 
     public string PokemonName { get { return pokemonName; } }
     public string Description { get { return description; } }
-
-    public GameObject Model { get { return model; } }
-    public Sprite Icon { get { return icon; } }
 
     public int[] MaxHp { get { return maxHp; } }
     public int[] Attack { get { return attack; } }
@@ -42,6 +38,8 @@ public class PokemonBase : ScriptableObject
     public int[] LifeSteal { get { return lifeSteal; } }
     public float[] AtkSpeed { get { return atkSpeed; } }
     public int[] Speed { get { return speed; } }
+
+    public AvailablePassives Passive { get { return passive; } }
 
     public LearnableMove[] LearnableMoves { get { return learnableMoves; } }
 

@@ -10,8 +10,8 @@ public class BlazingBycicleKick : MoveBase
 
     public BlazingBycicleKick()
     {
-        name = "Blazing Bycicle Kick";
-        cooldown = 0f;
+        Name = "Blazing Bycicle Kick";
+        Cooldown = 0f;
         damageInfo = new DamageInfo(0, 2.47f, 14, 670, DamageType.Physical);
     }
 
@@ -24,7 +24,7 @@ public class BlazingBycicleKick : MoveBase
 
     public override void Update()
     {
-        if (!isActive)
+        if (!IsActive)
         {
             return;
         }
@@ -33,7 +33,7 @@ public class BlazingBycicleKick : MoveBase
 
     public override void Finish()
     {
-        if (target != null && isActive)
+        if (target != null && IsActive)
         {
             playerManager.MovesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
             wasMoveSuccessful = true;
@@ -41,5 +41,11 @@ public class BlazingBycicleKick : MoveBase
         Aim.Instance.HideAutoAim();
         Debug.Log("Finished ember!");
         base.Finish();
+    }
+
+    public override void Cancel()
+    {
+        base.Cancel();
+        Aim.Instance.HideAutoAim();
     }
 }

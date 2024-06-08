@@ -144,105 +144,249 @@ public class Pokemon : NetworkBehaviour
 
     public int GetAttack()
     {
-        int trueAtk = baseStats.Attack[currentLevel.Value];
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.Attack)
+            if (change.AffectedStat == Stat.Attack && !change.Percentage)
             {
-                trueAtk = change.IsBuff? trueAtk + change.Amount : trueAtk - change.Amount;
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
         }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Attack && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueAtk = baseStats.Attack[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueAtk = Mathf.RoundToInt(trueAtk * (1f + percentModifierSum / 100f));
+
         return Mathf.Clamp(trueAtk, 0, 9999);
     }
 
     public int GetDefense()
     {
-        int trueDef = baseStats.Defense[currentLevel.Value];
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.Defense)
+            if (change.AffectedStat == Stat.Defense && !change.Percentage)
             {
-                trueDef = change.IsBuff ? trueDef + change.Amount : trueDef - change.Amount;
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
         }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Defense && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueDef = baseStats.Defense[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueDef = Mathf.RoundToInt(trueDef * (1f + percentModifierSum / 100f));
+
         return Mathf.Clamp(trueDef, 0, 9999);
     }
 
     public int GetSpAttack()
     {
-        int trueSpAtk = baseStats.SpAttack[currentLevel.Value];
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.SpAttack)
+            if (change.AffectedStat == Stat.SpAttack && !change.Percentage)
             {
-                trueSpAtk = change.IsBuff ? trueSpAtk + change.Amount : trueSpAtk - change.Amount;
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
         }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.SpAttack && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueSpAtk = baseStats.SpAttack[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueSpAtk = Mathf.RoundToInt(trueSpAtk * (1f + percentModifierSum / 100f));
+
         return Mathf.Clamp(trueSpAtk, 0, 9999);
     }
 
     public int GetSpDefense()
     {
-        int trueSpDef = baseStats.SpDefense[currentLevel.Value];
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.SpDefense)
+            if (change.AffectedStat == Stat.SpDefense && !change.Percentage)
             {
-                trueSpDef = change.IsBuff ? trueSpDef + change.Amount : trueSpDef - change.Amount;
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
         }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.SpDefense && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueSpDef = baseStats.SpDefense[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueSpDef = Mathf.RoundToInt(trueSpDef * (1f + percentModifierSum / 100f));
+
         return Mathf.Clamp(trueSpDef, 0, 9999);
     }
 
     public int GetCritRate()
     {
-        int trueCrit = baseStats.CritRate[currentLevel.Value];
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.CritRate)
+            if (change.AffectedStat == Stat.CritRate && !change.Percentage)
             {
-                trueCrit = change.IsBuff ? trueCrit + change.Amount : trueCrit - change.Amount;
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
         }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.CritRate && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueCrit = baseStats.CritRate[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueCrit = Mathf.RoundToInt(trueCrit * (1f + percentModifierSum / 100f));
+
         return Mathf.Clamp(trueCrit, 0, 9999);
     }
 
     public int GetCDR()
     {
-        int trueCDR = baseStats.Cdr[currentLevel.Value];
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.Cdr)
+            if (change.AffectedStat == Stat.Cdr && !change.Percentage)
             {
-                trueCDR = change.IsBuff ? trueCDR + change.Amount : trueCDR - change.Amount;
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
         }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Cdr && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueCDR = baseStats.Cdr[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueCDR = Mathf.RoundToInt(trueCDR * (1f + percentModifierSum / 100f));
+
         return Mathf.Clamp(trueCDR, 0, 9999);
     }
 
     public int GetLifeSteal()
     {
-        int trueLifeSteal = baseStats.LifeSteal[currentLevel.Value];
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.LifeSteal)
+            if (change.AffectedStat == Stat.LifeSteal && !change.Percentage)
             {
-                trueLifeSteal = change.IsBuff ? trueLifeSteal + change.Amount : trueLifeSteal - change.Amount;
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
         }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.LifeSteal && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueLifeSteal = baseStats.LifeSteal[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueLifeSteal = Mathf.RoundToInt(trueLifeSteal * (1f + percentModifierSum / 100f));
+
         return Mathf.Clamp(trueLifeSteal, 0, 9999);
     }
 
     public float GetAtkSpeed()
     {
-        float trueAtkSpeed = baseStats.AtkSpeed[currentLevel.Value];
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.AtkSpeed)
+            if (change.AffectedStat == Stat.AtkSpeed && !change.Percentage)
             {
-                trueAtkSpeed = change.IsBuff ? trueAtkSpeed + change.Amount : trueAtkSpeed - change.Amount;
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
         }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.AtkSpeed && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        float trueAtkSpeed = baseStats.AtkSpeed[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueAtkSpeed = trueAtkSpeed * (1f + percentModifierSum / 100f);
+
         return trueAtkSpeed;
     }
 
@@ -320,7 +464,7 @@ public class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void AddStatChangeRPC(StatChange change)
+    private void AddStatChangeRPC(StatChange change)
     {
         statChanges.Add(change);
         if (change.IsTimed)

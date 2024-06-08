@@ -7,9 +7,9 @@ using UnityEngine;
 public class MovesController : NetworkBehaviour
 {
     [SerializeField] private MoveAsset lockedMove;
-    public Transform projectileSpawnPoint; // Define the spawn point for the projectile
-    public GameObject homingProjectilePrefab; // Reference to the homing projectile prefab
-    [SerializeField]private int uniteMoveCharge = 0;
+    public Transform projectileSpawnPoint;
+    public GameObject homingProjectilePrefab;
+    [SerializeField] private int uniteMoveCharge = 0;
     private int uniteMoveMaxCharge = 10000;
 
     private MoveBase[] moves = new MoveBase[2];
@@ -132,6 +132,13 @@ public class MovesController : NetworkBehaviour
             uniteMove.Update();
         }
 
+        if (controls.Movement.CancelMove.WasPressedThisFrame())
+        {
+            moves[0].Cancel();
+            moves[1].Cancel();
+            uniteMove.Cancel();
+        }
+
         if (controls.Movement.MoveA.WasReleasedThisFrame())
         {
             TryFinishingMove(0);
@@ -225,13 +232,13 @@ public class MovesController : NetworkBehaviour
             return;
         }
 
-        if (move.cooldown > 0)
+        if (move.Cooldown > 0)
         {
             for (int i = 0; i < moves.Length; i++)
             {
                 if (moves[i] == move)
                 {
-                    moveCooldowns[i] = moves[i].cooldown;
+                    moveCooldowns[i] = moves[i].Cooldown;
                     moveCooldowns[i] -= moveCooldowns[i] * pokemon.GetCDR() / 100f;
                     BattleUIManager.instance.ShowMoveCooldown(i, moveCooldowns[i]);
                 }

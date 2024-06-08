@@ -6,8 +6,8 @@ public class LockedMove : MoveBase
 {
     public LockedMove()
     {
-        name = "Not Learned";
-        cooldown = 0;
+        Name = "Not Learned";
+        Cooldown = 0;
     }
 
     public override void Start(PlayerManager controller)

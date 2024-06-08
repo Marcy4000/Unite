@@ -12,8 +12,8 @@ public class CinderEmber : MoveBase
 
     public CinderEmber()
     {
-        name = "Ember";
-        cooldown = 6.0f;
+        Name = "Ember";
+        Cooldown = 6.0f;
         distance = 8f;
         angle = 60f;
         damageInfo = new DamageInfo(0, 1, 7, 135, DamageType.Physical);
@@ -28,7 +28,7 @@ public class CinderEmber : MoveBase
 
     public override void Update()
     {
-        if (!isActive)
+        if (!IsActive)
         {
             return;
         }
@@ -37,7 +37,7 @@ public class CinderEmber : MoveBase
 
     public override void Finish()
     {
-        if (target != null && isActive)
+        if (target != null && IsActive)
         {
             playerManager.MovesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
             playerManager.AnimationManager.PlayAnimation($"ani_spell1_bat_0815");
@@ -49,5 +49,11 @@ public class CinderEmber : MoveBase
         Aim.Instance.HideAutoAim();
         Debug.Log("Finished ember!");
         base.Finish();
+    }
+
+    public override void Cancel()
+    {
+        base.Cancel();
+        Aim.Instance.HideAutoAim();
     }
 }

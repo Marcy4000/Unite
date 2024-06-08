@@ -24,6 +24,7 @@ public class PlayerManager : NetworkBehaviour
     private PlayerControls playerControls;
     private AnimationManager animationManager;
     private Vision vision;
+    private PassiveController passiveController;
     [SerializeField] private VisionController visionController;
     [SerializeField] private HPBar hpBar;
 
@@ -48,6 +49,8 @@ public class PlayerManager : NetworkBehaviour
     public AnimationManager AnimationManager { get => animationManager; }
     public VisionController VisionController { get => visionController; }
     public Vision Vision { get => vision; }
+    public HPBar HPBar { get => hpBar; }
+    public PassiveController PassiveController { get => passiveController; }
     public bool IsScoring { get => isScoring; }
 
     public PlayerState PlayerState { get => playerState.Value; }
