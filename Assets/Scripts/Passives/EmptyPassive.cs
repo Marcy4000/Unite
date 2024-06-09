@@ -11,4 +11,9 @@ public class EmptyPassive : PassiveBase
         base.Start(controller);
         Debug.Log("Empty Passive");
     }
+
+    public override void Update()
+    {
+        // Empty
+    }
 }

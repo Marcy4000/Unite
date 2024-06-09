@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public class BasicAttackBase
+public abstract class BasicAttackBase
 {
     public PlayerManager playerManager;
     public float range = 0f;
@@ -14,7 +14,24 @@ public class BasicAttackBase
         playerManager = manager;
     }
 
-    public virtual void Perform()
+    public abstract void Perform();
+
+    public abstract void Update();
+}
+
+public class EmptyBasicAtk : BasicAttackBase
+{
+    public override void Initialize(PlayerManager manager)
+    {
+        base.Initialize(manager);
+    }
+
+    public override void Perform()
+    {
+        Debug.Log("Empty basic attack");
+    }
+
+    public override void Update()
     {
     }
 }
@@ -28,8 +45,10 @@ public static class BasicAttacksDatabase
         {
             case "cinderace":
                 return new CinderBasicAtk();
+            case "glaceon":
+                return new GlaceBasicAtk();
             default:
-                return new BasicAttackBase();
+                return new EmptyBasicAtk();
         }
     }
 }

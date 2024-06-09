@@ -14,4 +14,8 @@ public class LockedMove : MoveBase
     {
         Debug.Log("This move is not learned yet.");
     }
+
+    public override void Update()
+    {
+    }
 }

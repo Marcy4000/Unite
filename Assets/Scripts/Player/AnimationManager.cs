@@ -17,6 +17,13 @@ public class AnimationManager : NetworkBehaviour
     public void AssignAnimator(Animator animator)
     {
         this.animator = animator;
+        foreach (var parameter in animator.parameters)
+        {
+            if (parameter.type == AnimatorControllerParameterType.Trigger)
+            {
+                animator.ResetTrigger(parameter.name);
+            }
+        }
     }
 
     public void SetBool(string name, bool value)
@@ -44,6 +51,7 @@ public class AnimationManager : NetworkBehaviour
     {
         if (IsAnimatorNull())
             return;
+
         animator.SetTrigger(name);
     }
 

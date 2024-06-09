@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -759,10 +758,20 @@ public class Pokemon : NetworkBehaviour
             return;
         }
 
+        float hpPercentage = (float)currentHp.Value / GetMaxHp();
+
         localExp -= baseStats.GetExpForNextLevel(localLevel);
         localLevel++;
-        Debug.Log("Level Up! Current Level: " + currentLevel.Value);
-        // You can add additional logic here upon leveling up
+        Debug.Log("Level Up! Current Level: " + localLevel);
+
+        if (IsServer)
+        {
+            currentHp.Value = Mathf.RoundToInt(baseStats.MaxHp[localLevel] * hpPercentage);
+        }
+        else
+        {
+            SetCurrentHPServerRPC(Mathf.RoundToInt(baseStats.MaxHp[localLevel] * hpPercentage));
+        }
     }
 
     [Rpc(SendTo.Server)]

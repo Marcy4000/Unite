@@ -15,6 +15,8 @@ public class MovesController : NetworkBehaviour
     private MoveBase[] moves = new MoveBase[2];
     private float[] moveCooldowns = new float[2];
 
+    private int prevLevel = -1;
+
     private MoveBase uniteMove;
     private BasicAttackBase basicAttack;
 
@@ -27,7 +29,12 @@ public class MovesController : NetworkBehaviour
     public PlayerMovement PlayerMovement => playerManager.PlayerMovement;
     public int UniteMoveCharge => uniteMoveCharge;
 
+    public BasicAttackBase BasicAttack => basicAttack;
+
     private float basicAttackCooldown = 0;
+
+    public event Action onBasicAttackPerformed;
+    public event Action<MoveBase> onMovePerformed;
 
     private AttackSpeedCooldown[] cooldownTable = new AttackSpeedCooldown[]
 {
@@ -101,6 +108,8 @@ public class MovesController : NetworkBehaviour
             TryPerformingBasicAttack();
         }
 
+        basicAttack.Update();
+
         if (basicAttackCooldown > 0)
         {
             basicAttackCooldown -= Time.deltaTime;
@@ -163,14 +172,20 @@ public class MovesController : NetworkBehaviour
 
     private void CheckIfCanLearnMove()
     {
-        for (int i = 0; i < pokemon.BaseStats.LearnableMoves.Length; i++)
+        Debug.Log($"Checking if can learn move. Current level: {pokemon.CurrentLevel.Value}, Previous level: {prevLevel}");
+
+        for (int i = prevLevel+1; i <= pokemon.CurrentLevel.Value; i++)
         {
-            if (pokemon.CurrentLevel.Value == pokemon.BaseStats.LearnableMoves[i].level)
+            for (int j = 0; j < pokemon.BaseStats.LearnableMoves.Length; j++)
             {
-                BattleUIManager.instance.InitializeMoveLearnPanel(pokemon.BaseStats.LearnableMoves[i].moves);
-                //LearnMove(pokemon.BaseStats.LearnableMoves[i].moves[0]);
+                if (i == pokemon.BaseStats.LearnableMoves[j].level)
+                {
+                    BattleUIManager.instance.InitializeMoveLearnPanel(pokemon.BaseStats.LearnableMoves[j].moves);
+                }
             }
         }
+
+        prevLevel = pokemon.CurrentLevel.Value;
     }
 
     private void TryPerformingBasicAttack()
@@ -181,6 +196,7 @@ public class MovesController : NetworkBehaviour
         }
         basicAttack.Perform();
         basicAttackCooldown = GetAtkSpeedCooldown();
+        onBasicAttackPerformed?.Invoke();
     }
 
     public void TryUsingMove(int index)
@@ -248,6 +264,8 @@ public class MovesController : NetworkBehaviour
         {
             uniteMoveCharge = 0;
         }
+
+        onMovePerformed?.Invoke(move);
     }
 
     public void LearnBasicAttack(BasicAttackBase basicAttack)

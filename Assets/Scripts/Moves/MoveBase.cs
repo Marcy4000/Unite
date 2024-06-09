@@ -23,8 +23,7 @@ public abstract class MoveBase
         Debug.Log("Executing move: " + Name);
     }
 
-    public virtual void Update(){
-    }
+    public abstract void Update();
 
     public virtual void Finish(){
         onMoveOver?.Invoke(this);
@@ -56,6 +55,10 @@ public static class MoveDatabase
                 return new CinderFeint();
             case AvailableMoves.BlazingBycicleKick:
                 return new BlazingBycicleKick();
+            case AvailableMoves.GlaceSwift:
+                return new GlaceSwift();
+            case AvailableMoves.GlaceTailWhip:
+                return new GlaceTailWhip();
             default:
                 return null;
         }
@@ -70,5 +73,7 @@ public enum AvailableMoves
     CinderPyroball,
     CinderFlameCharge,
     CinderFeint,
-    BlazingBycicleKick
+    BlazingBycicleKick,
+    GlaceSwift,
+    GlaceTailWhip
 }

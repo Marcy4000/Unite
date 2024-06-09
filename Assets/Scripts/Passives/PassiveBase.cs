@@ -12,9 +12,7 @@ public abstract class PassiveBase
         playerManager = controller;
     }
 
-    public virtual void Update()
-    {    
-    }
+    public abstract void Update();
 }
 
 public static class PassiveDatabase
@@ -27,6 +25,8 @@ public static class PassiveDatabase
                 return new EmptyPassive();
             case AvailablePassives.CinderPassive:
                 return new CinderPassive();
+            case AvailablePassives.GlaceonPassive:
+                return new GlaceonPassive();
             default:
                 return new EmptyPassive();
         }
@@ -36,5 +36,6 @@ public static class PassiveDatabase
 public enum AvailablePassives
 {
     EmptyPassive,
-    CinderPassive
+    CinderPassive,
+    GlaceonPassive
 }
