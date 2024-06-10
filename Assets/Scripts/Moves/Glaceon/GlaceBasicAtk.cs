@@ -17,7 +17,7 @@ public class GlaceBasicAtk : BasicAttackBase
     {
         base.Initialize(manager);
         range = 7f;
-        attackPrefab = "BasicAtk/CinderBasicAtk";
+        attackPrefab = "BasicAtk/GlaceonBasicAtk";
         normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.39f, 4, 70, DamageType.Special);
         boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.47f, 5, 90, DamageType.Special);
     }
@@ -37,7 +37,7 @@ public class GlaceBasicAtk : BasicAttackBase
             playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
             playerManager.transform.LookAt(closestEnemy.transform);
             playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
-            cooldown = 4f;
+            cooldown = 4.5f;
             charge++;
         }
 

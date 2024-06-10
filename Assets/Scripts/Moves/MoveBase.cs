@@ -59,6 +59,10 @@ public static class MoveDatabase
                 return new GlaceSwift();
             case AvailableMoves.GlaceTailWhip:
                 return new GlaceTailWhip();
+            case AvailableMoves.GlaceIcycleSpear:
+                return new GlaceIcicleSpear();
+            case AvailableMoves.GlaceIceShard:
+                return new GlaceIceShard();
             default:
                 return null;
         }
@@ -75,5 +79,8 @@ public enum AvailableMoves
     CinderFeint,
     BlazingBycicleKick,
     GlaceSwift,
-    GlaceTailWhip
+    GlaceTailWhip,
+    GlaceIcycleSpear,
+    GlaceIcyWind,
+    GlaceIceShard,
 }

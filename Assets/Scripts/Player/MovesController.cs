@@ -36,6 +36,8 @@ public class MovesController : NetworkBehaviour
     public event Action onBasicAttackPerformed;
     public event Action<MoveBase> onMovePerformed;
 
+    public event Action<GameObject> onObjectSpawned;
+
     private AttackSpeedCooldown[] cooldownTable = new AttackSpeedCooldown[]
 {
         new AttackSpeedCooldown { threshold = 8.11f, cooldown = 0.93333f },
@@ -128,18 +130,10 @@ public class MovesController : NetworkBehaviour
             TryUsingUniteMove();
         }
 
-        if (controls.Movement.MoveA.IsPressed())
-        {
-            moves[0].Update();
-        }
-        if (controls.Movement.MoveB.IsPressed())
-        {
-            moves[1].Update();
-        }
-        if (controls.Movement.UniteMove.IsPressed())
-        {
-            uniteMove.Update();
-        }
+
+        moves[0].Update();
+        moves[1].Update();
+        uniteMove.Update();
 
         if (controls.Movement.CancelMove.WasPressedThisFrame())
         {
@@ -329,7 +323,7 @@ public class MovesController : NetworkBehaviour
     private void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info, string resourcePath)
     {
         // Instantiate homing projectile
-        GameObject homingProjectile = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), projectileSpawnPoint.position, Quaternion.identity) as GameObject;
+        GameObject homingProjectile = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), projectileSpawnPoint.position, projectileSpawnPoint.rotation) as GameObject;
         homingProjectile.GetComponent<NetworkObject>().Spawn();
 
         // Set target for homing projectile
@@ -353,6 +347,41 @@ public class MovesController : NetworkBehaviour
         {
             forwardsScript.SetDirection(dir, info, maxDistance);
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void DespawnNetworkObjectRPC(ulong objectID)
+    {
+        NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(objectID, out NetworkObject networkObject);
+        if (networkObject != null)
+        {
+            networkObject.Despawn(true);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void SpawnNetworkObjectFromStringRPC(string path)
+    {
+        GameObject spawnedObject = GameObject.Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
+        spawnedObject.GetComponent<NetworkObject>().Spawn();
+
+        NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
+    }
+
+    [Rpc(SendTo.Server)]
+    public void SpawnNetworkObjectFromStringRPC(string path, ulong cliendID)
+    {
+        GameObject spawnedObject = GameObject.Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
+        spawnedObject.GetComponent<NetworkObject>().SpawnWithOwnership(cliendID, true);
+
+        NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void NotifyAboutSpawnRPC(ulong objectID)
+    {
+        onObjectSpawned?.Invoke(NetworkManager.Singleton.SpawnManager.SpawnedObjects[objectID].gameObject);
+        onObjectSpawned = null;
     }
 
     public void IncrementUniteCharge(int amount)

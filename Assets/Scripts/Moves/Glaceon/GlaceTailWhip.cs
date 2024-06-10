@@ -10,6 +10,8 @@ public class GlaceTailWhip : MoveBase
     private float distance;
     private float angle;
 
+    private string attackPrefab;
+
     public GlaceTailWhip()
     {
         Name = "Tail Whip";
@@ -17,6 +19,7 @@ public class GlaceTailWhip : MoveBase
         distance = 8f;
         angle = 60f;
         damageInfo = new DamageInfo(0, 0.61f, 6, 190, DamageType.Special);
+        attackPrefab = "Moves/Glaceon/GlaceonTailWhip";
     }
 
     public override void Start(PlayerManager controller)
@@ -39,7 +42,7 @@ public class GlaceTailWhip : MoveBase
     {
         if (target != null && IsActive)
         {
-            playerManager.MovesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
+            playerManager.MovesController.LaunchProjectileFromPath(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo, attackPrefab);
             string animation = playerManager.Pokemon.CurrentLevel.Value >= 3 ? "ani_spell2_bat_0471" : "ani_spell2G_bat_0133";
             playerManager.AnimationManager.PlayAnimation(animation);
             playerManager.StopMovementForTime(0.4f);

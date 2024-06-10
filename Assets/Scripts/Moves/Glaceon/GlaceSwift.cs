@@ -9,7 +9,6 @@ public class GlaceSwift : MoveBase
     private string attackPrefab;
 
     private DamageInfo damageInfo;
-    private Vector3 direction;
 
     private float range = 7f;
 
@@ -62,14 +61,21 @@ public class GlaceSwift : MoveBase
         }
 
         GlaceBasicAtk basicAtk = playerManager.MovesController.BasicAttack as GlaceBasicAtk;
-        byte starAmount = 1;
+        byte starsToShoot = 1;
+        byte basicAtkCharge = (byte)(basicAtk.Charge-1);
 
-        if (basicAtk.Charge == 2)
+        if (basicAtkCharge == 255)
         {
-            starAmount = 2;
+            basicAtkCharge = 2;
         }
 
-        for (int i = 0; i < starAmount; i++)
+
+        if (basicAtkCharge == 2)
+        {
+            starsToShoot = 2;
+        }
+
+        for (int i = 0; i < starsToShoot; i++)
         {
             GameObject closestEnemy = Aim.Instance.AimInCircle(range);
 

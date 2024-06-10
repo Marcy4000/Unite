@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Move", menuName = "Moves/Move", order = 1)]
+[CreateAssetMenu(fileName = "Move", menuName = "Moves/New Move", order = 1)]
 public class MoveAsset : ScriptableObject
 {
     public AvailableMoves move;

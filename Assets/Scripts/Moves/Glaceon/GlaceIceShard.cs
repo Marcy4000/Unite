@@ -1,0 +1,88 @@
+using System.Collections;
+using System.Collections.Generic;
+using Unity.Netcode;
+using UnityEngine;
+
+public class GlaceIceShard : MoveBase
+{
+    private string attackPrefab;
+
+    private DamageInfo damageInfo;
+    private StatChange movementBuff;
+    private StatChange atkSpeedBuff;
+
+    private float range = 7f;
+
+    private float timer = 0f;
+    private bool subscribed = false;
+    private bool isActivated = false;
+
+    public GlaceIceShard()
+    {
+        Name = "Ice Shard";
+        Cooldown = 8.5f;
+        damageInfo = new DamageInfo(0, 0.52f, 6, 100, DamageType.Special);
+        attackPrefab = "BasicAtk/CinderBasicAtk";
+        movementBuff = new StatChange(40, Stat.Speed, 0.5f, true, true, true, 0);
+        atkSpeedBuff = new StatChange(60, Stat.AtkSpeed, 2.5f, true, true, true, 0);
+    }
+
+    public override void Start(PlayerManager controller)
+    {
+        base.Start(controller);
+        damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
+        if (!subscribed)
+        {
+            playerManager.MovesController.onBasicAttackPerformed += OnBasicAttack;
+            subscribed = true;
+        }
+    }
+
+    public override void Update()
+    {
+        if (timer > 0)
+        {
+            timer -= Time.deltaTime;
+        }
+
+        if (timer <= 0 && isActivated)
+        {
+            isActivated = false;
+        }
+    }
+
+    public override void Finish()
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        wasMoveSuccessful = true;
+        isActivated = true;
+        timer = 2.5f;
+
+        playerManager.Pokemon.AddStatChange(movementBuff);
+        playerManager.Pokemon.AddStatChange(atkSpeedBuff);
+
+        playerManager.AnimationManager.PlayAnimation("ani_spell2a_bat_0471");
+
+        base.Finish();
+    }
+
+    private void OnBasicAttack()
+    {
+        if (!isActivated)
+        {
+            return;
+        }
+
+        GameObject closestEnemy = Aim.Instance.AimInCircle(range);
+
+        // If an enemy is found, launch a homing projectile towards it
+        if (closestEnemy != null)
+        {
+            playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damageInfo, attackPrefab);
+        }
+    }
+}
