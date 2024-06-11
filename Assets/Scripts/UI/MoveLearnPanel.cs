@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class MoveLearnPanel : MonoBehaviour
 {
-    [SerializeField] private GameObject panelBg, moveLearnPrefab;
+    [SerializeField] private GameObject panelBg, moveLearnPrefab, arrowIcon;
     private bool isLearningMove;
     private PlayerControls controls;
     private float timer;
@@ -31,6 +31,7 @@ public class MoveLearnPanel : MonoBehaviour
     public void ShowLearnMovePanel(MoveAsset[] moves)
     {
         panelBg.SetActive(true);
+        arrowIcon.SetActive(true);
         this.moves = moves;
         foreach (MoveAsset move in moves)
         {
@@ -47,6 +48,7 @@ public class MoveLearnPanel : MonoBehaviour
             Destroy(child.gameObject);
         }
         panelBg.SetActive(false);
+        arrowIcon.SetActive(false);
         isLearningMove = false;
         moves = null;
     }

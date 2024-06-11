@@ -10,8 +10,14 @@ public class GlaceIcicleSpear : MoveBase
     private float distance;
     private Vector3 direction;
 
+    private float timer = 0f;
+
     private string resourcePath = "Moves/Glaceon/IcicleSpear";
     private IcicleSpearHitbox icicleSpearHitbox;
+
+    private GlaceonPassive glaceonPassive;
+
+    private bool activated = false;
 
     public GlaceIcicleSpear()
     {
@@ -25,6 +31,7 @@ public class GlaceIcicleSpear : MoveBase
     public override void Start(PlayerManager controller)
     {
         base.Start(controller);
+
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
         Aim.Instance.InitializeSkillshotAimAim(distance);
         playerManager.MovesController.onObjectSpawned += (icicleSpearHitbox) =>
@@ -39,14 +46,57 @@ public class GlaceIcicleSpear : MoveBase
 
         playerManager.AnimationManager.PlayAnimation("ani_spell1a1_bat_0471");
         playerManager.Pokemon.AddStatChange(selfSlow);
+
+        playerManager.MovesController.UpdateMoveStatus(1, ActionStatusType.Disabled);
+
+        glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
+
+        BattleUIManager.instance.ShowMoveSecondaryCooldown(0, timer);
+        glaceonPassive.ResetTimer();
+
+        if (!activated && glaceonPassive.IciclesCount < 1)
+        {
+            glaceonPassive.UpdateIciclesCount(2);
+            timer = 1f;
+        }
+
+        activated = true;
     }
 
     public override void Update()
     {
+        if (!activated)
+        {
+            return;
+        }
+
+        if (timer > 0)
+        {
+            timer -= Time.deltaTime;
+        }
+
+        if (timer <= 0)
+        {
+            if (glaceonPassive.IciclesCount > 1)
+            {
+                glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount - 1, 0, 8));
+                glaceonPassive.ResetTimer();
+                timer = 1f;
+                BattleUIManager.instance.ShowMoveSecondaryCooldown(0, timer);
+            }
+            else
+            {
+                glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount - 1, 0, 8));
+                activated = false;
+                Finish();
+            }
+        }
+
         if (!IsActive)
         {
             return;
         }
+
         direction = Aim.Instance.SkillshotAim();
 
         if (icicleSpearHitbox == null)
@@ -56,21 +106,29 @@ public class GlaceIcicleSpear : MoveBase
         }
 
         icicleSpearHitbox.transform.position = playerManager.transform.position;
-        icicleSpearHitbox.transform.rotation = Quaternion.LookRotation(direction);
 
-        Debug.Log($"Icicle Spear Hitbox updated! {icicleSpearHitbox.name}");
-
-        playerManager.transform.rotation = Quaternion.LookRotation(direction);
-
+        if (direction.magnitude != 0)
+        {
+            icicleSpearHitbox.transform.rotation = Quaternion.LookRotation(direction);
+            playerManager.transform.rotation = Quaternion.LookRotation(direction);
+        }
     }
 
     public override void Finish()
     {
-        wasMoveSuccessful = true;
-        playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
-        Aim.Instance.HideSkillshotAim();
-        icicleSpearHitbox = null;
-        playerManager.Pokemon.RemoveStatChangeWithID(3);
+        if (!activated)
+        {
+            wasMoveSuccessful = true;
+        }
+
+        if (IsActive)
+        {
+            playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
+            Aim.Instance.HideSkillshotAim();
+            icicleSpearHitbox = null;
+            playerManager.Pokemon.RemoveStatChangeWithID(3);
+            playerManager.MovesController.RestoreMoveStatus(1);
+        }
         Debug.Log($"Finished {Name}!");
         base.Finish();
     }
@@ -78,6 +136,10 @@ public class GlaceIcicleSpear : MoveBase
     public override void Cancel()
     {
         base.Cancel();
+        playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
         Aim.Instance.HideSkillshotAim();
+        icicleSpearHitbox = null;
+        playerManager.Pokemon.RemoveStatChangeWithID(3);
+        playerManager.MovesController.RestoreMoveStatus(1);
     }
 }

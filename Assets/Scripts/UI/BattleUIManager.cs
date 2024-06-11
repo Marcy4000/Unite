@@ -74,6 +74,16 @@ public class BattleUIManager : MonoBehaviour
         moveUIs[id].StartCooldown(time);
     }
 
+    public void ShowMoveSecondaryCooldown(int id, float time)
+    {
+        moveUIs[id].ShowSecondaryCooldown(time);
+    }
+
+    public void SetMoveLock(int id, bool isLocked)
+    {
+        moveUIs[id].SetLock(isLocked);
+    }
+
     public void ReferenceController(MovesController controller)
     {
         uniteMoveUI.AssignController(controller);

@@ -17,6 +17,9 @@ public class GlaceIceShard : MoveBase
     private bool subscribed = false;
     private bool isActivated = false;
 
+    private GlaceonPassive glaceonPassive;
+    private GlaceBasicAtk basicAtk;
+
     public GlaceIceShard()
     {
         Name = "Ice Shard";
@@ -31,6 +34,8 @@ public class GlaceIceShard : MoveBase
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
+        glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
+        basicAtk = playerManager.MovesController.BasicAttack as GlaceBasicAtk;
         if (!subscribed)
         {
             playerManager.MovesController.onBasicAttackPerformed += OnBasicAttack;
@@ -48,6 +53,7 @@ public class GlaceIceShard : MoveBase
         if (timer <= 0 && isActivated)
         {
             isActivated = false;
+            basicAtk.ChangeBasicAtkType(0);
         }
     }
 
@@ -61,6 +67,8 @@ public class GlaceIceShard : MoveBase
         wasMoveSuccessful = true;
         isActivated = true;
         timer = 2.5f;
+
+        basicAtk.ChangeBasicAtkType(1);
 
         playerManager.Pokemon.AddStatChange(movementBuff);
         playerManager.Pokemon.AddStatChange(atkSpeedBuff);
@@ -83,6 +91,7 @@ public class GlaceIceShard : MoveBase
         if (closestEnemy != null)
         {
             playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damageInfo, attackPrefab);
+            glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount + 2, 0, 8));
         }
     }
 }

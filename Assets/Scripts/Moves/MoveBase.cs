@@ -61,6 +61,8 @@ public static class MoveDatabase
                 return new GlaceTailWhip();
             case AvailableMoves.GlaceIcycleSpear:
                 return new GlaceIcicleSpear();
+            case AvailableMoves.GlaceIcyWind:
+                return new GlaceIcyWind();
             case AvailableMoves.GlaceIceShard:
                 return new GlaceIceShard();
             default:

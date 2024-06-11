@@ -6,6 +6,7 @@ using UnityEngine;
 public class IcicleSpearHitbox : NetworkBehaviour
 {
     private DamageInfo damageInfo;
+    private StatChange enemySlow = new StatChange(20, Stat.Speed, 0.75f, true, false, true, 0);
     private bool teamToIgnore;
 
     public DamageInfo DamageInfo { get => damageInfo; set => SetDamageRPC(value); }
@@ -47,6 +48,7 @@ public class IcicleSpearHitbox : NetworkBehaviour
                 }
 
                 pokemonInTrigger[i-1].TakeDamage(damageInfo);
+                pokemonInTrigger[i-1].AddStatChange(enemySlow);
             }
 
             cooldown = 0.75f;

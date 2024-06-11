@@ -51,7 +51,7 @@ public class GlaceTailWhip : MoveBase
             wasMoveSuccessful = true;
 
             GlaceBasicAtk basicAtk = playerManager.MovesController.BasicAttack as GlaceBasicAtk;
-            basicAtk.Charge = 2;
+            basicAtk.FillChargeAmount();
         }
         Aim.Instance.HideAutoAim();
         Debug.Log("Finished Tail Whip!");

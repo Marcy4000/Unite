@@ -6,10 +6,11 @@ using UnityEngine.UI;
 
 public class HPBar : MonoBehaviour
 {
-    [SerializeField] private Image hpBar, shieldBar, damageBar, expBar, storedExpBar, energyBG;
+    [SerializeField] private Image hpBar, shieldBar, damageBar, expBar, storedExpBar, energyBG, genericGuageBar;
     [SerializeField] private TMP_Text lvText, playerNameText, energyText;
     [SerializeField] private Pokemon pokemon;
     [SerializeField] private Sprite orangeEnergyBG, blueEnergyBG;
+    [SerializeField] private GameObject generigGuage;
 
     public void SetPokemon(Pokemon pokemon)
     {
@@ -20,6 +21,7 @@ public class HPBar : MonoBehaviour
         UpdateUI();
         UpdateLevel();
         UpdateExp();
+        ShowGenericGuage(false);
     }
 
     public void UpdatePlayerName(string playerName)
@@ -57,6 +59,21 @@ public class HPBar : MonoBehaviour
             default:
                 break;
         }
+    }
+
+    public void ShowGenericGuage(bool show)
+    {
+        generigGuage.SetActive(show);
+    }
+
+    public void UpdateGenericGuageValue(float fillAmount)
+    {
+        genericGuageBar.fillAmount = Mathf.Clamp(fillAmount, 0f, 1f);
+    }
+
+    public void UpdateGenericGuageValue(float fillAmount, float maxValue)
+    {
+        genericGuageBar.fillAmount = Mathf.Clamp(fillAmount / maxValue, 0f, 1f);
     }
 
     public void UpdateEnergyAmount(short amount)

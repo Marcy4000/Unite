@@ -77,6 +77,7 @@ public class PlayerManager : NetworkBehaviour
         playerMovement = GetComponent<PlayerMovement>();
         animationManager = GetComponent<AnimationManager>();
         vision = GetComponent<Vision>();
+        passiveController = GetComponent<PassiveController>();
 
         lobbyPlayerId.OnValueChanged += (previous, current) =>
         {

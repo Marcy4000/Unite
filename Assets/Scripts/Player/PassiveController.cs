@@ -9,6 +9,8 @@ public class PassiveController : MonoBehaviour
 
     private PassiveBase passive;
 
+    public PassiveBase Passive => passive;
+
     private void Start()
     {
         playerManager = GetComponent<PlayerManager>();

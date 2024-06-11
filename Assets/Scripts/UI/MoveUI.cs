@@ -6,23 +6,59 @@ using UnityEngine.UI;
 
 public class MoveUI : MonoBehaviour
 {
-    [SerializeField] private Image moveIcon;
-    [SerializeField] private GameObject cdLine, cdBg;
+    [SerializeField] private Image moveIcon, secondaryCd;
+    [SerializeField] private GameObject cdLine, cdBg, lockImage;
     [SerializeField] private TMP_Text cdText, moveName;
 
     private Coroutine cooldownCoroutine;
+    private Coroutine secondaryCooldownCoroutine;
 
     private void Start()
     {
         cdLine.SetActive(false);
         cdText.gameObject.SetActive(false);
         cdBg.SetActive(false);
+        lockImage.SetActive(false);
+        secondaryCd.gameObject.SetActive(false);
     }
 
     public void Initialize(MoveAsset move)
     {
         moveIcon.sprite = move.icon;
         moveName.text = MoveDatabase.GetMove(move.move).Name;
+    }
+
+    public void SetLock(bool isLocked)
+    {
+        lockImage.SetActive(isLocked);
+    }
+
+    public void ShowSecondaryCooldown(float cdDuration)
+    {
+        if (secondaryCooldownCoroutine != null)
+            StopCoroutine(secondaryCooldownCoroutine);
+
+        secondaryCooldownCoroutine = StartCoroutine(SecondaryCooldownRoutine(cdDuration));
+    }
+
+    private IEnumerator SecondaryCooldownRoutine(float cooldownDuration)
+    {
+        secondaryCd.gameObject.SetActive(true);
+        secondaryCd.fillAmount = 1f;
+
+        float timer = cooldownDuration;
+
+        while (timer > 0)
+        {
+            timer -= Time.deltaTime;
+
+            secondaryCd.fillAmount = timer / cooldownDuration;
+
+            yield return null;
+        }
+
+        secondaryCd.gameObject.SetActive(false);
+        secondaryCooldownCoroutine = null;
     }
 
     public void StartCooldown(float cooldownDuration)
@@ -41,6 +77,8 @@ public class MoveUI : MonoBehaviour
 
         float timer = cooldownDuration;
 
+        cdLine.transform.rotation = Quaternion.identity;
+
         while (timer > 0)
         {
             timer -= Time.deltaTime;
@@ -57,5 +95,6 @@ public class MoveUI : MonoBehaviour
         cdLine.SetActive(false);
         cdText.gameObject.SetActive(false);
         cdBg.SetActive(false);
+        cooldownCoroutine = null;
     }
 }

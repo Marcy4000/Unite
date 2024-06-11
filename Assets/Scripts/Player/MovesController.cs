@@ -13,7 +13,7 @@ public class MovesController : NetworkBehaviour
     private int uniteMoveMaxCharge = 10000;
 
     private MoveBase[] moves = new MoveBase[2];
-    private float[] moveCooldowns = new float[2];
+    private MoveStatus[] moveStatuses = new MoveStatus[2];
 
     private int prevLevel = -1;
 
@@ -74,7 +74,7 @@ public class MovesController : NetworkBehaviour
         for (int i = 0; i < moves.Length; i++)
         {
             LearnMove(lockedMove);
-            moveCooldowns[i] = 0;
+            moveStatuses[i] = new MoveStatus(0);
         }
 
         CheckIfCanLearnMove();
@@ -155,11 +155,15 @@ public class MovesController : NetworkBehaviour
             TryFinishingUniteMove();
         }
 
-        for (int i = 0; i < moveCooldowns.Length; i++)
+        for (int i = 0; i < moveStatuses.Length; i++)
         {
-            if (moveCooldowns[i] > 0)
+            if (moveStatuses[i].Cooldown > 0)
             {
-                moveCooldowns[i] -= Time.deltaTime;
+                moveStatuses[i].Cooldown -= Time.deltaTime;
+            }
+            else if (moveStatuses[i].StatusType == ActionStatusType.Cooldown)
+            {
+                moveStatuses[i].StatusType = ActionStatusType.Ready;
             }
         }
     }
@@ -200,7 +204,7 @@ public class MovesController : NetworkBehaviour
             return;
         }
 
-        if (moveCooldowns[index] > 0)
+        if (moveStatuses[index].StatusType != ActionStatusType.Ready)
             return;
 
         moves[index].Start(playerManager);
@@ -229,7 +233,7 @@ public class MovesController : NetworkBehaviour
             return;
         }
 
-        if (moveCooldowns[index] > 0)
+        if (moveStatuses[index].StatusType != ActionStatusType.Ready)
             return;
 
         moves[index].Finish();
@@ -248,9 +252,10 @@ public class MovesController : NetworkBehaviour
             {
                 if (moves[i] == move)
                 {
-                    moveCooldowns[i] = moves[i].Cooldown;
-                    moveCooldowns[i] -= moveCooldowns[i] * pokemon.GetCDR() / 100f;
-                    BattleUIManager.instance.ShowMoveCooldown(i, moveCooldowns[i]);
+                    moveStatuses[i].StatusType = ActionStatusType.Cooldown;
+                    moveStatuses[i].Cooldown = moves[i].Cooldown;
+                    moveStatuses[i].Cooldown -= moveStatuses[i].Cooldown * pokemon.GetCDR() / 100f;
+                    UpdateMoveUI(i);
                 }
             }
         }
@@ -260,6 +265,25 @@ public class MovesController : NetworkBehaviour
         }
 
         onMovePerformed?.Invoke(move);
+    }
+
+    private void UpdateMoveUI(int index)
+    {
+        switch (moveStatuses[index].StatusType)
+        {
+            case ActionStatusType.Ready:
+                BattleUIManager.instance.SetMoveLock(index, false);
+                break;
+            case ActionStatusType.Cooldown:
+                BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown);
+                BattleUIManager.instance.SetMoveLock(index, false);
+                break;
+            case ActionStatusType.Disabled:
+                BattleUIManager.instance.SetMoveLock(index, true);
+                break;
+            default:
+                break;
+        }
     }
 
     public void LearnBasicAttack(BasicAttackBase basicAttack)
@@ -297,6 +321,36 @@ public class MovesController : NetworkBehaviour
         }
 
         BattleUIManager.instance.InitializeMoveUI(move);
+    }
+
+    public void UpdateMoveStatus(int index, ActionStatusType statusType)
+    {
+        if (index < 0 || index > moveStatuses.Length)
+        {
+            return;
+        }
+
+        moveStatuses[index].StatusType = statusType;
+        UpdateMoveUI(index);
+    }
+
+    public void RestoreMoveStatus(int index)
+    {
+        if (index < 0 || index > moveStatuses.Length)
+        {
+            return;
+        }
+
+        if (moveStatuses[index].Cooldown > 0f)
+        {
+            moveStatuses[index].StatusType = ActionStatusType.Cooldown;
+            UpdateMoveUI(index);
+        }
+        else
+        {
+            moveStatuses[index].StatusType = ActionStatusType.Ready;
+            UpdateMoveUI(index);
+        }
     }
 
     [Rpc(SendTo.Server)]
