@@ -1,0 +1,174 @@
+using System.Collections;
+using System.Collections.Generic;
+using Unity.Netcode;
+using UnityEngine;
+
+public class GlaceUniteArea : NetworkBehaviour
+{
+    private DamageInfo damageInfo;
+    private bool orangeTeam;
+    private ulong glaceonID;
+
+    private bool zoneActive = false;
+
+    private float activeTimer = 0f;
+    private float glaceonSpearsTimer = 1f;
+
+    private StatChange glaceonBuff = new StatChange(50, Stat.Speed, 6f, true, true, true, 0);
+    private StatChange enemiesDebuff = new StatChange(50, Stat.Speed, 1f, true, false, true, 0);
+
+    private List<Pokemon> pokemonInZone = new List<Pokemon>();
+
+    public event System.Action onGiveGlaceonSpears;
+
+    [Rpc(SendTo.Server)]
+    public void InitializeRPC(Vector3 position, Quaternion rotation, DamageInfo info, bool orangeTeam, ulong glaceonID)
+    {
+        transform.position = position;
+        transform.rotation = rotation;
+        damageInfo = info;
+        this.orangeTeam = orangeTeam;
+        this.glaceonID = glaceonID;
+        activeTimer = 10f;
+        StartCoroutine(ApplyBuff());
+        StartCoroutine(ApplyDebuff());
+        StartCoroutine(DamageEnemies());
+        zoneActive = true;
+    }
+
+    private void Update()
+    {
+        if (!zoneActive)
+        {
+            return;
+        }
+
+        if (IsOwner)
+        {
+            glaceonSpearsTimer -= Time.deltaTime;
+
+            if (glaceonSpearsTimer <= 0)
+            {
+                foreach (Pokemon pokemon in pokemonInZone)
+                {
+                    if (pokemon.NetworkObjectId == glaceonID)
+                    {
+                        onGiveGlaceonSpears?.Invoke();
+                        break;
+                    }
+                }
+                glaceonSpearsTimer = 1f;
+            }
+
+
+        }
+
+        if (!IsServer)
+        {
+            return;
+        }
+
+        activeTimer -= Time.deltaTime;
+
+        if (activeTimer <= 0)
+        {
+            zoneActive = false;
+            NetworkObject.Despawn(true);
+        }
+    }
+
+    private IEnumerator DamageEnemies()
+    {
+        yield return new WaitForSeconds(0.2f);
+
+        foreach (Pokemon pokemon in pokemonInZone)
+        {
+            PlayerManager playerManager;
+            if (pokemon.TryGetComponent(out playerManager))
+            {
+                if (playerManager.OrangeTeam != orangeTeam)
+                {
+                    pokemon.TakeDamage(damageInfo);
+                }
+            }
+            else
+            {
+                pokemon.TakeDamage(damageInfo);
+            }
+        }
+    }
+
+    private IEnumerator ApplyBuff()
+    {
+        while (zoneActive)
+        {
+            foreach (Pokemon pokemon in pokemonInZone)
+            {
+                if (pokemon.NetworkObjectId == glaceonID)
+                {
+                    pokemon.AddStatChange(glaceonBuff);
+                    break;
+                }
+            }
+
+            yield return new WaitForSeconds(6f);
+        }
+    }
+
+    private IEnumerator ApplyDebuff()
+    {
+        while (zoneActive)
+        {
+            foreach (Pokemon pokemon in pokemonInZone)
+            {
+                if (pokemon.NetworkObjectId == glaceonID)
+                {
+                    continue;
+                }
+
+                PlayerManager playerManager;
+                if (pokemon.TryGetComponent(out playerManager))
+                {
+                    if (playerManager.OrangeTeam != orangeTeam)
+                    {
+                        pokemon.AddStatChange(enemiesDebuff);
+                    }
+                }
+                else
+                {
+                    pokemon.AddStatChange(enemiesDebuff);
+                }
+            }
+
+            yield return new WaitForSeconds(1f);
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        Pokemon pokemon = other.GetComponent<Pokemon>();
+        if (pokemon != null && !pokemonInZone.Contains(pokemon))
+        {
+            pokemonInZone.Add(pokemon);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        Pokemon pokemon = other.GetComponent<Pokemon>();
+        if (pokemon != null && pokemonInZone.Contains(pokemon))
+        {
+            pokemonInZone.Remove(pokemon);
+        }
+    }
+}

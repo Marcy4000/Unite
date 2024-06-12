@@ -8,6 +8,7 @@ public class Aim : NetworkBehaviour
     public static Aim Instance { get; private set; }
     [SerializeField] private LayerMask targetMask;
     [SerializeField] private GameObject autoAimIndicator, indicatorHolders, circleIndicator, dashIndicator, skillShotLine;
+    [SerializeField] private GameObject glaceonUniteIndicator;
     [SerializeField] private GameObject basicAtkIndicator;
     private Transform playerTransform;
     private PlayerControls controls;
@@ -43,6 +44,7 @@ public class Aim : NetworkBehaviour
         circleIndicator.SetActive(false);
         dashIndicator.SetActive(false);
         skillShotLine.SetActive(false);
+        glaceonUniteIndicator.SetActive(false);
         indicatorHolders.transform.SetParent(null);
     }
 
@@ -99,6 +101,16 @@ public class Aim : NetworkBehaviour
     {
         basicAtkIndicator.SetActive(show);
         basicAtkIndicator.transform.localScale = new Vector3(radius / 2.5f, 1, radius / 2.5f);
+    }
+
+    public void InitializeGlaceonUniteAim()
+    {
+        glaceonUniteIndicator.SetActive(true);
+    }
+
+    public void HideGlaceonUniteAim()
+    {
+        glaceonUniteIndicator.SetActive(false);
     }
 
     public GameObject AimInCircle(float attackRadius)
@@ -205,6 +217,19 @@ public class Aim : NetworkBehaviour
         Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
 
         skillShotLine.transform.rotation = Quaternion.LookRotation(aimDirection);
+
+        return aimDirection;
+    }
+
+    public Vector3 GlaceonUniteAim()
+    {
+        // Rotate aiming direction based on right stick input
+        float horizontalInput = controls.Movement.AimMove.ReadValue<Vector2>().x;
+        float verticalInput = controls.Movement.AimMove.ReadValue<Vector2>().y;
+
+        Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
+
+        glaceonUniteIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
 
         return aimDirection;
     }

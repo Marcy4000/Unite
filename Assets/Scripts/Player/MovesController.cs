@@ -267,6 +267,21 @@ public class MovesController : NetworkBehaviour
         onMovePerformed?.Invoke(move);
     }
 
+    public MoveBase GetMove(MoveType moveType)
+    {
+        switch (moveType)
+        {
+            case MoveType.MoveA:
+                return moves[0];
+            case MoveType.MoveB:
+                return moves[1];
+            case MoveType.UniteMove:
+                return uniteMove;
+            default:
+                return null;
+        }
+    }
+
     private void UpdateMoveUI(int index)
     {
         switch (moveStatuses[index].StatusType)

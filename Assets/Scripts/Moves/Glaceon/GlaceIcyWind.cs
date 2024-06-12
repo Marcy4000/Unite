@@ -97,7 +97,12 @@ public class GlaceIcyWind : MoveBase
             yield return new WaitForSeconds(0.01f);
         }
 
+        byte iciclesCount = glaceonPassive.IciclesCount;
         glaceonPassive.UpdateIciclesCount(0);
+
+        yield return new WaitForSeconds(0.7f);
+
+        glaceonPassive.UpdateIciclesCount(iciclesCount);
     }
 
     public override void Finish()
@@ -112,7 +117,10 @@ public class GlaceIcyWind : MoveBase
             effectTimer = 5f;
             wasMoveSuccessful = true;
 
-            playerManager.MovesController.UpdateMoveStatus(1, ActionStatusType.Disabled);
+            if (playerManager.MovesController.GetMove(MoveType.MoveB) is GlaceIceShard)
+            {
+                playerManager.MovesController.UpdateMoveStatus(1, ActionStatusType.Disabled);
+            }
 
             if (glaceonPassive.IciclesCount < 1)
             {

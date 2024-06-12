@@ -65,6 +65,10 @@ public static class MoveDatabase
                 return new GlaceIcyWind();
             case AvailableMoves.GlaceIceShard:
                 return new GlaceIceShard();
+            case AvailableMoves.GlaceFreezeDry:
+                return new GlaceFreezeDry();
+            case AvailableMoves.GlaceonUnite:
+                return new GlaceUnite();
             default:
                 return null;
         }
@@ -85,4 +89,6 @@ public enum AvailableMoves
     GlaceIcycleSpear,
     GlaceIcyWind,
     GlaceIceShard,
+    GlaceFreezeDry,
+    GlaceonUnite
 }
