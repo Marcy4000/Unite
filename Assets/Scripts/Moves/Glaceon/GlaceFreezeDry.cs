@@ -51,7 +51,7 @@ public class GlaceFreezeDry : MoveBase
                 Debug.Log("Freeze dry projectile spawned!");
             };
 
-            playerManager.MovesController.SpawnNetworkObjectFromStringRPC("Moves/Glaceon/FreezeDryProjectile");
+            playerManager.MovesController.SpawnNetworkObjectFromStringRPC("Moves/Glaceon/FreezeDryProjectile", playerManager.OwnerClientId);
             playerManager.StopMovementForTime(0.35f);
             playerManager.AnimationManager.PlayAnimation($"ani_spell1b_bat_0471");
             playerManager.transform.rotation = Quaternion.LookRotation(this.direction);

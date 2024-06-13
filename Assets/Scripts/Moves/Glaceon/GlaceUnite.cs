@@ -59,7 +59,7 @@ public class GlaceUnite : MoveBase
                 Debug.Log("Unite area spawned!");
             };
 
-            playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
+            playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
             playerManager.AnimationManager.PlayAnimation("ani_spellu_bat_0471");
             wasMoveSuccessful = true;
             foreach (StatChange buff in uniteBuffs)

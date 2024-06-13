@@ -7,9 +7,9 @@ public class GlaceUniteArea : NetworkBehaviour
 {
     private DamageInfo damageInfo;
     private bool orangeTeam;
-    private ulong glaceonID;
+    private NetworkVariable<ulong> glaceonID = new NetworkVariable<ulong>();
 
-    private bool zoneActive = false;
+    private NetworkVariable<bool> zoneActive = new NetworkVariable<bool>(false);
 
     private float activeTimer = 0f;
     private float glaceonSpearsTimer = 1f;
@@ -28,17 +28,17 @@ public class GlaceUniteArea : NetworkBehaviour
         transform.rotation = rotation;
         damageInfo = info;
         this.orangeTeam = orangeTeam;
-        this.glaceonID = glaceonID;
-        activeTimer = 10f;
+        this.glaceonID.Value = glaceonID;
+        activeTimer = 8.5f;
         StartCoroutine(ApplyBuff());
         StartCoroutine(ApplyDebuff());
         StartCoroutine(DamageEnemies());
-        zoneActive = true;
+        zoneActive.Value = true;
     }
 
     private void Update()
     {
-        if (!zoneActive)
+        if (!zoneActive.Value)
         {
             return;
         }
@@ -51,7 +51,7 @@ public class GlaceUniteArea : NetworkBehaviour
             {
                 foreach (Pokemon pokemon in pokemonInZone)
                 {
-                    if (pokemon.NetworkObjectId == glaceonID)
+                    if (pokemon.NetworkObjectId == glaceonID.Value)
                     {
                         onGiveGlaceonSpears?.Invoke();
                         break;
@@ -59,8 +59,6 @@ public class GlaceUniteArea : NetworkBehaviour
                 }
                 glaceonSpearsTimer = 1f;
             }
-
-
         }
 
         if (!IsServer)
@@ -72,7 +70,7 @@ public class GlaceUniteArea : NetworkBehaviour
 
         if (activeTimer <= 0)
         {
-            zoneActive = false;
+            zoneActive.Value = false;
             NetworkObject.Despawn(true);
         }
     }
@@ -83,6 +81,11 @@ public class GlaceUniteArea : NetworkBehaviour
 
         foreach (Pokemon pokemon in pokemonInZone)
         {
+            if (!zoneActive.Value)
+            {
+                yield return null;
+            }
+
             PlayerManager playerManager;
             if (pokemon.TryGetComponent(out playerManager))
             {
@@ -100,11 +103,11 @@ public class GlaceUniteArea : NetworkBehaviour
 
     private IEnumerator ApplyBuff()
     {
-        while (zoneActive)
+        while (true)
         {
             foreach (Pokemon pokemon in pokemonInZone)
             {
-                if (pokemon.NetworkObjectId == glaceonID)
+                if (pokemon.NetworkObjectId == glaceonID.Value)
                 {
                     pokemon.AddStatChange(glaceonBuff);
                     break;
@@ -117,11 +120,16 @@ public class GlaceUniteArea : NetworkBehaviour
 
     private IEnumerator ApplyDebuff()
     {
-        while (zoneActive)
+        while (true)
         {
+            if (!zoneActive.Value)
+            {
+                yield return null;
+            }
+
             foreach (Pokemon pokemon in pokemonInZone)
             {
-                if (pokemon.NetworkObjectId == glaceonID)
+                if (pokemon.NetworkObjectId == glaceonID.Value)
                 {
                     continue;
                 }
@@ -146,11 +154,6 @@ public class GlaceUniteArea : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer)
-        {
-            return;
-        }
-
         Pokemon pokemon = other.GetComponent<Pokemon>();
         if (pokemon != null && !pokemonInZone.Contains(pokemon))
         {
@@ -160,11 +163,6 @@ public class GlaceUniteArea : NetworkBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (!IsServer)
-        {
-            return;
-        }
-
         Pokemon pokemon = other.GetComponent<Pokemon>();
         if (pokemon != null && pokemonInZone.Contains(pokemon))
         {

@@ -16,6 +16,7 @@ public class FreezeDryProjectile : NetworkBehaviour
     private bool orangeTeam;
 
     private bool canMove = false;
+    private bool gaveDamage = false;
 
     private List<Pokemon> pokemonList = new List<Pokemon>();
 
@@ -46,10 +47,11 @@ public class FreezeDryProjectile : NetworkBehaviour
         distanceTraveled += speed * Time.deltaTime;
 
         // Check if the projectile has traveled the maximum distance
-        if (distanceTraveled >= maxDistance)
+        if (distanceTraveled >= maxDistance && !gaveDamage)
         {
             GiveDamage();
             DespawnObjectRPC();
+            gaveDamage = true;
         }
     }
 

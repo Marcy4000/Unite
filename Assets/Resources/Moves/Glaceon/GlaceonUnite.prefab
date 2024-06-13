@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4895237219429483263}
   - component: {fileID: 2976592401943767677}
-  - component: {fileID: 7937942968439935058}
   - component: {fileID: 1302831344185291684}
+  - component: {fileID: 6519398041108383820}
   - component: {fileID: 8717326350554220913}
   m_Layer: 0
   m_Name: GlaceonUnite
@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2864137686
+  GlobalObjectIdHash: 1477410458
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -57,7 +57,7 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &7937942968439935058
+--- !u!114 &1302831344185291684
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -66,7 +66,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 6645857729888113097}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df2868252ab5c4d1da357e8f11f1b524, type: 3}
+  m_Script: {fileID: 11500000, guid: 10d2c1bc662337443b0b09e62c82627c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &6519398041108383820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6645857729888113097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   UseUnreliableDeltas: 0
@@ -86,20 +98,8 @@ MonoBehaviour:
   UseQuaternionCompression: 0
   UseHalfFloatPrecision: 0
   InLocalSpace: 0
-  Interpolate: 1
+  Interpolate: 0
   SlerpPosition: 0
---- !u!114 &1302831344185291684
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6645857729888113097}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 10d2c1bc662337443b0b09e62c82627c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!64 &8717326350554220913
 MeshCollider:
   m_ObjectHideFlags: 0
