@@ -40,7 +40,7 @@ public class GlaceUnite : MoveBase
         {
             return;
         }
-        direction = Aim.Instance.GlaceonUniteAim();
+        direction = Aim.Instance.SkillshotAim();
     }
 
     public override void Finish()

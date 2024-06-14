@@ -38,7 +38,7 @@ public class EmptyBasicAtk : BasicAttackBase
 
 public static class BasicAttacksDatabase
 {
-    public static BasicAttackBase GetBasitAttack(string pokemonName)
+    public static BasicAttackBase GetBasicAttack(string pokemonName)
     {
        pokemonName = pokemonName.ToLower();
         switch (pokemonName)
@@ -47,6 +47,8 @@ public static class BasicAttacksDatabase
                 return new CinderBasicAtk();
             case "glaceon":
                 return new GlaceBasicAtk();
+            case "sylveon":
+                return new SylvBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

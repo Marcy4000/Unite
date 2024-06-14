@@ -73,7 +73,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxScore: 80
   orangeTeam: 0
+  healAmount: 0
   goalTier: 0
+  goalLaneId: 0
   scoreText: {fileID: 7422740956712573315}
   orangeModel: {fileID: 8875436615242302182}
   blueModel: {fileID: 8844327073734446134}
@@ -136,7 +138,7 @@ GameObject:
   - component: {fileID: 1689552772303042422}
   - component: {fileID: 4610370727165455503}
   - component: {fileID: 7422740956712573315}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: GoalHP
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -272,7 +274,7 @@ GameObject:
   - component: {fileID: 6111234577025542126}
   - component: {fileID: 4645107957720432881}
   - component: {fileID: 909612047850688380}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: GoalZoneHP
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -316,7 +318,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0

@@ -79,14 +79,19 @@ public class BattleUIManager : MonoBehaviour
         moveUIs[id].ShowSecondaryCooldown(time);
     }
 
+    public void UpdateUniteMoveCooldown(int currCharge, int maxCharge)
+    {
+        uniteMoveUI.UpdateUI(currCharge, maxCharge);
+    }
+
+    public void SetUniteMoveDisabledLock(bool visible)
+    {
+        uniteMoveUI.SetDisabledLock(visible);
+    }
+
     public void SetMoveLock(int id, bool isLocked)
     {
         moveUIs[id].SetLock(isLocked);
-    }
-
-    public void ReferenceController(MovesController controller)
-    {
-        uniteMoveUI.AssignController(controller);
     }
 
     public void UpdateEnergyUI(int currEnergy, int maxEnergy)

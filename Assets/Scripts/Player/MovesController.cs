@@ -9,16 +9,19 @@ public class MovesController : NetworkBehaviour
     [SerializeField] private MoveAsset lockedMove;
     public Transform projectileSpawnPoint;
     public GameObject homingProjectilePrefab;
-    [SerializeField] private int uniteMoveCharge = 0;
-    private int uniteMoveMaxCharge = 10000;
 
     private MoveBase[] moves = new MoveBase[2];
-    private MoveStatus[] moveStatuses = new MoveStatus[2];
+    private BattleActionStatus[] moveStatuses = new BattleActionStatus[2];
 
     private int prevLevel = -1;
 
     private MoveBase uniteMove;
+    private BattleActionStatus uniteMoveStatus = new BattleActionStatus(0); // Cooldown float goes unused cause unite move charges with ints
+    private int uniteMoveCharge; // Should probably unify this with the BattleActionStatus class but eh
+    private int uniteMoveMaxCharge;
+
     private BasicAttackBase basicAttack;
+    private BattleActionStatus basicAttackStatus = new BattleActionStatus(0);
 
     private Pokemon pokemon;
     private PlayerControls controls;
@@ -30,8 +33,7 @@ public class MovesController : NetworkBehaviour
     public int UniteMoveCharge => uniteMoveCharge;
 
     public BasicAttackBase BasicAttack => basicAttack;
-
-    private float basicAttackCooldown = 0;
+    public BattleActionStatus BasicAttackStatus => basicAttackStatus;
 
     public event Action onBasicAttackPerformed;
     public event Action<MoveBase> onMovePerformed;
@@ -69,16 +71,18 @@ public class MovesController : NetworkBehaviour
         pokemon.OnLevelChange += CheckIfCanLearnMove;
         MoveLearnPanel.onSelectedMove += LearnMove;
 
-        BattleUIManager.instance.ReferenceController(this);
+        LearnMove(lockedMove);
 
         for (int i = 0; i < moves.Length; i++)
         {
-            LearnMove(lockedMove);
-            moveStatuses[i] = new MoveStatus(0);
+            moveStatuses[i] = new BattleActionStatus(0);
         }
 
+        uniteMoveCharge = 0;
+        uniteMoveStatus.AddStatus(ActionStatusType.Cooldown);
+
         CheckIfCanLearnMove();
-        LearnBasicAttack(BasicAttacksDatabase.GetBasitAttack(pokemon.BaseStats.PokemonName));
+        LearnBasicAttack(BasicAttacksDatabase.GetBasicAttack(pokemon.BaseStats.PokemonName));
         StartCoroutine(PassiveUniteCharge());
     }
 
@@ -112,9 +116,14 @@ public class MovesController : NetworkBehaviour
 
         basicAttack.Update();
 
-        if (basicAttackCooldown > 0)
+        if (basicAttackStatus.Cooldown > 0)
         {
-            basicAttackCooldown -= Time.deltaTime;
+            basicAttackStatus.Cooldown -= Time.deltaTime;
+        }
+
+        if (basicAttackStatus.HasStatus(ActionStatusType.Cooldown) && basicAttackStatus.Cooldown <= 0)
+        {
+            BasicAttackStatus.RemoveStatus(ActionStatusType.Cooldown);
         }
 
         if (controls.Movement.MoveA.WasPressedThisFrame())
@@ -161,11 +170,13 @@ public class MovesController : NetworkBehaviour
             {
                 moveStatuses[i].Cooldown -= Time.deltaTime;
             }
-            else if (moveStatuses[i].StatusType == ActionStatusType.Cooldown)
+            else if (moveStatuses[i].HasStatus(ActionStatusType.Cooldown))
             {
-                moveStatuses[i].StatusType = ActionStatusType.Ready;
+                moveStatuses[i].RemoveStatus(ActionStatusType.Cooldown);
             }
         }
+
+        UpdateUniteMoveUI();
     }
 
     private void CheckIfCanLearnMove()
@@ -188,12 +199,13 @@ public class MovesController : NetworkBehaviour
 
     private void TryPerformingBasicAttack()
     {
-        if (basicAttackCooldown > 0)
+        if (!basicAttackStatus.HasStatus(ActionStatusType.None))
         {
             return;
         }
         basicAttack.Perform();
-        basicAttackCooldown = GetAtkSpeedCooldown();
+        basicAttackStatus.Cooldown = GetAtkSpeedCooldown();
+        BasicAttackStatus.AddStatus(ActionStatusType.Cooldown);
         onBasicAttackPerformed?.Invoke();
     }
 
@@ -204,7 +216,7 @@ public class MovesController : NetworkBehaviour
             return;
         }
 
-        if (moveStatuses[index].StatusType != ActionStatusType.Ready)
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None))
             return;
 
         moves[index].Start(playerManager);
@@ -212,7 +224,7 @@ public class MovesController : NetworkBehaviour
 
     public void TryUsingUniteMove()
     {
-        if (uniteMoveCharge < uniteMoveMaxCharge)
+        if (!uniteMoveStatus.HasStatus(ActionStatusType.None))
             return;
 
         uniteMove.Start(playerManager);
@@ -220,7 +232,7 @@ public class MovesController : NetworkBehaviour
 
     public void TryFinishingUniteMove()
     {
-        if (uniteMoveCharge < uniteMoveMaxCharge)
+        if (!uniteMoveStatus.HasStatus(ActionStatusType.None))
             return;
 
         uniteMove.Finish();
@@ -233,7 +245,7 @@ public class MovesController : NetworkBehaviour
             return;
         }
 
-        if (moveStatuses[index].StatusType != ActionStatusType.Ready)
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None))
             return;
 
         moves[index].Finish();
@@ -252,7 +264,7 @@ public class MovesController : NetworkBehaviour
             {
                 if (moves[i] == move)
                 {
-                    moveStatuses[i].StatusType = ActionStatusType.Cooldown;
+                    moveStatuses[i].AddStatus(ActionStatusType.Cooldown);
                     moveStatuses[i].Cooldown = moves[i].Cooldown;
                     moveStatuses[i].Cooldown -= moveStatuses[i].Cooldown * pokemon.GetCDR() / 100f;
                     UpdateMoveUI(i);
@@ -261,6 +273,7 @@ public class MovesController : NetworkBehaviour
         }
         else
         {
+            uniteMoveStatus.AddStatus(ActionStatusType.Cooldown);
             uniteMoveCharge = 0;
         }
 
@@ -284,21 +297,19 @@ public class MovesController : NetworkBehaviour
 
     private void UpdateMoveUI(int index)
     {
-        switch (moveStatuses[index].StatusType)
+        BattleUIManager.instance.SetMoveLock(index, moveStatuses[index].HasStatus(ActionStatusType.Disabled));
+
+        if (moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
         {
-            case ActionStatusType.Ready:
-                BattleUIManager.instance.SetMoveLock(index, false);
-                break;
-            case ActionStatusType.Cooldown:
-                BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown);
-                BattleUIManager.instance.SetMoveLock(index, false);
-                break;
-            case ActionStatusType.Disabled:
-                BattleUIManager.instance.SetMoveLock(index, true);
-                break;
-            default:
-                break;
+            BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown);
         }
+    }
+
+    private void UpdateUniteMoveUI()
+    {
+        BattleUIManager.instance.SetUniteMoveDisabledLock(uniteMoveStatus.HasStatus(ActionStatusType.Disabled));
+
+        BattleUIManager.instance.UpdateUniteMoveCooldown(uniteMoveCharge, uniteMoveMaxCharge);
     }
 
     public void LearnBasicAttack(BasicAttackBase basicAttack)
@@ -330,6 +341,7 @@ public class MovesController : NetworkBehaviour
                     moves[i] = MoveDatabase.GetMove(move.move);
                 }
                 uniteMove = MoveDatabase.GetMove(move.move);
+                uniteMoveMaxCharge = move.uniteEnergyCost;
                 break;
             default:
                 break;
@@ -338,34 +350,38 @@ public class MovesController : NetworkBehaviour
         BattleUIManager.instance.InitializeMoveUI(move);
     }
 
-    public void UpdateMoveStatus(int index, ActionStatusType statusType)
+    public void AddMoveStatus(int index, ActionStatusType statusType)
     {
-        if (index < 0 || index > moveStatuses.Length)
+        // If index is equal to the length of the moveStatuses array, it means we're adding a status to the unite move
+        if (index == moveStatuses.Length)
+        {
+            uniteMoveStatus.AddStatus(statusType);
+            return;
+        }
+        else if (index < 0 || index > moveStatuses.Length)
         {
             return;
         }
 
-        moveStatuses[index].StatusType = statusType;
+        moveStatuses[index].AddStatus(statusType);
         UpdateMoveUI(index);
     }
 
-    public void RestoreMoveStatus(int index)
+    public void RemoveMoveStatus(int index, ActionStatusType statusType)
     {
-        if (index < 0 || index > moveStatuses.Length)
+        // If index is equal to the length of the moveStatuses array, it means we're removing a status from the unite move
+        if (index == moveStatuses.Length)
+        {
+            uniteMoveStatus.RemoveStatus(statusType);
+            return;
+        }
+        else if (index < 0 || index > moveStatuses.Length)
         {
             return;
         }
 
-        if (moveStatuses[index].Cooldown > 0f)
-        {
-            moveStatuses[index].StatusType = ActionStatusType.Cooldown;
-            UpdateMoveUI(index);
-        }
-        else
-        {
-            moveStatuses[index].StatusType = ActionStatusType.Ready;
-            UpdateMoveUI(index);
-        }
+        moveStatuses[index].RemoveStatus(statusType);
+        UpdateMoveUI(index);
     }
 
     [Rpc(SendTo.Server)]
@@ -456,6 +472,10 @@ public class MovesController : NetworkBehaviour
     public void IncrementUniteCharge(int amount)
     {
         uniteMoveCharge = Mathf.Clamp(uniteMoveCharge + amount, 0, uniteMoveMaxCharge);
+        if (uniteMoveCharge == uniteMoveMaxCharge && uniteMoveStatus.HasStatus(ActionStatusType.Cooldown))
+        {
+            uniteMoveStatus.RemoveStatus(ActionStatusType.Cooldown);
+        }
     }
 
     public float GetAtkSpeedCooldown()

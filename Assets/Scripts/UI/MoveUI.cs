@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class MoveUI : MonoBehaviour
 {
-    [SerializeField] private Image moveIcon, secondaryCd;
+    [SerializeField] private Image moveIcon, secondaryCd, moveLabel;
     [SerializeField] private GameObject cdLine, cdBg, lockImage;
     [SerializeField] private TMP_Text cdText, moveName;
 
@@ -26,6 +26,16 @@ public class MoveUI : MonoBehaviour
     {
         moveIcon.sprite = move.icon;
         moveName.text = MoveDatabase.GetMove(move.move).Name;
+
+        if (move.moveLabel == MoveLabels.None)
+        {
+            moveLabel.gameObject.SetActive(false);
+        }
+        else
+        {
+            moveLabel.gameObject.SetActive(true);
+            moveLabel.sprite = CharactersList.instance.GetMoveLabel(move.moveLabel);
+        }
     }
 
     public void SetLock(bool isLocked)

@@ -35,7 +35,7 @@ public class PlayerManager : NetworkBehaviour
     private short maxEnergyCarry;
     private NetworkVariable<short> currentEnergy = new NetworkVariable<short>();
 
-    private bool canScore;
+    private BattleActionStatus scoreStatus = new BattleActionStatus(0);
     private bool isScoring = false;
 
     private string resourcePath = "Objects/AeosEnergy";
@@ -58,11 +58,11 @@ public class PlayerManager : NetworkBehaviour
     public bool OrangeTeam { get => orangeTeam.Value; }
     public short MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
     public short CurrentEnergy { get => currentEnergy.Value; }
-    public bool CanScore { get => canScore; set => canScore = value; }
+    public BattleActionStatus ScoreStatus { get => scoreStatus; }
 
     public Player LobbyPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
 
-    private float scoreTimer, maxScoreTime;
+    private float maxScoreTime;
 
     public event Action<int> onGoalScored;
 
@@ -85,7 +85,7 @@ public class PlayerManager : NetworkBehaviour
         };
 
         maxEnergyCarry = 30;
-        canScore = false;
+        scoreStatus.AddStatus(ActionStatusType.Disabled);
         if (IsServer)
         {
             currentEnergy.Value = 0;
@@ -293,7 +293,7 @@ public class PlayerManager : NetworkBehaviour
             HandleScoring();
         }
 
-        if (playerControls.Movement.Score.WasReleasedThisFrame() && CanScore)
+        if (playerControls.Movement.Score.WasReleasedThisFrame())
         {
             EndScoring();
         }
@@ -310,7 +310,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void StartScoring()
     {
-        if (!canScore || currentEnergy.Value == 0)
+        if (!scoreStatus.HasStatus(ActionStatusType.None) || currentEnergy.Value == 0)
         {
             return;
         }
@@ -318,7 +318,7 @@ public class PlayerManager : NetworkBehaviour
         isScoring = true;
         maxScoreTime = ScoringSystem.CalculateApproximateScoreTime(currentEnergy.Value);
         playerMovement.CanMove = false;
-        scoreTimer = 0;
+        scoreStatus.Cooldown = 0;
         BattleUIManager.instance.SetEnergyBallState(true);
     }
 
@@ -329,10 +329,10 @@ public class PlayerManager : NetworkBehaviour
             return;
         }
 
-        scoreTimer += Time.deltaTime;
-        BattleUIManager.instance.UpdateScoreGauge(scoreTimer, maxScoreTime);
+        scoreStatus.Cooldown += Time.deltaTime;
+        BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
 
-        if (scoreTimer >= maxScoreTime)
+        if (scoreStatus.Cooldown >= maxScoreTime)
         {
             ScorePoints();
         }
@@ -346,9 +346,9 @@ public class PlayerManager : NetworkBehaviour
         }
 
         isScoring = false;
-        scoreTimer = 0;
+        scoreStatus.Cooldown = 0;
         playerMovement.CanMove = true;
-        BattleUIManager.instance.UpdateScoreGauge(scoreTimer, maxScoreTime);
+        BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
         BattleUIManager.instance.SetEnergyBallState(false);
     }
 

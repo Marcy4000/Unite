@@ -8,22 +8,17 @@ public class UniteMoveUI : MonoBehaviour
 {
     [SerializeField] private Image moveIcon, chargeIndicator, bg;
     [SerializeField] private GameObject lockIcon;
+    [SerializeField] private GameObject disabledLock;
     [SerializeField] private TMP_Text cdText, moveName;
     [SerializeField] private Sprite notReady, ready;
-    private MovesController movesController;
-    private int uniteMaxCharge;
 
     private void Start()
     {
         lockIcon.SetActive(true);
         cdText.gameObject.SetActive(false);
         moveIcon.gameObject.SetActive(false);
+        disabledLock.SetActive(false);
         chargeIndicator.fillAmount = 0;
-    }
-
-    public void AssignController(MovesController controller)
-    {
-        movesController = controller;
     }
 
     public void Initialize(MoveAsset move)
@@ -31,21 +26,23 @@ public class UniteMoveUI : MonoBehaviour
         moveIcon.gameObject.SetActive(true);
         moveIcon.sprite = move.icon;
         moveName.text = MoveDatabase.GetMove(move.move).Name;
-        uniteMaxCharge = move.uniteEnergyCost;
     }
 
-    private void Update()
+    public void SetDisabledLock(bool visible)
     {
-        if (movesController == null) return;
-        
+        disabledLock.SetActive(visible);
+    }
+
+    public void UpdateUI(int uniteMoveCharge, int uniteMaxCharge)
+    {
         if (uniteMaxCharge > 0)
         {
-            float chargePercentage = (float) movesController.UniteMoveCharge / uniteMaxCharge;
+            float chargePercentage = (float)uniteMoveCharge / uniteMaxCharge;
             cdText.text = $"{Mathf.FloorToInt(chargePercentage * 100)}%";
             chargeIndicator.fillAmount = chargePercentage;
         }
 
-        if (movesController.UniteMoveCharge == uniteMaxCharge)
+        if (uniteMoveCharge == uniteMaxCharge)
         {
             lockIcon.SetActive(false);
             cdText.gameObject.SetActive(false);

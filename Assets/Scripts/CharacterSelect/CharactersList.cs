@@ -9,6 +9,7 @@ public class CharactersList : MonoBehaviour
     [SerializeField] private CharacterInfo[] characters;
     [SerializeField] private WildPokemonInfo[] wildPokemons;
     [SerializeField] private Sprite[] backgrounds;
+    [SerializeField] private Sprite[] moveLabels;
 
     public CharacterInfo[] Characters => characters;
     public WildPokemonInfo[] WildPokemons => wildPokemons;
@@ -55,5 +56,10 @@ public class CharactersList : MonoBehaviour
             default:
                 return null;
         }
+    }
+
+    public Sprite GetMoveLabel(MoveLabels label)
+    {
+        return moveLabels[(int)label-1];
     }
 }

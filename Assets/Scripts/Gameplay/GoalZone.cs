@@ -54,7 +54,14 @@ public class GoalZone : NetworkBehaviour
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
             playerManagerList.Add(playerManager);
-            playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
+            if (IsActive)
+            {
+                if (playerManager.OrangeTeam != orangeTeam)
+                {
+                    playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Disabled);
+                }
+            }
+            //playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
             playerManager.onGoalScored += OnScore;
             if (playerManager.OrangeTeam == orangeTeam && IsServer)
             {
@@ -68,7 +75,7 @@ public class GoalZone : NetworkBehaviour
         if (other.CompareTag("Player"))
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
-            playerManager.CanScore = false;
+            playerManager.ScoreStatus.AddStatus(ActionStatusType.Disabled);
             playerManager.onGoalScored -= OnScore;
             if (playerManager.OrangeTeam == orangeTeam && IsServer)
             {
@@ -127,7 +134,7 @@ public class GoalZone : NetworkBehaviour
         foreach (var player in playerManagerList)
         {
             player.onGoalScored -= OnScore;
-            player.CanScore = false;
+            player.ScoreStatus.AddStatus(ActionStatusType.Disabled);
         }
         gameObject.SetActive(false);
         onGoalZoneDestroyed?.Invoke(goalLaneId, goalTier);

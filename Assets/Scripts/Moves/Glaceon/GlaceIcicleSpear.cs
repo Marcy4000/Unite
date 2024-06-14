@@ -47,7 +47,9 @@ public class GlaceIcicleSpear : MoveBase
         playerManager.AnimationManager.PlayAnimation("ani_spell1a1_bat_0471");
         playerManager.Pokemon.AddStatChange(selfSlow);
 
-        playerManager.MovesController.UpdateMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
 
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
 
@@ -127,7 +129,9 @@ public class GlaceIcicleSpear : MoveBase
             Aim.Instance.HideSkillshotAim();
             icicleSpearHitbox = null;
             playerManager.Pokemon.RemoveStatChangeWithID(3);
-            playerManager.MovesController.RestoreMoveStatus(1);
+            playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+            playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+            playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
         }
         Debug.Log($"Finished {Name}!");
         base.Finish();
@@ -135,11 +139,18 @@ public class GlaceIcicleSpear : MoveBase
 
     public override void Cancel()
     {
-        base.Cancel();
+        if (!IsActive)
+        {
+            return;
+        }
         playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
         Aim.Instance.HideSkillshotAim();
         icicleSpearHitbox = null;
         playerManager.Pokemon.RemoveStatChangeWithID(3);
-        playerManager.MovesController.RestoreMoveStatus(1);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+
+        base.Cancel();
     }
 }

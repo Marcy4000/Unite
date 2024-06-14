@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Aim : NetworkBehaviour
@@ -8,7 +9,7 @@ public class Aim : NetworkBehaviour
     public static Aim Instance { get; private set; }
     [SerializeField] private LayerMask targetMask;
     [SerializeField] private GameObject autoAimIndicator, indicatorHolders, circleIndicator, dashIndicator, skillShotLine;
-    [SerializeField] private GameObject glaceonUniteIndicator;
+    [SerializeField] private GameObject glaceonUniteIndicator, hyperVoiceIndicator;
     [SerializeField] private GameObject basicAtkIndicator;
     private Transform playerTransform;
     private PlayerControls controls;
@@ -45,6 +46,8 @@ public class Aim : NetworkBehaviour
         dashIndicator.SetActive(false);
         skillShotLine.SetActive(false);
         glaceonUniteIndicator.SetActive(false);
+        basicAtkIndicator.SetActive(false);
+        hyperVoiceIndicator.SetActive(false);
         indicatorHolders.transform.SetParent(null);
     }
 
@@ -106,17 +109,33 @@ public class Aim : NetworkBehaviour
     public void InitializeGlaceonUniteAim()
     {
         glaceonUniteIndicator.SetActive(true);
+        circleIndicator.SetActive(true);
+        circleIndicator.transform.localScale = new Vector3(6.2f, 1f, 6.2f);
     }
 
     public void HideGlaceonUniteAim()
     {
         glaceonUniteIndicator.SetActive(false);
+        circleIndicator.SetActive(false);
+    }
+
+    public void InitializeHyperVoiceAim()
+    {
+        hyperVoiceIndicator.SetActive(true);
+        circleIndicator.SetActive(true);
+        circleIndicator.transform.localScale = new Vector3(2.5f, 1f, 2.5f);
+    }
+
+    public void HideHyperVoiceAim()
+    {
+        hyperVoiceIndicator.SetActive(false);
+        circleIndicator.SetActive(false);
     }
 
     public GameObject AimInCircle(float attackRadius)
     {
         // Find enemies within the attack radius using OverlapSphereNonAlloc
-        int numEnemies = Physics.OverlapSphereNonAlloc(transform.position, attackRadius, collidersBuffer, targetMask);
+        int numEnemies = Physics.OverlapSphereNonAlloc(transform.position, attackRadius-0.5f, collidersBuffer, targetMask);
 
         GameObject closestEnemy = null;
         float closestDistance = Mathf.Infinity;
@@ -188,7 +207,6 @@ public class Aim : NetworkBehaviour
                     }
                 }
                 return hit.collider.gameObject;
-                // Handle targeting here, such as highlighting the target
             }
         }
 
@@ -217,19 +235,8 @@ public class Aim : NetworkBehaviour
         Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
 
         skillShotLine.transform.rotation = Quaternion.LookRotation(aimDirection);
-
-        return aimDirection;
-    }
-
-    public Vector3 GlaceonUniteAim()
-    {
-        // Rotate aiming direction based on right stick input
-        float horizontalInput = controls.Movement.AimMove.ReadValue<Vector2>().x;
-        float verticalInput = controls.Movement.AimMove.ReadValue<Vector2>().y;
-
-        Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
-
         glaceonUniteIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
+        hyperVoiceIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
 
         return aimDirection;
     }

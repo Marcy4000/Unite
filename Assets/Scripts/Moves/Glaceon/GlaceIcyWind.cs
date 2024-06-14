@@ -53,7 +53,7 @@ public class GlaceIcyWind : MoveBase
         {
             effectActivated = false;
             basicAtk.ChangeBasicAtkType(0);
-            playerManager.MovesController.RestoreMoveStatus(1);
+            playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         }
 
         if (!IsActive)
@@ -85,7 +85,7 @@ public class GlaceIcyWind : MoveBase
             playerManager.transform.LookAt(closestEnemy.transform);
             playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
 
-            playerManager.MovesController.RestoreMoveStatus(1);
+            playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         }
     }
 
@@ -119,7 +119,7 @@ public class GlaceIcyWind : MoveBase
 
             if (playerManager.MovesController.GetMove(MoveType.MoveB) is GlaceIceShard)
             {
-                playerManager.MovesController.UpdateMoveStatus(1, ActionStatusType.Disabled);
+                playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
             }
 
             if (glaceonPassive.IciclesCount < 1)

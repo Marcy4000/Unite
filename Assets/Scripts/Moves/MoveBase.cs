@@ -69,6 +69,14 @@ public static class MoveDatabase
                 return new GlaceFreezeDry();
             case AvailableMoves.GlaceonUnite:
                 return new GlaceUnite();
+            case AvailableMoves.SylvSwift:
+                return new SylvSwift();
+            case AvailableMoves.SylvBabyDollEyes:
+                return new SylvBabyDollEyes();
+            case AvailableMoves.SylvHyperVoice:
+                return new SylvHyperVoice();
+            case AvailableMoves.SylvCalmMind:
+                return new SylvCalmMind();
             default:
                 return null;
         }
@@ -90,5 +98,12 @@ public enum AvailableMoves
     GlaceIcyWind,
     GlaceIceShard,
     GlaceFreezeDry,
-    GlaceonUnite
+    GlaceonUnite,
+    SylvSwift,
+    SylvBabyDollEyes,
+    SylvHyperVoice,
+    SylvMysticalCringe,
+    SylvCalmMind,
+    SylvDrainingKiss,
+    SylveonUnite
 }
