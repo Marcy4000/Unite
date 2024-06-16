@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BattleUIManager : MonoBehaviour
@@ -41,6 +39,11 @@ public class BattleUIManager : MonoBehaviour
     public void SetEnergyBallState(bool isPressed)
     {
         energyUI.SetBallPressed(isPressed);
+    }
+
+    public void SetEnergyBallLock(bool isLocked)
+    {
+        energyUI.SetLockIcon(isLocked);
     }
 
     public void InitializeMoveLearnPanel(MoveAsset[] moves)

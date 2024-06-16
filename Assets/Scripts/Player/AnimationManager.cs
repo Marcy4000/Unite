@@ -52,6 +52,7 @@ public class AnimationManager : NetworkBehaviour
         if (IsAnimatorNull())
             return;
 
+        animator.ResetTrigger(name);
         animator.SetTrigger(name);
     }
 

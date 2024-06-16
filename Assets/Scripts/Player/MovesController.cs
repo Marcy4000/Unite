@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -181,9 +180,9 @@ public class MovesController : NetworkBehaviour
 
     private void CheckIfCanLearnMove()
     {
-        Debug.Log($"Checking if can learn move. Current level: {pokemon.CurrentLevel.Value}, Previous level: {prevLevel}");
+        Debug.Log($"Checking if can learn move. Current level: {pokemon.CurrentLevel}, Previous level: {prevLevel}");
 
-        for (int i = prevLevel+1; i <= pokemon.CurrentLevel.Value; i++)
+        for (int i = prevLevel+1; i <= pokemon.CurrentLevel; i++)
         {
             for (int j = 0; j < pokemon.BaseStats.LearnableMoves.Length; j++)
             {
@@ -194,7 +193,7 @@ public class MovesController : NetworkBehaviour
             }
         }
 
-        prevLevel = pokemon.CurrentLevel.Value;
+        prevLevel = pokemon.CurrentLevel;
     }
 
     private void TryPerformingBasicAttack()
@@ -297,7 +296,8 @@ public class MovesController : NetworkBehaviour
 
     private void UpdateMoveUI(int index)
     {
-        BattleUIManager.instance.SetMoveLock(index, moveStatuses[index].HasStatus(ActionStatusType.Disabled));
+        bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned);
+        BattleUIManager.instance.SetMoveLock(index, showLock);
 
         if (moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
         {
@@ -307,7 +307,8 @@ public class MovesController : NetworkBehaviour
 
     private void UpdateUniteMoveUI()
     {
-        BattleUIManager.instance.SetUniteMoveDisabledLock(uniteMoveStatus.HasStatus(ActionStatusType.Disabled));
+        bool showLock = uniteMoveStatus.HasStatus(ActionStatusType.Disabled) || uniteMoveStatus.HasStatus(ActionStatusType.Stunned);
+        BattleUIManager.instance.SetUniteMoveDisabledLock(showLock);
 
         BattleUIManager.instance.UpdateUniteMoveCooldown(uniteMoveCharge, uniteMoveMaxCharge);
     }
@@ -348,6 +349,13 @@ public class MovesController : NetworkBehaviour
         }
 
         BattleUIManager.instance.InitializeMoveUI(move);
+    }
+
+    public void CancelAllMoves()
+    {
+        moves[0].Cancel();
+        moves[1].Cancel();
+        uniteMove.Cancel();
     }
 
     public void AddMoveStatus(int index, ActionStatusType statusType)

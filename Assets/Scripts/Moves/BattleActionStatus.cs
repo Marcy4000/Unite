@@ -20,6 +20,7 @@ public class BattleActionStatus
     private ActionStatusType statusType;
 
     public float Cooldown { get { return cooldown; } set { cooldown = value; } }
+    public event Action OnStatusChange;
 
     public BattleActionStatus(float cooldown)
     {
@@ -30,11 +31,13 @@ public class BattleActionStatus
     public void AddStatus(ActionStatusType status)
     {
         statusType |= status;
+        OnStatusChange?.Invoke();
     }
 
     public void RemoveStatus(ActionStatusType status)
     {
         statusType &= ~status;
+        OnStatusChange?.Invoke();
     }
 
     public bool HasStatus(ActionStatusType status)

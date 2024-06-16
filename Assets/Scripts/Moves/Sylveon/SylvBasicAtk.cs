@@ -40,7 +40,7 @@ public class SylvBasicAtk : BasicAttackBase
             playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
             cooldown = 4.5f;
 
-            if (charge == 2 && playerManager.Pokemon.CurrentLevel.Value >= 3)
+            if (charge == 2 && playerManager.Pokemon.CurrentLevel >= 3)
             {
                 speedBuff.Duration = 1f + (0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
                 playerManager.Pokemon.AddStatChange(speedBuff);

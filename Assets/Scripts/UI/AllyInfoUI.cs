@@ -14,14 +14,14 @@ public class AllyInfoUI : MonoBehaviour
     {
         allyPokemon = pokemon;
         portrait.sprite = pokemon.Portrait;
-        hpBar.fillAmount = (float)pokemon.CurrentHp.Value / pokemon.GetMaxHp();
-        pokemon.CurrentHp.OnValueChanged += UpdateHpBar;
+        hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
+        pokemon.OnHpOrShieldChange += UpdateHpBar;
         pokemon.OnEvolution += UpdatePortrait;
     }
 
-    public void UpdateHpBar(int previous, int current)
+    public void UpdateHpBar()
     {
-        hpBar.fillAmount = (float)current / allyPokemon.GetMaxHp();
+        hpBar.fillAmount = (float)allyPokemon.CurrentHp / allyPokemon.GetMaxHp();
     }
 
     public void UpdatePortrait()

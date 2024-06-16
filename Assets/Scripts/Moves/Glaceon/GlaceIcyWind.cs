@@ -100,7 +100,7 @@ public class GlaceIcyWind : MoveBase
         byte iciclesCount = glaceonPassive.IciclesCount;
         glaceonPassive.UpdateIciclesCount(0);
 
-        yield return new WaitForSeconds(0.7f);
+        yield return new WaitForSeconds(0.45f);
 
         glaceonPassive.UpdateIciclesCount(iciclesCount);
     }

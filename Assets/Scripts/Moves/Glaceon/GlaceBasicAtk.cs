@@ -39,7 +39,7 @@ public class GlaceBasicAtk : BasicAttackBase
                     DamageInfo damage = charge == 2 ? boostedDmg : normalDmg;
 
                     playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damage, attackPrefab);
-                    string animation = playerManager.Pokemon.CurrentLevel.Value >= 3 ? $"ani_atk{charge + 1}_bat_0471" : $"ani_atk{charge + 4}_bat_0133";
+                    string animation = playerManager.Pokemon.CurrentLevel >= 3 ? $"ani_atk{charge + 1}_bat_0471" : $"ani_atk{charge + 4}_bat_0133";
                     playerManager.AnimationManager.PlayAnimation(animation);
                     playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
                     playerManager.transform.LookAt(closestEnemy.transform);

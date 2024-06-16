@@ -7,6 +7,11 @@ using UnityEngine;
 public class Aim : NetworkBehaviour
 {
     public static Aim Instance { get; private set; }
+
+    public const int MAX_ENEMIES = 15; // Maximum number of enemies to detect
+
+    private static readonly StatusType[] invulnerableStatuses = { StatusType.Invincible, StatusType.Untargetable, StatusType.Invisible };
+
     [SerializeField] private LayerMask targetMask;
     [SerializeField] private GameObject autoAimIndicator, indicatorHolders, circleIndicator, dashIndicator, skillShotLine;
     [SerializeField] private GameObject glaceonUniteIndicator, hyperVoiceIndicator;
@@ -17,7 +22,7 @@ public class Aim : NetworkBehaviour
     private float coneDistance = 10f;
     private Collider[] collidersBuffer; // Buffer to store colliders
     private Collider playerCollider; // Collider of the player character
-    public int maxEnemies = 10; // Maximum number of enemies to detect
+
     private bool teamToIgnore;
 
     public bool TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; } 
@@ -33,7 +38,7 @@ public class Aim : NetworkBehaviour
         Instance = this;
 
         // Initialize the colliders buffer
-        collidersBuffer = new Collider[maxEnemies];
+        collidersBuffer = new Collider[MAX_ENEMIES];
 
         // Get the collider of the player character
         playerCollider = GetComponent<Collider>();
@@ -41,6 +46,7 @@ public class Aim : NetworkBehaviour
         playerTransform = transform;
         controls = new PlayerControls();
         controls.asset.Enable();
+
         autoAimIndicator.SetActive(false);
         circleIndicator.SetActive(false);
         dashIndicator.SetActive(false);
@@ -156,6 +162,14 @@ public class Aim : NetworkBehaviour
                 }
             }
 
+            if (collidersBuffer[i].TryGetComponent(out Pokemon pokemon))
+            {
+                if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
+                {
+                    continue;
+                }
+            }
+
             float distance = Vector3.Distance(transform.position, collidersBuffer[i].transform.position);
             if (distance < closestDistance)
             {
@@ -206,6 +220,15 @@ public class Aim : NetworkBehaviour
                         continue;
                     }
                 }
+
+                if (hit.collider.TryGetComponent(out Pokemon pokemon))
+                {
+                    if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
+                    {
+                        continue;
+                    }
+                }
+
                 return hit.collider.gameObject;
             }
         }

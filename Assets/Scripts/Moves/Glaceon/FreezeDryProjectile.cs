@@ -18,8 +18,6 @@ public class FreezeDryProjectile : NetworkBehaviour
     private bool canMove = false;
     private bool gaveDamage = false;
 
-    private List<Pokemon> pokemonList = new List<Pokemon>();
-
     public event Action<int> OnMoveHit;
 
     public void SetDirection(Vector3 startingPosition, Vector2 direction, DamageInfo info, float maxDistance)
@@ -50,7 +48,6 @@ public class FreezeDryProjectile : NetworkBehaviour
         if (distanceTraveled >= maxDistance && !gaveDamage)
         {
             GiveDamage();
-            DespawnObjectRPC();
             gaveDamage = true;
         }
     }
@@ -63,18 +60,31 @@ public class FreezeDryProjectile : NetworkBehaviour
 
     private void GiveDamage()
     {
-        OnMoveHit?.Invoke(pokemonList.Count);
+        Collider[] hits = Physics.OverlapSphere(transform.position, 1f);
+        int pokemonCount = 0;
 
-        for (int i = pokemonList.Count; i > 0; i--)
+        foreach (var hit in hits)
         {
-            if (pokemonList[i - 1] == null)
+            if (hit.TryGetComponent(out PlayerManager playerManager))
             {
-                pokemonList.RemoveAt(i - 1);
-                continue;
+                if (playerManager.OrangeTeam == orangeTeam)
+                {
+                    return;
+                }
             }
 
-            pokemonList[i - 1].TakeDamage(damageInfo);
+            Pokemon pokemon;
+            if (hit.TryGetComponent(out pokemon))
+            {
+                pokemonCount++;
+                pokemon.TakeDamage(damageInfo);
+            }
         }
+
+        OnMoveHit?.Invoke(pokemonCount);
+        canMove = false;
+
+        DespawnObjectRPC();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -96,29 +106,7 @@ public class FreezeDryProjectile : NetworkBehaviour
         Pokemon pokemon;
         if (other.TryGetComponent(out pokemon))
         {
-            // Deal damage to the target
-            if (!pokemonList.Contains(pokemon))
-            {
-                pokemonList.Add(pokemon);
-            }
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (!IsOwner)
-        {
-            return;
-        }
-
-        Pokemon pokemon;
-        if (other.TryGetComponent(out pokemon))
-        {
-            // Deal damage to the target
-            if (pokemonList.Contains(pokemon))
-            {
-                pokemonList.Remove(pokemon);
-            }
+            GiveDamage();
         }
     }
 }

@@ -26,11 +26,14 @@ public class Pokemon : NetworkBehaviour
     private NetworkList<StatChange> statChanges;
     private List<float> statTimers = new List<float>();
 
-    public NetworkVariable<int> CurrentHp { get { return currentHp; } }
-    public NetworkVariable<int> ShieldHp { get { return shieldHp; } }
-    public NetworkVariable<int> CurrentLevel { get { return currentLevel; } }
-    public NetworkVariable<int> CurrentExp { get { return currentExp; } }
-    public NetworkVariable<int> StoredExp { get { return storedExp; } }
+    private NetworkList<StatusEffect> statusEffects;
+    private List<float> statusTimers = new List<float>();
+
+    public int CurrentHp { get { return currentHp.Value; } }
+    public int ShieldHp { get { return shieldHp.Value; } }
+    public int CurrentLevel { get { return currentLevel.Value; } }
+    public int CurrentExp { get { return currentExp.Value; } }
+    public int StoredExp { get { return storedExp.Value; } }
 
     public int LocalExp { get { return localExp; } }
     public int LocalStoredExp { get { return localStoredExp; } }
@@ -45,6 +48,7 @@ public class Pokemon : NetworkBehaviour
     public Sprite Portrait { get { return portrait; } }
 
     public NetworkList<StatChange> StatChanges { get { return statChanges; } }
+    public NetworkList<StatusEffect> StatusEffects { get { return statusEffects; } }
 
     public event Action OnHpOrShieldChange;
     public event Action OnLevelChange;
@@ -55,12 +59,14 @@ public class Pokemon : NetworkBehaviour
     public event Action OnPokemonInitialized;
 
     public event Action OnStatChange;
+    public event Action<StatusEffect, bool> OnStatusChange;
 
     private DamageInfo lastHit;
 
     private void Awake()
     {
         statChanges = new NetworkList<StatChange>();
+        statusEffects = new NetworkList<StatusEffect>();
     }
 
     public void GainPassiveExp(int amount)
@@ -134,6 +140,11 @@ public class Pokemon : NetworkBehaviour
     {
         localStoredExp = current;
         OnExpChange?.Invoke();
+    }
+
+    private void OnStatListChanged(NetworkListEvent<StatChange> changeEvent)
+    {
+        OnStatChange?.Invoke();
     }
 
     public int GetMaxHp()
@@ -389,6 +400,7 @@ public class Pokemon : NetworkBehaviour
         return trueAtkSpeed;
     }
 
+    // Thanks to the unite mathcord for the publishing <3
     public int GetSpeed()
     {
         // Step 1: Sum together all flat modifiers
@@ -430,7 +442,7 @@ public class Pokemon : NetworkBehaviour
         {
             trueSpeed = Mathf.RoundToInt((trueSpeed - 5000) * 0.8f + 5000);
         }
-        else // trueSpeed > 5750
+        else if (trueSpeed > 5750)
         {
             trueSpeed = Mathf.RoundToInt((trueSpeed - 5750) * 0.5f + (5750 - 5000) * 0.8f + 5000);
         }
@@ -510,9 +522,149 @@ public class Pokemon : NetworkBehaviour
         }
     }
 
-    private void OnStatListChanged(NetworkListEvent<StatChange> changeEvent)
+    public void AddStatusEffect(StatusEffect effect)
     {
-        OnStatChange?.Invoke();
+        /*if (IsServer)
+        {
+            statusEffects.Add(effect);
+            if (effect.IsTimed)
+            {
+                statusTimers.Add(effect.Duration);
+            }
+            else
+            {
+                statusTimers.Add(-1);
+            }
+        }
+        else
+        {
+            AddStatusEffectRPC(effect);
+        }*/
+        AddStatusEffectRPC(effect);
+    }
+
+    [Rpc(SendTo.Server)]
+    private void AddStatusEffectRPC(StatusEffect effect)
+    {
+        if (effect.IsNegativeStatus())
+        {
+            if (HasStatusEffect(StatusType.Unstoppable) || HasStatusEffect(StatusType.Invincible))
+            {
+                return;
+            }
+            else if (HasStatusEffect(StatusType.HindranceResistance))
+            {
+                AddStatChange(new StatChange(20, Stat.Speed, 3, true, false, true, 0));
+                return;
+            }
+        }
+        else if (effect.Type == StatusType.Unstoppable)
+        {
+            foreach (var loopEffect in statusEffects)
+            {
+                if (loopEffect.IsNegativeStatus())
+                {
+                    statusTimers.RemoveAt(statusEffects.IndexOf(loopEffect));
+                    statusEffects.Remove(loopEffect);
+                }
+            }
+        }
+
+        if (HasStatusEffect(effect.Type))
+        {
+            statusTimers[statusEffects.IndexOf(effect)] += effect.Duration;
+        }
+        else
+        {
+            statusEffects.Add(effect);
+            if (effect.IsTimed)
+            {
+                statusTimers.Add(effect.Duration);
+            }
+            else
+            {
+                statusTimers.Add(-1);
+            }
+            OnStatusListChangedRPC(effect, true);
+        }
+    }
+
+    public void RemoveStatusEffectWithID(ushort id)
+    {
+        if (IsServer)
+        {
+            for (int i = 0; i < statusEffects.Count; i++)
+            {
+                if (statusEffects[i].ID == id)
+                {
+                    OnStatusListChangedRPC(statusEffects[i], false);
+                    statusEffects.RemoveAt(i);
+                    statusTimers.RemoveAt(i);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            RemoveStatusEffectWithIDRPC(id);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void RemoveStatusEffectWithIDRPC(ushort id)
+    {
+        for (int i = 0; i < statusEffects.Count; i++)
+        {
+            if (statusEffects[i].ID == id)
+            {
+                OnStatusListChangedRPC(statusEffects[i], false);
+                statusEffects.RemoveAt(i);
+                statusTimers.RemoveAt(i);
+                return;
+            }
+        }
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void OnStatusListChangedRPC(StatusEffect effect, bool added)
+    {
+        OnStatusChange?.Invoke(effect, added);
+    }
+
+    [Rpc(SendTo.Server)]
+    public void ClearStatusEffectsRPC()
+    {
+        statusEffects.Clear();
+        statusTimers.Clear();
+    }
+
+    public bool HasStatusEffect(StatusType type)
+    {
+        foreach (StatusEffect effect in statusEffects)
+        {
+            if (effect.Type == type)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool HasAnyStatusEffect(StatusType[] types)
+    {
+        foreach (StatusEffect effect in statusEffects)
+        {
+            foreach (var type in types)
+            {
+                if (effect.Type == type)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private void Update()
@@ -530,6 +682,22 @@ public class Pokemon : NetworkBehaviour
                     {
                         statChanges.RemoveAt(index);
                         statTimers.RemoveAt(index);
+                    }
+                }
+            }
+
+            for (int i = statusEffects.Count; i > 0; i--)
+            {
+                int index = i - 1;
+                StatusEffect effect = statusEffects[index];
+                if (effect.IsTimed)
+                {
+                    statusTimers[index] -= Time.deltaTime;
+                    if (statusTimers[index] <= 0)
+                    {
+                        statusEffects.RemoveAt(index);
+                        statusTimers.RemoveAt(index);
+                        OnStatusListChangedRPC(effect, false);
                     }
                 }
             }
@@ -567,6 +735,11 @@ public class Pokemon : NetworkBehaviour
         {
             AddStatChange(new StatChange(1000, Stat.Speed, 5, true, false, false, 0));
         }
+
+        if (Keyboard.current.zKey.wasPressedThisFrame)
+        {
+            AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 3f, true, 0));
+        }
     }
 
     public void TakeDamage(DamageInfo damage)
@@ -591,7 +764,7 @@ public class Pokemon : NetworkBehaviour
                 break;
         }
 
-        int attackDamage = Mathf.FloorToInt(damage.ratio * atkStat + damage.slider * attacker.CurrentLevel.Value + damage.baseDmg);
+        int attackDamage = Mathf.FloorToInt(damage.ratio * atkStat + damage.slider * attacker.CurrentLevel + damage.baseDmg);
         int defStat;
         switch (damage.type)
         {

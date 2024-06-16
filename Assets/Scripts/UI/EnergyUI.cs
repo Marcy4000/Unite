@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,12 +5,19 @@ using UnityEngine.UI;
 public class EnergyUI : MonoBehaviour
 {
     [SerializeField] private TMP_Text currEnergyText, maxEnergyText;
+    [SerializeField] private GameObject lockIcon;
     [SerializeField] private Image ballIcon, scoreGauge;
     [SerializeField] private Sprite idle, pressed;
 
     private void Start()
     {
         scoreGauge.fillAmount = 0;
+        lockIcon.SetActive(false);
+    }
+
+    public void SetLockIcon(bool value)
+    {
+        lockIcon.SetActive(value);
     }
 
     public void SetBallPressed(bool value)

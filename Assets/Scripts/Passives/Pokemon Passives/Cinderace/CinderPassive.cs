@@ -34,7 +34,7 @@ public class CinderPassive : PassiveBase
 
     private void CinderPassiveEffect()
     {
-        if (playerManager.Pokemon.CurrentHp.Value < playerManager.Pokemon.GetMaxHp()/2f && !IsActive)
+        if (playerManager.Pokemon.CurrentHp < playerManager.Pokemon.GetMaxHp()/2f && !IsActive)
         {
             IsActive = true;
             playerManager.Pokemon.AddStatChange(critBuff);

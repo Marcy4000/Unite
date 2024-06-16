@@ -43,7 +43,7 @@ public class GlaceTailWhip : MoveBase
         if (target != null && IsActive)
         {
             playerManager.MovesController.LaunchProjectileFromPath(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo, attackPrefab);
-            string animation = playerManager.Pokemon.CurrentLevel.Value >= 3 ? "ani_spell2_bat_0471" : "ani_spell2G_bat_0133";
+            string animation = playerManager.Pokemon.CurrentLevel >= 3 ? "ani_spell2_bat_0471" : "ani_spell2G_bat_0133";
             playerManager.AnimationManager.PlayAnimation(animation);
             playerManager.StopMovementForTime(0.4f);
             playerManager.transform.LookAt(target.transform);

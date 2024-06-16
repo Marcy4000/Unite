@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SylvHyperVoice : MoveBase
@@ -39,7 +37,10 @@ public class SylvHyperVoice : MoveBase
 
             playerManager.HPBar.UpdateGenericGuageValue(screamTimer, 2.5f);
 
-            hypervoiceHitbox.transform.position = playerManager.transform.position;
+            if (hypervoiceHitbox != null)
+            {
+                hypervoiceHitbox.transform.position = playerManager.transform.position;
+            }
             playerManager.transform.rotation = Quaternion.LookRotation(direction);
 
             if (screamTimer <= 0f)

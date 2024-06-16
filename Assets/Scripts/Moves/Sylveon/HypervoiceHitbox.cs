@@ -15,7 +15,7 @@ public class HypervoiceHitbox : NetworkBehaviour
 
     private List<Pokemon> pokemonInTrigger = new List<Pokemon>();
 
-    private float cooldown;
+    private float cooldown = 0.1f;
 
     [Rpc(SendTo.ClientsAndHost)]
     public void SetDamageRPC(DamageInfo close, DamageInfo far)

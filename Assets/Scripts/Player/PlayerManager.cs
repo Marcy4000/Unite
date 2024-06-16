@@ -1,4 +1,3 @@
-using Cinemachine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -17,6 +16,8 @@ public enum PlayerState
 
 public class PlayerManager : NetworkBehaviour
 {
+    // TODO: reorganize these variable declarations
+
     private Pokemon pokemon;
     private MovesController movesController;
     private PlayerMovement playerMovement;
@@ -41,6 +42,9 @@ public class PlayerManager : NetworkBehaviour
     private string resourcePath = "Objects/AeosEnergy";
 
     private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm:NetworkVariableWritePermission.Owner);
+
+    private Dictionary<StatusType, Action> statusAddedActions;
+    private Dictionary<StatusType, Action> statusRemovedActions;
 
     public Pokemon Pokemon { get => pokemon; }
     public MovesController MovesController { get => movesController; }
@@ -90,6 +94,8 @@ public class PlayerManager : NetworkBehaviour
         {
             currentEnergy.Value = 0;
         }
+
+        InitializeStatusActions();
     }
 
     public override void OnNetworkSpawn()
@@ -135,13 +141,18 @@ public class PlayerManager : NetworkBehaviour
             pokemon.OnLevelChange += OnPokemonLevelUp;
             pokemon.OnDeath += OnPokemonDeath;
             pokemon.OnDamageTaken += OnPokemonDamage;
+            pokemon.OnStatusChange += OnPokemonStatusChange;
+            scoreStatus.OnStatusChange += () =>
+            {
+                bool showLock = scoreStatus.HasStatus(ActionStatusType.Busy) || scoreStatus.HasStatus(ActionStatusType.Stunned);
+                BattleUIManager.instance.SetEnergyBallLock(showLock);
+            };
             visionController.IsEnabled = true;
         }
         else
         {
             visionController.IsEnabled = currentTeam == OrangeTeam;
         }
-
 
         NetworkObject.DestroyWithScene = true;
 
@@ -151,6 +162,44 @@ public class PlayerManager : NetworkBehaviour
         UpdateEnergyGraphic();
         AssignVisionObjects();
         vision.SetVisibility(currentTeam == OrangeTeam);
+    }
+
+    private void InitializeStatusActions()
+    {
+        statusAddedActions = new Dictionary<StatusType, Action>
+        {
+            { StatusType.Immobilized, () =>
+                {
+                    playerMovement.CanMove = false;
+                    animationManager.SetBool("Walking", false);
+                }
+            },
+            { StatusType.Frozen, () =>
+                {
+                    playerMovement.CanMove = false;
+                    movesController.CancelAllMoves();
+                    EndScoring();
+                    movesController.AddMoveStatus(0, ActionStatusType.Stunned);
+                    movesController.AddMoveStatus(1, ActionStatusType.Stunned);
+                    movesController.AddMoveStatus(2, ActionStatusType.Stunned);
+                    scoreStatus.AddStatus(ActionStatusType.Stunned);
+                }
+            },
+            { StatusType.Incapacitated, ApplyStun },
+            { StatusType.Asleep, ApplyStun },
+            { StatusType.Bound, ApplyStun }
+            // Add other statuses
+        };
+
+        statusRemovedActions = new Dictionary<StatusType, Action>
+        {
+            { StatusType.Immobilized, () => playerMovement.CanMove = true },
+            { StatusType.Frozen, RemoveStun },
+            { StatusType.Incapacitated, RemoveStun },
+            { StatusType.Asleep, RemoveStun },
+            { StatusType.Bound, RemoveStun }
+            // Add other statuses
+        };
     }
 
     private void OnEnergyAmountChange(short prev, short curr)
@@ -283,6 +332,8 @@ public class PlayerManager : NetworkBehaviour
             transform.rotation = spawnpoint.rotation;
         }
 
+        //HandlePokemonStatuses();
+
         if (playerControls.Movement.Score.WasPressedThisFrame())
         {
             StartScoring();
@@ -377,7 +428,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonLevelUp()
     {
-        switch (pokemon.CurrentLevel.Value)
+        switch (pokemon.CurrentLevel)
         {
             case 8:
                 ChangeMaxEnergy(40);
@@ -385,6 +436,80 @@ public class PlayerManager : NetworkBehaviour
             case 11:
                 ChangeMaxEnergy(50);
                 break;
+        }
+    }
+
+    private void HandlePokemonStatuses()
+    {
+        if (pokemon.StatusEffects.Count == 0)
+        {
+            return;
+        }
+
+        foreach (StatusEffect effect in pokemon.StatusEffects)
+        {
+            switch (effect.Type)
+            {
+                case StatusType.Immobilized:
+                    break;
+                case StatusType.Incapacitated:
+                    break;
+                case StatusType.Asleep:
+                    break;
+                case StatusType.Frozen:
+                    break;
+                case StatusType.Bound:
+                    break;
+                case StatusType.Unstoppable:
+                    break;
+                case StatusType.Invincible:
+                    break;
+                case StatusType.Untargetable:
+                    break;
+                case StatusType.HindranceResistance:
+                    break;
+                case StatusType.Invisible:
+                    break;
+                case StatusType.VisionObscuring:
+                    break;
+            }
+        }
+    }
+
+    private void ApplyStun()
+    {
+        playerMovement.CanMove = false;
+        animationManager.SetTrigger("Stun");
+        movesController.CancelAllMoves();
+        EndScoring();
+        movesController.AddMoveStatus(0, ActionStatusType.Stunned);
+        movesController.AddMoveStatus(1, ActionStatusType.Stunned);
+        movesController.AddMoveStatus(2, ActionStatusType.Stunned);
+        scoreStatus.AddStatus(ActionStatusType.Stunned);
+    }
+
+    private void RemoveStun()
+    {
+        playerMovement.CanMove = true;
+        animationManager.SetTrigger("Transition");
+        movesController.RemoveMoveStatus(0, ActionStatusType.Stunned);
+        movesController.RemoveMoveStatus(1, ActionStatusType.Stunned);
+        movesController.RemoveMoveStatus(2, ActionStatusType.Stunned);
+        scoreStatus.RemoveStatus(ActionStatusType.Stunned);
+    }
+
+    private void OnPokemonStatusChange(StatusEffect effect, bool added)
+    {
+        // This is so incredibly stupid but it'll do for now
+        // Update: no longer as stupid, still stupid
+        Debug.Log("Status changed");
+        if (added && statusAddedActions.TryGetValue(effect.Type, out Action addAction))
+        {
+            addAction.Invoke();
+        }
+        else if (!added && statusRemovedActions.TryGetValue(effect.Type, out Action removeAction))
+        {
+            removeAction.Invoke();
         }
     }
 

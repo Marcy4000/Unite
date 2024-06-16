@@ -36,19 +36,19 @@ public class HPBarWild : MonoBehaviour
 
     public void UpdateUI()
     {
-        if (hpBar.fillAmount > (pokemon.CurrentHp.Value / pokemon.GetMaxHp()))
+        if (hpBar.fillAmount > (pokemon.CurrentHp / pokemon.GetMaxHp()))
         {
             if (isActiveAndEnabled)
             {
                 StopAllCoroutines();
-                StartCoroutine(UpdateHP(pokemon.CurrentHp.Value / pokemon.GetMaxHp()));
+                StartCoroutine(UpdateHP(pokemon.CurrentHp / pokemon.GetMaxHp()));
             }
         }
         else
         {
-            hpBar.fillAmount = (float)pokemon.CurrentHp.Value / pokemon.GetMaxHp();
+            hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
         }
-        shieldBar.fillAmount = (float)pokemon.ShieldHp.Value / pokemon.GetMaxHp();
+        shieldBar.fillAmount = (float)pokemon.ShieldHp / pokemon.GetMaxHp();
     }
 
     private IEnumerator UpdateHP(float newHp)
@@ -57,7 +57,7 @@ public class HPBarWild : MonoBehaviour
         float changeAmt = curHp - newHp;
 
         damageBar.fillAmount = curHp;
-        hpBar.fillAmount = (float)pokemon.CurrentHp.Value / pokemon.GetMaxHp();
+        hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
 
         yield return new WaitForSeconds(1f);
 
