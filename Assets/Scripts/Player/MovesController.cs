@@ -455,8 +455,8 @@ public class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void SpawnNetworkObjectFromStringRPC(string path)
     {
-        GameObject spawnedObject = GameObject.Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
-        spawnedObject.GetComponent<NetworkObject>().Spawn();
+        GameObject spawnedObject = Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
+        spawnedObject.GetComponent<NetworkObject>().Spawn(true);
 
         NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
     }
@@ -464,7 +464,7 @@ public class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void SpawnNetworkObjectFromStringRPC(string path, ulong cliendID)
     {
-        GameObject spawnedObject = GameObject.Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
+        GameObject spawnedObject = Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
         spawnedObject.GetComponent<NetworkObject>().SpawnWithOwnership(cliendID, true);
 
         NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);

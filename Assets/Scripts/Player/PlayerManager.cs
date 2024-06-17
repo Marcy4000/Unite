@@ -83,17 +83,18 @@ public class PlayerManager : NetworkBehaviour
         vision = GetComponent<Vision>();
         passiveController = GetComponent<PassiveController>();
 
-        lobbyPlayerId.OnValueChanged += (previous, current) =>
-        {
-            hpBar.UpdatePlayerName(LobbyController.Instance.GetPlayerByID(current.ToString()).Data["PlayerName"].Value);
-        };
-
         maxEnergyCarry = 30;
         scoreStatus.AddStatus(ActionStatusType.Disabled);
         if (IsServer)
         {
             currentEnergy.Value = 0;
         }
+
+        pokemon.OnPokemonInitialized += OnPokemonInitialized;
+        lobbyPlayerId.OnValueChanged += (previous, current) =>
+        {
+            hpBar.UpdatePlayerName(LobbyController.Instance.GetPlayerByID(current.ToString()).Data["PlayerName"].Value);
+        };
 
         InitializeStatusActions();
     }
@@ -124,7 +125,6 @@ public class PlayerManager : NetworkBehaviour
             else
             {
                 visionController.IsEnabled = currentTeam == current;
-                vision.SetVisibility(currentTeam == current);
             }
         };
 
@@ -154,14 +154,16 @@ public class PlayerManager : NetworkBehaviour
             visionController.IsEnabled = currentTeam == OrangeTeam;
         }
 
-        NetworkObject.DestroyWithScene = true;
-
         pokemon.OnEvolution += HandleEvolution;
         currentEnergy.OnValueChanged += OnEnergyAmountChange;
 
+        if (!string.IsNullOrEmpty(lobbyPlayerId.Value.ToString()))
+        {
+            hpBar.UpdatePlayerName(LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()).Data["PlayerName"].Value);
+        }
+
         UpdateEnergyGraphic();
         AssignVisionObjects();
-        vision.SetVisibility(currentTeam == OrangeTeam);
     }
 
     private void InitializeStatusActions()
@@ -208,6 +210,13 @@ public class PlayerManager : NetworkBehaviour
         UpdateEnergyGraphic();
     }
 
+    private void OnPokemonInitialized()
+    {
+        bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        vision.SetVisibility(currentTeam == OrangeTeam);
+        passiveController.LearnPassive();
+    }
+
     public void StopMovementForTime(float time)
     {
         if (stopMovementCoroutine != null)
@@ -247,10 +256,13 @@ public class PlayerManager : NetworkBehaviour
         pokemon.SetNewPokemon(selectedPokemon);
         hpBar.SetPokemon(pokemon);
         HandleEvolution();
-        if (LobbyPlayer.Data["PlayerName"].Value != null)
-        {
-            hpBar.UpdatePlayerName(LobbyPlayer.Data["PlayerName"].Value);
-        }
+    }
+
+    [Rpc(SendTo.Owner)]
+    public void UpdatePosAndRotRPC(Vector3 pos, Quaternion rot)
+    {
+        transform.position = pos;
+        transform.rotation = rot;
     }
 
     private void OnPokemonDamage(DamageInfo info)

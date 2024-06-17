@@ -86,7 +86,10 @@ public class HPBar : MonoBehaviour
         if (hpBar.fillAmount > (pokemon.CurrentHp / pokemon.GetMaxHp()))
         {
             StopAllCoroutines();
-            StartCoroutine(UpdateHP(pokemon.CurrentHp / pokemon.GetMaxHp()));
+            if (isActiveAndEnabled)
+            {
+                StartCoroutine(UpdateHP(pokemon.CurrentHp / pokemon.GetMaxHp()));
+            }
         }
         else
         {

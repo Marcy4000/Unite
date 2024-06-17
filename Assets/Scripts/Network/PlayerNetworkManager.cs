@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
@@ -7,7 +8,6 @@ using UnityEngine.SceneManagement;
 public class PlayerNetworkManager : NetworkBehaviour
 {
     [SerializeField] private GameObject playerPrefab;
-    private GameObject spawnedPlayer;
     private PlayerManager playerManager;
     private Player localPlayer;
 
@@ -39,7 +39,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsOwner || spawnedPlayer == null)
+        if (!IsOwner || playerManager == null)
         {
             return;
         }
@@ -60,7 +60,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void HandleGameStateChanged(GameState state)
     {
-        if (state == GameState.Initialising && spawnedPlayer == null)
+        if (state == GameState.Initialising && playerManager == null)
         {
             SpawnPlayerObject();
         }
@@ -79,9 +79,9 @@ public class PlayerNetworkManager : NetworkBehaviour
     private void SpawnPlayerRpc(ulong clientID, bool orangeTeam)
     {
         Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
-        spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);
+        GameObject spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);
         var spawnedPlayerNetworkObject = spawnedPlayer.GetComponent<NetworkObject>();
-        spawnedPlayerNetworkObject.SpawnAsPlayerObject(clientID);
+        spawnedPlayerNetworkObject.SpawnAsPlayerObject(clientID, true);
         OnPlayerSpawnedRpc(spawnedPlayerNetworkObject.NetworkObjectId, orangeTeam);
     }
 
@@ -91,21 +91,30 @@ public class PlayerNetworkManager : NetworkBehaviour
         PlayerManager[] players = FindObjectsOfType<PlayerManager>();
         foreach (PlayerManager player in players)
         {
-            if (player.GetComponent<NetworkObject>().NetworkObjectId == networkID)
+            NetworkObject playerNetworkObject = player.GetComponent<NetworkObject>();
+
+            if (playerNetworkObject.NetworkObjectId == networkID)
             {
-                spawnedPlayer = player.gameObject;
-                playerManager = player;
-                player.ChangeCurrentTeam(orangeTeam);
                 GameManager.Instance.AddPlayer(player);
-                if (IsOwner)
+                if (playerNetworkObject.OwnerClientId == OwnerClientId)
                 {
-                    player.Pokemon.OnDeath += OnPlayerDeath;
-                    Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
-                    player.transform.position = spawnpoint.position;
-                    player.transform.rotation = spawnpoint.rotation;
+                    playerManager = player;
+                    player.ChangeCurrentTeam(orangeTeam);
+                    if (IsOwner)
+                    {
+                        player.Pokemon.OnDeath += OnPlayerDeath;
+                        StartCoroutine(StupidPositionPlayer(orangeTeam));
+                    }
                 }
             }
         }
+    }
+
+    private IEnumerator StupidPositionPlayer(bool orangeTeam)
+    {
+        yield return new WaitForSeconds(0.1f);
+        Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+        playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
     }
 
     private void OnPlayerDeath(DamageInfo info)

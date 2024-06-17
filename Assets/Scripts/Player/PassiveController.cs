@@ -1,8 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PassiveController : MonoBehaviour
+public class PassiveController : NetworkBehaviour
 {
     private PlayerManager playerManager;
     private Pokemon pokemon;
@@ -11,22 +12,30 @@ public class PassiveController : MonoBehaviour
 
     public PassiveBase Passive => passive;
 
-    private void Start()
+    private void Awake()
     {
         playerManager = GetComponent<PlayerManager>();
         pokemon = GetComponent<Pokemon>();
-
-        LearnPassive();
     }
 
-    private void LearnPassive()
+    public void LearnPassive()
     {
+        if (!IsOwner)
+        {
+            return;
+        }
+
         passive = PassiveDatabase.GetPassive(pokemon.BaseStats.Passive);
         passive.Start(playerManager);
     }
 
     private void Update()
     {
+        if (passive == null || !IsOwner)
+        {
+            return;
+        }
+
         passive.Update();
     }
 }
