@@ -21,6 +21,7 @@ public class PlayerMovement : NetworkBehaviour
     private Vector3 dashDirection;
 
     public bool CanMove { get => canMove; set => canMove = value; }
+    public CharacterController CharacterController => characterController;
 
     public override void OnNetworkSpawn()
     {
@@ -152,5 +153,24 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         animationManager.SetBool("Walking", isMoving);
+    }
+
+    [Rpc(SendTo.Owner)]
+    public void KnockbackRPC(Vector3 direction, float force)
+    {
+        StartCoroutine(ApplyKnockback(direction, force));
+    }
+
+    private IEnumerator ApplyKnockback(Vector3 direction, float force)
+    {
+        float knockbackDuration = 0.2f; // Duration of the knockback effect
+        float elapsedTime = 0f;
+
+        while (elapsedTime < knockbackDuration)
+        {
+            characterController.Move(direction.normalized * force * Time.deltaTime);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
     }
 }

@@ -49,6 +49,8 @@ public static class BasicAttacksDatabase
                 return new GlaceBasicAtk();
             case "sylveon":
                 return new SylvBasicAtk();
+            case "vaporeon":
+                return new VaporBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

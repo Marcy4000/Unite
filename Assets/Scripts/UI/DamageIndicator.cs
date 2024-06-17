@@ -12,7 +12,7 @@ public class DamageIndicator : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         rb.AddForce(Vector3.up * 2f, ForceMode.Impulse);
-        rb.AddTorque(Random.insideUnitSphere * 5f, ForceMode.Impulse);
+        rb.AddTorque(Random.insideUnitSphere * 8f, ForceMode.Impulse);
         damageText.text = damage.ToString();
         switch (damageType)
         {
@@ -26,6 +26,16 @@ public class DamageIndicator : MonoBehaviour
                 damageText.color = Color.white;
                 break;
         }
+        Destroy(gameObject, 1f);
+    }
+
+    public void ShowHeal(int heal)
+    {
+        rb = GetComponent<Rigidbody>();
+        rb.AddForce(Vector3.up * 2f, ForceMode.Impulse);
+        rb.AddTorque(Random.insideUnitSphere * 8f, ForceMode.Impulse);
+        damageText.text = heal.ToString();
+        damageText.color = Color.green;
         Destroy(gameObject, 1f);
     }
 }

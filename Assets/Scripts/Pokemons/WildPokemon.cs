@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -58,8 +59,14 @@ public class WildPokemon : NetworkBehaviour
         if (IsServer)
         {
             GiveAttackerEnergy(attacker.GetComponent<PlayerManager>());
-            gameObject.GetComponent<NetworkObject>().Despawn(true);
+            StartCoroutine(DumbDespawn());
         }
+    }
+    
+    private IEnumerator DumbDespawn()
+    {
+        yield return new WaitForSeconds(0.1f);
+        gameObject.GetComponent<NetworkObject>().Despawn(true);
     }
 
     private void GiveAttackerEnergy(PlayerManager attacker)

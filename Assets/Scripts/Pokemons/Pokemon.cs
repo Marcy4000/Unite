@@ -488,7 +488,7 @@ public class Pokemon : NetworkBehaviour
         }
     }
 
-    public void RemoveStatChangeWithID(short id)
+    public void RemoveStatChangeWithID(ushort id)
     {
         if (IsServer)
         {
@@ -509,7 +509,7 @@ public class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void RemoveStatChangeWithIDRPC(short id)
+    private void RemoveStatChangeWithIDRPC(ushort id)
     {
         for (int i = 0; i < statChanges.Count; i++)
         {
@@ -524,22 +524,6 @@ public class Pokemon : NetworkBehaviour
 
     public void AddStatusEffect(StatusEffect effect)
     {
-        /*if (IsServer)
-        {
-            statusEffects.Add(effect);
-            if (effect.IsTimed)
-            {
-                statusTimers.Add(effect.Duration);
-            }
-            else
-            {
-                statusTimers.Add(-1);
-            }
-        }
-        else
-        {
-            AddStatusEffectRPC(effect);
-        }*/
         AddStatusEffectRPC(effect);
     }
 
@@ -828,6 +812,13 @@ public class Pokemon : NetworkBehaviour
         indicator.ShowDamage(actualDamage, damage.type);
     }
 
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ClientHealRpc(int actualHeal)
+    {
+        DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
+        indicator.ShowHeal(actualHeal);
+    }
+
     [Rpc(SendTo.Owner)]
     private void OnDamageTakenRpc(DamageInfo damage)
     {
@@ -844,6 +835,43 @@ public class Pokemon : NetworkBehaviour
         {
             SetCurrentHPServerRPC(Mathf.Min(currentHp.Value + amount, GetMaxHp()));
         }
+    }
+
+    public void HealDamage(DamageInfo healInfo)
+    {
+        int atkStat;
+        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[healInfo.attackerId].GetComponent<Pokemon>();
+        int localHp = currentHp.Value;
+        int localShield = shieldHp.Value;
+
+        switch (healInfo.type)
+        {
+            case DamageType.True:
+            case DamageType.Physical:
+                atkStat = attacker.GetAttack();
+                break;
+            case DamageType.Special:
+                atkStat = attacker.GetSpAttack();
+                break;
+            default:
+                atkStat = 0;
+                break;
+        }
+
+        int healAmount = Mathf.FloorToInt(healInfo.ratio * atkStat + healInfo.slider * attacker.CurrentLevel + healInfo.baseDmg);
+
+        localHp = Mathf.Min(localHp + healAmount, GetMaxHp());
+
+        if (IsServer)
+        {
+            currentHp.Value = localHp;
+        }
+        else
+        {
+            SetCurrentHPServerRPC(localHp);
+        }
+
+        ClientHealRpc(healAmount);
     }
 
     public void AddShield(int amount)

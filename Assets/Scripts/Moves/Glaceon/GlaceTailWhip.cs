@@ -26,7 +26,7 @@ public class GlaceTailWhip : MoveBase
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeAutoAim(distance, angle);
+        Aim.Instance.InitializeAutoAim(distance, angle, AimTarget.NonAlly);
     }
 
     public override void Update()

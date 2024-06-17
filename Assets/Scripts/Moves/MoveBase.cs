@@ -77,6 +77,18 @@ public static class MoveDatabase
                 return new SylvHyperVoice();
             case AvailableMoves.SylvCalmMind:
                 return new SylvCalmMind();
+            case AvailableMoves.VaporSwift:
+                return new VaporSwift();
+            case AvailableMoves.VaporHelpingHand:
+                return new VaporHelpingHand();
+            case AvailableMoves.VaporRainDance:
+                return new VaporRainDance();
+            case AvailableMoves.VaporDive:
+                return new VaporDive();
+            case AvailableMoves.VaporAquaRing:
+                return new VaporAquaRing();
+            case AvailableMoves.VaporeonUnite:
+                return new VaporeonUnite();
             default:
                 return null;
         }
@@ -105,5 +117,12 @@ public enum AvailableMoves
     SylvMysticalCringe,
     SylvCalmMind,
     SylvDrainingKiss,
-    SylveonUnite
+    SylveonUnite,
+    VaporSwift,
+    VaporHelpingHand,
+    VaporRainDance,
+    VaporAquaRing,
+    VaporDive,
+    VaporHaze,
+    VaporeonUnite,
 }

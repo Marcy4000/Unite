@@ -4,6 +4,8 @@ using Unity.Netcode;
 using Unity.VisualScripting;
 using UnityEngine;
 
+public enum AimTarget { Enemy, Ally, Wild, NonAlly, All }
+
 public class Aim : NetworkBehaviour
 {
     public static Aim Instance { get; private set; }
@@ -13,7 +15,7 @@ public class Aim : NetworkBehaviour
     private static readonly StatusType[] invulnerableStatuses = { StatusType.Invincible, StatusType.Untargetable, StatusType.Invisible };
 
     [SerializeField] private LayerMask targetMask;
-    [SerializeField] private GameObject autoAimIndicator, indicatorHolders, circleIndicator, dashIndicator, skillShotLine;
+    [SerializeField] private GameObject autoAimIndicator, indicatorHolders, circleIndicator, dashIndicator, skillShotLine, circleAreaIndicator;
     [SerializeField] private GameObject glaceonUniteIndicator, hyperVoiceIndicator;
     [SerializeField] private GameObject basicAtkIndicator;
     private Transform playerTransform;
@@ -22,6 +24,13 @@ public class Aim : NetworkBehaviour
     private float coneDistance = 10f;
     private Collider[] collidersBuffer; // Buffer to store colliders
     private Collider playerCollider; // Collider of the player character
+
+    private AimTarget autoaimTarget;
+
+    private float circleAimSpeed = 20f;
+
+    private Vector3 circleAimPosition;
+    private float maxCircleAimRadius;
 
     private bool teamToIgnore;
 
@@ -54,6 +63,7 @@ public class Aim : NetworkBehaviour
         glaceonUniteIndicator.SetActive(false);
         basicAtkIndicator.SetActive(false);
         hyperVoiceIndicator.SetActive(false);
+        circleAreaIndicator.SetActive(false);
         indicatorHolders.transform.SetParent(null);
     }
 
@@ -76,7 +86,7 @@ public class Aim : NetworkBehaviour
         circleIndicator.transform.localScale = new Vector3(distance / 2.5f, 1, distance / 2.5f);
     }
 
-    public void InitializeAutoAim(float distance, float angle)
+    public void InitializeAutoAim(float distance, float angle, AimTarget target)
     {
         autoAimIndicator.SetActive(true);
         circleIndicator.SetActive(true);
@@ -84,6 +94,7 @@ public class Aim : NetworkBehaviour
         coneAngle = angle;
         autoAimIndicator.transform.localScale = new Vector3(coneAngle / 25f, 1, coneDistance / 5f);
         circleIndicator.transform.localScale = new Vector3(coneDistance / 2.5f, 1, coneDistance / 2.5f);
+        autoaimTarget = target;
     }
 
     public void InitializeSkillshotAimAim(float distance)
@@ -92,6 +103,27 @@ public class Aim : NetworkBehaviour
         circleIndicator.SetActive(true);
         skillShotLine.transform.localScale = new Vector3(1f, 1f, distance / 2.5f);
         circleIndicator.transform.localScale = new Vector3(distance / 2.5f, 1f, distance / 2.5f);
+    }
+
+    public void InitializeCircleAreaIndicator(float maxRadius)
+    {
+        circleAreaIndicator.SetActive(true);
+        circleIndicator.SetActive(true);
+        circleIndicator.transform.localScale = new Vector3(maxRadius / 2.5f, 1, maxRadius / 2.5f);
+        circleAreaIndicator.transform.position = new Vector3(playerTransform.position.x, circleAreaIndicator.transform.position.y, playerTransform.position.z);
+        circleAimPosition = Vector3.zero;
+        maxCircleAimRadius = maxRadius;
+    }
+
+    public void InitializeSimpleCircle(float radius)
+    {
+        circleIndicator.SetActive(true);
+        circleIndicator.transform.localScale = new Vector3(radius / 2.5f, 1f, radius / 2.5f);
+    }
+
+    public void HideSimpleCircle()
+    {
+        circleIndicator.SetActive(false);
     }
 
     public void HideDashAim()
@@ -109,7 +141,7 @@ public class Aim : NetworkBehaviour
     public void ShowBasicAtk(bool show, float radius)
     {
         basicAtkIndicator.SetActive(show);
-        basicAtkIndicator.transform.localScale = new Vector3(radius / 2.5f, 1, radius / 2.5f);
+        basicAtkIndicator.transform.localScale = new Vector3(radius, 1, radius);
     }
 
     public void InitializeGlaceonUniteAim()
@@ -122,6 +154,12 @@ public class Aim : NetworkBehaviour
     public void HideGlaceonUniteAim()
     {
         glaceonUniteIndicator.SetActive(false);
+        circleIndicator.SetActive(false);
+    }
+
+    public void HideCircleAreaIndicator()
+    {
+        circleAreaIndicator.SetActive(false);
         circleIndicator.SetActive(false);
     }
 
@@ -189,6 +227,11 @@ public class Aim : NetworkBehaviour
 
         Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
 
+        if (aimDirection.magnitude == 0)
+        {
+            return null;
+        }
+
         autoAimIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
         autoAimIndicator.transform.localScale = new Vector3(coneAngle / 25f, 1, coneDistance / 5f);
 
@@ -212,13 +255,54 @@ public class Aim : NetworkBehaviour
                     continue;
                 }
 
-                if (hit.collider.CompareTag("Player"))
+                switch (autoaimTarget)
                 {
-                    var playerManager = hit.collider.gameObject.GetComponent<PlayerManager>();
-                    if (playerManager.OrangeTeam == teamToIgnore)
-                    {
-                        continue;
-                    }
+                    case AimTarget.Enemy:
+                        if (hit.collider.GetComponent<WildPokemon>())
+                        {
+                            continue;
+                        }
+
+                        if (hit.collider.CompareTag("Player"))
+                        {
+                            var playerManager = hit.collider.gameObject.GetComponent<PlayerManager>();
+                            if (playerManager.OrangeTeam == teamToIgnore)
+                            {
+                                continue;
+                            }
+                        }
+                        break;
+                    case AimTarget.Ally:
+                        if (hit.collider.GetComponent<WildPokemon>())
+                        {
+                            continue;
+                        }
+
+                        if (hit.collider.CompareTag("Player"))
+                        {
+                            var playerManager = hit.collider.gameObject.GetComponent<PlayerManager>();
+                            if (playerManager.OrangeTeam != teamToIgnore)
+                            {
+                                continue;
+                            }
+                        }
+                        break;
+                    case AimTarget.Wild:
+                        if (!hit.collider.GetComponent<WildPokemon>())
+                        {
+                            continue;
+                        }
+                        break;
+                    case AimTarget.NonAlly:
+                        if (hit.collider.CompareTag("Player"))
+                        {
+                            var playerManager = hit.collider.gameObject.GetComponent<PlayerManager>();
+                            if (playerManager.OrangeTeam == teamToIgnore)
+                            {
+                                continue;
+                            }
+                        }
+                        break;
                 }
 
                 if (hit.collider.TryGetComponent(out Pokemon pokemon))
@@ -235,6 +319,31 @@ public class Aim : NetworkBehaviour
 
         return null;
     }
+
+    public Vector3 CircleAreaAim()
+    {
+        // Read input and normalize it
+        Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>().normalized;
+
+        // Calculate the new position based on input and speed
+        float xPos = circleAimPosition.x - (input.y * Time.deltaTime * circleAimSpeed);
+        float zPos = circleAimPosition.z + (input.x * Time.deltaTime * circleAimSpeed);
+
+        // Update the aim position
+        circleAimPosition = new Vector3(xPos, 0, zPos);
+
+        // Clamp the position within the allowed radius
+        if (circleAimPosition.magnitude > maxCircleAimRadius)
+        {
+            circleAimPosition = circleAimPosition.normalized * maxCircleAimRadius;
+        }
+
+        // Update the indicator position
+        circleAreaIndicator.transform.localPosition = new Vector3(circleAimPosition.x, circleAreaIndicator.transform.localPosition.y, circleAimPosition.z);
+
+        return circleAreaIndicator.transform.position;
+    }
+
 
     public Vector3 DashAim()
     {

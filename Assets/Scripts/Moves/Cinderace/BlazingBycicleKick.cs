@@ -19,7 +19,7 @@ public class BlazingBycicleKick : MoveBase
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeAutoAim(11, 90);
+        Aim.Instance.InitializeAutoAim(11, 90, AimTarget.Enemy);
     }
 
     public override void Update()
