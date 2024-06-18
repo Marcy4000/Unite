@@ -10,6 +10,7 @@ public class GoalZone : NetworkBehaviour
     [SerializeField] private int maxScore;
     [SerializeField] private bool orangeTeam;
     [SerializeField] private int healAmount;
+    [SerializeField] private float shieldAmount;
     [SerializeField] private int goalTier;
     [SerializeField] private int goalLaneId;
     [SerializeField] private TMP_Text scoreText;
@@ -94,6 +95,7 @@ public class GoalZone : NetworkBehaviour
                 if (player.OrangeTeam == orangeTeam)
                 {
                     player.Pokemon.HealDamage(healAmount);
+                    player.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * shieldAmount), 1, 0, 1.5f, true));
                 }
             }
             yield return new WaitForSeconds(1.5f);

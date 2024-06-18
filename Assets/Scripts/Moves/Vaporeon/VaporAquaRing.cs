@@ -73,8 +73,6 @@ public class VaporAquaRing : MoveBase
                 };
             }
 
-
-
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
 
             playerManager.AnimationManager.PlayAnimation("Armature_pm0134_00_kw32_happyB01_gfbanm");

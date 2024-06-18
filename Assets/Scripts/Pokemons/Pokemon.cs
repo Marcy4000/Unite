@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -9,10 +10,13 @@ public class Pokemon : NetworkBehaviour
     [SerializeField] private GameObject damagePrefab;
     private PokemonBase baseStats;
     private NetworkVariable<int> currentHp = new NetworkVariable<int>();
-    private NetworkVariable<int> shieldHp = new NetworkVariable<int>();
     private NetworkVariable<int> currentLevel = new NetworkVariable<int>();
     private NetworkVariable<int> currentExp = new NetworkVariable<int>();
     private NetworkVariable<int> storedExp = new NetworkVariable<int>();
+
+    private NetworkList<ShieldInfo> shields;
+    private List<float> shieldTimers = new List<float>();
+
     private int localExp;
     private int localStoredExp;
     private int localLevel;
@@ -30,10 +34,12 @@ public class Pokemon : NetworkBehaviour
     private List<float> statusTimers = new List<float>();
 
     public int CurrentHp { get { return currentHp.Value; } }
-    public int ShieldHp { get { return shieldHp.Value; } }
+    public int ShieldHp { get { return GetShieldsAsInt(); } }
     public int CurrentLevel { get { return currentLevel.Value; } }
     public int CurrentExp { get { return currentExp.Value; } }
     public int StoredExp { get { return storedExp.Value; } }
+
+    public NetworkList<ShieldInfo> Shields { get { return shields; } }
 
     public int LocalExp { get { return localExp; } }
     public int LocalStoredExp { get { return localStoredExp; } }
@@ -67,6 +73,7 @@ public class Pokemon : NetworkBehaviour
     {
         statChanges = new NetworkList<StatChange>();
         statusEffects = new NetworkList<StatusEffect>();
+        shields = new NetworkList<ShieldInfo>();
     }
 
     public void GainPassiveExp(int amount)
@@ -97,20 +104,21 @@ public class Pokemon : NetworkBehaviour
         localExp = 0;
         if (IsServer) {
             currentHp.Value = GetMaxHp();
-            shieldHp.Value = 0;
             currentExp.Value = 0;
+            shields.Clear();
+            shieldTimers.Clear();
         } else {
             SetCurrentHPServerRPC(GetMaxHp());
             SetCurrentEXPServerRPC(0);
-            SetShieldServerRPC(0);
+            ClearShieldsRPC();
         }
         currentHp.OnValueChanged += CurrentHpChanged;
-        shieldHp.OnValueChanged += (previous, current) => OnHpOrShieldChange?.Invoke();
         storedExp.OnValueChanged += StoredExpChanged;
         currentExp.OnValueChanged += CurrentExpValueChanged;
         currentLevel.OnValueChanged += CurrentLevelChanged;
         statChanges.OnListChanged += OnStatListChanged;
         CheckEvolution();
+
         OnPokemonInitialized?.Invoke();
     }
 
@@ -120,6 +128,12 @@ public class Pokemon : NetworkBehaviour
         {
             OnDeath?.Invoke(lastHit);
         }
+        OnHpOrShieldChange?.Invoke();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void OnShieldListChangedRPC()
+    {
         OnHpOrShieldChange?.Invoke();
     }
 
@@ -685,12 +699,29 @@ public class Pokemon : NetworkBehaviour
                     }
                 }
             }
+
+            for (int i = shields.Count; i > 0; i--)
+            {
+                int index = i - 1;
+                ShieldInfo shield = shields[index];
+                if (shield.IsTimed)
+                {
+                    shieldTimers[index] -= Time.deltaTime;
+                    if (shieldTimers[index] <= 0)
+                    {
+                        shields.RemoveAt(index);
+                        shieldTimers.RemoveAt(index);
+                    }
+                }
+            }
         }
 
         if (!IsOwner)
         {
             return;
         }
+
+        // TODO: remove all this debug stuff once ready for release
 
         if (Keyboard.current.tKey.wasPressedThisFrame)
         {
@@ -703,11 +734,11 @@ public class Pokemon : NetworkBehaviour
 
         if (Keyboard.current.hKey.wasPressedThisFrame)
         {
-            AddShield(300);
+            AddShieldRPC(new ShieldInfo(300, 6969, 0, 3, true));
         }
         if (Keyboard.current.jKey.wasPressedThisFrame)
         {
-            RemoveShield(300);
+            RemoveShieldWithIDRPC(6969);
         }
 
         if (Keyboard.current.kKey.wasPressedThisFrame)
@@ -732,7 +763,8 @@ public class Pokemon : NetworkBehaviour
         int atkStat;
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
         int localHp = currentHp.Value;
-        int localShield = shieldHp.Value;
+        List<ShieldInfo> localShields = GetShieldsAsList();
+
 
         switch (damage.type)
         {
@@ -766,22 +798,13 @@ public class Pokemon : NetworkBehaviour
 
         int actualDamage = Mathf.FloorToInt((float)attackDamage * 600 / (600 + defStat));
 
-        if (localShield > 0)
+        int damageRemainder;
+
+        List<ShieldInfo> remainingShields = TakeDamageFromShields(localShields.ToArray(), actualDamage, out damageRemainder);
+
+        if (damageRemainder > 0)
         {
-            if (localShield >= actualDamage)
-            {
-                localShield -= actualDamage;
-            }
-            else
-            {
-                actualDamage -= localShield;
-                localShield = 0;
-                localHp -= actualDamage;
-            }
-        }
-        else
-        {
-            localHp -= actualDamage;
+            localHp -= damageRemainder;
         }
 
         if (localHp <= 0)
@@ -789,19 +812,67 @@ public class Pokemon : NetworkBehaviour
             localHp = 0;
         }
 
+        UpdateShieldListRPC(remainingShields.ToArray());
+
         if (IsServer)
         {
             currentHp.Value = localHp;
-            shieldHp.Value = localShield;
+            //shieldHp.Value = localShield;
         }
         else
         {
             SetCurrentHPServerRPC(localHp);
-            SetShieldServerRPC(localShield);
+            //SetShieldServerRPC(localShield);
         }
 
         OnDamageTakenRpc(damage);
         ClientDamageRpc(actualDamage, damage);
+    }
+
+    public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)
+    {
+        // Copy the original shields to the result list
+        List<ShieldInfo> resultShields = new List<ShieldInfo>(shields);
+
+        // Sort a copy of the shields array by priority in descending order
+        ShieldInfo[] sortedShields = shields.OrderByDescending(s => s.Priority).ToArray();
+
+        // Iterate over the sorted shields and apply damage
+        int remainingDamage = damage;
+        foreach (var shield in sortedShields)
+        {
+            for (int i = 0; i < resultShields.Count; i++)
+            {
+                if (resultShields[i].Equals(shield))
+                {
+                    if (remainingDamage > 0)
+                    {
+                        ShieldInfo updatedShield = resultShields[i];
+                        if (updatedShield.Amount > remainingDamage)
+                        {
+                            updatedShield.Amount -= remainingDamage;
+                            remainingDamage = 0;
+                        }
+                        else
+                        {
+                            remainingDamage -= updatedShield.Amount;
+                            updatedShield.Amount = 0;
+                        }
+                        resultShields[i] = updatedShield;
+                    }
+                }
+            }
+            if (remainingDamage <= 0)
+            {
+                break;
+            }
+        }
+
+        // Set the remainder to the remaining damage after applying to all shields
+        remainder = remainingDamage;
+
+        // Return the updated list of shields
+        return resultShields;
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -842,7 +913,6 @@ public class Pokemon : NetworkBehaviour
         int atkStat;
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[healInfo.attackerId].GetComponent<Pokemon>();
         int localHp = currentHp.Value;
-        int localShield = shieldHp.Value;
 
         switch (healInfo.type)
         {
@@ -874,45 +944,106 @@ public class Pokemon : NetworkBehaviour
         ClientHealRpc(healAmount);
     }
 
-    public void AddShield(int amount)
+    [Rpc(SendTo.Server)]
+    public void AddShieldRPC(ShieldInfo info)
     {
-        if (IsServer)
+        if (HasShieldWithID(info.ID))
         {
-            shieldHp.Value += amount;
+            for (int i = 0; i < shields.Count; i++)
+            {
+                if (shields[i].ID == info.ID)
+                {
+                    shields[i] = new ShieldInfo(shields[i].Amount+info.Amount, info.ID, shields[i].Priority, shields[i].Duration, shields[i].IsTimed);
+                    shieldTimers[i] += info.Duration;
+                    OnShieldListChangedRPC();
+                    return;
+                }
+            }
+        }
+
+        shields.Add(info);
+        if (info.IsTimed)
+        {
+            shieldTimers.Add(info.Duration);
         }
         else
         {
-            SetShieldServerRPC(shieldHp.Value + amount);
+            statTimers.Add(-1);
+        }
+        OnShieldListChangedRPC();
+    }
+
+    [Rpc(SendTo.Server)]
+    public void RemoveShieldWithIDRPC(ushort id)
+    {
+        for (int i = 0; i < shields.Count; i++)
+        {
+            if (shields[i].ID == id)
+            {
+                shields.RemoveAt(i);
+                shieldTimers.RemoveAt(i);
+                OnShieldListChangedRPC();
+                return;
+            }
         }
     }
 
-    public void RemoveShield(int amount)
+    public bool HasShieldWithID(ushort id)
     {
-        if (IsServer)
+        foreach (ShieldInfo shield in shields)
         {
-            shieldHp.Value = Mathf.Max(shieldHp.Value - amount, 0);
+            if (shield.ID == id)
+            {
+                return true;
+            }
         }
-        else
-        {
-            SetShieldServerRPC(Mathf.Max(shieldHp.Value - amount, 0));
-        }
+
+        return false;
     }
 
-    public void SetShield(int amount)
+    private List<ShieldInfo> GetShieldsAsList()
     {
-        if (amount < 0)
+        List<ShieldInfo> shieldList = new List<ShieldInfo>();
+
+        foreach (ShieldInfo shield in shields)
         {
-            return;
+            shieldList.Add(shield);
         }
 
-        if (IsServer)
+        return shieldList;
+    }
+
+    private int GetShieldsAsInt()
+    {
+        int shieldAmount = 0;
+
+        foreach (ShieldInfo shield in shields)
         {
-            shieldHp.Value = amount;
+            shieldAmount += shield.Amount;
         }
-        else
+
+        return shieldAmount;
+    }
+
+    [Rpc(SendTo.Server)]
+    private void UpdateShieldListRPC(ShieldInfo[] newShields)
+    {
+        // Convert array to list and remove shields with Amount = 0
+        List<ShieldInfo> filteredShields = new List<ShieldInfo>(newShields);
+        filteredShields.RemoveAll(shield => shield.Amount == 0);
+
+        // Clear the existing lists
+        shields.Clear();
+        shieldTimers.Clear();
+
+        // Update the parallel lists based on filteredShields
+        foreach (var shield in filteredShields)
         {
-            SetShieldServerRPC(amount);
+            shields.Add(shield);
+            shieldTimers.Add(shield.Duration); // Assuming the timer is based on the Duration field
         }
+
+        OnShieldListChangedRPC();
     }
 
     public void GainExperience(int amount)
@@ -976,15 +1107,16 @@ public class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void SetCurrentHPServerRPC(int amount)
+    private void ClearShieldsRPC()
     {
-        currentHp.Value = amount;
+        shields.Clear();
+        shieldTimers.Clear();
     }
 
     [Rpc(SendTo.Server)]
-    private void SetShieldServerRPC(int amount)
+    private void SetCurrentHPServerRPC(int amount)
     {
-        shieldHp.Value = amount;
+        currentHp.Value = amount;
     }
 
     [Rpc(SendTo.Server)]

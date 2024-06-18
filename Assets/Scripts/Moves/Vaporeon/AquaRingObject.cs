@@ -18,13 +18,24 @@ public class AquaRingObject : NetworkBehaviour
     private bool initialized;
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(ulong target, DamageInfo heal)
+    public void InitializeRPC(ulong targetId, DamageInfo heal)
     {
-        targetId = target;
+        this.targetId = targetId;
         healAmount = heal;
-        this.target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetId].GetComponent<PlayerManager>();
-        this.target.Pokemon.AddShield(Mathf.FloorToInt(this.target.Pokemon.GetMaxHp() * 0.10f));
+        target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetId].GetComponent<PlayerManager>();
+        target.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(target.Pokemon.GetMaxHp()*0.20f), 2, 1, 6f, true));
+        target.Pokemon.OnHpOrShieldChange += CheckIfShouldBreakEarly;
         initialized = true;
+    }
+
+    private void CheckIfShouldBreakEarly()
+    {
+        if (!target.Pokemon.HasShieldWithID(2))
+        {
+            initialized = false;
+            target.Pokemon.OnHpOrShieldChange -= CheckIfShouldBreakEarly;
+            NetworkObject.Despawn(true);
+        }
     }
 
     private void Update()
@@ -47,6 +58,7 @@ public class AquaRingObject : NetworkBehaviour
 
         if (ringDuration <= 0)
         {
+            target.Pokemon.OnHpOrShieldChange -= CheckIfShouldBreakEarly;
             NetworkObject.Despawn(true);
         }
     }

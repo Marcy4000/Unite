@@ -1,6 +1,4 @@
 using DG.Tweening;
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -13,7 +11,6 @@ public class VaporUniteArea : NetworkBehaviour
     private StatChange spDefDebuff = new StatChange(50, Stat.SpDefense, 5f, true, false, true, 0);
 
     private bool vaporeonTeam;
-    private bool initialized;
 
     [Rpc(SendTo.Server)]
     public void InitializeRPC(DamageInfo damageInfo, DamageInfo healAmount, bool vaporeonTeam, Vector3 position)
@@ -23,7 +20,6 @@ public class VaporUniteArea : NetworkBehaviour
         this.damageInfo = damageInfo;
         this.healAmount = healAmount;
         this.vaporeonTeam = vaporeonTeam;
-        initialized = true;
     }
 
     [Rpc(SendTo.Server)]
