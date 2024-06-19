@@ -7,6 +7,7 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private MoveUI[] moveUIs;
     [SerializeField] private UniteMoveUI uniteMoveUI;
     [SerializeField] private MoveLearnPanel moveLearnPanel;
+    [SerializeField] private BattleItemUI battleItemUI;
     [SerializeField] private EnergyUI energyUI;
     [SerializeField] private ScoreUI blueScoreUI, orangeScoreUI;
     [SerializeField] private DeathScreenUI deathScreenUI;
@@ -82,6 +83,11 @@ public class BattleUIManager : MonoBehaviour
         moveUIs[id].ShowSecondaryCooldown(time);
     }
 
+    public void ShowBattleItemCooldown(float time)
+    {
+        battleItemUI.StartCooldown(time);
+    }
+
     public void UpdateUniteMoveCooldown(int currCharge, int maxCharge)
     {
         uniteMoveUI.UpdateUI(currCharge, maxCharge);
@@ -95,6 +101,11 @@ public class BattleUIManager : MonoBehaviour
     public void SetMoveLock(int id, bool isLocked)
     {
         moveUIs[id].SetLock(isLocked);
+    }
+
+    public void SetBattleItemLock(bool locked)
+    {
+        battleItemUI.SetLock(locked);
     }
 
     public void UpdateEnergyUI(int currEnergy, int maxEnergy)
@@ -135,5 +146,10 @@ public class BattleUIManager : MonoBehaviour
             default:
                 break;
         }
+    }
+
+    public void InitializeBattleItemUI(BattleItemAsset battleItem)
+    {
+        battleItemUI.Initialize(battleItem);
     }
 }

@@ -711,6 +711,7 @@ public class Pokemon : NetworkBehaviour
                     {
                         shields.RemoveAt(index);
                         shieldTimers.RemoveAt(index);
+                        OnShieldListChangedRPC();
                     }
                 }
             }

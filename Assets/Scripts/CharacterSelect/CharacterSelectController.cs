@@ -11,6 +11,7 @@ using UnityEngine.SceneManagement;
 public class CharacterSelectController : NetworkBehaviour
 {
     private const float SELECTION_TIME = 10f;
+    private const bool ALLOW_DUPLICATE_CHARACTERS = false;
 
     [SerializeField] private GameObject playerIconPrefab;
     [SerializeField] private Transform playerIconsHolder;
@@ -26,6 +27,7 @@ public class CharacterSelectController : NetworkBehaviour
     private NetworkVariable<float> selectionTimer = new NetworkVariable<float>(SELECTION_TIME);
     private bool isLoading = false;
     private bool startTimer = false;
+    private bool hasSelectedCharacter = false;
 
     private void OnEnable()
     {
@@ -56,7 +58,7 @@ public class CharacterSelectController : NetworkBehaviour
         {
             GameObject playerIcon = Instantiate(playerIconPrefab, playerIconsHolder);
             playerIcon.GetComponent<PlayerSelectionIcon>().Initialize(player);
-            if (player.Id == LobbyController.Instance.Player.Id)
+            if (player.Id == LobbyController.Instance.Player.Id && !string.IsNullOrEmpty(player.Data["SelectedCharacter"].Value))
             {
                 SpawnPokemon(CharactersList.instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value));
             }
@@ -97,6 +99,14 @@ public class CharacterSelectController : NetworkBehaviour
                 }
             }
         }
+
+        if (selectionTimer.Value <= 0.3f && !hasSelectedCharacter)
+        {
+            if (string.IsNullOrEmpty(LobbyController.Instance.Player.Data["SelectedCharacter"].Value))
+            {
+                ChangeCharacter(GetRandomCharacter());
+            }
+        }
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -107,8 +117,49 @@ public class CharacterSelectController : NetworkBehaviour
 
     private void ChangeCharacter(CharacterInfo character)
     {
+        if (!IsCharacterAvailable(character.pokemonName) && !ALLOW_DUPLICATE_CHARACTERS)
+        {
+            return;
+        }
+
+        hasSelectedCharacter = true;
         LobbyController.Instance.ChangePlayerCharacter(character.pokemonName);
         SpawnPokemon(character);
+    }
+
+    private bool IsCharacterAvailable(string characterName)
+    {
+        Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
+        foreach (var player in localTeamPlayers)
+        {
+            if (player.Id != LobbyController.Instance.Player.Id)
+            {
+                if (player.Data["SelectedCharacter"].Value == characterName)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private CharacterInfo GetRandomCharacter()
+    {
+        bool found = false;
+
+        CharacterInfo character = null;
+
+        while (!found)
+        {
+            character = CharactersList.instance.Characters[UnityEngine.Random.Range(0, CharactersList.instance.Characters.Length)];
+            if (IsCharacterAvailable(character.pokemonName))
+            {
+                found = true;
+            }
+        }
+
+        return character;
     }
 
     private void SpawnPokemon(CharacterInfo character)

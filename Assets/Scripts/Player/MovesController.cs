@@ -22,6 +22,9 @@ public class MovesController : NetworkBehaviour
     private BasicAttackBase basicAttack;
     private BattleActionStatus basicAttackStatus = new BattleActionStatus(0);
 
+    private BattleItemBase battleItem;
+    private BattleActionStatus battleItemStatus = new BattleActionStatus(0);
+
     private Pokemon pokemon;
     private PlayerControls controls;
     private PlayerManager playerManager;
@@ -33,6 +36,9 @@ public class MovesController : NetworkBehaviour
 
     public BasicAttackBase BasicAttack => basicAttack;
     public BattleActionStatus BasicAttackStatus => basicAttackStatus;
+
+    public BattleItemBase BattleItem => battleItem;
+    public BattleActionStatus BattleItemStatus => battleItemStatus;
 
     public event Action onBasicAttackPerformed;
     public event Action<MoveBase> onMovePerformed;
@@ -69,6 +75,9 @@ public class MovesController : NetworkBehaviour
 
         pokemon.OnLevelChange += CheckIfCanLearnMove;
         MoveLearnPanel.onSelectedMove += LearnMove;
+
+        SelectBattleItem();
+        battleItemStatus.OnStatusChange += UpdateBattleItemUI;
 
         LearnMove(lockedMove);
 
@@ -138,16 +147,24 @@ public class MovesController : NetworkBehaviour
             TryUsingUniteMove();
         }
 
+        if (controls.Movement.BattleItem.WasPressedThisFrame())
+        {
+            TryUsingBattleItem();
+        }
+
 
         moves[0].Update();
         moves[1].Update();
         uniteMove.Update();
+
+        battleItem.Update();
 
         if (controls.Movement.CancelMove.WasPressedThisFrame())
         {
             moves[0].Cancel();
             moves[1].Cancel();
             uniteMove.Cancel();
+            battleItem.Cancel();
         }
 
         if (controls.Movement.MoveA.WasReleasedThisFrame())
@@ -163,6 +180,11 @@ public class MovesController : NetworkBehaviour
             TryFinishingUniteMove();
         }
 
+        if (controls.Movement.BattleItem.WasReleasedThisFrame())
+        {
+            TryFinishingBattleItem();
+        }
+
         for (int i = 0; i < moveStatuses.Length; i++)
         {
             if (moveStatuses[i].Cooldown > 0)
@@ -173,6 +195,15 @@ public class MovesController : NetworkBehaviour
             {
                 moveStatuses[i].RemoveStatus(ActionStatusType.Cooldown);
             }
+        }
+
+        if (battleItemStatus.Cooldown > 0)
+        {
+            battleItemStatus.Cooldown -= Time.deltaTime;
+        }
+        else if (battleItemStatus.HasStatus(ActionStatusType.Cooldown))
+        {
+            battleItemStatus.RemoveStatus(ActionStatusType.Cooldown);
         }
 
         UpdateUniteMoveUI();
@@ -229,6 +260,14 @@ public class MovesController : NetworkBehaviour
         uniteMove.Start(playerManager);
     }
 
+    public void TryUsingBattleItem()
+    {
+        if (!battleItemStatus.HasStatus(ActionStatusType.None))
+            return;
+
+        battleItem.Start(playerManager);
+    }
+
     public void TryFinishingUniteMove()
     {
         if (!uniteMoveStatus.HasStatus(ActionStatusType.None))
@@ -248,6 +287,14 @@ public class MovesController : NetworkBehaviour
             return;
 
         moves[index].Finish();
+    }
+
+    public void TryFinishingBattleItem()
+    {
+        if (!battleItemStatus.HasStatus(ActionStatusType.None))
+            return;
+
+        battleItem.Finish();
     }
 
     public void OnMoveOver(MoveBase move)
@@ -279,6 +326,18 @@ public class MovesController : NetworkBehaviour
         onMovePerformed?.Invoke(move);
     }
 
+    private void OnBattleItemOver()
+    {
+        if (!battleItem.wasUseSuccessful)
+        {
+            return;
+        }
+
+        battleItemStatus.AddStatus(ActionStatusType.Cooldown);
+        battleItemStatus.Cooldown = battleItem.Cooldown;
+        UpdateBattleItemUI();
+    }
+
     public MoveBase GetMove(MoveType moveType)
     {
         switch (moveType)
@@ -302,6 +361,17 @@ public class MovesController : NetworkBehaviour
         if (moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
         {
             BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown);
+        }
+    }
+
+    private void UpdateBattleItemUI()
+    {
+        bool showLock = battleItemStatus.HasStatus(ActionStatusType.Disabled) || battleItemStatus.HasStatus(ActionStatusType.Stunned);
+        BattleUIManager.instance.SetBattleItemLock(showLock);
+
+        if (battleItemStatus.HasStatus(ActionStatusType.Cooldown))
+        {
+            BattleUIManager.instance.ShowBattleItemCooldown(battleItemStatus.Cooldown);
         }
     }
 
@@ -349,6 +419,17 @@ public class MovesController : NetworkBehaviour
         }
 
         BattleUIManager.instance.InitializeMoveUI(move);
+    }
+
+    private void SelectBattleItem()
+    {
+        BattleItemAsset selectedBattleItem = CharactersList.instance.GetBattleItemByID(int.Parse(LobbyController.Instance.Player.Data["BattleItem"].Value));
+
+        battleItem = BattleItemDatabase.GetBattleItem(selectedBattleItem.battleItemType);
+
+        BattleUIManager.instance.InitializeBattleItemUI(selectedBattleItem);
+
+        battleItem.onBattleItemOver += OnBattleItemOver;
     }
 
     public void CancelAllMoves()

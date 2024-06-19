@@ -12,6 +12,7 @@ public class MainMenuUI : MonoBehaviour
 
     [SerializeField] private GameObject[] lobbyUIs;
     [SerializeField] private PartyScreenUI partyScreenUI;
+    [SerializeField] private LobbyPlayerInfoIcons lobbyPlayerInfoIcons;
 
     private void Start()
     {
@@ -34,7 +35,14 @@ public class MainMenuUI : MonoBehaviour
             LobbyController.Instance.LeaveLobby();
         });
 
+        lobbyPlayerInfoIcons.Initialize(LobbyController.Instance.Player);
+
         ShowMainMenuUI();
+    }
+
+    public void ShowPlayerMenuUI()
+    {
+        lobbyUIs[2].SetActive(true);
     }
 
     public void ShowLobbyUI()

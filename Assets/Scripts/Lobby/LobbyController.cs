@@ -107,7 +107,8 @@ public class LobbyController : MonoBehaviour
             {
                 {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, testPlayerName)},
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
-                {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Cinderace")}
+                {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
+                {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")}
             });
 
             LoadingScreen.Instance.HideGenericLoadingScreen();

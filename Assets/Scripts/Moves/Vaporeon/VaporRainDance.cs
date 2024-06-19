@@ -57,6 +57,7 @@ public class VaporRainDance : MoveBase
         playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
         playerManager.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
+        playerManager.MovesController.BattleItemStatus.AddStatus(ActionStatusType.Disabled);
         playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
 
         var jump = playerManager.transform.DOJump(destination, 1f, 1, 0.35f);
@@ -92,6 +93,7 @@ public class VaporRainDance : MoveBase
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
         playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.MovesController.BattleItemStatus.RemoveStatus(ActionStatusType.Disabled);
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 

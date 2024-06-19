@@ -98,6 +98,15 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""BattleItem"",
+                    ""type"": ""Button"",
+                    ""id"": ""7ac68a41-d673-433c-80a1-30b8579cd2bb"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -243,6 +252,17 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""action"": ""CancelMove"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""61f6efb9-e4cb-4879-8448-51c8bbd652aa"",
+                    ""path"": ""<Gamepad>/buttonWest"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""BattleItem"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -375,6 +395,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_Movement_UniteMove = m_Movement.FindAction("UniteMove", throwIfNotFound: true);
         m_Movement_Score = m_Movement.FindAction("Score", throwIfNotFound: true);
         m_Movement_CancelMove = m_Movement.FindAction("CancelMove", throwIfNotFound: true);
+        m_Movement_BattleItem = m_Movement.FindAction("BattleItem", throwIfNotFound: true);
         // LearnMove
         m_LearnMove = asset.FindActionMap("LearnMove", throwIfNotFound: true);
         m_LearnMove_Move1 = m_LearnMove.FindAction("Move1", throwIfNotFound: true);
@@ -453,6 +474,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Movement_UniteMove;
     private readonly InputAction m_Movement_Score;
     private readonly InputAction m_Movement_CancelMove;
+    private readonly InputAction m_Movement_BattleItem;
     public struct MovementActions
     {
         private @PlayerControls m_Wrapper;
@@ -465,6 +487,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         public InputAction @UniteMove => m_Wrapper.m_Movement_UniteMove;
         public InputAction @Score => m_Wrapper.m_Movement_Score;
         public InputAction @CancelMove => m_Wrapper.m_Movement_CancelMove;
+        public InputAction @BattleItem => m_Wrapper.m_Movement_BattleItem;
         public InputActionMap Get() { return m_Wrapper.m_Movement; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -498,6 +521,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @CancelMove.started += instance.OnCancelMove;
             @CancelMove.performed += instance.OnCancelMove;
             @CancelMove.canceled += instance.OnCancelMove;
+            @BattleItem.started += instance.OnBattleItem;
+            @BattleItem.performed += instance.OnBattleItem;
+            @BattleItem.canceled += instance.OnBattleItem;
         }
 
         private void UnregisterCallbacks(IMovementActions instance)
@@ -526,6 +552,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @CancelMove.started -= instance.OnCancelMove;
             @CancelMove.performed -= instance.OnCancelMove;
             @CancelMove.canceled -= instance.OnCancelMove;
+            @BattleItem.started -= instance.OnBattleItem;
+            @BattleItem.performed -= instance.OnBattleItem;
+            @BattleItem.canceled -= instance.OnBattleItem;
         }
 
         public void RemoveCallbacks(IMovementActions instance)
@@ -669,6 +698,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         void OnUniteMove(InputAction.CallbackContext context);
         void OnScore(InputAction.CallbackContext context);
         void OnCancelMove(InputAction.CallbackContext context);
+        void OnBattleItem(InputAction.CallbackContext context);
     }
     public interface ILearnMoveActions
     {
