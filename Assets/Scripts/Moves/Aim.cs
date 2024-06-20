@@ -179,7 +179,7 @@ public class Aim : NetworkBehaviour
     public GameObject AimInCircle(float attackRadius)
     {
         // Find enemies within the attack radius using OverlapSphereNonAlloc
-        int numEnemies = Physics.OverlapSphereNonAlloc(transform.position, attackRadius-0.5f, collidersBuffer, targetMask);
+        int numEnemies = Physics.OverlapSphereNonAlloc(transform.position, attackRadius, collidersBuffer, targetMask);
 
         GameObject closestEnemy = null;
         float closestDistance = Mathf.Infinity;
@@ -353,6 +353,11 @@ public class Aim : NetworkBehaviour
 
         Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
 
+        if (aimDirection.magnitude == 0)
+        {
+            return Vector3.zero;
+        }
+
         dashIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
 
         return aimDirection;
@@ -365,6 +370,11 @@ public class Aim : NetworkBehaviour
         float verticalInput = controls.Movement.AimMove.ReadValue<Vector2>().y;
 
         Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
+
+        if (aimDirection.magnitude == 0)
+        {
+            return Vector3.zero;
+        }
 
         skillShotLine.transform.rotation = Quaternion.LookRotation(aimDirection);
         glaceonUniteIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);

@@ -97,10 +97,6 @@ public class GameManager : NetworkBehaviour
     private void GameStateChanged(GameState previous, GameState current)
     {
         onGameStateChanged?.Invoke(current);
-        if (current == GameState.Ended)
-        {
-            //NetworkManagerUI.instance.DebugShowScore();
-        }
     }
 
     public void StartGame()

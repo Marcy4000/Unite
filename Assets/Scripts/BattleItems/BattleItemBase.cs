@@ -52,7 +52,7 @@ public static class BattleItemDatabase
             case AvailableBattleItems.XAttack:
                 //return new XAttack();
             case AvailableBattleItems.FullHeal:
-                //return new FullHeal();
+                return new FullHeal();
             case AvailableBattleItems.GoalGetter:
                 //return new GoalGetter();
             case AvailableBattleItems.Potion:

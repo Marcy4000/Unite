@@ -289,6 +289,16 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerData(options);
     }
 
+    public void ChangePlayerBattleItem(string battleItemID)
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["BattleItem"].Value = battleItemID;
+        Debug.Log($"Changed Battle Item to {options.Data["BattleItem"].Value}");
+
+        UpdatePlayerData(options);
+    }
+
     public void ChangePlayerName(string newName)
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();

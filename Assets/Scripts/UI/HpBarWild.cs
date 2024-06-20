@@ -59,7 +59,7 @@ public class HPBarWild : MonoBehaviour
         damageBar.fillAmount = curHp;
         hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.4f);
 
         while (curHp - newHp > Mathf.Epsilon)
         {

@@ -142,6 +142,7 @@ public class PlayerManager : NetworkBehaviour
             pokemon.OnDeath += OnPokemonDeath;
             pokemon.OnDamageTaken += OnPokemonDamage;
             pokemon.OnStatusChange += OnPokemonStatusChange;
+            playerState.OnValueChanged += OnPlayerStateChange;
             scoreStatus.OnStatusChange += () =>
             {
                 bool showLock = scoreStatus.HasStatus(ActionStatusType.Busy) || scoreStatus.HasStatus(ActionStatusType.Stunned);
@@ -261,8 +262,20 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(SendTo.Owner)]
     public void UpdatePosAndRotRPC(Vector3 pos, Quaternion rot)
     {
+        playerMovement.CharacterController.enabled = false;
         transform.position = pos;
         transform.rotation = rot;
+        playerMovement.CharacterController.enabled = true;
+    }
+
+    private void OnPlayerStateChange(PlayerState prev, PlayerState curr)
+    {
+        if (curr != PlayerState.Dead && transform.position.y == deathPosition.y)
+        {
+            Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+            UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
+            playerMovement.CanMove = true;
+        }
     }
 
     private void OnPokemonDamage(DamageInfo info)
@@ -277,8 +290,8 @@ public class PlayerManager : NetworkBehaviour
     {
         SpawnEnergy(currentEnergy.Value);
         ResetEnergyRPC();
-        transform.position = deathPosition;
         playerMovement.CanMove = false;
+        UpdatePosAndRotRPC(deathPosition, Quaternion.identity);
         ChangeCurrentState(PlayerState.Dead);
     }
 
@@ -295,10 +308,6 @@ public class PlayerManager : NetworkBehaviour
     {
         ChangeCurrentState(PlayerState.Alive);
         pokemon.HealDamage(pokemon.GetMaxHp());
-        playerMovement.CanMove = true;
-        Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
-        transform.position = new Vector3(spawnpoint.position.x, spawnpoint.position.y, spawnpoint.position.z);
-        transform.rotation = spawnpoint.rotation;
     }
 
     [Rpc(SendTo.Server)]
@@ -335,13 +344,6 @@ public class PlayerManager : NetworkBehaviour
         if (playerState.Value != PlayerState.Alive)
         {
             return;
-        }
-
-        if (playerState.Value != PlayerState.Dead && transform.position.y == deathPosition.y)
-        {
-            Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
-            transform.position = new Vector3(spawnpoint.position.x, spawnpoint.position.y, spawnpoint.position.z);
-            transform.rotation = spawnpoint.rotation;
         }
 
         //HandlePokemonStatuses();

@@ -6,5 +6,10 @@ using UnityEngine;
 public class BattleItemAsset : ScriptableObject
 {
     public AvailableBattleItems battleItemType;
+    public string itemName;
+
+    [TextArea]
+    public string description;
+
     public Sprite icon;
 }

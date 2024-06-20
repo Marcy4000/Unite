@@ -20,7 +20,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool isDashing = false;
     private Vector3 dashDirection;
 
-    public bool CanMove { get => canMove; set => canMove = value; }
+    public bool CanMove { get => canMove; set => EnableMovement(value); }
     public CharacterController CharacterController => characterController;
 
     public override void OnNetworkSpawn()
@@ -43,6 +43,12 @@ public class PlayerMovement : NetworkBehaviour
     private void UpdateSpeed()
     {
         moveSpeed = pokemon.GetSpeed() / 1000f;
+    }
+
+    private void EnableMovement(bool value)
+    {
+        canMove = value;
+        //characterController.enabled = value;
     }
 
     void Update()
@@ -91,6 +97,8 @@ public class PlayerMovement : NetworkBehaviour
 
     public void StartDash()
     {
+        characterController.enabled = true;
+
         if (!isDashing)
         {
             isDashing = true;
@@ -103,6 +111,8 @@ public class PlayerMovement : NetworkBehaviour
 
     public void StartDash(Vector3 dashDirection)
     {
+        characterController.enabled = true;
+
         if (!isDashing)
         {
             isDashing = true;

@@ -14,6 +14,7 @@ public class CharactersList : MonoBehaviour
 
     public CharacterInfo[] Characters => characters;
     public WildPokemonInfo[] WildPokemons => wildPokemons;
+    public BattleItemAsset[] BattleItems => battleItems;
 
     private void Awake()
     {

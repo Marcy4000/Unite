@@ -11,6 +11,7 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private TMP_InputField lobbyIdField;
 
     [SerializeField] private GameObject[] lobbyUIs;
+    [SerializeField] private GameObject[] lobbyScenes;
     [SerializeField] private PartyScreenUI partyScreenUI;
     [SerializeField] private LobbyPlayerInfoIcons lobbyPlayerInfoIcons;
 
@@ -51,7 +52,14 @@ public class MainMenuUI : MonoBehaviour
         {
             lobbyUI.SetActive(false);
         }
+
+        foreach (var lobbyScene in lobbyScenes)
+        {
+            lobbyScene.SetActive(false);
+        }
+
         lobbyUIs[1].SetActive(true);
+        lobbyScenes[1].SetActive(true);
         partyScreenUI.InitializeUI(LobbyController.Instance.Lobby);
     }
 
@@ -61,7 +69,14 @@ public class MainMenuUI : MonoBehaviour
         {
             lobbyUI.SetActive(false);
         }
+
+        foreach (var lobbyScene in lobbyScenes)
+        {
+            lobbyScene.SetActive(false);
+        }
+
         lobbyUIs[0].SetActive(true);
+        lobbyScenes[0].SetActive(true);
     }
 
     public void UpdatePartyScreenUI()

@@ -10,6 +10,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     [SerializeField] private GameObject playerPrefab;
     private PlayerManager playerManager;
     private Player localPlayer;
+    private bool matchStarted = false;
 
     private float deathTimer = 5f;
 
@@ -64,6 +65,12 @@ public class PlayerNetworkManager : NetworkBehaviour
         {
             SpawnPlayerObject();
         }
+
+        if (state == GameState.Playing && !matchStarted)
+        {
+            playerManager.PlayerMovement.CanMove = true;
+            matchStarted = true;
+        }
     }
 
     public void SpawnPlayerObject()
@@ -103,18 +110,13 @@ public class PlayerNetworkManager : NetworkBehaviour
                     if (IsOwner)
                     {
                         player.Pokemon.OnDeath += OnPlayerDeath;
-                        StartCoroutine(StupidPositionPlayer(orangeTeam));
+                        Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+                        playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
+                        playerManager.PlayerMovement.CanMove = false;
                     }
                 }
             }
         }
-    }
-
-    private IEnumerator StupidPositionPlayer(bool orangeTeam)
-    {
-        yield return new WaitForSeconds(0.1f);
-        Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
-        playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
     }
 
     private void OnPlayerDeath(DamageInfo info)

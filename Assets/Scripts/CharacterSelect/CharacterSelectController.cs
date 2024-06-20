@@ -1,23 +1,19 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class CharacterSelectController : NetworkBehaviour
 {
-    private const float SELECTION_TIME = 10f;
+    private const float SELECTION_TIME = 20f;
     private const bool ALLOW_DUPLICATE_CHARACTERS = false;
 
     [SerializeField] private GameObject playerIconPrefab;
     [SerializeField] private Transform playerIconsHolder;
 
-    [SerializeField] private GameObject characterPrefab;
-    [SerializeField] private Transform characterSpawnPoint;
+    [SerializeField] CharacterSelectorUI characterSelectorUI;
 
     [SerializeField] private Transform pokemonSpawnPoint;
     private GameObject currentPokemon;
@@ -64,11 +60,11 @@ public class CharacterSelectController : NetworkBehaviour
             }
         }
 
-        foreach (var character in CharactersList.instance.Characters)
+        List<CharacterSelectIcon> characterSelectIcons = characterSelectorUI.InitializeUI();
+
+        foreach (var icon in characterSelectIcons)
         {
-            GameObject characterIcon = Instantiate(characterPrefab, characterSpawnPoint);
-            characterIcon.GetComponent<CharacterSelectIcon>().Initialize(character);
-            characterIcon.GetComponent<CharacterSelectIcon>().OnCharacterSelected += ChangeCharacter;
+            icon.OnCharacterSelected += ChangeCharacter;
         }
 
         selectionTimer.OnValueChanged += UpdateTimerText;
