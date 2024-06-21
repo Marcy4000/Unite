@@ -21,7 +21,7 @@ public class JoltPassive : PassiveBase
             Pokemon targetPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[target].GetComponent<Pokemon>();
             if (targetPokemon.Type == PokemonType.Player)
             {
-                passiveCharge += 5f;
+                passiveCharge += 8f;
             }
         };
         playerManager.Pokemon.onOtherPokemonKilled += (target) =>
@@ -29,7 +29,7 @@ public class JoltPassive : PassiveBase
             Pokemon targetPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[target].GetComponent<Pokemon>();
             if (targetPokemon.Type == PokemonType.Player)
             {
-                passiveCharge += 15f;
+                passiveCharge += 20f;
             }
         };
     }
@@ -49,11 +49,11 @@ public class JoltPassive : PassiveBase
             return;
         }
 
-        passiveCharge += Time.deltaTime;
+        passiveCharge += 2f * Time.deltaTime;
 
         if (playerManager.PlayerMovement.IsMoving)
         {
-            passiveCharge += 2f * Time.deltaTime;
+            passiveCharge += 3f * Time.deltaTime;
         }
 
         if (passiveCharge > 100f)

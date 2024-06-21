@@ -20,7 +20,7 @@ public class GlaceBasicAtk : BasicAttackBase
     {
         base.Initialize(manager);
         range = 7f;
-        attackPrefab = "BasicAtk/GlaceonBasicAtk";
+        attackPrefab = "Assets/Prefabs/Objects/BasicAtk/GlaceonBasicAtk.prefab";
         normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.39f, 4, 70, DamageType.Special);
         boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.47f, 5, 90, DamageType.Special);
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;

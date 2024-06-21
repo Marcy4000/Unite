@@ -1,6 +1,8 @@
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class WildPokemon : NetworkBehaviour
 {
@@ -9,7 +11,7 @@ public class WildPokemon : NetworkBehaviour
     [SerializeField] private HPBarWild hpBar;
     private Vision vision;
 
-    private string resourcePath = "Objects/AeosEnergy";
+    private string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
 
     public Pokemon Pokemon => pokemon;
     public WildPokemonInfo WildPokemonInfo { get => wildPokemonInfo; set { wildPokemonInfo = value; } }
@@ -107,9 +109,20 @@ public class WildPokemon : NetworkBehaviour
     private void SpawnEnergyRpc(bool isBig)
     {
         Vector3 offset = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f));
-        GameObject energy = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), transform.position + offset, Quaternion.identity) as GameObject;
-        energy.GetComponent<AeosEnergy>().LocalBigEnergy = isBig;
-        energy.GetComponent<NetworkObject>().Spawn();
+        Addressables.LoadAssetAsync<GameObject>(resourcePath).Completed += (handle) =>
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject prefab = handle.Result;
+                GameObject spawnedObject = Instantiate(prefab, transform.position + offset, Quaternion.identity);
+                spawnedObject.GetComponent<AeosEnergy>().LocalBigEnergy = isBig;
+                spawnedObject.GetComponent<NetworkObject>().Spawn(true);
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
     }
 
     [Rpc(SendTo.ClientsAndHost)]

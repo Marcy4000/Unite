@@ -7,7 +7,7 @@ public class JoltSwift : MoveBase
     private DamageInfo bigStar = new DamageInfo(0, 1.2f, 8, 220, DamageType.Physical);
     private DamageInfo smallStar = new DamageInfo(0, 1f, 6, 180, DamageType.Physical);
 
-    private string assetPath = "Moves/Jolteon/JoltSwift";
+    private string assetPath = "Assets/Prefabs/Objects/Moves/Jolteon/JoltSwift.prefab";
     private float range = 5f;
 
     private Vector3 direction;

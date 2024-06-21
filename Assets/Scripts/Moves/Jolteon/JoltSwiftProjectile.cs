@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class JoltSwiftProjectile : NetworkBehaviour
 {
@@ -11,6 +13,8 @@ public class JoltSwiftProjectile : NetworkBehaviour
     [SerializeField] private float maxDistance = 20f; // Maximum distance before destruction
 
     private bool isBigStar;
+
+    private bool[] starSpawned = new bool[3] { false, false, false };
 
     private DamageInfo bigDamage;
     private DamageInfo smallDamage;
@@ -25,7 +29,7 @@ public class JoltSwiftProjectile : NetworkBehaviour
 
     private float traveledDistance = 0f;
 
-    private string path = "Moves/Jolteon/JoltSwift";
+    private string path = "Assets/Prefabs/Objects/Moves/Jolteon/JoltSwift.prefab";
     private Rigidbody rb;
 
     [Rpc(SendTo.Server)]
@@ -43,7 +47,7 @@ public class JoltSwiftProjectile : NetworkBehaviour
 
         if (!isBigStar)
         {
-            traveledDistance /= 1.5f;
+            maxDistance /= 1.5f;
         }
 
         initialized = true;
@@ -82,14 +86,18 @@ public class JoltSwiftProjectile : NetworkBehaviour
             {
                 Split(null);
             }
+            else
+            {
+                starSpawned = new bool[3] { true, true, true };
+            }
 
-            NetworkObject.Despawn(gameObject);
+            StartCoroutine(CheckIfCanDespawn());
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer)
+        if (!IsServer || !initialized)
         {
             return;
         }
@@ -136,8 +144,26 @@ public class JoltSwiftProjectile : NetworkBehaviour
         {
             Split(pokemon);
         }
+        else
+        {
+            starSpawned = new bool[3] { true, true, true };
+        }
 
-        NetworkObject.Despawn(gameObject);
+        StartCoroutine(CheckIfCanDespawn());
+    }
+
+    private IEnumerator CheckIfCanDespawn()
+    {
+        while (true)
+        {
+            if (starSpawned[0] && starSpawned[1] && starSpawned[2])
+            {
+                NetworkObject.Despawn(gameObject);
+                yield break;
+            }
+
+            yield return null;
+        }
     }
 
     private void Split(Pokemon pokemon)
@@ -148,16 +174,18 @@ public class JoltSwiftProjectile : NetworkBehaviour
         Vector3 direction3 = Quaternion.Euler(0, -60, 0) * direction;
 
         // Spawn the first small star with the original direction
-        SpawnStar(direction1, pokemon);
+        SpawnStar(direction1, pokemon, 0);
 
         // Spawn the second small star with +60 degrees direction
-        SpawnStar(direction2, pokemon);
+        SpawnStar(direction2, pokemon, 1);
 
         // Spawn the third small star with -60 degrees direction
-        SpawnStar(direction3, pokemon);
+        SpawnStar(direction3, pokemon, 2);
+
+        initialized = false;
     }
 
-    private void SpawnStar(Vector3 direction, Pokemon pokemon)
+    private void SpawnStar(Vector3 direction, Pokemon pokemon, int index)
     {
         ulong clientId;
 
@@ -170,8 +198,23 @@ public class JoltSwiftProjectile : NetworkBehaviour
         }
 
         // Instantiate the small star
-        GameObject spawnedObject = Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
-        spawnedObject.GetComponent<NetworkObject>().Spawn(true);
-        spawnedObject.GetComponent<JoltSwiftProjectile>().InitializeRPC(transform.position, direction, false, bigDamage, smallDamage, orangeTeam, clientId);
+        // Instantiate the small star
+        Addressables.LoadAssetAsync<GameObject>(path).Completed += (handle) =>
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject prefab = handle.Result;
+                GameObject spawnedObject = Instantiate(prefab);
+                spawnedObject.GetComponent<NetworkObject>().Spawn(true);
+
+                JoltSwiftProjectile star = spawnedObject.GetComponent<JoltSwiftProjectile>();
+                star.InitializeRPC(transform.position, direction, false, bigDamage, smallDamage, orangeTeam, clientId);
+                starSpawned[index] = true;
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
     } 
 }

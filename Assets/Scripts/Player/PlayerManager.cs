@@ -5,7 +5,9 @@ using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public enum PlayerState
 {
@@ -39,7 +41,7 @@ public class PlayerManager : NetworkBehaviour
     private BattleActionStatus scoreStatus = new BattleActionStatus(0);
     private bool isScoring = false;
 
-    private string resourcePath = "Objects/AeosEnergy";
+    private string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
 
     private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm:NetworkVariableWritePermission.Owner);
 
@@ -577,8 +579,19 @@ public class PlayerManager : NetworkBehaviour
     private void SpawnEnergyRpc(bool isBig)
     {
         Vector3 offset = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f));
-        GameObject energy = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), transform.position + offset, Quaternion.identity) as GameObject;
-        energy.GetComponent<AeosEnergy>().LocalBigEnergy = isBig;
-        energy.GetComponent<NetworkObject>().Spawn();
+        Addressables.LoadAssetAsync<GameObject>(resourcePath).Completed += (handle) =>
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject prefab = handle.Result;
+                GameObject spawnedObject = Instantiate(prefab, transform.position + offset, Quaternion.identity);
+                spawnedObject.GetComponent<AeosEnergy>().LocalBigEnergy = isBig;
+                spawnedObject.GetComponent<NetworkObject>().Spawn(true);
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
     }
 }

@@ -12,7 +12,7 @@ public class VaporDive : MoveBase
     private DamageInfo damageInfo = new DamageInfo(0, 0.25f, 6, 120, DamageType.Special);
 
     private VaporeonDiveWarning diveWarning;
-    private string assetPath = "Moves/Vaporeon/VaporeonDive";
+    private string assetPath = "Assets/Prefabs/Objects/Moves/Vaporeon/VaporeonDive.prefab";
 
     private StatusEffect underwaterEffect = new StatusEffect(StatusType.Invincible, 0, false, 1);
 

@@ -25,7 +25,7 @@ public class GlaceIceShard : MoveBase
         Name = "Ice Shard";
         Cooldown = 8.5f;
         damageInfo = new DamageInfo(0, 0.52f, 6, 100, DamageType.Special);
-        attackPrefab = "BasicAtk/CinderBasicAtk";
+        attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
         movementBuff = new StatChange(40, Stat.Speed, 0.5f, true, true, true, 0);
         atkSpeedBuff = new StatChange(60, Stat.AtkSpeed, 2.5f, true, true, true, 0);
     }

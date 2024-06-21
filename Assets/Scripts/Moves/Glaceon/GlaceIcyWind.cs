@@ -7,7 +7,7 @@ public class GlaceIcyWind : MoveBase
 {
     private DamageInfo icicleDamage = new DamageInfo(0, 0.20f, 2, 35, DamageType.Special);
 
-    private string attackPrefab = "BasicAtk/GlaceonBasicAtk";
+    private string attackPrefab = "Assets/Prefabs/Objects/BasicAtk/GlaceonBasicAtk.prefab";
 
     private float dashDistance = 4f;
     private float attackRange = 8f;

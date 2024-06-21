@@ -7,7 +7,7 @@ public class VaporRainDance : MoveBase
 {
     private Vector3 destination;
 
-    private string assetPath = "Moves/Vaporeon/VaporeonRain";
+    private string assetPath = "Assets/Prefabs/Objects/Moves/Vaporeon/VaporeonRain.prefab";
     private DamageInfo heal = new DamageInfo(0, 0.38f, 7, 300, DamageType.Special);
 
     private float range = 4f;

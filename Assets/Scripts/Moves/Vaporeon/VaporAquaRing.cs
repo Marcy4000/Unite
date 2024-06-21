@@ -10,7 +10,7 @@ public class VaporAquaRing : MoveBase
 
     private DamageInfo healAmount = new DamageInfo(0, 0.51f, 6, 300, DamageType.Special);
 
-    private string assetPath = "Moves/Vaporeon/VaporeonAquaRing";
+    private string assetPath = "Assets/Prefabs/Objects/Moves/Vaporeon/VaporeonAquaRing.prefab";
 
     private GameObject target;
 

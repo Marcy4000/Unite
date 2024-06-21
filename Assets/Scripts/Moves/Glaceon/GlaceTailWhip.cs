@@ -19,7 +19,7 @@ public class GlaceTailWhip : MoveBase
         distance = 8f;
         angle = 60f;
         damageInfo = new DamageInfo(0, 0.61f, 6, 190, DamageType.Special);
-        attackPrefab = "Moves/Glaceon/GlaceonTailWhip";
+        attackPrefab = "Assets/Prefabs/Objects/Moves/Glaceon/GlaceonTailWhip.prefab";
     }
 
     public override void Start(PlayerManager controller)

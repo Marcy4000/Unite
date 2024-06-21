@@ -8,7 +8,7 @@ public class GlaceUnite : MoveBase
     private Vector3 direction;
     private DamageInfo damageInfo;
 
-    private string assetPath = "Moves/Glaceon/GlaceonUnite";
+    private string assetPath = "Assets/Prefabs/Objects/Moves/Glaceon/GlaceonUnite.prefab";
 
     private GlaceUniteArea uniteArea;
     private GlaceonPassive glaceonPassive;

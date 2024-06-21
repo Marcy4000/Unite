@@ -70,7 +70,7 @@ public class SylvSwift : MoveBase
                 sylvSwiftProjectile.GetComponent<SylvSwiftProjectile>().SetDirection(playerManager.transform.position, direction, damageInfo, distance);
             };
 
-            playerManager.MovesController.SpawnNetworkObjectFromStringRPC("Moves/Sylveon/SylvSwift", playerManager.OwnerClientId);
+            playerManager.MovesController.SpawnNetworkObjectFromStringRPC("Assets/Prefabs/Objects/Moves/Sylveon/SylvSwift.prefab", playerManager.OwnerClientId);
         }
 
         launching = false;

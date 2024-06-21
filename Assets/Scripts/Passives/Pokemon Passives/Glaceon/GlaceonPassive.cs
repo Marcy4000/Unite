@@ -5,7 +5,7 @@ public class GlaceonPassive : PassiveBase
     private byte iciclesCount;
     private bool hasEvolved;
 
-    private string resourcePath = "Passives/Glaceon/IciclesHolder";
+    private string resourcePath = "Assets/Prefabs/Objects/Passives/Glaceon/IciclesHolder.prefab";
 
     private float iciclesTimer = 5f;
 

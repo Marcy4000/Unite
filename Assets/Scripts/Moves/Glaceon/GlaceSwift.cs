@@ -22,7 +22,7 @@ public class GlaceSwift : MoveBase
         Name = "Swift";
         Cooldown = 5.0f;
         damageInfo = new DamageInfo(0, 0.16f, 6, 110, DamageType.Special);
-        attackPrefab = "BasicAtk/CinderBasicAtk";
+        attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
     }
 
     public override void Start(PlayerManager controller)

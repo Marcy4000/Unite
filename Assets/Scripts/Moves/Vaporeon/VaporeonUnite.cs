@@ -8,7 +8,7 @@ public class VaporeonUnite : MoveBase
     private DamageInfo damageInfo = new DamageInfo(0, 0.92f, 9, 640, DamageType.Special);
     private DamageInfo healInfo = new DamageInfo(0, 2.6f, 5, 840, DamageType.Special);
 
-    private string assetPath = "Moves/Vaporeon/VaporeonUnite";
+    private string assetPath = "Assets/Prefabs/Objects/Moves/Vaporeon/VaporeonUnite.prefab";
 
     private VaporUniteArea area;
 

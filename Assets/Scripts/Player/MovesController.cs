@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class MovesController : NetworkBehaviour
 {
@@ -494,33 +496,51 @@ public class MovesController : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info, string resourcePath)
+    private void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info, string addressableKey)
     {
-        // Instantiate homing projectile
-        GameObject homingProjectile = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), projectileSpawnPoint.position, projectileSpawnPoint.rotation) as GameObject;
-        homingProjectile.GetComponent<NetworkObject>().Spawn();
-
-        // Set target for homing projectile
-        HomingProjectile homingScript = homingProjectile.GetComponent<HomingProjectile>();
-        if (homingScript != null)
+        Addressables.LoadAssetAsync<GameObject>(addressableKey).Completed += handle =>
         {
-            homingScript.SetTarget(targetId, info);
-        }
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject prefab = handle.Result;
+                GameObject homingProjectile = Instantiate(prefab, projectileSpawnPoint.position, projectileSpawnPoint.rotation);
+                homingProjectile.GetComponent<NetworkObject>().Spawn();
+
+                HomingProjectile homingScript = homingProjectile.GetComponent<HomingProjectile>();
+                if (homingScript != null)
+                {
+                    homingScript.SetTarget(targetId, info);
+                }
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
     }
 
     [Rpc(SendTo.Server)]
-    public void LaunchMoveForwardProjRpc(Vector2 dir, DamageInfo info, float maxDistance, string resourcePath)
+    public void LaunchMoveForwardProjRpc(Vector2 dir, DamageInfo info, float maxDistance, string addressableKey)
     {
-        // Instantiate homing projectile
-        GameObject moveForwardsProjectile = Instantiate(Resources.Load(resourcePath, typeof(GameObject)), projectileSpawnPoint.position, Quaternion.identity) as GameObject;
-        moveForwardsProjectile.GetComponent<NetworkObject>().Spawn();
-
-        // Set target for homing projectile
-        MoveForwardProjectile forwardsScript = moveForwardsProjectile.GetComponent<MoveForwardProjectile>();
-        if (forwardsScript != null)
+        Addressables.LoadAssetAsync<GameObject>(addressableKey).Completed += handle =>
         {
-            forwardsScript.SetDirection(dir, info, maxDistance);
-        }
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject prefab = handle.Result;
+                GameObject moveForwardsProjectile = Instantiate(prefab, projectileSpawnPoint.position, Quaternion.identity);
+                moveForwardsProjectile.GetComponent<NetworkObject>().Spawn();
+
+                MoveForwardProjectile forwardsScript = moveForwardsProjectile.GetComponent<MoveForwardProjectile>();
+                if (forwardsScript != null)
+                {
+                    forwardsScript.SetDirection(dir, info, maxDistance);
+                }
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
     }
 
     [Rpc(SendTo.Server)]
@@ -534,21 +554,43 @@ public class MovesController : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void SpawnNetworkObjectFromStringRPC(string path)
+    public void SpawnNetworkObjectFromStringRPC(string addressableKey)
     {
-        GameObject spawnedObject = Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
-        spawnedObject.GetComponent<NetworkObject>().Spawn(true);
+        Addressables.LoadAssetAsync<GameObject>(addressableKey).Completed += (handle) =>
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject prefab = handle.Result;
+                GameObject spawnedObject = Instantiate(prefab);
+                spawnedObject.GetComponent<NetworkObject>().Spawn(true);
 
-        NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
+                NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
     }
 
     [Rpc(SendTo.Server)]
-    public void SpawnNetworkObjectFromStringRPC(string path, ulong cliendID)
+    public void SpawnNetworkObjectFromStringRPC(string addressableKey, ulong cliendID)
     {
-        GameObject spawnedObject = Instantiate(Resources.Load(path, typeof(GameObject))) as GameObject;
-        spawnedObject.GetComponent<NetworkObject>().SpawnWithOwnership(cliendID, true);
+        Addressables.LoadAssetAsync<GameObject>(addressableKey).Completed += (handle) =>
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject prefab = handle.Result;
+                GameObject spawnedObject = Instantiate(prefab);
+                spawnedObject.GetComponent<NetworkObject>().SpawnWithOwnership(cliendID, true);
 
-        NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
+                NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
     }
 
     [Rpc(SendTo.ClientsAndHost)]

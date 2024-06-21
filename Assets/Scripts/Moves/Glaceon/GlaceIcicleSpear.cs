@@ -12,7 +12,7 @@ public class GlaceIcicleSpear : MoveBase
 
     private float timer = 0f;
 
-    private string resourcePath = "Moves/Glaceon/IcicleSpear";
+    private string resourcePath = "Assets/Prefabs/Objects/Moves/Glaceon/IcicleSpear.prefab";
     private IcicleSpearHitbox icicleSpearHitbox;
 
     private GlaceonPassive glaceonPassive;

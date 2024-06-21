@@ -19,7 +19,7 @@ public class SylvBasicAtk : BasicAttackBase
     {
         base.Initialize(manager);
         range = 5f;
-        attackPrefab = "BasicAtk/CinderBasicAtk";
+        attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
         normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical);
         boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.35f, 10, 180, DamageType.Special);
     }

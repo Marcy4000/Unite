@@ -6,7 +6,7 @@ public class SylvHyperVoice : MoveBase
     private DamageInfo farDamage;
     private Vector3 direction;
 
-    private string assetPath = "Moves/Sylveon/HypervoiceHitbox";
+    private string assetPath = "Assets/Prefabs/Objects/Moves/Sylveon/HypervoiceHitbox.prefab";
 
     private bool isScreaming = false;
     private float screamTimer = 2.5f;

@@ -8,7 +8,7 @@ public class VaporSwift : MoveBase
     private float distance;
     private Vector3 position;
 
-    private string attackPrefab = "Moves/Vaporeon/VaporeonSwift";
+    private string attackPrefab = "Assets/Prefabs/Objects/Moves/Vaporeon/VaporeonSwift.prefab";
 
     public VaporSwift()
     {
