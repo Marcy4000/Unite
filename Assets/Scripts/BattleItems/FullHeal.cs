@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class FullHeal : BattleItemBase
 {
+    StatusEffect statusEffect = new StatusEffect(StatusType.Unstoppable, 1.5f, true, 0);
+
     public FullHeal()
     {
         Name = "Full Heal";
@@ -19,6 +21,8 @@ public class FullHeal : BattleItemBase
     {
         if (IsActive)
         {
+            playerManager.Pokemon.ClearStatusEffectsRPC();
+            playerManager.Pokemon.AddStatusEffect(statusEffect);
             wasUseSuccessful = true;
         }
         base.Finish();

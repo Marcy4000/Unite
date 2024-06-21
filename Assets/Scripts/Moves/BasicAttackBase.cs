@@ -51,6 +51,8 @@ public static class BasicAttacksDatabase
                 return new SylvBasicAtk();
             case "vaporeon":
                 return new VaporBasicAtk();
+            case "jolteon":
+                return new JoltBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

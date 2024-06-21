@@ -29,6 +29,8 @@ public static class PassiveDatabase
                 return new GlaceonPassive();
             case AvailablePassives.SylveonPassive:
                 return new SylvPassive();
+            case AvailablePassives.JolteonPassive:
+                return new JoltPassive();
             default:
                 return new EmptyPassive();
         }
@@ -40,5 +42,7 @@ public enum AvailablePassives
     EmptyPassive,
     CinderPassive,
     GlaceonPassive,
-    SylveonPassive
+    SylveonPassive,
+    VaporeonPassive,
+    JolteonPassive
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
@@ -9,8 +10,13 @@ public class PlayerNetworkManager : NetworkBehaviour
 {
     [SerializeField] private GameObject playerPrefab;
     private PlayerManager playerManager;
-    private Player localPlayer;
+    public Player LocalPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
+
+    private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm: NetworkVariableWritePermission.Owner);
+
     private bool matchStarted = false;
+
+    private bool orangeTeam = false;
 
     private float deathTimer = 5f;
 
@@ -20,14 +26,22 @@ public class PlayerNetworkManager : NetworkBehaviour
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
         if (IsOwner)
         {
-            localPlayer = LobbyController.Instance.Player;
-            LobbyController.Instance.onLobbyUpdate += HandleLobbyUpdate;
+            lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
         }
+        LobbyController.Instance.onLobbyUpdate += HandleLobbyUpdate;
     }
 
     private void HandleLobbyUpdate(Lobby lobby)
     {
-        localPlayer = lobby.Players.Find(x => x.Id == localPlayer.Id);
+        if (string.IsNullOrWhiteSpace(lobbyPlayerId.Value.ToString()))
+        {
+            return;
+        }
+
+        if (LocalPlayer.Data.ContainsKey("PlayerTeam"))
+        {
+            orangeTeam = LocalPlayer.Data["PlayerTeam"].Value == "Orange";
+        }
     }
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
@@ -107,6 +121,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                 {
                     playerManager = player;
                     player.ChangeCurrentTeam(orangeTeam);
+                    player.Initialize();
                     if (IsOwner)
                     {
                         player.Pokemon.OnDeath += OnPlayerDeath;

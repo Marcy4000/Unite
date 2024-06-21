@@ -31,7 +31,7 @@ public class PlayerManager : NetworkBehaviour
 
     [SerializeField] private PokemonBase selectedPokemon;
 
-    private NetworkVariable<bool> orangeTeam = new NetworkVariable<bool>();
+    private bool orangeTeam = false;
     private NetworkVariable<PlayerState> playerState = new NetworkVariable<PlayerState>(PlayerState.Alive);
     private short maxEnergyCarry;
     private NetworkVariable<short> currentEnergy = new NetworkVariable<short>();
@@ -59,7 +59,7 @@ public class PlayerManager : NetworkBehaviour
 
     public PlayerState PlayerState { get => playerState.Value; }
 
-    public bool OrangeTeam { get => orangeTeam.Value; }
+    public bool OrangeTeam { get => orangeTeam; }
     public short MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
     public short CurrentEnergy { get => currentEnergy.Value; }
     public BattleActionStatus ScoreStatus { get => scoreStatus; }
@@ -106,49 +106,42 @@ public class PlayerManager : NetworkBehaviour
             lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
             ChangeSelectedPokemonRpc(LobbyController.Instance.Player.Data["SelectedCharacter"].Value);
         }
+    }
 
+    public void Initialize()
+    {
         bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
 
-        orangeTeam.OnValueChanged += (previous, current) =>
-        {
-            aim.TeamToIgnore = current;
-            visionController.TeamToIgnore = current;
-            vision.CurrentTeam = current;
-            vision.HasATeam = true;
-            vision.IsVisible = true;
-            hpBar.InitializeEnergyUI(PokemonType.Player, current, IsOwner);
-            if (IsOwner)
-            {
-                visionController.IsEnabled = true;
-                vision.SetVisibility(true);
-            }
-            else
-            {
-                visionController.IsEnabled = currentTeam == current;
-            }
-        };
-
-        hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
+        aim.TeamToIgnore = orangeTeam;
+        visionController.TeamToIgnore = orangeTeam;
+        vision.CurrentTeam = orangeTeam;
         vision.HasATeam = true;
         vision.IsVisible = true;
+
+        hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
 
         if (IsOwner)
         {
             CameraController cameraController = FindObjectOfType<CameraController>();
             cameraController.Initialize(transform);
+
             playerControls = new PlayerControls();
             playerControls.asset.Enable();
+
             pokemon.OnLevelChange += OnPokemonLevelUp;
             pokemon.OnDeath += OnPokemonDeath;
             pokemon.OnDamageTaken += OnPokemonDamage;
             pokemon.OnStatusChange += OnPokemonStatusChange;
             playerState.OnValueChanged += OnPlayerStateChange;
+
             scoreStatus.OnStatusChange += () =>
             {
                 bool showLock = scoreStatus.HasStatus(ActionStatusType.Busy) || scoreStatus.HasStatus(ActionStatusType.Stunned);
                 BattleUIManager.instance.SetEnergyBallLock(showLock);
             };
+
             visionController.IsEnabled = true;
+            vision.SetVisibility(true);
         }
         else
         {
@@ -215,6 +208,7 @@ public class PlayerManager : NetworkBehaviour
     {
         bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
         vision.SetVisibility(currentTeam == OrangeTeam);
+
         passiveController.LearnPassive();
     }
 
@@ -227,12 +221,16 @@ public class PlayerManager : NetworkBehaviour
         stopMovementCoroutine = StartCoroutine(StopMovementForTimeCoroutine(time));
     }
 
-    private IEnumerator StopMovementForTimeCoroutine(float time)
+    private IEnumerator StopMovementForTimeCoroutine(float time, bool setTrigger=true)
     {
         playerMovement.CanMove = false;
         yield return new WaitForSeconds(time);
         playerMovement.CanMove = true;
-        animationManager.SetTrigger("Transition");
+
+        if (setTrigger)
+        {
+            animationManager.SetTrigger("Transition");
+        }
     }
 
     private void HandleEvolution()
@@ -297,11 +295,7 @@ public class PlayerManager : NetworkBehaviour
 
     public void ChangeCurrentTeam(bool isOrange)
     {
-        if (IsServer) {
-            orangeTeam.Value = isOrange;
-        } else {
-            ChangeCurrentTeamRpc(isOrange);
-        }
+        orangeTeam = isOrange;
     }
 
     public void Respawn()
@@ -326,12 +320,6 @@ public class PlayerManager : NetworkBehaviour
         {
             ChangeCurrentStateRpc(newState);
         }
-    }
-
-    [Rpc(SendTo.Server)]
-    private void ChangeCurrentTeamRpc(bool isOrange)
-    {
-        orangeTeam.Value = isOrange;
     }
 
     private void Update()

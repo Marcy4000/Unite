@@ -43,6 +43,23 @@ public class BattleItemMenu : MonoBehaviour
         CancelAndExit();
     }
 
+    private void OnEnable()
+    {
+        int selectedBattleItemId = int.Parse(LobbyController.Instance.Player.Data["BattleItem"].Value);
+        selectedBattleItem = CharactersList.instance.GetBattleItemByID(selectedBattleItemId);
+        battleItemName.text = selectedBattleItem.itemName;
+        battleItemDescription.text = selectedBattleItem.description;
+
+        foreach (Transform child in battleItemsHolder)
+        {
+            BattleItemElementUI battleItemElement = child.GetComponent<BattleItemElementUI>();
+            if (battleItemElement.BattleItem.battleItemType == selectedBattleItem.battleItemType)
+            {
+                battleItemElement.GetComponent<Toggle>().isOn = true;
+            }
+        }
+    }
+
     public void SaveAndExit()
     {
         int battleItemID = (int)selectedBattleItem.battleItemType;

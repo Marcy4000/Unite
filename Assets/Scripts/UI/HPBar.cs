@@ -100,6 +100,7 @@ public class HPBar : MonoBehaviour
         {
             hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
         }
+
         shieldBar.fillAmount = (float)pokemon.ShieldHp / pokemon.GetMaxHp();
     }
 

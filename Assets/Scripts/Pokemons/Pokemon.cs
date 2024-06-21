@@ -64,6 +64,9 @@ public class Pokemon : NetworkBehaviour
     public event Action<DamageInfo> OnDamageTaken;
     public event Action OnPokemonInitialized;
 
+    public event Action<ulong> onDamageDealt;
+    public event Action<ulong> onOtherPokemonKilled;
+
     public event Action OnStatChange;
     public event Action<StatusEffect, bool> OnStatusChange;
 
@@ -811,6 +814,7 @@ public class Pokemon : NetworkBehaviour
         if (localHp <= 0)
         {
             localHp = 0;
+            attacker.OnKilledPokemonRPC(NetworkObjectId);
         }
 
         UpdateShieldListRPC(remainingShields.ToArray());
@@ -828,6 +832,7 @@ public class Pokemon : NetworkBehaviour
 
         OnDamageTakenRpc(damage);
         ClientDamageRpc(actualDamage, damage);
+        attacker.OnDamageDealtRPC(NetworkObjectId);
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)
@@ -1045,6 +1050,18 @@ public class Pokemon : NetworkBehaviour
         }
 
         OnShieldListChangedRPC();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    public void OnDamageDealtRPC(ulong targetID)
+    {
+        onDamageDealt?.Invoke(targetID);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    public void OnKilledPokemonRPC(ulong targetID)
+    {
+        onOtherPokemonKilled?.Invoke(targetID);
     }
 
     public void GainExperience(int amount)

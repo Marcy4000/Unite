@@ -89,6 +89,10 @@ public static class MoveDatabase
                 return new VaporAquaRing();
             case AvailableMoves.VaporeonUnite:
                 return new VaporeonUnite();
+            case AvailableMoves.JoltSwift:
+                return new JoltSwift();
+            case AvailableMoves.JoltAgility:
+                return new JoltAgility();
             default:
                 return null;
         }
@@ -125,4 +129,11 @@ public enum AvailableMoves
     VaporDive,
     VaporHaze,
     VaporeonUnite,
+    JoltSwift,
+    JoltAgility,
+    JoltThunderFang,
+    JoltDischarge,
+    JoltCharge,
+    JoltElectroWeb,
+    JolteonUnite
 }

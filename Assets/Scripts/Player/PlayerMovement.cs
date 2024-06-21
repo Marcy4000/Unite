@@ -16,11 +16,13 @@ public class PlayerMovement : NetworkBehaviour
     private Pokemon pokemon;
     private bool canMove = true;
     private bool lastValue = true;
+    private bool isMoving = false;
 
     private bool isDashing = false;
     private Vector3 dashDirection;
 
     public bool CanMove { get => canMove; set => EnableMovement(value); }
+    public bool IsMoving => isMoving;
     public CharacterController CharacterController => characterController;
 
     public override void OnNetworkSpawn()
@@ -76,9 +78,11 @@ public class PlayerMovement : NetworkBehaviour
     {
         inputMovement = new Vector3(playerInput.x, 0, playerInput.y);
         characterController.Move(inputMovement.normalized * moveSpeed * Time.deltaTime);
+        isMoving = false;
         if (inputMovement.magnitude != 0)
         {
             transform.rotation = Quaternion.LookRotation(inputMovement);
+            isMoving = true;
         }
     }
 
