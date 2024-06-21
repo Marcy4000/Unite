@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -10,6 +8,9 @@ public class JoltPassive : PassiveBase
 
     private float passiveCharge;
     public bool IsPassiveReady => passiveCharge >= 100f;
+
+    private bool isBoostedByUnite = false;
+    private float boostDuration = 5f;
 
     public override void Start(PlayerManager controller)
     {
@@ -23,6 +24,10 @@ public class JoltPassive : PassiveBase
             {
                 passiveCharge += 8f;
             }
+            else
+            {
+                passiveCharge += 4f;
+            }
         };
         playerManager.Pokemon.onOtherPokemonKilled += (target) =>
         {
@@ -31,6 +36,16 @@ public class JoltPassive : PassiveBase
             {
                 passiveCharge += 20f;
             }
+
+            if (targetPokemon.HasStatusEffect(8))
+            {
+                playerManager.Pokemon.AddStatChange(new StatChange(30, Stat.Speed, 1f, true, true, true, 0));
+            }
+        };
+
+        playerManager.Pokemon.OnDeath += (damage) =>
+        {
+            ResetPassiveCharge();
         };
     }
 
@@ -44,16 +59,25 @@ public class JoltPassive : PassiveBase
 
     public override void Update()
     {
-        if (!isEvolved)
+        if (!isEvolved || playerManager.PlayerState == PlayerState.Dead)
         {
             return;
+        }
+
+        if (isBoostedByUnite)
+        {
+            boostDuration -= Time.deltaTime;
+            if (boostDuration <= 0)
+            {
+                isBoostedByUnite = false;
+            }
         }
 
         passiveCharge += 2f * Time.deltaTime;
 
         if (playerManager.PlayerMovement.IsMoving)
         {
-            passiveCharge += 3f * Time.deltaTime;
+            passiveCharge += 4f * Time.deltaTime;
         }
 
         if (passiveCharge > 100f)
@@ -61,7 +85,7 @@ public class JoltPassive : PassiveBase
             passiveCharge = 100f;
         }
 
-        if (Mathf.Abs((passiveCharge / 100f) - playerManager.AnimationManager.Animator.GetFloat("PassiveAmount")) > 0.05f)
+        if (Mathf.Abs((passiveCharge / 100f) - playerManager.AnimationManager.Animator.GetFloat("PassiveAmount")) > 0.03f)
         {
             playerManager.AnimationManager.SetFloat("PassiveAmount", passiveCharge / 100f);
         }
@@ -69,8 +93,33 @@ public class JoltPassive : PassiveBase
         playerManager.HPBar.UpdateGenericGuageValue(passiveCharge, 100f);
     }
 
-    public void ResetPassive()
+    public void ResetPassiveCharge()
     {
+        if (isBoostedByUnite)
+        {
+            return;
+        }
         passiveCharge = 0f;
+    }
+
+    public void ReducePassiveCharge(float amount)
+    {
+        if (isBoostedByUnite)
+        {
+            return;
+        }
+
+        passiveCharge -= amount;
+        if (passiveCharge < 0f)
+        {
+            passiveCharge = 0f;
+        }
+    }
+
+    public void UniteFillCharge(float duration)
+    {
+        isBoostedByUnite = true;
+        passiveCharge = 100f;
+        boostDuration = duration;
     }
 }

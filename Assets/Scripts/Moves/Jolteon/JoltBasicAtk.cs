@@ -23,7 +23,7 @@ public class JoltBasicAtk : BasicAttackBase
     public override void Perform()
     {
         GameObject closestEnemy = Aim.Instance.AimInCircle(range);
-        Collider[] hitColliders;
+        GameObject[] hitColliders;
         if (closestEnemy != null)
         {
             playerManager.transform.LookAt(closestEnemy.transform);
@@ -37,33 +37,15 @@ public class JoltBasicAtk : BasicAttackBase
             }
         }
 
-        hitColliders = Physics.OverlapSphere(playerManager.transform.position + (playerManager.transform.forward * 1.377f), 1f);
+        hitColliders = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position + (playerManager.transform.forward * 1.377f), 1f, AimTarget.NonAlly);
 
         foreach (var hitCollider in hitColliders)
         {
-            if (hitCollider.gameObject == playerManager.gameObject)
-            {
-                continue;
-            }
-
             Pokemon targetPokemon = hitCollider.GetComponent<Pokemon>();
 
             if (targetPokemon == null)
             {
                 continue;
-            }
-
-            if (targetPokemon.HasAnyStatusEffect(invulnerableStatuses))
-            {
-                continue;
-            }
-
-            if (targetPokemon.TryGetComponent(out PlayerManager player))
-            {
-                if (player.OrangeTeam == playerManager.OrangeTeam)
-                {
-                    continue;
-                }
             }
 
             DamageInfo damageInfo = charge == 2 ? boostedDamage : normalDamage;

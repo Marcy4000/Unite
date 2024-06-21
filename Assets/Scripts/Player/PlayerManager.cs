@@ -57,6 +57,7 @@ public class PlayerManager : NetworkBehaviour
     public Vision Vision { get => vision; }
     public HPBar HPBar { get => hpBar; }
     public PassiveController PassiveController { get => passiveController; }
+    public PlayerControls PlayerControls { get => playerControls; }
     public bool IsScoring { get => isScoring; }
 
     public PlayerState PlayerState { get => playerState.Value; }
@@ -214,13 +215,13 @@ public class PlayerManager : NetworkBehaviour
         passiveController.LearnPassive();
     }
 
-    public void StopMovementForTime(float time)
+    public void StopMovementForTime(float time, bool setTrigger=true)
     {
         if (stopMovementCoroutine != null)
         {
             StopCoroutine(stopMovementCoroutine);
         }
-        stopMovementCoroutine = StartCoroutine(StopMovementForTimeCoroutine(time));
+        stopMovementCoroutine = StartCoroutine(StopMovementForTimeCoroutine(time, setTrigger));
     }
 
     private IEnumerator StopMovementForTimeCoroutine(float time, bool setTrigger=true)

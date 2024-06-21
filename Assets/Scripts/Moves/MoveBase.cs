@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -93,6 +91,16 @@ public static class MoveDatabase
                 return new JoltSwift();
             case AvailableMoves.JoltAgility:
                 return new JoltAgility();
+            case AvailableMoves.JoltThunderFang:
+                return new JoltThunderFang();
+            case AvailableMoves.JoltCharge:
+                return new JoltCharge();
+            case AvailableMoves.JoltDischarge:
+                return new JoltDischarge();
+            case AvailableMoves.JoltElectroWeb:
+                return new JoltElectroweb();
+            case AvailableMoves.JolteonUnite:
+                return new JolteonUnite();
             default:
                 return null;
         }

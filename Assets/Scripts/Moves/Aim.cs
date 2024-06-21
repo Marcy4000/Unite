@@ -219,6 +219,83 @@ public class Aim : NetworkBehaviour
         return closestEnemy;
     }
 
+    public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target)
+    {
+        List<GameObject> foundTargets = new List<GameObject>();
+
+        Collider[] hitColliders = Physics.OverlapSphere(position, radius);
+
+        foreach (var hitCollider in hitColliders)
+        {
+            if (hitCollider.gameObject == gameObject)
+            {
+                continue;
+            }
+
+            switch (target)
+            {
+                case AimTarget.Enemy:
+                    if (hitCollider.GetComponent<WildPokemon>())
+                    {
+                        continue;
+                    }
+
+                    if (hitCollider.CompareTag("Player"))
+                    {
+                        var playerManager = hitCollider.gameObject.GetComponent<PlayerManager>();
+                        if (playerManager.OrangeTeam == teamToIgnore)
+                        {
+                            continue;
+                        }
+                    }
+                    break;
+                case AimTarget.Ally:
+                    if (hitCollider.GetComponent<WildPokemon>())
+                    {
+                        continue;
+                    }
+
+                    if (hitCollider.CompareTag("Player"))
+                    {
+                        var playerManager = hitCollider.gameObject.GetComponent<PlayerManager>();
+                        if (playerManager.OrangeTeam != teamToIgnore)
+                        {
+                            continue;
+                        }
+                    }
+                    break;
+                case AimTarget.Wild:
+                    if (!hitCollider.GetComponent<WildPokemon>())
+                    {
+                        continue;
+                    }
+                    break;
+                case AimTarget.NonAlly:
+                    if (hitCollider.CompareTag("Player"))
+                    {
+                        var playerManager = hitCollider.gameObject.GetComponent<PlayerManager>();
+                        if (playerManager.OrangeTeam == teamToIgnore)
+                        {
+                            continue;
+                        }
+                    }
+                    break;
+            }
+
+            if (hitCollider.TryGetComponent(out Pokemon pokemon))
+            {
+                if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
+                {
+                    continue;
+                }
+            }
+
+            foundTargets.Add(hitCollider.gameObject);
+        }
+
+        return foundTargets.ToArray();
+    }
+
     public GameObject SureHitAim()
     {
         // Rotate aiming direction based on right stick input

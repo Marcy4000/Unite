@@ -652,6 +652,20 @@ public class Pokemon : NetworkBehaviour
         return false;
     }
 
+    public bool HasStatusEffect(ushort id)
+    {
+
+        foreach (StatusEffect effect in statusEffects)
+        {
+            if (effect.ID == id)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public bool HasAnyStatusEffect(StatusType[] types)
     {
         foreach (StatusEffect effect in statusEffects)
