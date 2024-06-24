@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public enum AimTarget { Enemy, Ally, Wild, NonAlly, All }
@@ -208,6 +206,14 @@ public class Aim : NetworkBehaviour
                 }
             }
 
+            if (collidersBuffer[i].TryGetComponent(out Vision vision))
+            {
+                if (!vision.IsVisible || !vision.IsRendered)
+                {
+                    continue;
+                }
+            }
+
             float distance = Vector3.Distance(transform.position, collidersBuffer[i].transform.position);
             if (distance < closestDistance)
             {
@@ -232,62 +238,9 @@ public class Aim : NetworkBehaviour
                 continue;
             }
 
-            switch (target)
+            if (!CanPokemonBeTargeted(hitCollider.gameObject, target))
             {
-                case AimTarget.Enemy:
-                    if (hitCollider.GetComponent<WildPokemon>())
-                    {
-                        continue;
-                    }
-
-                    if (hitCollider.CompareTag("Player"))
-                    {
-                        var playerManager = hitCollider.gameObject.GetComponent<PlayerManager>();
-                        if (playerManager.OrangeTeam == teamToIgnore)
-                        {
-                            continue;
-                        }
-                    }
-                    break;
-                case AimTarget.Ally:
-                    if (hitCollider.GetComponent<WildPokemon>())
-                    {
-                        continue;
-                    }
-
-                    if (hitCollider.CompareTag("Player"))
-                    {
-                        var playerManager = hitCollider.gameObject.GetComponent<PlayerManager>();
-                        if (playerManager.OrangeTeam != teamToIgnore)
-                        {
-                            continue;
-                        }
-                    }
-                    break;
-                case AimTarget.Wild:
-                    if (!hitCollider.GetComponent<WildPokemon>())
-                    {
-                        continue;
-                    }
-                    break;
-                case AimTarget.NonAlly:
-                    if (hitCollider.CompareTag("Player"))
-                    {
-                        var playerManager = hitCollider.gameObject.GetComponent<PlayerManager>();
-                        if (playerManager.OrangeTeam == teamToIgnore)
-                        {
-                            continue;
-                        }
-                    }
-                    break;
-            }
-
-            if (hitCollider.TryGetComponent(out Pokemon pokemon))
-            {
-                if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
-                {
-                    continue;
-                }
+                continue;
             }
 
             foundTargets.Add(hitCollider.gameObject);
@@ -332,62 +285,9 @@ public class Aim : NetworkBehaviour
                     continue;
                 }
 
-                switch (autoaimTarget)
+                if (!CanPokemonBeTargeted(hit.collider.gameObject, autoaimTarget))
                 {
-                    case AimTarget.Enemy:
-                        if (hit.collider.GetComponent<WildPokemon>())
-                        {
-                            continue;
-                        }
-
-                        if (hit.collider.CompareTag("Player"))
-                        {
-                            var playerManager = hit.collider.gameObject.GetComponent<PlayerManager>();
-                            if (playerManager.OrangeTeam == teamToIgnore)
-                            {
-                                continue;
-                            }
-                        }
-                        break;
-                    case AimTarget.Ally:
-                        if (hit.collider.GetComponent<WildPokemon>())
-                        {
-                            continue;
-                        }
-
-                        if (hit.collider.CompareTag("Player"))
-                        {
-                            var playerManager = hit.collider.gameObject.GetComponent<PlayerManager>();
-                            if (playerManager.OrangeTeam != teamToIgnore)
-                            {
-                                continue;
-                            }
-                        }
-                        break;
-                    case AimTarget.Wild:
-                        if (!hit.collider.GetComponent<WildPokemon>())
-                        {
-                            continue;
-                        }
-                        break;
-                    case AimTarget.NonAlly:
-                        if (hit.collider.CompareTag("Player"))
-                        {
-                            var playerManager = hit.collider.gameObject.GetComponent<PlayerManager>();
-                            if (playerManager.OrangeTeam == teamToIgnore)
-                            {
-                                continue;
-                            }
-                        }
-                        break;
-                }
-
-                if (hit.collider.TryGetComponent(out Pokemon pokemon))
-                {
-                    if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 return hit.collider.gameObject;
@@ -458,5 +358,76 @@ public class Aim : NetworkBehaviour
         hyperVoiceIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
 
         return aimDirection;
+    }
+
+    public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType)
+    {
+        switch (targetType)
+        {
+            case AimTarget.Enemy:
+                if (pokemonObject.GetComponent<WildPokemon>())
+                {
+                    return false;
+                }
+
+                if (pokemonObject.CompareTag("Player"))
+                {
+                    var playerManager = pokemonObject.GetComponent<PlayerManager>();
+                    if (playerManager.OrangeTeam == teamToIgnore)
+                    {
+                        return false;
+                    }
+                }
+                break;
+            case AimTarget.Ally:
+                if (pokemonObject.GetComponent<WildPokemon>())
+                {
+                    return false;
+                }
+
+                if (pokemonObject.CompareTag("Player"))
+                {
+                    var playerManager = pokemonObject.GetComponent<PlayerManager>();
+                    if (playerManager.OrangeTeam != teamToIgnore)
+                    {
+                        return false;
+                    }
+                }
+                break;
+            case AimTarget.Wild:
+                if (!pokemonObject.GetComponent<WildPokemon>())
+                {
+                    return false;
+                }
+                break;
+            case AimTarget.NonAlly:
+                if (pokemonObject.CompareTag("Player"))
+                {
+                    var playerManager = pokemonObject.GetComponent<PlayerManager>();
+                    if (playerManager.OrangeTeam == teamToIgnore)
+                    {
+                        return false;
+                    }
+                }
+                break;
+        }
+
+        if (pokemonObject.TryGetComponent(out Pokemon pokemon))
+        {
+            if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
+            {
+                return false;
+            }
+        }
+
+        if (pokemonObject.TryGetComponent(out Vision vision))
+        {
+            if (!vision.IsRendered || !vision.IsVisible)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

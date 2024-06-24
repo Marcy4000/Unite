@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class VisionController : MonoBehaviour
@@ -7,9 +8,11 @@ public class VisionController : MonoBehaviour
     private SphereCollider visionCollider;
     private bool teamToIgnore;
     private bool isEnabled = false;
+    private bool isBlinded = false;
 
     public bool TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; }
     public bool IsEnabled { get => isEnabled; set => isEnabled = value; }
+    public bool IsBlinded { get => isBlinded; set => UpdateBlindState(value); }
 
     private List<Vision> visibleObjects = new List<Vision>();
 
@@ -19,6 +22,38 @@ public class VisionController : MonoBehaviour
         visionCollider.radius = visionRange;
     }
 
+    private void UpdateBlindState(bool state)
+    {
+        isBlinded = state;
+        if (isBlinded)
+        {
+            foreach (Vision vision in visibleObjects)
+            {
+                vision.SetVisibility(false);
+            }
+        }
+        else
+        {
+            foreach (Vision vision in visibleObjects)
+            {
+                if (vision.HasATeam && vision.CurrentTeam == teamToIgnore)
+                {
+                    vision.SetVisibility(true);
+                    return;
+                }
+
+                if (vision.IsVisible)
+                {
+                    vision.SetVisibility(true);
+                }
+                else
+                {
+                    vision.SetVisibility(false);
+                }
+            }
+        }
+    }
+
     private void Update()
     {
         if (!isEnabled)
@@ -26,11 +61,16 @@ public class VisionController : MonoBehaviour
             return;
         }
 
-        foreach (Vision vision in visibleObjects)
+        for (int i = visibleObjects.Count; i > 0; i--)
         {
-            if (vision.IsVisible && !vision.IsRendered)
+            int index = i - 1;
+            if (visibleObjects[index] == null)
             {
-                vision.SetVisibility(true);
+                visibleObjects.RemoveAt(index);
+            }
+            else if (visibleObjects[index].IsVisible && !visibleObjects[index].IsRendered && !IsBlinded)
+            {
+                visibleObjects[index].SetVisibility(true);
             }
         }
     }
@@ -45,14 +85,13 @@ public class VisionController : MonoBehaviour
         Vision vision;
         if (other.TryGetComponent(out vision))
         {
-            Debug.Log("Vision found");
             if (vision.HasATeam && vision.CurrentTeam == teamToIgnore)
             {
                 return;
             }
             else
             {
-                if (vision.IsVisible)
+                if (vision.IsVisible && !isBlinded)
                 {
                     vision.SetVisibility(true);
                 }

@@ -7,7 +7,7 @@ public class JoltThunderFang : MoveBase
 {
     private DamageInfo biteDamage = new DamageInfo(0, 1.72f, 9, 300, DamageType.Physical);
     private DamageInfo biteDamageBoosted = new DamageInfo(0, 1.9f, 10, 350, DamageType.Physical);
-    private StatusEffect stun = new StatusEffect(StatusType.Incapacitated, 0.7f, true, 0);
+    private StatusEffect stun = new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0);
     private StatChange speedBoost = new StatChange(60, Stat.Speed, 1.5f, true, true, true, 0);
 
     private float distance = 4f;

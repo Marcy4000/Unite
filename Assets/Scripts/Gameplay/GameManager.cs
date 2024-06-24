@@ -148,6 +148,7 @@ public class GameManager : NetworkBehaviour
                 if (gameTime.Value <= 0f)
                 {
                     gameTime.Value = 0f;
+                    LobbyController.Instance.UpdateLobbyScores(BlueTeamScore, OrangeTeamScore);
                     EndGameRPC();
                 } else if (gameTime.Value <= FINAL_STRETCH_TIME && !finalStretch.Value)
                 {
@@ -185,7 +186,6 @@ public class GameManager : NetworkBehaviour
             blueTeamScore.Value += info.scoredPoints;
         }
         ShowGoalScoredRpc(info);
-        LobbyController.Instance.UpdateLobbyScores(BlueTeamScore, OrangeTeamScore);
     }
 
     [Rpc(SendTo.ClientsAndHost)]

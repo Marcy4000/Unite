@@ -186,7 +186,8 @@ public class PlayerManager : NetworkBehaviour
             },
             { StatusType.Incapacitated, ApplyStun },
             { StatusType.Asleep, ApplyStun },
-            { StatusType.Bound, ApplyStun }
+            { StatusType.Bound, ApplyStun },
+            { StatusType.VisionObscuring, () => VisionController.IsBlinded = true }
             // Add other statuses
         };
 
@@ -196,7 +197,8 @@ public class PlayerManager : NetworkBehaviour
             { StatusType.Frozen, RemoveStun },
             { StatusType.Incapacitated, RemoveStun },
             { StatusType.Asleep, RemoveStun },
-            { StatusType.Bound, RemoveStun }
+            { StatusType.Bound, RemoveStun },
+            { StatusType.VisionObscuring, () => VisionController.IsBlinded = false }
             // Add other statuses
         };
     }

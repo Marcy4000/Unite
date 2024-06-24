@@ -6,9 +6,10 @@ using UnityEngine;
 public class JolteonUnite : MoveBase
 {
     public float dashSpeed = 25f;
-    public float dashDuration = 3f;
+    public float dashDuration = 3.5f;
     public float bounceFactor = 0.8f; // Factor for bouncing off obstacles
     public float sphereCastRadius = 1f; // Radius for the sphere cast
+    public float turningFactor = 5f; // Factor for smoothing out direction changes
 
     private float dashTimeRemaining;
     private bool isDashing;
@@ -16,7 +17,7 @@ public class JolteonUnite : MoveBase
     private Vector3 currentVelocity;
 
     private List<Pokemon> recentlyHitPokemon = new List<Pokemon>();
-    private float invincibilityDuration = 1.5f; // Duration for which a Pokemon can't be hit again
+    private float invincibilityDuration = 0.7f; // Duration for which a Pokemon can't be hit again
 
     private GameObject trailObject;
 
@@ -111,7 +112,7 @@ public class JolteonUnite : MoveBase
             Vector3 adjustDirection = new Vector3(adjustDirectionX, 0, adjustDirectionZ).normalized;
             if (adjustDirection != Vector3.zero)
             {
-                dashDirection = Vector3.Lerp(dashDirection, adjustDirection, Time.deltaTime * 2); // Smoothly adjust direction
+                dashDirection = Vector3.Lerp(dashDirection, adjustDirection, Time.deltaTime * turningFactor); // Smoothly adjust direction
             }
 
             if (trailObject != null)
