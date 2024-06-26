@@ -1,6 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -11,17 +9,21 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private float dashDuration = 0.2f; // Set your desired dash duration
     [SerializeField] private AnimationManager animationManager;
     private Vector3 inputMovement;
+    private Vector3 currentMovement; // Accumulated movement vector
     private CharacterController characterController;
     private PlayerControls controls;
     private Pokemon pokemon;
     private bool canMove = true;
     private bool lastValue = true;
     private bool isMoving = false;
+    private bool canBeKnockedBack = true;
 
     private bool isDashing = false;
     private Vector3 dashDirection;
 
     public bool CanMove { get => canMove; set => EnableMovement(value); }
+    public bool CanBeKnockedBack { get => canBeKnockedBack; set => canBeKnockedBack = value; }
+    public bool IsDashing => isDashing;
     public bool IsMoving => isMoving;
     public CharacterController CharacterController => characterController;
 
@@ -66,8 +68,13 @@ public class PlayerMovement : NetworkBehaviour
         }
         else
         {
-            characterController.Move(dashDirection * Time.deltaTime * (dashDistance / dashDuration));
+            currentMovement += dashDirection * (dashDistance / dashDuration);
         }
+
+        // Apply accumulated movement
+        characterController.Move(currentMovement * Time.deltaTime);
+
+        currentMovement = Vector3.zero; // Reset current movement at the start of each frame
 
         SnapToGround();
 
@@ -77,7 +84,7 @@ public class PlayerMovement : NetworkBehaviour
     private void Move(Vector2 playerInput)
     {
         inputMovement = new Vector3(playerInput.x, 0, playerInput.y);
-        characterController.Move(inputMovement.normalized * moveSpeed * Time.deltaTime);
+        currentMovement += inputMovement.normalized * moveSpeed;
         isMoving = false;
         if (inputMovement.magnitude != 0)
         {
@@ -92,9 +99,9 @@ public class PlayerMovement : NetworkBehaviour
         if (Physics.Raycast(transform.position, Vector3.down, out hit))
         {
             float distanceToGround = hit.distance;
-            if (distanceToGround > 0.01f) // Adjust this threshold as needed
+            if (distanceToGround > 0.001f) // Adjust this threshold as needed
             {
-                characterController.Move(Vector3.down * (distanceToGround - 0.01f)); // Snap to ground
+                currentMovement += Vector3.down * (distanceToGround - 0.001f); // Snap to ground
             }
         }
     }
@@ -172,6 +179,10 @@ public class PlayerMovement : NetworkBehaviour
     [Rpc(SendTo.Owner)]
     public void KnockbackRPC(Vector3 direction, float force)
     {
+        if (!canBeKnockedBack)
+        {
+            return;
+        }
         StartCoroutine(ApplyKnockback(direction, force));
     }
 
@@ -182,7 +193,7 @@ public class PlayerMovement : NetworkBehaviour
 
         while (elapsedTime < knockbackDuration)
         {
-            characterController.Move(direction.normalized * force * Time.deltaTime);
+            currentMovement += direction.normalized * force;
             elapsedTime += Time.deltaTime;
             yield return null;
         }

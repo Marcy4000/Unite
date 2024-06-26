@@ -24,7 +24,7 @@ public class JoltSwift : MoveBase
         bigStar.attackerId = playerManager.NetworkObjectId;
         smallStar.attackerId = playerManager.NetworkObjectId;
 
-        Aim.Instance.InitializeSkillshotAimAim(range);
+        Aim.Instance.InitializeSkillshotAim(range);
     }
 
     public override void Update()

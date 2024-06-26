@@ -64,7 +64,7 @@ public class Pokemon : NetworkBehaviour
     public event Action<DamageInfo> OnDamageTaken;
     public event Action OnPokemonInitialized;
 
-    public event Action<ulong> onDamageDealt;
+    public event Action<ulong, int> onDamageDealt;
     public event Action<ulong> onOtherPokemonKilled;
 
     public event Action OnStatChange;
@@ -626,6 +626,19 @@ public class Pokemon : NetworkBehaviour
         }
     }
 
+    [Rpc(SendTo.Server)]
+    public void UpdateStatusEffectTimeRPC(StatusEffect status, float newTime)
+    {
+        foreach (var effect in statusEffects)
+        {
+            if (effect.Equals(status))
+            {
+                statusTimers[statusEffects.IndexOf(effect)] = newTime;
+                return;
+            }
+        }
+    }
+
     [Rpc(SendTo.ClientsAndHost)]
     private void OnStatusListChangedRPC(StatusEffect effect, bool added)
     {
@@ -777,12 +790,16 @@ public class Pokemon : NetworkBehaviour
 
     public void TakeDamage(DamageInfo damage)
     {
+        if (HasStatusEffect(StatusType.Invincible))
+        {
+            return;
+        }
+
         lastHit = damage;
         int atkStat;
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
         int localHp = currentHp.Value;
         List<ShieldInfo> localShields = GetShieldsAsList();
-
 
         switch (damage.type)
         {
@@ -846,7 +863,7 @@ public class Pokemon : NetworkBehaviour
 
         OnDamageTakenRpc(damage);
         ClientDamageRpc(actualDamage, damage);
-        attacker.OnDamageDealtRPC(NetworkObjectId);
+        attacker.OnDamageDealtRPC(NetworkObjectId, actualDamage);
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)
@@ -1067,9 +1084,9 @@ public class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    public void OnDamageDealtRPC(ulong targetID)
+    public void OnDamageDealtRPC(ulong targetID, int damage)
     {
-        onDamageDealt?.Invoke(targetID);
+        onDamageDealt?.Invoke(targetID, damage);
     }
 
     [Rpc(SendTo.ClientsAndHost)]

@@ -20,7 +20,7 @@ public class JoltElectroweb : MoveBase
     public override void Start(PlayerManager controller)
     {
         base.Start(controller);
-        Aim.Instance.InitializeSkillshotAimAim(range);
+        Aim.Instance.InitializeSkillshotAim(range);
         tickDamage.attackerId = playerManager.NetworkObjectId;
     }
 

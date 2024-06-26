@@ -33,7 +33,7 @@ public class GlaceIcicleSpear : MoveBase
         base.Start(controller);
 
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeSkillshotAimAim(distance);
+        Aim.Instance.InitializeSkillshotAim(distance);
         playerManager.MovesController.onObjectSpawned += (icicleSpearHitbox) =>
         {
             this.icicleSpearHitbox = icicleSpearHitbox.GetComponent<IcicleSpearHitbox>();

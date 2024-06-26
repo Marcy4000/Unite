@@ -41,6 +41,7 @@ public static class MoveDatabase
         {
             case AvailableMoves.LockedMove:
                 return new LockedMove();
+
             case AvailableMoves.CinderEmber:
                 return new CinderEmber();
             case AvailableMoves.CinderLowSweep:
@@ -53,6 +54,7 @@ public static class MoveDatabase
                 return new CinderFeint();
             case AvailableMoves.BlazingBycicleKick:
                 return new BlazingBycicleKick();
+
             case AvailableMoves.GlaceSwift:
                 return new GlaceSwift();
             case AvailableMoves.GlaceTailWhip:
@@ -67,6 +69,7 @@ public static class MoveDatabase
                 return new GlaceFreezeDry();
             case AvailableMoves.GlaceonUnite:
                 return new GlaceUnite();
+
             case AvailableMoves.SylvSwift:
                 return new SylvSwift();
             case AvailableMoves.SylvBabyDollEyes:
@@ -75,6 +78,7 @@ public static class MoveDatabase
                 return new SylvHyperVoice();
             case AvailableMoves.SylvCalmMind:
                 return new SylvCalmMind();
+
             case AvailableMoves.VaporSwift:
                 return new VaporSwift();
             case AvailableMoves.VaporHelpingHand:
@@ -87,6 +91,7 @@ public static class MoveDatabase
                 return new VaporAquaRing();
             case AvailableMoves.VaporeonUnite:
                 return new VaporeonUnite();
+
             case AvailableMoves.JoltSwift:
                 return new JoltSwift();
             case AvailableMoves.JoltAgility:
@@ -101,6 +106,21 @@ public static class MoveDatabase
                 return new JoltElectroweb();
             case AvailableMoves.JolteonUnite:
                 return new JolteonUnite();
+
+            case AvailableMoves.FlygonBite:
+                return new FlygonBite();
+            case AvailableMoves.FlygonDig:
+                return new FlygonDig();
+            case AvailableMoves.FlygonBoomBurst:
+                return new FlygonBoomburst();
+            case AvailableMoves.FlygonSuperSonic:
+                return new FlygonSupersonic();
+            case AvailableMoves.FlygonSandstorm:
+                return new FlygonSandstorm();
+            case AvailableMoves.FlygonEarthquake:
+                return new FlygonEarthquake();
+            case AvailableMoves.FlygonUnite:
+                return new FlygonUnite();
             default:
                 return null;
         }
@@ -110,12 +130,14 @@ public static class MoveDatabase
 public enum AvailableMoves
 {
     LockedMove,
+
     CinderEmber,
     CinderLowSweep,
     CinderPyroball,
     CinderFlameCharge,
     CinderFeint,
     BlazingBycicleKick,
+
     GlaceSwift,
     GlaceTailWhip,
     GlaceIcycleSpear,
@@ -123,6 +145,7 @@ public enum AvailableMoves
     GlaceIceShard,
     GlaceFreezeDry,
     GlaceonUnite,
+
     SylvSwift,
     SylvBabyDollEyes,
     SylvHyperVoice,
@@ -130,6 +153,7 @@ public enum AvailableMoves
     SylvCalmMind,
     SylvDrainingKiss,
     SylveonUnite,
+
     VaporSwift,
     VaporHelpingHand,
     VaporRainDance,
@@ -137,11 +161,20 @@ public enum AvailableMoves
     VaporDive,
     VaporHaze,
     VaporeonUnite,
+
     JoltSwift,
     JoltAgility,
     JoltThunderFang,
     JoltDischarge,
     JoltCharge,
     JoltElectroWeb,
-    JolteonUnite
+    JolteonUnite,
+
+    FlygonBite,
+    FlygonDig,
+    FlygonSuperSonic,
+    FlygonBoomBurst,
+    FlygonEarthquake,
+    FlygonSandstorm,
+    FlygonUnite,
 }

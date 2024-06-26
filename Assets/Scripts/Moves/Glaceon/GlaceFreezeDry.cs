@@ -26,7 +26,7 @@ public class GlaceFreezeDry : MoveBase
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
-        Aim.Instance.InitializeSkillshotAimAim(distance);
+        Aim.Instance.InitializeSkillshotAim(distance);
     }
 
     public override void Update()

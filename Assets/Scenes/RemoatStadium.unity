@@ -27,7 +27,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: 7964b506aa7319744b886654dc1b56af, type: 2}
+  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -1387,7 +1387,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
-  wildPokemonID: 0
+  wildPokemonID: 3
   firstSpawnTime: 590
   cooldown: 60
   canRespawn: 1
@@ -1920,7 +1920,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
-  wildPokemonID: 0
+  wildPokemonID: 3
   firstSpawnTime: 590
   cooldown: 60
   canRespawn: 1
@@ -2546,7 +2546,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
-  wildPokemonID: 0
+  wildPokemonID: 3
   firstSpawnTime: 585
   cooldown: 60
   canRespawn: 1
@@ -4570,7 +4570,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
-  wildPokemonID: 0
+  wildPokemonID: 3
   firstSpawnTime: 590
   cooldown: 60
   canRespawn: 1
@@ -14035,7 +14035,7 @@ PrefabInstance:
     - target: {fileID: -1446508076185959571, guid: 05654bb4a5eed374a9eadeb7cbfdcdc0,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -1446508076185959571, guid: 05654bb4a5eed374a9eadeb7cbfdcdc0,
         type: 3}
@@ -17613,6 +17613,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1994459974670024093, guid: 05654bb4a5eed374a9eadeb7cbfdcdc0,
         type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1994459974670024093, guid: 05654bb4a5eed374a9eadeb7cbfdcdc0,
+        type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
@@ -18655,6 +18660,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_IsTrigger
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2957242864458676949, guid: 05654bb4a5eed374a9eadeb7cbfdcdc0,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2957242864458676949, guid: 05654bb4a5eed374a9eadeb7cbfdcdc0,
         type: 3}
@@ -21871,6 +21881,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 6395414396337926113, guid: 05654bb4a5eed374a9eadeb7cbfdcdc0,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6395414396337926113, guid: 05654bb4a5eed374a9eadeb7cbfdcdc0,
         type: 3}
@@ -29969,11 +29984,6 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3257124053614968667, guid: 2706dd02067078547b84fbe105b7b406,
-        type: 3}
-      propertyPath: field of view
-      value: 60
-      objectReference: {fileID: 0}
     - target: {fileID: 3778104981286763566, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -30033,11 +30043,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7112189886029418906, guid: 2706dd02067078547b84fbe105b7b406,
-        type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -31.150024
       objectReference: {fileID: 0}
     - target: {fileID: 7150169576634738329, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
@@ -30129,15 +30134,20 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8114860311599539771, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8114860311599539771, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -6
+      objectReference: {fileID: 0}
     - target: {fileID: 8348073312560232253, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: GlobalObjectIdHash
       value: 1005832488
-      objectReference: {fileID: 0}
-    - target: {fileID: 9143233053392451355, guid: 2706dd02067078547b84fbe105b7b406,
-        type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -53.80005
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -33440,6 +33450,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: WaterBlock_50m
       objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791836, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1507636620937791839, guid: 7097ba7ba649e1f41bba232312bdcbd8,
         type: 3}
       propertyPath: m_Materials.Array.data[0]
@@ -34929,7 +34944,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
-  wildPokemonID: 0
+  wildPokemonID: 3
   firstSpawnTime: 590
   cooldown: 60
   canRespawn: 1
@@ -35063,6 +35078,79 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1001 &2084084646
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.13
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791777, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791836, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_Name
+      value: WaterBlock_50m (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1507636620937791839, guid: 7097ba7ba649e1f41bba232312bdcbd8,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 36a5e33e516f280499b4d2b5c6a72794, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 7097ba7ba649e1f41bba232312bdcbd8, type: 3}
 --- !u!114 &2085509820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35689,3 +35777,4 @@ SceneRoots:
   - {fileID: 1862141612}
   - {fileID: 39309799}
   - {fileID: 1467436642}
+  - {fileID: 2084084646}

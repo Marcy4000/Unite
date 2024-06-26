@@ -95,7 +95,7 @@ public class Aim : NetworkBehaviour
         autoaimTarget = target;
     }
 
-    public void InitializeSkillshotAimAim(float distance)
+    public void InitializeSkillshotAim(float distance)
     {
         skillShotLine.SetActive(true);
         circleIndicator.SetActive(true);

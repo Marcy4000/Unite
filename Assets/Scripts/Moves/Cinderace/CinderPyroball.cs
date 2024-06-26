@@ -21,7 +21,7 @@ public class CinderPyroball : MoveBase
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeSkillshotAimAim(distance);
+        Aim.Instance.InitializeSkillshotAim(distance);
     }
 
     public override void Update()

@@ -17,7 +17,7 @@ public class JoltPassive : PassiveBase
         base.Start(controller);
         playerManager.Pokemon.OnEvolution += OnEvolution;
         playerManager.Pokemon.AddStatChange(eeveeSpdBoost);
-        playerManager.Pokemon.onDamageDealt += (target) =>
+        playerManager.Pokemon.onDamageDealt += (target, damage) =>
         {
             Pokemon targetPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[target].GetComponent<Pokemon>();
             if (targetPokemon.Type == PokemonType.Player)
