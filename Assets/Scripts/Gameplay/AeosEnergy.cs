@@ -55,7 +55,7 @@ public class AeosEnergy : NetworkBehaviour
                 return;
             }
 
-            short energy = (short)(IsBigEnergy ? 5 : 1);
+            ushort energy = (ushort)(IsBigEnergy ? 5 : 1);
             if (IsServer)
             {
                 playerManager.GainEnergyRPC(energy);

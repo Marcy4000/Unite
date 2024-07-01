@@ -35,8 +35,8 @@ public class PlayerManager : NetworkBehaviour
 
     private bool orangeTeam = false;
     private NetworkVariable<PlayerState> playerState = new NetworkVariable<PlayerState>(PlayerState.Alive);
-    private short maxEnergyCarry;
-    private NetworkVariable<short> currentEnergy = new NetworkVariable<short>();
+    private ushort maxEnergyCarry;
+    private NetworkVariable<ushort> currentEnergy = new NetworkVariable<ushort>();
 
     private BattleActionStatus scoreStatus = new BattleActionStatus(0);
     private bool isScoring = false;
@@ -63,8 +63,8 @@ public class PlayerManager : NetworkBehaviour
     public PlayerState PlayerState { get => playerState.Value; }
 
     public bool OrangeTeam { get => orangeTeam; }
-    public short MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
-    public short CurrentEnergy { get => currentEnergy.Value; }
+    public ushort MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
+    public ushort CurrentEnergy { get => currentEnergy.Value; }
     public BattleActionStatus ScoreStatus { get => scoreStatus; }
 
     public Player LobbyPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
@@ -203,7 +203,7 @@ public class PlayerManager : NetworkBehaviour
         };
     }
 
-    private void OnEnergyAmountChange(short prev, short curr)
+    private void OnEnergyAmountChange(ushort prev, ushort curr)
     {
         hpBar.UpdateEnergyAmount(curr);
         UpdateEnergyGraphic();
@@ -521,15 +521,15 @@ public class PlayerManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void GainEnergyRPC(short amount=1)
+    public void GainEnergyRPC(ushort amount=1)
     {
-        currentEnergy.Value = (short)Mathf.Clamp(currentEnergy.Value + amount, 0, maxEnergyCarry);
+        currentEnergy.Value = (ushort)Mathf.Clamp(currentEnergy.Value + amount, 0, maxEnergyCarry);
     }
 
     [Rpc(SendTo.Server)]
     public void LoseEnergyRPC(short amount=1)
     {
-        currentEnergy.Value = (short)Mathf.Clamp(currentEnergy.Value - amount, 0, maxEnergyCarry);
+        currentEnergy.Value = (ushort)Mathf.Clamp(currentEnergy.Value - amount, 0, maxEnergyCarry);
     }
 
     [Rpc(SendTo.Server)]
@@ -538,7 +538,7 @@ public class PlayerManager : NetworkBehaviour
         currentEnergy.Value = 0;
     }
 
-    public void ChangeMaxEnergy(short amount)
+    public void ChangeMaxEnergy(ushort amount)
     {
         maxEnergyCarry = amount;
         UpdateEnergyGraphic();
@@ -549,9 +549,9 @@ public class PlayerManager : NetworkBehaviour
         return currentEnergy.Value == maxEnergyCarry;
     }
 
-    public short AvailableEnergy()
+    public ushort AvailableEnergy()
     {
-        return (short)(maxEnergyCarry - currentEnergy.Value);
+        return (ushort)(maxEnergyCarry - currentEnergy.Value);
     }
 
     public void UpdateEnergyGraphic()
@@ -562,7 +562,7 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
-    private void SpawnEnergy(short amount)
+    private void SpawnEnergy(ushort amount)
     {
         int numFives = amount / 5;
         int remainderOnes = amount % 5;

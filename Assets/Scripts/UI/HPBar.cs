@@ -76,7 +76,7 @@ public class HPBar : MonoBehaviour
         genericGuageBar.fillAmount = Mathf.Clamp(fillAmount / maxValue, 0f, 1f);
     }
 
-    public void UpdateEnergyAmount(short amount)
+    public void UpdateEnergyAmount(ushort amount)
     {
         energyText.text = amount.ToString();
     }

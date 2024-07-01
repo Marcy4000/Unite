@@ -85,6 +85,11 @@ public class PlayerNetworkManager : NetworkBehaviour
             playerManager.PlayerMovement.CanMove = true;
             matchStarted = true;
         }
+
+        if (state == GameState.Ended)
+        {
+            playerManager.PlayerMovement.CanMove = false;
+        }
     }
 
     public void SpawnPlayerObject()

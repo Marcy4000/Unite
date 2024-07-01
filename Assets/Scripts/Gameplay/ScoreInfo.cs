@@ -5,10 +5,10 @@ using UnityEngine;
 
 public struct ScoreInfo : INetworkSerializable
 {
-    public short scoredPoints;
+    public ushort scoredPoints;
     public ulong scorerId;
 
-    public ScoreInfo(short scoredPoints, ulong scorerId)
+    public ScoreInfo(ushort scoredPoints, ulong scorerId)
     {
         this.scoredPoints = scoredPoints;
         this.scorerId = scorerId;

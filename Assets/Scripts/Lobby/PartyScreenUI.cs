@@ -43,11 +43,17 @@ public class PartyScreenUI : MonoBehaviour
         {
             if (i < maxPlayers/2)
             {
+                int index = i;
                 playerIconsBlueTeam[i] = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
+                playerIconsBlueTeam[i].InitializeElement(false, i);
+                playerIconsBlueTeam[i].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsBlueTeam[index]));
             }
             else
             {
-                playerIconsOrangeTeam[i - maxPlayers/2] = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
+                int index = i - maxPlayers/2;
+                playerIconsOrangeTeam[index] = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
+                playerIconsOrangeTeam[index].InitializeElement(true, index);
+                playerIconsOrangeTeam[index].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsOrangeTeam[index]));
             }
         }
 
@@ -55,12 +61,12 @@ public class PartyScreenUI : MonoBehaviour
         {
             if (lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
             {
-                playerIconsBlueTeam[blueIndex].Initialize(lobby.Players[i]);
+                playerIconsBlueTeam[blueIndex].InitializePlayer(lobby.Players[i]);
                 blueIndex++;
             }
             else
             {
-                playerIconsOrangeTeam[orangeIndex].Initialize(lobby.Players[i]);
+                playerIconsOrangeTeam[orangeIndex].InitializePlayer(lobby.Players[i]);
                 orangeIndex++;
             }
         }
@@ -68,8 +74,6 @@ public class PartyScreenUI : MonoBehaviour
 
     public void UpdatePlayers(Lobby lobby)
     {
-        int blueIndex = 0;
-        int orangeIndex = 0;
         startGameButton.SetActive(lobby.HostId == AuthenticationService.Instance.PlayerId);
 
         for (int i = 0; i < maxPlayers; i++)
@@ -86,15 +90,14 @@ public class PartyScreenUI : MonoBehaviour
 
         for (int i = 0; i < lobby.Players.Count; i++)
         {
+            int playerPos = NumberEncoder.Base64ToDecimal(lobby.Players[i].Data["PlayerPos"].Value);
             if (lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
             {
-                playerIconsBlueTeam[blueIndex].Initialize(lobby.Players[i]);
-                blueIndex++;
+                playerIconsBlueTeam[playerPos].InitializePlayer(lobby.Players[i]);
             }
             else
             {
-                playerIconsOrangeTeam[orangeIndex].Initialize(lobby.Players[i]);
-                orangeIndex++;
+                playerIconsOrangeTeam[playerPos].InitializePlayer(lobby.Players[i]);
             }
         }
     }
@@ -112,6 +115,29 @@ public class PartyScreenUI : MonoBehaviour
     public void SwitchTeam()
     {
         LobbyController.Instance.PlayerSwitchTeam();
+    }
+
+    public void ChangePosition(string team, int position)
+    {
+        LobbyController.Instance.UpdatePlayerTeamAndPos(team, position);
+    }
+
+    private void CheckIfPosIsAvailable(LobbyPlayerIcon playerIcon)
+    {
+        if (!playerIcon.OrangeTeam)
+        {
+            if (playerIconsBlueTeam[playerIcon.Position].PlayerName == "No Player")
+            {
+                ChangePosition("Blue", playerIcon.Position);
+            }
+        }
+        else
+        {
+            if (playerIconsOrangeTeam[playerIcon.Position].PlayerName == "No Player")
+            {
+                ChangePosition("Orange", playerIcon.Position);
+            }
+        }
     }
 
     public void ClearUI()

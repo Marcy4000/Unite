@@ -7,6 +7,17 @@ public class LobbyPlayerIcon : MonoBehaviour
 {
     [SerializeField] private TMP_Text playerNameText;
     [SerializeField] private Image playerHead;
+    [SerializeField] private Button switchButton;
+
+    private bool orangeTeam = false;
+    private int position = 0;
+
+    public bool OrangeTeam => orangeTeam;
+    public int Position => position;
+
+    public Button SwitchButton => switchButton;
+
+    public string PlayerName => playerNameText.text;
 
     public void ResetName()
     {
@@ -15,7 +26,13 @@ public class LobbyPlayerIcon : MonoBehaviour
         playerNameText.color = Color.white;
     }
 
-    public void Initialize(Player player)
+    public void InitializeElement(bool orangeTeam, int position)
+    {
+        this.orangeTeam = orangeTeam;
+        this.position = position;
+    }
+
+    public void InitializePlayer(Player player)
     {
         playerNameText.text = player.Data["PlayerName"].Value;
         playerHead.gameObject.SetActive(true);

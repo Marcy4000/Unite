@@ -16,7 +16,7 @@ public class WildPokemon : NetworkBehaviour
     public Pokemon Pokemon => pokemon;
     public WildPokemonInfo WildPokemonInfo { get => wildPokemonInfo; set { wildPokemonInfo = value; } }
     public int ExpYield { get => wildPokemonInfo.ExpYield; }
-    public short EnergyYield { get => wildPokemonInfo.EnergyYield; }
+    public ushort EnergyYield { get => wildPokemonInfo.EnergyYield; }
 
     public override void OnNetworkSpawn()
     {

@@ -107,6 +107,7 @@ public class LobbyController : MonoBehaviour
             {
                 {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, testPlayerName)},
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
+                {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.DecimalToBase64(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")}
             });
@@ -222,6 +223,7 @@ public class LobbyController : MonoBehaviour
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
             Debug.Log($"Joined lobby: {partyLobby.Name}");
+            CheckIfShouldChangePos();
             NetworkManager.Singleton.StartClient();
             lobbyUI.ShowLobbyUI();
             LoadingScreen.Instance.HideGenericLoadingScreen();
@@ -230,6 +232,39 @@ public class LobbyController : MonoBehaviour
         {
             LoadingScreen.Instance.HideGenericLoadingScreen();
             Debug.LogError($"Failed to join party lobby: {e.Message}");
+        }
+    }
+
+    private void CheckIfShouldChangePos()
+    {
+        HashSet<string> usedPositions = new HashSet<string>();
+
+        // Track all used positions
+        foreach (var player in partyLobby.Players)
+        {
+            string playerTeam = player.Data["PlayerTeam"].Value;
+            string playerPos = NumberEncoder.Base64ToDecimal(player.Data["PlayerPos"].Value).ToString();
+            usedPositions.Add(playerTeam + playerPos);
+        }
+
+        string localTeam = localPlayer.Data["PlayerTeam"].Value;
+        int localPos = NumberEncoder.Base64ToDecimal(localPlayer.Data["PlayerPos"].Value);
+
+        // Check if local player's position is already taken
+        if (usedPositions.Contains(localTeam + localPos.ToString()))
+        {
+            // Find the next available position
+            for (int i = 0; i < maxPartyMembers; i++)
+            {
+                string team = i < maxPartyMembers / 2 ? "Blue" : "Orange";
+                int pos = i % (maxPartyMembers / 2);
+
+                if (!usedPositions.Contains(team + pos.ToString()))
+                {
+                    UpdatePlayerTeamAndPos(team, pos);
+                    break;
+                }
+            }
         }
     }
 
@@ -279,6 +314,17 @@ public class LobbyController : MonoBehaviour
         Debug.Log($"Switched team to {localPlayer.Data["PlayerTeam"].Value}");
     }
 
+    public void UpdatePlayerTeamAndPos(string team, int pos)
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["PlayerTeam"].Value = team;
+        options.Data["PlayerPos"].Value = NumberEncoder.DecimalToBase64(pos);
+        Debug.Log($"Changed team to {options.Data["PlayerTeam"].Value} and pos to {options.Data["PlayerPos"].Value}");
+
+        UpdatePlayerData(options);
+    }
+    
     public void ChangePlayerCharacter(string characterName)
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();
@@ -423,6 +469,15 @@ public class LobbyController : MonoBehaviour
                 teamPlayers.Add(player);
             }
         }
+
+        // Sort the players by their position
+        teamPlayers.Sort((p1, p2) =>
+        {
+            int pos1 = NumberEncoder.Base64ToDecimal(p1.Data["PlayerPos"].Value);
+            int pos2 = NumberEncoder.Base64ToDecimal(p2.Data["PlayerPos"].Value);
+            return pos1.CompareTo(pos2);
+        });
+
         return teamPlayers.ToArray();
     }
 }

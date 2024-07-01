@@ -1,47 +1,55 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using Unity.Netcode;
 
-public class GameResults 
+public struct GameResults : INetworkSerializable
 {
-    public bool BlueTeamWon { get; set; }
-    public int BlueTeamScore { get; set; }
-    public int OrangeTeamScore { get; set; }
+    public bool BlueTeamWon;
+    public ushort BlueTeamScore;
+    public ushort OrangeTeamScore;
 
-    public float TotalGameTime { get; set; }
+    public float TotalGameTime;
 
-    public List<ResultScoreInfo> BlueTeamScores { get; set; }
-    public List<ResultScoreInfo> OrangeTeamScores { get; set; }
+    public ResultScoreInfo[] BlueTeamScores;
+    public ResultScoreInfo[] OrangeTeamScores;
 
-    public GameResults(bool blueTeamWon, int blueTeamScore, int orangeTeamScore)
+    public GameResults(bool blueTeamWon, ushort blueTeamScore, ushort orangeTeamScore, float totalGameTime, ResultScoreInfo[] blueTeamScores, ResultScoreInfo[] orangeTeamScores)
     {
         BlueTeamWon = blueTeamWon;
         BlueTeamScore = blueTeamScore;
         OrangeTeamScore = orangeTeamScore;
-        BlueTeamScores = new List<ResultScoreInfo>();
-        OrangeTeamScores = new List<ResultScoreInfo>();
+        TotalGameTime = totalGameTime;
+        BlueTeamScores = blueTeamScores;
+        OrangeTeamScores = orangeTeamScores;
     }
 
-    public GameResults()
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
-        BlueTeamWon = false;
-        BlueTeamScore = 0;
-        OrangeTeamScore = 0;
-        BlueTeamScores = new List<ResultScoreInfo>();
-        OrangeTeamScores = new List<ResultScoreInfo>();
+        serializer.SerializeValue(ref BlueTeamWon);
+        serializer.SerializeValue(ref BlueTeamScore);
+        serializer.SerializeValue(ref OrangeTeamScore);
+        serializer.SerializeValue(ref TotalGameTime);
+
+        serializer.SerializeValue(ref BlueTeamScores);
+        serializer.SerializeValue(ref OrangeTeamScores);
     }
 }
 
-public struct ResultScoreInfo
+public struct ResultScoreInfo : INetworkSerializable
 {
-    public int ScoredPoints;
+    public ushort ScoredPoints;
     public string PlayerID;
-    public float time;
+    public float Time;
 
-    public ResultScoreInfo(int scoredPoints, string playerID, float time)
+    public ResultScoreInfo(ushort scoredPoints, string playerID, float time)
     {
         ScoredPoints = scoredPoints;
         PlayerID = playerID;
-        this.time = time;
+        Time = time;
+    }
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref ScoredPoints);
+        serializer.SerializeValue(ref PlayerID);
+        serializer.SerializeValue(ref Time);
     }
 }

@@ -17,7 +17,7 @@ public class HPBarWild : MonoBehaviour
         UpdateUI();
     }
 
-    public void InitializeEnergyUI(short energyAmount, bool hideUI = false)
+    public void InitializeEnergyUI(ushort energyAmount, bool hideUI = false)
     {
         if (hideUI)
         {
@@ -29,7 +29,7 @@ public class HPBarWild : MonoBehaviour
         UpdateEnergyAmount(energyAmount);
     }
 
-    public void UpdateEnergyAmount(short amount)
+    public void UpdateEnergyAmount(ushort amount)
     {
         energyText.text = amount.ToString();
     }

@@ -58,8 +58,8 @@ public class LoadingScreen : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        Player[] orangeTeamPlayers = GetTeamPlayers(true);
-        Player[] blueTeamPlayers = GetTeamPlayers(false);
+        Player[] orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(true);
+        Player[] blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(false);
 
         foreach (var player in orangeTeamPlayers)
         {
@@ -72,18 +72,5 @@ public class LoadingScreen : MonoBehaviour
             GameObject playerObj = Instantiate(playerPrefab, blueTeamSpawn);
             playerObj.GetComponent<LoadingScreenPlayer>().SetPlayerData(player);
         }
-    }
-
-    private Player[] GetTeamPlayers(bool orangeTeam)
-    {
-        List<Player> teamPlayers = new List<Player>();
-        foreach (var player in LobbyController.Instance.Lobby.Players)
-        {
-            if (player.Data["PlayerTeam"].Value == (orangeTeam ? "Orange" : "Blue"))
-            {
-                teamPlayers.Add(player);
-            }
-        }
-        return teamPlayers.ToArray();
     }
 }

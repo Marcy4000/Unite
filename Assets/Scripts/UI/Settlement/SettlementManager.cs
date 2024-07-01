@@ -68,6 +68,9 @@ public class SettlementManager : MonoBehaviour
 
         GameResults gameResults = LobbyController.Instance.GameResults;
 
+        List<ResultScoreInfo> blueTeamScores = new List<ResultScoreInfo>(gameResults.BlueTeamScores);
+        List<ResultScoreInfo> orangeTeamScores = new List<ResultScoreInfo>(gameResults.OrangeTeamScores);
+
         yield return new WaitForSeconds(1.5f);
 
         float timer = gameResults.TotalGameTime;
@@ -75,23 +78,23 @@ public class SettlementManager : MonoBehaviour
 
         while (!finished)
         {
-            for (int i = gameResults.BlueTeamScores.Count-1; i >= 0; i--)
+            for (int i = blueTeamScores.Count-1; i >= 0; i--)
             {
-                if (gameResults.BlueTeamScores[i].time >= timer)
+                if (blueTeamScores[i].Time >= timer)
                 {
-                    blueScoreValue += gameResults.BlueTeamScores[i].ScoredPoints;
-                    Debug.Log($"Blue Score {gameResults.BlueTeamScores[i].ScoredPoints} + At Time {gameResults.BlueTeamScores[i].time} (Current time: {timer})");
-                    gameResults.BlueTeamScores.RemoveAt(i);
+                    blueScoreValue += blueTeamScores[i].ScoredPoints;
+                    Debug.Log($"Blue Score {blueTeamScores[i].ScoredPoints} + At Time {blueTeamScores[i].Time} (Current time: {timer})");
+                    blueTeamScores.RemoveAt(i);
                 }
             }
 
-            for (int i = gameResults.OrangeTeamScores.Count - 1; i >= 0; i--)
+            for (int i = orangeTeamScores.Count - 1; i >= 0; i--)
             {
-                if (gameResults.OrangeTeamScores[i].time >= timer)
+                if (orangeTeamScores[i].Time >= timer)
                 {
-                    orangeScoreValue += gameResults.OrangeTeamScores[i].ScoredPoints;
-                    Debug.Log($"Orange Score {gameResults.OrangeTeamScores[i].ScoredPoints} + At Time {gameResults.OrangeTeamScores[i].time} (Current time: {timer})");
-                    gameResults.OrangeTeamScores.RemoveAt(i);
+                    orangeScoreValue += orangeTeamScores[i].ScoredPoints;
+                    Debug.Log($"Orange Score {orangeTeamScores[i].ScoredPoints} + At Time {orangeTeamScores[i].Time} (Current time: {timer})");
+                    orangeTeamScores.RemoveAt(i);
                 }
             }
 
