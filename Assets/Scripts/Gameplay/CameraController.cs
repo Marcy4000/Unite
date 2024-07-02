@@ -3,11 +3,14 @@ using Cinemachine;
 
 public class CameraController : MonoBehaviour
 {
+    public static CameraController Instance;
+
     [SerializeField] private CinemachineVirtualCamera virtualCamera;
     [SerializeField] private float panSpeed = 10f;
 
     private Vector2 moveInput;
     private bool isPanning;
+    private bool forcePanning;
     private Transform cameraTransform;
     private Transform playerTransform;
 
@@ -15,6 +18,11 @@ public class CameraController : MonoBehaviour
 
     public CinemachineVirtualCamera VirtualCamera => virtualCamera;
     public bool IsPanning => isPanning;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
@@ -37,19 +45,40 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    void Update()
+    public void ForcePan(bool value)
     {
-        if (playerControls.PanCamera.ShouldPan.WasPressedThisFrame())
+        forcePanning = value;
+
+        if (forcePanning)
         {
             isPanning = true;
             virtualCamera.Follow = null;
             virtualCamera.LookAt = null;
         }
-        else if (playerControls.PanCamera.ShouldPan.WasReleasedThisFrame())
+        else
         {
             isPanning = false;
             virtualCamera.Follow = playerTransform;
             virtualCamera.LookAt = playerTransform;
+        }
+    }
+
+    void Update()
+    {
+        if (!forcePanning)
+        {
+            if (playerControls.PanCamera.ShouldPan.WasPressedThisFrame())
+            {
+                isPanning = true;
+                virtualCamera.Follow = null;
+                virtualCamera.LookAt = null;
+            }
+            else if (playerControls.PanCamera.ShouldPan.WasReleasedThisFrame())
+            {
+                isPanning = false;
+                virtualCamera.Follow = playerTransform;
+                virtualCamera.LookAt = playerTransform;
+            }
         }
 
         if (isPanning)

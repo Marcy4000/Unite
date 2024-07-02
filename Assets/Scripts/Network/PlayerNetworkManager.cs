@@ -46,7 +46,8 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        if (sceneName.Equals("RemoatStadium"))
+        string selectedMap = LobbyController.Instance.Lobby.Data["SelectedMap"].Value;
+        if (sceneName.Equals(selectedMap))
         {
             GameManager.Instance.onGameStateChanged += HandleGameStateChanged;
         }
@@ -130,7 +131,8 @@ public class PlayerNetworkManager : NetworkBehaviour
                     if (IsOwner)
                     {
                         player.Pokemon.OnDeath += OnPlayerDeath;
-                        Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+                        short pos = NumberEncoder.Base64ToShort(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+                        Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
                         playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
                         playerManager.PlayerMovement.CanMove = false;
                     }

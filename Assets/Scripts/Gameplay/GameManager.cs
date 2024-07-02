@@ -60,7 +60,8 @@ public class GameManager : NetworkBehaviour
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        if (sceneName.Equals("RemoatStadium"))
+        string selectedMap = LobbyController.Instance.Lobby.Data["SelectedMap"].Value;
+        if (sceneName.Equals(selectedMap))
         {
             StartCoroutine(StartGameDelayed());
         }
@@ -158,8 +159,6 @@ public class GameManager : NetworkBehaviour
                 if (gameTime.Value <= 0f)
                 {
                     gameTime.Value = 0f;
-
-                    LobbyController.Instance.UpdateLobbyScores(BlueTeamScore, OrangeTeamScore);
 
                     EndGameRPC(GenerateGameResults());
                 }

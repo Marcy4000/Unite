@@ -23,4 +23,24 @@ public class SpawnpointManager : MonoBehaviour
     {
         return orangeTeamPoints[Random.Range(0, orangeTeamPoints.Length)];
     }
+
+    public Transform GetBlueTeamSpawnpoint(int index)
+    {
+        if (index < 0 || index >= blueTeamPoints.Length)
+        {
+            return null;
+        }
+
+        return blueTeamPoints[index];
+    }
+
+    public Transform GetOrangeTeamSpawnpoint(int index)
+    {
+        if (index < 0 || index >= orangeTeamPoints.Length)
+        {
+            return null;
+        }
+
+        return orangeTeamPoints[index];
+    }
 }

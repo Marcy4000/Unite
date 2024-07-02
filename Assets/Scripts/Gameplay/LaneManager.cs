@@ -7,6 +7,7 @@ using UnityEngine;
 public class LaneManager : NetworkBehaviour
 {
     [SerializeField] private bool orangeTeam;
+    [SerializeField] private int maxTier = 2;
 
     private List<GoalZone> goalZones = new List<GoalZone>();
     private List<FluxZone> fluxZones = new List<FluxZone>();
@@ -59,7 +60,7 @@ public class LaneManager : NetworkBehaviour
 
         foreach (GoalZone goalZone in goalZones)
         {
-            if (goalZone.GoalTier < 2)
+            if (goalZone.GoalTier < maxTier)
             {
                 goalZone.SetIsActive(false);
             }

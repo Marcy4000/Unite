@@ -275,7 +275,8 @@ public class PlayerManager : NetworkBehaviour
     {
         if (curr != PlayerState.Dead && transform.position.y == deathPosition.y)
         {
-            Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+            short pos = NumberEncoder.Base64ToShort(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+            Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
             UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
             playerMovement.CanMove = true;
         }
@@ -294,6 +295,9 @@ public class PlayerManager : NetworkBehaviour
         SpawnEnergy(currentEnergy.Value);
         ResetEnergyRPC();
         playerMovement.CanMove = false;
+
+        CameraController.Instance.ForcePan(true);
+
         UpdatePosAndRotRPC(deathPosition, Quaternion.identity);
         ChangeCurrentState(PlayerState.Dead);
     }
@@ -305,6 +309,7 @@ public class PlayerManager : NetworkBehaviour
 
     public void Respawn()
     {
+        CameraController.Instance.ForcePan(false);
         ChangeCurrentState(PlayerState.Alive);
         pokemon.HealDamage(pokemon.GetMaxHp());
     }

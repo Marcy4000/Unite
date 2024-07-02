@@ -90,7 +90,7 @@ public class CharacterSelectController : NetworkBehaviour
                 if (selectionTimer.Value <= 0 && !isLoading)
                 {
                     ShowLoadingScreenRpc();
-                    LobbyController.Instance.LoadRemoat();
+                    LobbyController.Instance.LoadGameMap();
                     isLoading = true;
                 }
             }

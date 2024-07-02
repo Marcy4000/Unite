@@ -107,7 +107,7 @@ public class LobbyController : MonoBehaviour
             {
                 {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, testPlayerName)},
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
-                {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.DecimalToBase64(0))},
+                {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ShortToBase64(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")}
             });
@@ -174,8 +174,7 @@ public class LobbyController : MonoBehaviour
                 Player = localPlayer,
                 Data = new Dictionary<string, DataObject>
                 {
-                    {"BlueTeamScore", new DataObject(DataObject.VisibilityOptions.Member, "0")},
-                    {"OrangeTeamScore", new DataObject(DataObject.VisibilityOptions.Member, "0")}
+                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, "MerStadium")}
                 }
             };
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
@@ -198,6 +197,9 @@ public class LobbyController : MonoBehaviour
 
             NetworkManager.Singleton.StartHost();
             lobbyUI.ShowLobbyUI();
+
+            onLobbyUpdate?.Invoke(partyLobby);
+
             LoadingScreen.Instance.HideGenericLoadingScreen();
         }
         catch (LobbyServiceException e)
@@ -226,6 +228,9 @@ public class LobbyController : MonoBehaviour
             CheckIfShouldChangePos();
             NetworkManager.Singleton.StartClient();
             lobbyUI.ShowLobbyUI();
+
+            onLobbyUpdate?.Invoke(partyLobby);
+
             LoadingScreen.Instance.HideGenericLoadingScreen();
         }
         catch (LobbyServiceException e)
@@ -243,12 +248,12 @@ public class LobbyController : MonoBehaviour
         foreach (var player in partyLobby.Players)
         {
             string playerTeam = player.Data["PlayerTeam"].Value;
-            string playerPos = NumberEncoder.Base64ToDecimal(player.Data["PlayerPos"].Value).ToString();
+            string playerPos = NumberEncoder.Base64ToInt(player.Data["PlayerPos"].Value).ToString();
             usedPositions.Add(playerTeam + playerPos);
         }
 
         string localTeam = localPlayer.Data["PlayerTeam"].Value;
-        int localPos = NumberEncoder.Base64ToDecimal(localPlayer.Data["PlayerPos"].Value);
+        short localPos = NumberEncoder.Base64ToShort(localPlayer.Data["PlayerPos"].Value);
 
         // Check if local player's position is already taken
         if (usedPositions.Contains(localTeam + localPos.ToString()))
@@ -257,7 +262,7 @@ public class LobbyController : MonoBehaviour
             for (int i = 0; i < maxPartyMembers; i++)
             {
                 string team = i < maxPartyMembers / 2 ? "Blue" : "Orange";
-                int pos = i % (maxPartyMembers / 2);
+                short pos = (short)(i % (maxPartyMembers / 2));
 
                 if (!usedPositions.Contains(team + pos.ToString()))
                 {
@@ -314,12 +319,12 @@ public class LobbyController : MonoBehaviour
         Debug.Log($"Switched team to {localPlayer.Data["PlayerTeam"].Value}");
     }
 
-    public void UpdatePlayerTeamAndPos(string team, int pos)
+    public void UpdatePlayerTeamAndPos(string team, short pos)
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();
         options.Data = localPlayer.Data;
         options.Data["PlayerTeam"].Value = team;
-        options.Data["PlayerPos"].Value = NumberEncoder.DecimalToBase64(pos);
+        options.Data["PlayerPos"].Value = NumberEncoder.ShortToBase64(pos);
         Debug.Log($"Changed team to {options.Data["PlayerTeam"].Value} and pos to {options.Data["PlayerPos"].Value}");
 
         UpdatePlayerData(options);
@@ -353,31 +358,6 @@ public class LobbyController : MonoBehaviour
         Debug.Log($"Changed name to {options.Data["PlayerName"]}");
 
         UpdatePlayerData(options);
-    }
-
-    public async void UpdateLobbyScores(int blueTeamScore, int orangeTeamScore)
-    {
-        UpdateLobbyOptions options = new UpdateLobbyOptions();
-
-        options.HostId = partyLobby.HostId;
-        options.MaxPlayers = partyLobby.MaxPlayers;
-        options.IsPrivate = partyLobby.IsPrivate;
-        options.Name = partyLobby.Name;
-
-        options.Data = new Dictionary<string, DataObject>
-        {
-            {"BlueTeamScore", new DataObject(DataObject.VisibilityOptions.Member, blueTeamScore.ToString())},
-            {"OrangeTeamScore", new DataObject(DataObject.VisibilityOptions.Member, orangeTeamScore.ToString())}
-        };
-
-        try
-        {
-            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, options);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogError(e);
-        }
     }
 
     private async Task<Allocation> AllocateRelay()
@@ -430,9 +410,10 @@ public class LobbyController : MonoBehaviour
         NetworkManager.Singleton.SceneManager.LoadScene("CharacterSelect", LoadSceneMode.Single);
     }
 
-    public void LoadRemoat()
+    public void LoadGameMap()
     {
-        NetworkManager.Singleton.SceneManager.LoadScene("RemoatStadium", LoadSceneMode.Single);
+        string selectedMap = partyLobby.Data["SelectedMap"].Value;
+        NetworkManager.Singleton.SceneManager.LoadScene(selectedMap, LoadSceneMode.Single);
     }
 
     public void LoadResultsScreen()
@@ -473,8 +454,8 @@ public class LobbyController : MonoBehaviour
         // Sort the players by their position
         teamPlayers.Sort((p1, p2) =>
         {
-            int pos1 = NumberEncoder.Base64ToDecimal(p1.Data["PlayerPos"].Value);
-            int pos2 = NumberEncoder.Base64ToDecimal(p2.Data["PlayerPos"].Value);
+            int pos1 = NumberEncoder.Base64ToInt(p1.Data["PlayerPos"].Value);
+            int pos2 = NumberEncoder.Base64ToInt(p2.Data["PlayerPos"].Value);
             return pos1.CompareTo(pos2);
         });
 

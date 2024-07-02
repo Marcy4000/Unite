@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
-using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
@@ -45,14 +42,14 @@ public class PartyScreenUI : MonoBehaviour
             {
                 int index = i;
                 playerIconsBlueTeam[i] = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
-                playerIconsBlueTeam[i].InitializeElement(false, i);
+                playerIconsBlueTeam[i].InitializeElement(false, (short)i);
                 playerIconsBlueTeam[i].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsBlueTeam[index]));
             }
             else
             {
                 int index = i - maxPlayers/2;
                 playerIconsOrangeTeam[index] = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
-                playerIconsOrangeTeam[index].InitializeElement(true, index);
+                playerIconsOrangeTeam[index].InitializeElement(true, (short)index);
                 playerIconsOrangeTeam[index].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsOrangeTeam[index]));
             }
         }
@@ -90,7 +87,7 @@ public class PartyScreenUI : MonoBehaviour
 
         for (int i = 0; i < lobby.Players.Count; i++)
         {
-            int playerPos = NumberEncoder.Base64ToDecimal(lobby.Players[i].Data["PlayerPos"].Value);
+            int playerPos = NumberEncoder.Base64ToShort(lobby.Players[i].Data["PlayerPos"].Value);
             if (lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
             {
                 playerIconsBlueTeam[playerPos].InitializePlayer(lobby.Players[i]);
@@ -117,7 +114,7 @@ public class PartyScreenUI : MonoBehaviour
         LobbyController.Instance.PlayerSwitchTeam();
     }
 
-    public void ChangePosition(string team, int position)
+    public void ChangePosition(string team, short position)
     {
         LobbyController.Instance.UpdatePlayerTeamAndPos(team, position);
     }
