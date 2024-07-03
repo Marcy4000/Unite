@@ -31,7 +31,7 @@ To run this project locally, follow these steps:
 2. **Open in Unity**
     - Open Unity Hub.
     - Click on the 'Add' button and select the cloned project folder.
-    - Open the project in the Unity Editor (Version 2022.3.32).
+    - Open the project in the Unity Editor (Version 2022.3.35).
 
 ## Acknowledgments
 

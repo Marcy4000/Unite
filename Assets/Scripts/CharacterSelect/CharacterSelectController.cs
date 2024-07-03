@@ -4,6 +4,7 @@ using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using JSAM;
 
 public class CharacterSelectController : NetworkBehaviour
 {
@@ -49,6 +50,9 @@ public class CharacterSelectController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
+        AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon);
+
         Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
         foreach (var player in localTeamPlayers)
         {
@@ -108,6 +112,8 @@ public class CharacterSelectController : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowLoadingScreenRpc()
     {
+        AudioManager.StopMusic(DefaultAudioMusic.ChoosePokemon);
+        AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme);
         LoadingScreen.Instance.ShowMatchLoadingScreen();
     }
 

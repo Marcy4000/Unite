@@ -1,6 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
+using JSAM;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,6 +11,8 @@ public class BootSceneController : MonoBehaviour
     private void Start()
     {
         startButton.onClick.AddListener(OnStartButtonClicked);
+
+        AudioManager.PlayMusic(DefaultAudioMusic.MainTheme);
     }
 
     private void OnStartButtonClicked()
@@ -21,6 +21,9 @@ public class BootSceneController : MonoBehaviour
         {
             return;
         }
+
+        AudioManager.StopMusic(DefaultAudioMusic.MainTheme);
+
         LobbyController.Instance.StartGame(playerNameInputField.text);
     }
 }

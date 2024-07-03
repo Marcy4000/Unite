@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class BattleUIManager : MonoBehaviour
@@ -13,6 +14,10 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private DeathScreenUI deathScreenUI;
     [SerializeField] private KillNotificationUI killNotificationUI;
     [SerializeField] private GoalStateUI goalStateUI;
+    [SerializeField] private RecallBarUI recallBarUI;
+    [SerializeField] private ScoreboardUI scoreboardUI;
+
+    private PlayerControls playerControls;
 
     private void Awake()
     {
@@ -21,6 +26,41 @@ public class BattleUIManager : MonoBehaviour
             Destroy(instance.gameObject);
         }
         instance = this;
+    }
+
+    private void Start()
+    {
+        GameManager.Instance.onGameStateChanged += HandleGameStateChanged;
+        playerControls = new PlayerControls();
+        playerControls.asset.Enable();
+    }
+
+    private void HandleGameStateChanged(GameState currentState)
+    {
+        if (currentState == GameState.Initialising)
+        {
+            StartCoroutine(InitializeDelayed());
+        }
+    }
+
+    private IEnumerator InitializeDelayed()
+    {
+        yield return new WaitForSeconds(0.4f);
+
+        scoreboardUI.Initialize();
+        scoreboardUI.CloseScoreboard();
+    }
+
+    private void Update()
+    {
+        if (playerControls.UI.OpenScoreboard.WasPressedThisFrame())
+        {
+            scoreboardUI.OpenScoreboard();
+        }
+        else if (playerControls.UI.CloseScoreboard.WasPressedThisFrame())
+        {
+            scoreboardUI.CloseScoreboard();
+        }
     }
 
     public void ShowScore(int amount, bool orangeTeam, Sprite portrait)
@@ -151,5 +191,15 @@ public class BattleUIManager : MonoBehaviour
     public void InitializeBattleItemUI(BattleItemAsset battleItem)
     {
         battleItemUI.Initialize(battleItem);
+    }
+
+    public void UpdateRecallBar(float value)
+    {
+        recallBarUI.SetRecallBar(value);
+    }
+
+    public void SetRecallBarActive(bool active)
+    {
+        recallBarUI.SetRecallBarActive(active);
     }
 }

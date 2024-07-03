@@ -753,38 +753,41 @@ public class Pokemon : NetworkBehaviour
         }
 
         // TODO: remove all this debug stuff once ready for release
+        // Update: Only available in debug builds now
+        if (Debug.isDebugBuild)
+        {
+            if (Keyboard.current.tKey.wasPressedThisFrame)
+            {
+                TakeDamage(new DamageInfo(NetworkObjectId, 3.45f, 32, 820, DamageType.Physical));
+            }
+            if (Keyboard.current.yKey.wasPressedThisFrame)
+            {
+                HealDamage(300);
+            }
 
-        if (Keyboard.current.tKey.wasPressedThisFrame)
-        {
-            TakeDamage(new DamageInfo(NetworkObjectId, 3.45f, 32, 820, DamageType.Physical));
-        }
-        if (Keyboard.current.yKey.wasPressedThisFrame)
-        {
-            HealDamage(300);
-        }
+            if (Keyboard.current.hKey.wasPressedThisFrame)
+            {
+                AddShieldRPC(new ShieldInfo(300, 6969, 0, 3, true));
+            }
+            if (Keyboard.current.jKey.wasPressedThisFrame)
+            {
+                RemoveShieldWithIDRPC(6969);
+            }
 
-        if (Keyboard.current.hKey.wasPressedThisFrame)
-        {
-            AddShieldRPC(new ShieldInfo(300, 6969, 0, 3, true));
-        }
-        if (Keyboard.current.jKey.wasPressedThisFrame)
-        {
-            RemoveShieldWithIDRPC(6969);
-        }
+            if (Keyboard.current.kKey.wasPressedThisFrame)
+            {
+                GainExperience(100);
+            }
 
-        if (Keyboard.current.kKey.wasPressedThisFrame)
-        {
-            GainExperience(100);
-        }
+            if (Keyboard.current.lKey.wasPressedThisFrame)
+            {
+                AddStatChange(new StatChange(1000, Stat.Speed, 5, true, false, false, 0));
+            }
 
-        if (Keyboard.current.lKey.wasPressedThisFrame)
-        {
-            AddStatChange(new StatChange(1000, Stat.Speed, 5, true, false, false, 0));
-        }
-
-        if (Keyboard.current.zKey.wasPressedThisFrame)
-        {
-            AddStatusEffect(new StatusEffect(StatusType.VisionObscuring, 3f, true, 0));
+            if (Keyboard.current.zKey.wasPressedThisFrame)
+            {
+                AddStatusEffect(new StatusEffect(StatusType.VisionObscuring, 3f, true, 0));
+            }
         }
     }
 
@@ -796,42 +799,13 @@ public class Pokemon : NetworkBehaviour
         }
 
         lastHit = damage;
-        int atkStat;
+
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
+
         int localHp = currentHp.Value;
         List<ShieldInfo> localShields = GetShieldsAsList();
 
-        switch (damage.type)
-        {
-            case DamageType.True:
-            case DamageType.Physical:
-                atkStat = attacker.GetAttack();
-                break;
-            case DamageType.Special:
-                atkStat = attacker.GetSpAttack();
-                break;
-            default:
-                atkStat = 0;
-                break;
-        }
-
-        int attackDamage = Mathf.FloorToInt(damage.ratio * atkStat + damage.slider * attacker.CurrentLevel + damage.baseDmg);
-        int defStat;
-        switch (damage.type)
-        {
-            case DamageType.Physical:
-                defStat = GetDefense();
-                break;
-            case DamageType.Special:
-                defStat = GetSpDefense();
-                break;
-            case DamageType.True:
-            default:
-                defStat = 0;
-                break;
-        }
-
-        int actualDamage = Mathf.FloorToInt((float)attackDamage * 600 / (600 + defStat));
+        int actualDamage = CalculateDamage(damage, attacker);
 
         int damageRemainder;
 
@@ -864,6 +838,50 @@ public class Pokemon : NetworkBehaviour
         OnDamageTakenRpc(damage);
         ClientDamageRpc(actualDamage, damage);
         attacker.OnDamageDealtRPC(NetworkObjectId, actualDamage);
+    }
+
+    public int CalculateDamage(DamageInfo damage)
+    {
+        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
+
+        return CalculateDamage(damage, attacker);
+    }
+
+    public int CalculateDamage(DamageInfo damage, Pokemon attacker)
+    {
+        int atkStat;
+
+        switch (damage.type)
+        {
+            case DamageType.True:
+            case DamageType.Physical:
+                atkStat = attacker.GetAttack();
+                break;
+            case DamageType.Special:
+                atkStat = attacker.GetSpAttack();
+                break;
+            default:
+                atkStat = 0;
+                break;
+        }
+
+        int attackDamage = Mathf.FloorToInt(damage.ratio * atkStat + damage.slider * attacker.CurrentLevel + damage.baseDmg);
+        int defStat;
+        switch (damage.type)
+        {
+            case DamageType.Physical:
+                defStat = GetDefense();
+                break;
+            case DamageType.Special:
+                defStat = GetSpDefense();
+                break;
+            case DamageType.True:
+            default:
+                defStat = 0;
+                break;
+        }
+
+        return Mathf.FloorToInt((float)attackDamage * 600 / (600 + defStat));
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)
@@ -1107,7 +1125,6 @@ public class Pokemon : NetworkBehaviour
         {
             int convertedExp = Mathf.Min(amount, localStoredExp);
             localStoredExp -= convertedExp;
-            amount -= convertedExp;
             localExp += convertedExp;
         }
 

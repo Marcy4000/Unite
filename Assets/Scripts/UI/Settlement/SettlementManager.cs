@@ -1,3 +1,4 @@
+using JSAM;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ public class SettlementManager : MonoBehaviour
 {
     [SerializeField] private ResultBarsUI resultBarsUI;
     [SerializeField] private GameInfoUI gameInfoUI;
+    [SerializeField] private BattleInfoUI battleInfoUI;
 
     [SerializeField] private TMP_Text blueScoreText;
     [SerializeField] private TMP_Text orangeScoreText;
@@ -25,11 +27,13 @@ public class SettlementManager : MonoBehaviour
     private void Start()
     {
         gameInfoUI.Initialize();
+        battleInfoUI.Initialize(LobbyController.Instance.GameResults);
         blueScoreText.gameObject.SetActive(false);
         orangeScoreText.gameObject.SetActive(false);
 
         returnLobbyButton.onClick.AddListener(() =>
         {
+            AudioManager.StopMusic(DefaultAudioMusic.GameEnd);
             LobbyController.Instance.ReturnToLobby();
         });
 
@@ -136,5 +140,7 @@ public class SettlementManager : MonoBehaviour
 
         blueScoreText.text = blueScoreValue.ToString();
         orangeScoreText.text = orangeScoreValue.ToString();
+
+        AudioManager.PlayMusic(DefaultAudioMusic.GameEnd);
     }
 }

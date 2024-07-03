@@ -1,3 +1,4 @@
+using JSAM;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -70,6 +71,8 @@ public class GameManager : NetworkBehaviour
     private IEnumerator StartGameDelayed()
     {
         yield return new WaitForSeconds(0.1f);
+        AudioManager.StopMusic(DefaultAudioMusic.LoadingTheme);
+        AudioManager.PlaySound(DefaultAudioSounds.LoadComplete);
         if (IsServer)
         {
             gameState.Value = GameState.Initialising;
@@ -85,6 +88,8 @@ public class GameManager : NetworkBehaviour
         {
             if (curr)
             {
+                AudioManager.StopMusic(DefaultAudioMusic.RemoatStadium);
+                AudioManager.PlayMusic(DefaultAudioMusic.RemoatFinalStretch);
                 onFinalStretch?.Invoke();
             }
         };
@@ -109,7 +114,11 @@ public class GameManager : NetworkBehaviour
         }
         LoadingScreen.Instance.HideMatchLoadingScreen();
 
-        yield return new WaitForSeconds(3.3f);
+        yield return new WaitForSeconds(0.2f);
+
+        AudioManager.PlayMusic(DefaultAudioMusic.RemoatStadium);
+
+        yield return new WaitForSeconds(3.1f);
 
         if (IsServer)
         {
@@ -168,13 +177,16 @@ public class GameManager : NetworkBehaviour
                 }
 
                 // Debug
-                if (Keyboard.current.oKey.wasPressedThisFrame)
+                if (Debug.isDebugBuild)
                 {
-                    gameTime.Value = 0f;
-                }
-                if (Keyboard.current.iKey.wasPressedThisFrame)
-                {
-                    gameTime.Value = 140f;
+                    if (Keyboard.current.oKey.wasPressedThisFrame)
+                    {
+                        gameTime.Value = 0f;
+                    }
+                    if (Keyboard.current.iKey.wasPressedThisFrame)
+                    {
+                        gameTime.Value = 140f;
+                    }
                 }
             }
         }
@@ -182,6 +194,14 @@ public class GameManager : NetworkBehaviour
 
     private GameResults GenerateGameResults()     
     {
+        List<PlayerStats> stats = new List<PlayerStats>();
+        PlayerNetworkManager[] playerNetworkManagers = FindObjectsOfType<PlayerNetworkManager>();
+
+        foreach (var playerNetworkManager in playerNetworkManagers)
+        {
+            stats.Add(playerNetworkManager.PlayerStats);
+        }
+
         return new GameResults
         {
             BlueTeamWon = blueTeamScore.Value > orangeTeamScore.Value,
@@ -189,7 +209,8 @@ public class GameManager : NetworkBehaviour
             OrangeTeamScore = orangeTeamScore.Value,
             TotalGameTime = MAX_GAME_TIME - gameTime.Value,
             BlueTeamScores = blueTeamScores.ToArray(),
-            OrangeTeamScores = orangeTeamScores.ToArray()
+            OrangeTeamScores = orangeTeamScores.ToArray(),
+            PlayerStats = stats.ToArray()
         };
     }
 
@@ -251,6 +272,7 @@ public class GameManager : NetworkBehaviour
         yield return new WaitForSeconds(1.7f);
 
         LoadingScreen.Instance.ShowGenericLoadingScreen();
+        AudioManager.StopAllMusic();
 
         yield return new WaitForSeconds(0.3f);
 

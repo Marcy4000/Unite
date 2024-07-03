@@ -11,7 +11,9 @@ public struct GameResults : INetworkSerializable
     public ResultScoreInfo[] BlueTeamScores;
     public ResultScoreInfo[] OrangeTeamScores;
 
-    public GameResults(bool blueTeamWon, ushort blueTeamScore, ushort orangeTeamScore, float totalGameTime, ResultScoreInfo[] blueTeamScores, ResultScoreInfo[] orangeTeamScores)
+    public PlayerStats[] PlayerStats;
+
+    public GameResults(bool blueTeamWon, ushort blueTeamScore, ushort orangeTeamScore, float totalGameTime, ResultScoreInfo[] blueTeamScores, ResultScoreInfo[] orangeTeamScores, PlayerStats[] playerStats)
     {
         BlueTeamWon = blueTeamWon;
         BlueTeamScore = blueTeamScore;
@@ -19,6 +21,7 @@ public struct GameResults : INetworkSerializable
         TotalGameTime = totalGameTime;
         BlueTeamScores = blueTeamScores;
         OrangeTeamScores = orangeTeamScores;
+        PlayerStats = playerStats;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -30,6 +33,7 @@ public struct GameResults : INetworkSerializable
 
         serializer.SerializeValue(ref BlueTeamScores);
         serializer.SerializeValue(ref OrangeTeamScores);
+        serializer.SerializeValue(ref PlayerStats);
     }
 }
 

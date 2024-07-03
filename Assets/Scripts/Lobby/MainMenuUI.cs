@@ -1,3 +1,4 @@
+using JSAM;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -37,6 +38,8 @@ public class MainMenuUI : MonoBehaviour
         });
 
         lobbyPlayerInfoIcons.Initialize(LobbyController.Instance.Player);
+
+        AudioManager.PlayMusic(DefaultAudioMusic.LobbyTheme);
 
         ShowMainMenuUI();
     }

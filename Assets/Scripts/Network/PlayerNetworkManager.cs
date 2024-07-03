@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
@@ -18,6 +17,10 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private bool orangeTeam = false;
 
+    private NetworkVariable<PlayerStats> playerStats = new NetworkVariable<PlayerStats>(writePerm: NetworkVariableWritePermission.Owner);
+
+    public PlayerStats PlayerStats => playerStats.Value;
+
     private float deathTimer = 5f;
 
     public override void OnNetworkSpawn()
@@ -26,9 +29,11 @@ public class PlayerNetworkManager : NetworkBehaviour
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
         if (IsOwner)
         {
+            playerStats.Value = new PlayerStats(LobbyController.Instance.Player.Id, 0, 0, 0, 0, 0, 0, 0);
             lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
         }
         LobbyController.Instance.onLobbyUpdate += HandleLobbyUpdate;
+        playerStats.OnValueChanged += HandlePlayerStatsChange;
     }
 
     private void HandleLobbyUpdate(Lobby lobby)
@@ -51,6 +56,11 @@ public class PlayerNetworkManager : NetworkBehaviour
         {
             GameManager.Instance.onGameStateChanged += HandleGameStateChanged;
         }
+    }
+
+    private void HandlePlayerStatsChange(PlayerStats previous, PlayerStats updated)
+    {
+        playerManager.PlayerStats = updated;
     }
 
     private void Update()
@@ -131,6 +141,11 @@ public class PlayerNetworkManager : NetworkBehaviour
                     if (IsOwner)
                     {
                         player.Pokemon.OnDeath += OnPlayerDeath;
+                        player.Pokemon.OnDamageTaken += OnPlayerTakeDamage;
+                        player.Pokemon.onDamageDealt += OnPlayerDealDamage;
+                        player.onGoalScored += OnGoalScored;
+                        player.Pokemon.onOtherPokemonKilled += OnOtherPokemonKilled;
+
                         short pos = NumberEncoder.Base64ToShort(LobbyController.Instance.Player.Data["PlayerPos"].Value);
                         Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
                         playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
@@ -141,8 +156,53 @@ public class PlayerNetworkManager : NetworkBehaviour
         }
     }
 
+    private void OnPlayerDealDamage(ulong attacked, int amount)
+    {
+        Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attacked].GetComponent<Pokemon>();
+
+        if (attackedPokemon.Type != PokemonType.Player)
+        {
+            return;
+        }
+
+        playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, playerStats.Value.deaths, playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt + (uint)amount, playerStats.Value.damageTaken, playerStats.Value.healingDone);
+    }
+
+    private void OnPlayerTakeDamage(DamageInfo info)
+    {
+        Pokemon attackerPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<Pokemon>();
+
+        if (attackerPokemon.Type != PokemonType.Player)
+        {
+            return;
+        }
+
+        playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, playerStats.Value.deaths, playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken + (uint)playerManager.Pokemon.CalculateDamage(info, attackerPokemon), playerStats.Value.healingDone);
+    }
+
+    private void OnOtherPokemonKilled(ulong killedId)
+    {
+        Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[killedId].GetComponent<Pokemon>();
+
+        if (attackedPokemon.Type != PokemonType.Player)
+        {
+            return;
+        }
+
+        playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), (ushort)(playerStats.Value.kills+1), playerStats.Value.deaths, playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
+    }
+
+    private void OnGoalScored(int amount)
+    {
+        amount = GameManager.Instance.FinalStretch ? amount * 2 : amount;
+
+        playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, playerStats.Value.deaths, playerStats.Value.assists, (ushort)(playerStats.Value.score + amount), playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
+    }
+
     private void OnPlayerDeath(DamageInfo info)
     {
+        playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, (ushort)(playerStats.Value.deaths + 1), playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
+
         ShowKillRpc(info, !playerManager.OrangeTeam);
         BattleUIManager.instance.ShowDeathScreen();
         deathTimer = 5f;

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -52,11 +53,31 @@ public class WildPokemon : NetworkBehaviour
     {
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
 
-        attacker.GainExperience(wildPokemonInfo.ExpYield);
-        if (attacker.GetComponent<PlayerManager>())
+        float baseExp = wildPokemonInfo.ExpYield;
+
+        Dictionary<int, (float koerExp, float proximityExp)> expDistribution = new Dictionary<int, (float, float)>
         {
-            attacker.GetComponent<PlayerManager>().MovesController.IncrementUniteCharge(5000);
+            {1, (1.0f, 0.0f)},
+            {2, (0.7f, 0.3f)},
+            {3, (0.7f, 0.15f)},
+            {4, (0.7f, 0.1f)},
+            {5, (0.7f, 0.075f)}
+        };
+
+        List<Pokemon> playersInProximity;
+
+        if (attacker.TryGetComponent(out PlayerManager player))
+        {
+            player.MovesController.IncrementUniteCharge(5000);
+
+            playersInProximity = FindPlayersInProximity(transform.position, 6f, player.OrangeTeam);
         }
+        else
+        {
+            playersInProximity = FindPlayersInProximity(transform.position, 6f, false);
+        }
+
+        DistributeExperience(attacker, playersInProximity, baseExp, expDistribution);
 
         if (IsServer)
         {
@@ -64,7 +85,44 @@ public class WildPokemon : NetworkBehaviour
             StartCoroutine(DumbDespawn());
         }
     }
-    
+
+    private List<Pokemon> FindPlayersInProximity(Vector3 koPosition, float range, bool orangeTeam)
+    {
+        List<Pokemon> playersInProximity = new List<Pokemon>();
+
+        foreach (var playerObject in NetworkManager.Singleton.SpawnManager.SpawnedObjects.Values)
+        {
+            PlayerManager player = playerObject.GetComponent<PlayerManager>();
+            if (player != null && player.OrangeTeam == orangeTeam && Vector3.Distance(player.transform.position, koPosition) <= range)
+            {
+                playersInProximity.Add(player.Pokemon);
+            }
+        }
+
+        return playersInProximity;
+    }
+
+    private void DistributeExperience(Pokemon attacker, List<Pokemon> playersInProximity, float baseExp, Dictionary<int, (float koerExp, float proximityExp)> expDistribution)
+    {
+        int playersCount = playersInProximity.Count;
+        if (!expDistribution.TryGetValue(playersCount, out var expValues))
+        {
+            expValues = expDistribution[1];
+        }
+
+        float attackerExp = baseExp * expValues.koerExp;
+        attacker.GainExperience(Mathf.FloorToInt(attackerExp));
+
+        float proximityExp = baseExp * expValues.proximityExp;
+        foreach (var player in playersInProximity)
+        {
+            if (player != attacker)
+            {
+                player.GainExperience(Mathf.FloorToInt(proximityExp));
+            }
+        }
+    }
+
     private IEnumerator DumbDespawn()
     {
         yield return new WaitForSeconds(0.1f);

@@ -14,18 +14,19 @@ public class GameInfoUI : MonoBehaviour
     {
         currentLobby = LobbyController.Instance.Lobby;
 
-        foreach (var player in currentLobby.Players)
+        Player[] blueTeam = LobbyController.Instance.GetTeamPlayers(false);
+        Player[] orangeTeam = LobbyController.Instance.GetTeamPlayers(true);
+
+        foreach (var player in blueTeam)
         {
-            if (player.Data["PlayerTeam"].Value == "Blue")
-            {
-                PlayerInfoUI info = Instantiate(playerInfoPrefab, blueTeamSpawn).GetComponent<PlayerInfoUI>();
-                info.SetPlayerInfo(player);
-            }
-            else
-            {
-                PlayerInfoUI info = Instantiate(playerInfoPrefab, orangeTeamSpawn).GetComponent<PlayerInfoUI>();
-                info.SetPlayerInfo(player);
-            }
+            PlayerInfoUI info = Instantiate(playerInfoPrefab, blueTeamSpawn).GetComponent<PlayerInfoUI>();
+            info.SetPlayerInfo(player, PlayerInfoType.Normal);
+        }
+
+        foreach (var player in orangeTeam)
+        {
+            PlayerInfoUI info = Instantiate(playerInfoPrefab, orangeTeamSpawn).GetComponent<PlayerInfoUI>();
+            info.SetPlayerInfo(player, PlayerInfoType.Normal);
         }
     }
 }

@@ -61,6 +61,7 @@ public class GoalZone : NetworkBehaviour
                 {
                     playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Disabled);
                 }
+                playerManager.GoalZone = this;
             }
             //playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
             playerManager.onGoalScored += OnScore;
@@ -82,7 +83,25 @@ public class GoalZone : NetworkBehaviour
             {
                 playerManager.Pokemon.RemoveStatChangeWithID(1);
             }
+            playerManager.GoalZone = null;
             playerManagerList.Remove(playerManager);
+        }
+    }
+
+    public void GetAlliesInGoal(bool orangeTeam, out int alliesInGoal, out int enemiesInGoal)
+    {
+        alliesInGoal = -1;
+        enemiesInGoal = 0;
+        foreach (var player in playerManagerList)
+        {
+            if (player.OrangeTeam == orangeTeam)
+            {
+                alliesInGoal++;
+            }
+            else
+            {
+                enemiesInGoal++;
+            }
         }
     }
 

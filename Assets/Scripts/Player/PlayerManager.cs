@@ -41,12 +41,21 @@ public class PlayerManager : NetworkBehaviour
     private BattleActionStatus scoreStatus = new BattleActionStatus(0);
     private bool isScoring = false;
 
+    private bool isRecalling;
+    private float recallTime;
+
+    private PlayerStats playerStats;
+
     private string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
 
     private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm:NetworkVariableWritePermission.Owner);
 
     private Dictionary<StatusType, Action> statusAddedActions;
     private Dictionary<StatusType, Action> statusRemovedActions;
+
+    private List<string> goalBuffs = new List<string>();
+
+    private GoalZone goalZone;
 
     public Pokemon Pokemon { get => pokemon; }
     public MovesController MovesController { get => movesController; }
@@ -66,6 +75,10 @@ public class PlayerManager : NetworkBehaviour
     public ushort MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
     public ushort CurrentEnergy { get => currentEnergy.Value; }
     public BattleActionStatus ScoreStatus { get => scoreStatus; }
+
+    public GoalZone GoalZone { get => goalZone; set => goalZone = value; }
+
+    public PlayerStats PlayerStats { get => playerStats; set => playerStats = value; }
 
     public Player LobbyPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
 
@@ -122,6 +135,7 @@ public class PlayerManager : NetworkBehaviour
         vision.IsVisible = true;
 
         hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
+        hpBar.UpdateHpBarColor(currentTeam != orangeTeam, IsOwner);
 
         if (IsOwner)
         {
@@ -136,6 +150,9 @@ public class PlayerManager : NetworkBehaviour
             pokemon.OnDamageTaken += OnPokemonDamage;
             pokemon.OnStatusChange += OnPokemonStatusChange;
             playerState.OnValueChanged += OnPlayerStateChange;
+
+            movesController.onBasicAttackPerformed += () => CancelRecall();
+            movesController.onMovePerformed += (MoveBase) => CancelRecall();
 
             scoreStatus.OnStatusChange += () =>
             {
@@ -361,14 +378,60 @@ public class PlayerManager : NetworkBehaviour
             EndScoring();
         }
 
-        if (Keyboard.current.nKey.wasPressedThisFrame)
+        if (playerControls.Movement.Recall.WasReleasedThisFrame())
         {
-            GainEnergyRPC(5);
+            StartRecalling();
         }
-        if (Keyboard.current.mKey.wasPressedThisFrame)
+
+        if (isRecalling)
         {
-            LoseEnergyRPC(5);
+            recallTime -= Time.deltaTime;
+            BattleUIManager.instance.UpdateRecallBar(1f-recallTime / 3f);
+
+            if (recallTime <= 0)
+            {
+                short pos = NumberEncoder.Base64ToShort(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+                Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
+                UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
+                isRecalling = false;
+                BattleUIManager.instance.SetRecallBarActive(false);
+            }
+
+            if (playerMovement.IsMoving)
+            {
+                CancelRecall();
+            }
         }
+
+        if (Debug.isDebugBuild)
+        {
+            if (Keyboard.current.nKey.wasPressedThisFrame)
+            {
+                GainEnergyRPC(5);
+            }
+            if (Keyboard.current.mKey.wasPressedThisFrame)
+            {
+                LoseEnergyRPC(5);
+            }
+        }
+    }
+
+    private void CancelRecall()
+    {
+        isRecalling = false;
+        BattleUIManager.instance.SetRecallBarActive(false);
+    }
+
+    private void StartRecalling()
+    {
+        if (isRecalling)
+        {
+            return;
+        }
+
+        isRecalling = true;
+        recallTime = 3f;
+        BattleUIManager.instance.SetRecallBarActive(true);
     }
 
     private void StartScoring()
@@ -378,8 +441,10 @@ public class PlayerManager : NetworkBehaviour
             return;
         }
 
+        goalZone.GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
+
         isScoring = true;
-        maxScoreTime = ScoringSystem.CalculateApproximateScoreTime(currentEnergy.Value);
+        maxScoreTime = ScoringSystem.CalculateTrueScoreTime(alliesInGoal, goalBuffs, currentEnergy.Value);
         playerMovement.CanMove = false;
         scoreStatus.Cooldown = 0;
         BattleUIManager.instance.SetEnergyBallState(true);
@@ -494,6 +559,7 @@ public class PlayerManager : NetworkBehaviour
         animationManager.SetTrigger("Stun");
         movesController.CancelAllMoves();
         EndScoring();
+        CancelRecall();
         movesController.AddMoveStatus(0, ActionStatusType.Stunned);
         movesController.AddMoveStatus(1, ActionStatusType.Stunned);
         movesController.AddMoveStatus(2, ActionStatusType.Stunned);

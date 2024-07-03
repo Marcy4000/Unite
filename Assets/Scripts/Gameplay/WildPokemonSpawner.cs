@@ -1,15 +1,22 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections.Generic;
 
 public class WildPokemonSpawner : NetworkBehaviour
 {
+    public enum RespawnType
+    {
+        NoRespawn,
+        TimedRespawn,
+        SpecificTimesRespawn
+    }
+
     [SerializeField] private GameObject pokemon;
     [SerializeField] private short wildPokemonID;
     [SerializeField] private float firstSpawnTime = 600f;
-    [SerializeField] private float cooldown;
-    [SerializeField] private bool canRespawn;
+    [SerializeField] private float respawnCooldown;
+    [SerializeField] private RespawnType respawnType;
+    [SerializeField] private List<float> specificRespawnTimes;
     [SerializeField] private bool isObjective;
     [SerializeField] private bool isSpawnedOnMap;
 
@@ -17,10 +24,8 @@ public class WildPokemonSpawner : NetworkBehaviour
     private bool spawnedFirstTime = false;
 
     public GameObject Pokemon => pokemon;
-    public float Cooldown => cooldown;
-    public bool CanRespawn => canRespawn;
-    public bool IsObjective => isObjective;
-    public bool IsSpawnedOnMap => isSpawnedOnMap;
+    public float RespawnCooldown => respawnCooldown;
+    public RespawnType PokemonRespawnType => respawnType;
 
     private void Update()
     {
@@ -36,11 +41,29 @@ public class WildPokemonSpawner : NetworkBehaviour
             firstSpawnTime = Mathf.NegativeInfinity;
         }
 
-        if (!canRespawn || isSpawnedOnMap || !spawnedFirstTime)
+        if (!spawnedFirstTime || IsPokemonSpawned())
         {
             return;
         }
 
+        switch (respawnType)
+        {
+            case RespawnType.NoRespawn:
+                // No respawn logic needed
+                break;
+
+            case RespawnType.TimedRespawn:
+                HandleTimedRespawn();
+                break;
+
+            case RespawnType.SpecificTimesRespawn:
+                HandleSpecificTimesRespawn();
+                break;
+        }
+    }
+
+    private void HandleTimedRespawn()
+    {
         timer -= Time.deltaTime;
         if (timer <= 0)
         {
@@ -48,9 +71,22 @@ public class WildPokemonSpawner : NetworkBehaviour
         }
     }
 
+    private void HandleSpecificTimesRespawn()
+    {
+        float currentTime = GameManager.Instance.GameTime.Value;
+        foreach (float respawnTime in specificRespawnTimes)
+        {
+            if (Mathf.Approximately(currentTime, respawnTime))
+            {
+                SpawnPokemon();
+                break;
+            }
+        }
+    }
+
     public void SpawnPokemon()
     {
-        if (isSpawnedOnMap)
+        if (IsPokemonSpawned())
         {
             return;
         }
@@ -66,6 +102,14 @@ public class WildPokemonSpawner : NetworkBehaviour
     private void HandlePokemonDeath(DamageInfo info)
     {
         isSpawnedOnMap = false;
-        timer = cooldown;
+        if (respawnType == RespawnType.TimedRespawn)
+        {
+            timer = respawnCooldown;
+        }
+    }
+
+    private bool IsPokemonSpawned()
+    {
+        return isSpawnedOnMap;
     }
 }

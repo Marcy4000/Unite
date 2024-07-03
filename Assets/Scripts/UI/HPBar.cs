@@ -12,6 +12,8 @@ public class HPBar : MonoBehaviour
     [SerializeField] private Sprite orangeEnergyBG, blueEnergyBG;
     [SerializeField] private GameObject generigGuage;
 
+    [SerializeField] private Sprite[] hpBarColors;
+
     public void SetPokemon(Pokemon pokemon)
     {
         this.pokemon = pokemon;
@@ -27,6 +29,24 @@ public class HPBar : MonoBehaviour
     public void UpdatePlayerName(string playerName)
     {
         playerNameText.text = playerName;
+    }
+
+    public void UpdateHpBarColor(bool enemyTeam, bool isPlayer)
+    {
+        if (isPlayer)
+        {
+            hpBar.sprite = hpBarColors[0];
+            return;
+        }
+
+        if (enemyTeam)
+        {
+            hpBar.sprite = hpBarColors[1];
+        }
+        else
+        {
+            hpBar.sprite = hpBarColors[2];
+        }
     }
 
     public void InitializeEnergyUI(PokemonType type, bool orangeTeam=false, bool hideUI=false)

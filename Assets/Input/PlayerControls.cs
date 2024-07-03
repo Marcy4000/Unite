@@ -107,6 +107,15 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Recall"",
+                    ""type"": ""Button"",
+                    ""id"": ""4276d91a-8362-443f-941a-1223745cf2e0"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -263,6 +272,17 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""action"": ""BattleItem"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0387a340-d924-4583-b629-10c57ffec2a3"",
+                    ""path"": ""<Gamepad>/dpad/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Recall"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -381,6 +401,54 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""UI"",
+            ""id"": ""574b1606-a351-480e-92b5-9927e4f958ac"",
+            ""actions"": [
+                {
+                    ""name"": ""OpenScoreboard"",
+                    ""type"": ""Button"",
+                    ""id"": ""f0692e0b-6ed1-401f-b223-d05b42f2c92c"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""CloseScoreboard"",
+                    ""type"": ""Button"",
+                    ""id"": ""2e123fa5-c325-4b87-b205-88f0dd350215"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""73bea6e1-1356-44f7-a74a-93d7cea20e51"",
+                    ""path"": ""<Gamepad>/start"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""OpenScoreboard"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4b84be26-69e0-4614-af86-42eee7a31b0a"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CloseScoreboard"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": []
@@ -396,6 +464,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_Movement_Score = m_Movement.FindAction("Score", throwIfNotFound: true);
         m_Movement_CancelMove = m_Movement.FindAction("CancelMove", throwIfNotFound: true);
         m_Movement_BattleItem = m_Movement.FindAction("BattleItem", throwIfNotFound: true);
+        m_Movement_Recall = m_Movement.FindAction("Recall", throwIfNotFound: true);
         // LearnMove
         m_LearnMove = asset.FindActionMap("LearnMove", throwIfNotFound: true);
         m_LearnMove_Move1 = m_LearnMove.FindAction("Move1", throwIfNotFound: true);
@@ -405,6 +474,10 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_PanCamera = asset.FindActionMap("PanCamera", throwIfNotFound: true);
         m_PanCamera_ShouldPan = m_PanCamera.FindAction("ShouldPan", throwIfNotFound: true);
         m_PanCamera_CameraMove = m_PanCamera.FindAction("CameraMove", throwIfNotFound: true);
+        // UI
+        m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
+        m_UI_OpenScoreboard = m_UI.FindAction("OpenScoreboard", throwIfNotFound: true);
+        m_UI_CloseScoreboard = m_UI.FindAction("CloseScoreboard", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -475,6 +548,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Movement_Score;
     private readonly InputAction m_Movement_CancelMove;
     private readonly InputAction m_Movement_BattleItem;
+    private readonly InputAction m_Movement_Recall;
     public struct MovementActions
     {
         private @PlayerControls m_Wrapper;
@@ -488,6 +562,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         public InputAction @Score => m_Wrapper.m_Movement_Score;
         public InputAction @CancelMove => m_Wrapper.m_Movement_CancelMove;
         public InputAction @BattleItem => m_Wrapper.m_Movement_BattleItem;
+        public InputAction @Recall => m_Wrapper.m_Movement_Recall;
         public InputActionMap Get() { return m_Wrapper.m_Movement; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -524,6 +599,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @BattleItem.started += instance.OnBattleItem;
             @BattleItem.performed += instance.OnBattleItem;
             @BattleItem.canceled += instance.OnBattleItem;
+            @Recall.started += instance.OnRecall;
+            @Recall.performed += instance.OnRecall;
+            @Recall.canceled += instance.OnRecall;
         }
 
         private void UnregisterCallbacks(IMovementActions instance)
@@ -555,6 +633,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @BattleItem.started -= instance.OnBattleItem;
             @BattleItem.performed -= instance.OnBattleItem;
             @BattleItem.canceled -= instance.OnBattleItem;
+            @Recall.started -= instance.OnRecall;
+            @Recall.performed -= instance.OnRecall;
+            @Recall.canceled -= instance.OnRecall;
         }
 
         public void RemoveCallbacks(IMovementActions instance)
@@ -688,6 +769,60 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         }
     }
     public PanCameraActions @PanCamera => new PanCameraActions(this);
+
+    // UI
+    private readonly InputActionMap m_UI;
+    private List<IUIActions> m_UIActionsCallbackInterfaces = new List<IUIActions>();
+    private readonly InputAction m_UI_OpenScoreboard;
+    private readonly InputAction m_UI_CloseScoreboard;
+    public struct UIActions
+    {
+        private @PlayerControls m_Wrapper;
+        public UIActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
+        public InputAction @OpenScoreboard => m_Wrapper.m_UI_OpenScoreboard;
+        public InputAction @CloseScoreboard => m_Wrapper.m_UI_CloseScoreboard;
+        public InputActionMap Get() { return m_Wrapper.m_UI; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(UIActions set) { return set.Get(); }
+        public void AddCallbacks(IUIActions instance)
+        {
+            if (instance == null || m_Wrapper.m_UIActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_UIActionsCallbackInterfaces.Add(instance);
+            @OpenScoreboard.started += instance.OnOpenScoreboard;
+            @OpenScoreboard.performed += instance.OnOpenScoreboard;
+            @OpenScoreboard.canceled += instance.OnOpenScoreboard;
+            @CloseScoreboard.started += instance.OnCloseScoreboard;
+            @CloseScoreboard.performed += instance.OnCloseScoreboard;
+            @CloseScoreboard.canceled += instance.OnCloseScoreboard;
+        }
+
+        private void UnregisterCallbacks(IUIActions instance)
+        {
+            @OpenScoreboard.started -= instance.OnOpenScoreboard;
+            @OpenScoreboard.performed -= instance.OnOpenScoreboard;
+            @OpenScoreboard.canceled -= instance.OnOpenScoreboard;
+            @CloseScoreboard.started -= instance.OnCloseScoreboard;
+            @CloseScoreboard.performed -= instance.OnCloseScoreboard;
+            @CloseScoreboard.canceled -= instance.OnCloseScoreboard;
+        }
+
+        public void RemoveCallbacks(IUIActions instance)
+        {
+            if (m_Wrapper.m_UIActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        public void SetCallbacks(IUIActions instance)
+        {
+            foreach (var item in m_Wrapper.m_UIActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_UIActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    public UIActions @UI => new UIActions(this);
     public interface IMovementActions
     {
         void OnMove(InputAction.CallbackContext context);
@@ -699,6 +834,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         void OnScore(InputAction.CallbackContext context);
         void OnCancelMove(InputAction.CallbackContext context);
         void OnBattleItem(InputAction.CallbackContext context);
+        void OnRecall(InputAction.CallbackContext context);
     }
     public interface ILearnMoveActions
     {
@@ -710,5 +846,10 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     {
         void OnShouldPan(InputAction.CallbackContext context);
         void OnCameraMove(InputAction.CallbackContext context);
+    }
+    public interface IUIActions
+    {
+        void OnOpenScoreboard(InputAction.CallbackContext context);
+        void OnCloseScoreboard(InputAction.CallbackContext context);
     }
 }

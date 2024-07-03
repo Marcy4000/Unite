@@ -174,7 +174,7 @@ public class LobbyController : MonoBehaviour
                 Player = localPlayer,
                 Data = new Dictionary<string, DataObject>
                 {
-                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, "MerStadium")}
+                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, "RemoatStadium")}
                 }
             };
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
