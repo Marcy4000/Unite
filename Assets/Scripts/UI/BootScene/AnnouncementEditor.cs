@@ -1,0 +1,30 @@
+using TMPro;
+using UnityEngine;
+
+public class AnnouncementEditor : MonoBehaviour
+{
+    [SerializeField] private TMP_InputField titleField, contentField;
+
+    public void SaveAnnouncement()
+    {
+        Announcement announcement = new Announcement
+        {
+            title = titleField.text,
+            message = contentField.text,
+            date = System.DateTime.Now.ToString("dd/MM/yyyy")
+        };
+
+        string json = JsonUtility.ToJson(announcement, true);
+        Debug.Log(json);
+
+        SaveJsonToFile(json, "announcement.json");
+        gameObject.SetActive(false);
+    }
+
+    void SaveJsonToFile(string json, string fileName)
+    {
+        string path = Application.dataPath + "/" + fileName;
+        System.IO.File.WriteAllText(path, json);
+        Debug.Log("JSON saved to: " + path);
+    }
+}

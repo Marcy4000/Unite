@@ -31,7 +31,6 @@ public class GameStatsUI : MonoBehaviour
         if (pingUpdateTimer <= 0)
         {
             ulong ping = NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(NetworkManager.Singleton.NetworkConfig.NetworkTransport.ServerClientId);
-            Debug.Log($"Ping: {ping}");
             if (ping < 110)
             {
                 pingImage.sprite = pingSprites[0];

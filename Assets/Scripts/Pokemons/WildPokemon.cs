@@ -45,7 +45,56 @@ public class WildPokemon : NetworkBehaviour
 
     private void Die(DamageInfo info)
     {
+        if (pokemon.Type == PokemonType.Objective)
+        {
+            ShowKillRpc(info);
+            HandleObjectiveBehaviour(ObjectivesDatabase.GetObjectiveType(wildPokemonInfo.PokemonBase.PokemonName), info);
+        }
+
         GiveExpRpc(info.attackerId);
+    }
+
+    private void HandleObjectiveBehaviour(ObjectiveType objectiveType, DamageInfo info)
+    {
+        switch (objectiveType)
+        {
+            case ObjectiveType.Zapdos:
+                Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<Pokemon>();
+                bool teamToBuff = false;
+                if (attacker.TryGetComponent(out PlayerManager player))
+                {
+                    teamToBuff = player.OrangeTeam;
+                }
+
+                foreach (var playerManager in GameManager.Instance.Players)
+                {
+                    if (playerManager != null && playerManager.OrangeTeam == teamToBuff)
+                    {
+                        playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.Rayquaza, 20f, true));
+                    }
+                }
+                break;
+            case ObjectiveType.Drednaw:
+                break;
+            case ObjectiveType.Rotom:
+                break;
+            default:
+                break;
+        }
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShowKillRpc(DamageInfo info)
+    {
+        bool orangeTeam = false;
+
+        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<Pokemon>();
+        if (attacker.TryGetComponent(out PlayerManager player))
+        {
+            orangeTeam = player.OrangeTeam;
+        }
+
+        BattleUIManager.instance.ShowKill(info, pokemon);
     }
 
     [Rpc(SendTo.ClientsAndHost)]

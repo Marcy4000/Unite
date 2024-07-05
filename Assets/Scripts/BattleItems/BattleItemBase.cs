@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 public abstract class BattleItemBase
 {
@@ -54,9 +51,9 @@ public static class BattleItemDatabase
             case AvailableBattleItems.FullHeal:
                 return new FullHeal();
             case AvailableBattleItems.GoalGetter:
-                //return new GoalGetter();
+                return new GoalGetter();
             case AvailableBattleItems.Potion:
-                //return new Potion();
+                return new Potion();
             case AvailableBattleItems.SlowSmoke:
                 //return new SlowSmoke();
             case AvailableBattleItems.ShedinjaDoll:

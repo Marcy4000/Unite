@@ -18,6 +18,8 @@ public class PlayerNetworkManager : NetworkBehaviour
     private bool orangeTeam = false;
 
     private NetworkVariable<PlayerStats> playerStats = new NetworkVariable<PlayerStats>(writePerm: NetworkVariableWritePermission.Owner);
+    private int killsSinceLastDeath = 0;
+    private int pointsSinceLastDeath = 0;
 
     public PlayerStats PlayerStats => playerStats.Value;
 
@@ -79,7 +81,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             {
                 BattleUIManager.instance.HideDeathScreen();
                 playerManager.Respawn();
-                deathTimer = 5f;
+                deathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
             }
         }
     }
@@ -94,6 +96,7 @@ public class PlayerNetworkManager : NetworkBehaviour
         if (state == GameState.Playing && !matchStarted)
         {
             playerManager.PlayerMovement.CanMove = true;
+            playerManager.MovesController.GameStarted();
             matchStarted = true;
         }
 
@@ -189,6 +192,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             return;
         }
 
+        killsSinceLastDeath++;
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), (ushort)(playerStats.Value.kills+1), playerStats.Value.deaths, playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
     }
 
@@ -196,6 +200,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         amount = GameManager.Instance.FinalStretch ? amount * 2 : amount;
 
+        pointsSinceLastDeath += amount;
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, playerStats.Value.deaths, playerStats.Value.assists, (ushort)(playerStats.Value.score + amount), playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
     }
 
@@ -204,13 +209,16 @@ public class PlayerNetworkManager : NetworkBehaviour
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, (ushort)(playerStats.Value.deaths + 1), playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
 
         ShowKillRpc(info, !playerManager.OrangeTeam);
+        deathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
         BattleUIManager.instance.ShowDeathScreen();
-        deathTimer = 5f;
+
+        killsSinceLastDeath = 0;
+        pointsSinceLastDeath = 0;
     }
 
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowKillRpc(DamageInfo info, bool orangeTeam)
     {
-        BattleUIManager.instance.ShowKill(info, orangeTeam, playerManager.Pokemon);
+        BattleUIManager.instance.ShowKill(info, playerManager.Pokemon);
     }
 }

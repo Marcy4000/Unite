@@ -29,8 +29,8 @@ public class EjectButton : BattleItemBase
         if (IsActive && dashDirection.magnitude != 0)
         {
             wasUseSuccessful = true;
-            playerManager.transform.rotation = Quaternion.LookRotation(dashDirection);
-            playerManager.PlayerMovement.CharacterController.Move(dashDirection * distance);
+            Vector3 newPosition = playerManager.transform.position + (dashDirection.normalized * distance);
+            playerManager.UpdatePosAndRotRPC(newPosition, Quaternion.LookRotation(dashDirection));
         }
         Aim.Instance.HideDashAim();
         base.Finish();

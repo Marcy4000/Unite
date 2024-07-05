@@ -1,15 +1,57 @@
+using System;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
+
+public enum ScoreSpeedFactor
+{
+    GoalGetter,
+    Rayquaza
+}
+
+public struct ScoreBoost : INetworkSerializable, IEquatable<ScoreBoost>
+{
+    public ushort ID;
+    public ScoreSpeedFactor ScoreSpeedFactor;
+    public float Duration;
+    public bool IsTimed;
+
+    public ScoreBoost(ushort id, ScoreSpeedFactor scoreSpeedFactor, float duration, bool isTimed)
+    {
+        ID = id;
+        ScoreSpeedFactor = scoreSpeedFactor;
+        Duration = duration;
+        IsTimed = isTimed;
+    }
+
+    public bool Equals(ScoreBoost other)
+    {
+        if (ID != other.ID || ScoreSpeedFactor != other.ScoreSpeedFactor || Duration != other.Duration || IsTimed != other.IsTimed)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref ID);
+        serializer.SerializeValue(ref ScoreSpeedFactor);
+        serializer.SerializeValue(ref Duration);
+        serializer.SerializeValue(ref IsTimed);
+    }
+}
 
 public class ScoringSystem
 {
     public static int baseScoreTime = 100; // Base time in percent to score without any modifiers
 
     // Dictionary to store the score speed factors for different buffs
-    private readonly static Dictionary<string, int> scoreSpeedFactors = new Dictionary<string, int>()
+    private readonly static Dictionary<ScoreSpeedFactor, int> scoreSpeedFactors = new Dictionary<ScoreSpeedFactor, int>()
     {
-        { "GoalGetter", 1 },
-        { "Rayquaza", 3 }
+        { ScoreSpeedFactor.GoalGetter, 1 },
+        { ScoreSpeedFactor.Rayquaza, 3 }
         // Add more buffs as needed
     };
 
@@ -24,15 +66,15 @@ public class ScoringSystem
     };
 
     // Calculate the score time based on modifiers
-    public static float CalculateScoreTime(int numAllies, List<string> Buffs)
+    public static float CalculateScoreTime(int numAllies, List<ScoreBoost> Buffs)
     {
         int totalScoreSpeedFactor = 1; // Start with the base factor 1
 
         foreach (var buff in Buffs)
         {
-            if (scoreSpeedFactors.ContainsKey(buff))
+            if (scoreSpeedFactors.ContainsKey(buff.ScoreSpeedFactor))
             {
-                totalScoreSpeedFactor += scoreSpeedFactors[buff];
+                totalScoreSpeedFactor += scoreSpeedFactors[buff.ScoreSpeedFactor];
             }
         }
 
@@ -60,7 +102,7 @@ public class ScoringSystem
     }
 
     // Calculate the true score time
-    public static float CalculateTrueScoreTime(int numAllies, List<string> Buffs, int score)
+    public static float CalculateTrueScoreTime(int numAllies, List<ScoreBoost> Buffs, int score)
     {
         // Calculate the score time based on buffs and allies
         float scoreTimeWithBuffsAndAllies = CalculateScoreTime(numAllies, Buffs);

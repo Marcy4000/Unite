@@ -15,9 +15,13 @@ public class GameTimerUI : MonoBehaviour
 
     private void Start()
     {
-        GameManager.Instance.GameTime.OnValueChanged += UpdateTimerText;
         GameManager.Instance.onFinalStretch += () => SetActiveTimer(true);
         SetActiveTimer(false);
+    }
+
+    private void Update()
+    {
+        UpdateTimerText(GameManager.Instance.GameTime);
     }
 
     public void SetActiveTimer(bool finalStretch)
@@ -36,7 +40,7 @@ public class GameTimerUI : MonoBehaviour
         }
     }
 
-    void UpdateTimerText(float prev, float curr)
+    void UpdateTimerText(float curr)
     {
         int minutes = Mathf.FloorToInt(curr / 60f);
         int seconds = Mathf.FloorToInt(curr % 60f);

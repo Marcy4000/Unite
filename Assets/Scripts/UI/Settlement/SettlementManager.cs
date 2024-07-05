@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -140,6 +141,30 @@ public class SettlementManager : MonoBehaviour
 
         blueScoreText.text = blueScoreValue.ToString();
         orangeScoreText.text = orangeScoreValue.ToString();
+
+        bool localPlayerTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        bool gameWon = LobbyController.Instance.GameResults.BlueTeamWon == !localPlayerTeam;
+        StartCoroutine(PlayResultSound(gameWon));
+    }
+
+    private IEnumerator PlayResultSound(bool gameWon)
+    {
+        if (gameWon)
+        {
+            AudioManager.PlaySound(DefaultAudioSounds.JingleVictory);
+        }
+        else
+        {
+            AudioManager.PlaySound(DefaultAudioSounds.JingleLose);
+        }
+
+        DefaultAudioSounds jingle = gameWon ? DefaultAudioSounds.JingleVictory : DefaultAudioSounds.JingleLose;
+
+        AudioManager.TryGetPlayingSound(jingle, out SoundChannelHelper helper);
+        while (helper.AudioSource.isPlaying)
+        {
+            yield return null;
+        }
 
         AudioManager.PlayMusic(DefaultAudioMusic.GameEnd);
     }

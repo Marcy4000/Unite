@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -91,9 +92,15 @@ public class MovesController : NetworkBehaviour
         uniteMoveCharge = 0;
         uniteMoveStatus.AddStatus(ActionStatusType.Cooldown);
 
-        CheckIfCanLearnMove();
+        LockEveryAction();
         LearnBasicAttack(BasicAttacksDatabase.GetBasicAttack(pokemon.BaseStats.PokemonName));
         StartCoroutine(PassiveUniteCharge());
+    }
+
+    public void GameStarted()
+    {
+        UnlockEveryAction();
+        CheckIfCanLearnMove();
     }
 
     IEnumerator PassiveUniteCharge()
@@ -221,12 +228,54 @@ public class MovesController : NetworkBehaviour
             {
                 if (i == pokemon.BaseStats.LearnableMoves[j].level)
                 {
-                    BattleUIManager.instance.InitializeMoveLearnPanel(pokemon.BaseStats.LearnableMoves[j].moves);
+                    LearnableMove learnableMove = RemoveAlreadyLearnedMoves(pokemon.BaseStats.LearnableMoves[j]);
+                    BattleUIManager.instance.InitializeMoveLearnPanel(learnableMove.moves);
                 }
             }
         }
 
         prevLevel = pokemon.CurrentLevel;
+    }
+
+    private LearnableMove RemoveAlreadyLearnedMoves(LearnableMove LearnableMoves)
+    {
+        LearnableMove newLearnableMove = new LearnableMove();
+        newLearnableMove.level = LearnableMoves.level;
+        List<MoveAsset> newMoves = new List<MoveAsset>();
+        foreach (MoveAsset move in LearnableMoves.moves)
+        {
+            MoveBase actualMove = MoveDatabase.GetMove(move.move);
+            switch (move.moveType)
+            {
+                case MoveType.MoveA:
+                    if (actualMove.GetType() != moves[0].GetType())
+                    {
+                        newMoves.Add(move);
+                    }
+                    break;
+                case MoveType.MoveB:
+                    if (actualMove.GetType() != moves[1].GetType())
+                    {
+                        newMoves.Add(move);
+                    }
+                    break;
+                case MoveType.UniteMove:
+                    if (actualMove.GetType() != uniteMove.GetType())
+                    {
+                        newMoves.Add(move);
+                    }
+                    break;
+                case MoveType.All:
+                    if (actualMove.GetType() != moves[0].GetType() && actualMove.GetType() != moves[1].GetType() && actualMove.GetType() != uniteMove.GetType())
+                    {
+                        newMoves.Add(move);
+                    }
+                    break;
+            }
+        }
+
+        newLearnableMove.moves = newMoves.ToArray();
+        return newLearnableMove;
     }
 
     private void TryPerformingBasicAttack()
@@ -364,6 +413,40 @@ public class MovesController : NetworkBehaviour
         {
             BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown);
         }
+    }
+
+    public void LockEveryAction()
+    {
+        for (int i = 0; i < moveStatuses.Length; i++)
+        {
+            moveStatuses[i].AddStatus(ActionStatusType.Disabled);
+            UpdateMoveUI(i);
+        }
+
+        battleItemStatus.AddStatus(ActionStatusType.Disabled);
+        UpdateBattleItemUI();
+
+        uniteMoveStatus.AddStatus(ActionStatusType.Disabled);
+        UpdateUniteMoveUI();
+
+        basicAttackStatus.AddStatus(ActionStatusType.Disabled);
+    }
+
+    public void UnlockEveryAction()
+    {
+        for (int i = 0; i < moveStatuses.Length; i++)
+        {
+            moveStatuses[i].RemoveStatus(ActionStatusType.Disabled);
+            UpdateMoveUI(i);
+        }
+
+        battleItemStatus.RemoveStatus(ActionStatusType.Disabled);
+        UpdateBattleItemUI();
+
+        uniteMoveStatus.RemoveStatus(ActionStatusType.Disabled);
+        UpdateUniteMoveUI();
+
+        basicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
     }
 
     private void UpdateBattleItemUI()

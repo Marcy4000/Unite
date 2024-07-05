@@ -1,5 +1,7 @@
     public enum DefaultAudioSounds {
-        LoadComplete
+        LoadComplete,
+        JingleVictory,
+        JingleLose
     }
     public enum DefaultAudioMusic {
         RemoatStadium,

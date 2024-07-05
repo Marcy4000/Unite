@@ -34,7 +34,7 @@ public class WildPokemonSpawner : NetworkBehaviour
             return;
         }
 
-        if (GameManager.Instance.GameTime.Value <= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
+        if (GameManager.Instance.GameTime <= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
         {
             SpawnPokemon();
             spawnedFirstTime = true;
@@ -73,7 +73,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     private void HandleSpecificTimesRespawn()
     {
-        float currentTime = GameManager.Instance.GameTime.Value;
+        float currentTime = GameManager.Instance.GameTime;
         foreach (float respawnTime in specificRespawnTimes)
         {
             if (Mathf.Approximately(currentTime, respawnTime))

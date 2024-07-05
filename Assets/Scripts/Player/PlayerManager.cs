@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using static UnityEngine.CullingGroup;
 
 public enum PlayerState
 {
@@ -53,7 +54,8 @@ public class PlayerManager : NetworkBehaviour
     private Dictionary<StatusType, Action> statusAddedActions;
     private Dictionary<StatusType, Action> statusRemovedActions;
 
-    private List<string> goalBuffs = new List<string>();
+    private NetworkList<ScoreBoost> goalBuffs;
+    private List<float> goalBuffsTimers = new List<float>();
 
     private GoalZone goalZone;
 
@@ -111,6 +113,8 @@ public class PlayerManager : NetworkBehaviour
         {
             hpBar.UpdatePlayerName(LobbyController.Instance.GetPlayerByID(current.ToString()).Data["PlayerName"].Value);
         };
+
+        goalBuffs = new NetworkList<ScoreBoost>();
 
         InitializeStatusActions();
     }
@@ -351,6 +355,24 @@ public class PlayerManager : NetworkBehaviour
 
     private void Update()
     {
+        if (IsServer)
+        {
+            for (int i = goalBuffs.Count; i > 0; i--)
+            {
+                int index = i - 1;
+                ScoreBoost change = goalBuffs[index];
+                if (change.IsTimed)
+                {
+                    goalBuffsTimers[index] -= Time.deltaTime;
+                    if (goalBuffsTimers[index] <= 0)
+                    {
+                        goalBuffs.RemoveAt(index);
+                        goalBuffsTimers.RemoveAt(index);
+                    }
+                }
+            }
+        }
+
         if (!IsOwner)
         {
             return;
@@ -444,7 +466,8 @@ public class PlayerManager : NetworkBehaviour
         goalZone.GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
 
         isScoring = true;
-        maxScoreTime = ScoringSystem.CalculateTrueScoreTime(alliesInGoal, goalBuffs, currentEnergy.Value);
+        
+        maxScoreTime = ScoringSystem.CalculateTrueScoreTime(alliesInGoal, GetScoreBuffs(), currentEnergy.Value);
         playerMovement.CanMove = false;
         scoreStatus.Cooldown = 0;
         BattleUIManager.instance.SetEnergyBallState(true);
@@ -667,5 +690,43 @@ public class PlayerManager : NetworkBehaviour
                 Debug.LogError($"Failed to load addressable: {handle.OperationException}");
             }
         };
+    }
+
+    [Rpc(SendTo.Server)]
+    public void AddScoreBoostRPC(ScoreBoost change)
+    {
+        goalBuffs.Add(change);
+        if (change.IsTimed)
+        {
+            goalBuffsTimers.Add(change.Duration);
+        }
+        else
+        {
+            goalBuffsTimers.Add(-1);
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void RemoveScoreBoostWithIDRPC(ushort id)
+    {
+        for (int i = 0; i < goalBuffs.Count; i++)
+        {
+            if (goalBuffs[i].ID == id)
+            {
+                goalBuffs.RemoveAt(i);
+                goalBuffsTimers.RemoveAt(i);
+                return;
+            }
+        }
+    }
+
+    public List<ScoreBoost> GetScoreBuffs()
+    {
+        List<ScoreBoost> buffs = new List<ScoreBoost>();
+        foreach (ScoreBoost boost in goalBuffs)
+        {
+            buffs.Add(boost);
+        }
+        return buffs;
     }
 }

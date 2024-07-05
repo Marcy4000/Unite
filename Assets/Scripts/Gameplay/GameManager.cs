@@ -35,7 +35,7 @@ public class GameManager : NetworkBehaviour
     private List<ResultScoreInfo> blueTeamScores;
     private List<ResultScoreInfo> orangeTeamScores;
 
-    public NetworkVariable<float> GameTime => gameTime;
+    public float GameTime => gameTime.Value;
     public int BlueTeamScore => blueTeamScore.Value;
     public int OrangeTeamScore => orangeTeamScore.Value;
     public bool FinalStretch => finalStretch.Value;

@@ -34,7 +34,7 @@ public class BattleItemMenu : MonoBehaviour
                 {
                     selectedBattleItem = battleItem;
                     battleItemName.text = battleItem.itemName;
-                    battleItemDescription.text = battleItem.description;
+                    battleItemDescription.SetText(battleItem.description);
                 }
             });
         }
