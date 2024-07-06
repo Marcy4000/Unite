@@ -18,7 +18,6 @@ public class AnnouncementEditor : MonoBehaviour
         Debug.Log(json);
 
         SaveJsonToFile(json, "announcement.json");
-        gameObject.SetActive(false);
     }
 
     void SaveJsonToFile(string json, string fileName)

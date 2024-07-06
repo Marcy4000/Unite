@@ -71,12 +71,12 @@ public class PlayerMovement : NetworkBehaviour
             currentMovement += dashDirection * (dashDistance / dashDuration);
         }
 
+        SnapToGround();
+
         // Apply accumulated movement
         characterController.Move(currentMovement * Time.deltaTime);
 
         currentMovement = Vector3.zero; // Reset current movement at the start of each frame
-
-        SnapToGround();
 
         HandleAnimations();
     }
@@ -101,7 +101,7 @@ public class PlayerMovement : NetworkBehaviour
             float distanceToGround = hit.distance;
             if (distanceToGround > 0.001f) // Adjust this threshold as needed
             {
-                currentMovement += Vector3.down * (distanceToGround - 0.001f); // Snap to ground
+                currentMovement += (Vector3.down * (distanceToGround - 0.001f))/Time.deltaTime; // Snap to ground
             }
         }
     }

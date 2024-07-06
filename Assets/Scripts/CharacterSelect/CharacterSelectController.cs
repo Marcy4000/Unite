@@ -8,7 +8,7 @@ using JSAM;
 
 public class CharacterSelectController : NetworkBehaviour
 {
-    private const float SELECTION_TIME = 20f;
+    private const float SELECTION_TIME = 30f;
     private const bool ALLOW_DUPLICATE_CHARACTERS = false;
 
     [SerializeField] private GameObject playerIconPrefab;

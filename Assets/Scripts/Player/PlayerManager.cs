@@ -8,7 +8,6 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using static UnityEngine.CullingGroup;
 
 public enum PlayerState
 {
@@ -87,8 +86,9 @@ public class PlayerManager : NetworkBehaviour
     private float maxScoreTime;
 
     public event Action<int> onGoalScored;
+    public event Action onRespawn;
 
-    private Vector3 deathPosition = new Vector3(0, -20, 0);
+    private Vector3 deathPosition = new Vector3(0, -50, 0);
     private Coroutine stopMovementCoroutine;
 
     private void Awake()
@@ -333,6 +333,13 @@ public class PlayerManager : NetworkBehaviour
         CameraController.Instance.ForcePan(false);
         ChangeCurrentState(PlayerState.Alive);
         pokemon.HealDamage(pokemon.GetMaxHp());
+        NotifyRespawnRPC();
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void NotifyRespawnRPC()
+    {
+        onRespawn?.Invoke();
     }
 
     [Rpc(SendTo.Server)]
@@ -531,10 +538,10 @@ public class PlayerManager : NetworkBehaviour
         switch (pokemon.CurrentLevel)
         {
             case 8:
-                ChangeMaxEnergy(40);
+                ChangeMaxEnergyRPC(40);
                 break;
             case 11:
-                ChangeMaxEnergy(50);
+                ChangeMaxEnergyRPC(50);
                 break;
         }
     }
@@ -632,10 +639,14 @@ public class PlayerManager : NetworkBehaviour
         currentEnergy.Value = 0;
     }
 
-    public void ChangeMaxEnergy(ushort amount)
+    [Rpc(SendTo.Everyone)]
+    public void ChangeMaxEnergyRPC(ushort amount)
     {
         maxEnergyCarry = amount;
-        UpdateEnergyGraphic();
+        if (IsOwner)
+        {
+            UpdateEnergyGraphic();
+        }
     }
 
     public bool IsEnergyFull()

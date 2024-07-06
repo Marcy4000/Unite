@@ -38,6 +38,13 @@ public class PlayerNetworkManager : NetworkBehaviour
         playerStats.OnValueChanged += HandlePlayerStatsChange;
     }
 
+    public override void OnDestroy()
+    {
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        LobbyController.Instance.onLobbyUpdate -= HandleLobbyUpdate;
+        playerStats.OnValueChanged -= HandlePlayerStatsChange;
+    }
+
     private void HandleLobbyUpdate(Lobby lobby)
     {
         if (string.IsNullOrWhiteSpace(lobbyPlayerId.Value.ToString()))
@@ -45,9 +52,16 @@ public class PlayerNetworkManager : NetworkBehaviour
             return;
         }
 
-        if (LocalPlayer.Data.ContainsKey("PlayerTeam"))
+        try
         {
-            orangeTeam = LocalPlayer.Data["PlayerTeam"].Value == "Orange";
+            if (LocalPlayer.Data.ContainsKey("PlayerTeam"))
+            {
+                orangeTeam = LocalPlayer.Data["PlayerTeam"].Value == "Orange";
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning(e.Message);
         }
     }
 
@@ -62,7 +76,10 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void HandlePlayerStatsChange(PlayerStats previous, PlayerStats updated)
     {
-        playerManager.PlayerStats = updated;
+        if (playerManager != null)
+        {
+            playerManager.PlayerStats = updated;
+        }
     }
 
     private void Update()
@@ -96,7 +113,10 @@ public class PlayerNetworkManager : NetworkBehaviour
         if (state == GameState.Playing && !matchStarted)
         {
             playerManager.PlayerMovement.CanMove = true;
-            playerManager.MovesController.GameStarted();
+            if (IsOwner)
+            {
+                playerManager.MovesController.GameStarted();
+            }
             matchStarted = true;
         }
 
@@ -141,6 +161,10 @@ public class PlayerNetworkManager : NetworkBehaviour
                     playerManager = player;
                     player.ChangeCurrentTeam(orangeTeam);
                     player.Initialize();
+
+                    // THIS IS TEMPORARY, REMOVE ONCE IT'S FINISHED
+                    MinimapManager.Instance.CreatePlayerIcon(player);
+
                     if (IsOwner)
                     {
                         player.Pokemon.OnDeath += OnPlayerDeath;

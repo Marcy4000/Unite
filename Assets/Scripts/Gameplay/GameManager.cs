@@ -187,6 +187,10 @@ public class GameManager : NetworkBehaviour
                     {
                         gameTime.Value = 140f;
                     }
+                    if (Keyboard.current.uKey.wasPressedThisFrame)
+                    {
+                        gameTime.Value = 430f;
+                    }
                 }
             }
         }

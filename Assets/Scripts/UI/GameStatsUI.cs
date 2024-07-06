@@ -6,9 +6,12 @@ using UnityEngine.UI;
 public class GameStatsUI : MonoBehaviour
 {
     [SerializeField] private Image pingImage;
-    [SerializeField] private TMP_Text fpsText;
+    [SerializeField] private TMP_Text fpsText, pingText;
 
     [SerializeField] private Sprite[] pingSprites;
+
+    [SerializeField] private bool updateFPS = true;
+    [SerializeField] private bool updatePing = true;
 
     private float fpsUpdateTimer;
     private float pingUpdateTimer;
@@ -20,8 +23,11 @@ public class GameStatsUI : MonoBehaviour
 
     private void Update()
     {
-        UpdatePing();
-        UpdateFPS();
+        if (updatePing)
+            UpdatePing();
+
+        if (updateFPS)
+            UpdateFPS();
     }
 
     private void UpdatePing()
@@ -30,18 +36,31 @@ public class GameStatsUI : MonoBehaviour
 
         if (pingUpdateTimer <= 0)
         {
-            ulong ping = NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(NetworkManager.Singleton.NetworkConfig.NetworkTransport.ServerClientId);
-            if (ping < 110)
+            try
             {
-                pingImage.sprite = pingSprites[0];
+                var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+                ulong ping = transport.GetCurrentRtt(NetworkManager.ServerClientId);
+                if (ping < 110)
+                {
+                    pingImage.sprite = pingSprites[0];
+                }
+                else if (ping < 210)
+                {
+                    pingImage.sprite = pingSprites[1];
+                }
+                else
+                {
+                    pingImage.sprite = pingSprites[2];
+                }
+
+                if (pingText != null)
+                {
+                    pingText.text = $"{ping}ms";
+                }
             }
-            else if (ping < 210)
+            catch (System.Exception ex)
             {
-                pingImage.sprite = pingSprites[1];
-            }
-            else
-            {
-                pingImage.sprite = pingSprites[2];
+                Debug.LogError($"Error getting RTT: {ex.Message}");
             }
 
             pingUpdateTimer = 3f;

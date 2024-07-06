@@ -19,6 +19,8 @@ public class Vision : MonoBehaviour
     public bool HasATeam { get => hasATeam; set => hasATeam = value; }
     public bool CurrentTeam { get => currentTeam; set => currentTeam = value; }
 
+    public event System.Action<bool> onVisibilityChanged;
+
     public void SetVisibility(bool isVisible)
     {
         isRendered = isVisible;
@@ -32,6 +34,8 @@ public class Vision : MonoBehaviour
         {
             renderer.enabled = isVisible;
         }
+
+        onVisibilityChanged?.Invoke(isVisible);
     }
 
     public void AddObject(GameObject obj)

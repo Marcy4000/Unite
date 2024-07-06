@@ -43,6 +43,9 @@ public class GoalZone : NetworkBehaviour
         Destroy(orangeTeam ? blueModel : orangeModel);
         scoreText.text = $"{maxScore - currentScore.Value}/{maxScore}";
         currentScore.OnValueChanged += UpdateGraphics;
+
+        MinimapManager.Instance.CreateGoalzoneIcon(this);
+
         if (goalTier == 0)
         {
             scoreText.gameObject.SetActive(false);

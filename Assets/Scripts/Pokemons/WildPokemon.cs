@@ -50,16 +50,19 @@ public class WildPokemon : NetworkBehaviour
             ShowKillRpc(info);
             HandleObjectiveBehaviour(ObjectivesDatabase.GetObjectiveType(wildPokemonInfo.PokemonBase.PokemonName), info);
         }
-
-        GiveExpRpc(info.attackerId);
+        else
+        {
+            GiveExpRpc(info.attackerId);
+        }
     }
 
     private void HandleObjectiveBehaviour(ObjectiveType objectiveType, DamageInfo info)
     {
+        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<Pokemon>();
+
         switch (objectiveType)
         {
             case ObjectiveType.Zapdos:
-                Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<Pokemon>();
                 bool teamToBuff = false;
                 if (attacker.TryGetComponent(out PlayerManager player))
                 {
@@ -73,8 +76,26 @@ public class WildPokemon : NetworkBehaviour
                         playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.Rayquaza, 20f, true));
                     }
                 }
+
+                GiveExpRpc(info.attackerId);
                 break;
             case ObjectiveType.Drednaw:
+                bool teamtToGiveExp = false;
+                if (attacker.TryGetComponent(out PlayerManager player2))
+                {
+                    teamtToGiveExp = player2.OrangeTeam;
+                    GiveAttackerEnergy(player2);
+                }
+
+                foreach (var playerManager in GameManager.Instance.Players)
+                {
+                    if (playerManager != null && playerManager.OrangeTeam == teamtToGiveExp)
+                    {
+                        playerManager.Pokemon.GainExperience(Mathf.RoundToInt(ExpYield * 0.50f));
+                    }
+                }
+
+                StartCoroutine(DumbDespawn());
                 break;
             case ObjectiveType.Rotom:
                 break;
@@ -241,5 +262,10 @@ public class WildPokemon : NetworkBehaviour
         pokemon.Type = isObjective ? PokemonType.Objective : PokemonType.Wild;
         hpBar.SetPokemon(pokemon);
         hpBar.InitializeEnergyUI(EnergyYield);
+
+        if (isObjective)
+        {
+            MinimapManager.Instance.CreateObjectiveIcon(this);
+        }
     }
 }

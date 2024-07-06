@@ -7,6 +7,7 @@ using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using Unity.Services.Core.Environments;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
@@ -27,7 +28,9 @@ public class LobbyController : MonoBehaviour
     private float lobbyHeartBeatTimer = 15.0f;
     private float lobbyUpdateTimer = 1.1f;
 
-    private string testPlayerName;
+    private string localPlayerName;
+
+    private ILobbyEvents lobbyEvents;
 
     private GameResults gameResults;
 
@@ -35,6 +38,8 @@ public class LobbyController : MonoBehaviour
     public Player Player => localPlayer;
 
     public GameResults GameResults { get => gameResults; set => gameResults = value;}
+
+    public ILobbyEvents LobbyEvents => lobbyEvents;
 
     public event Action<Lobby> onLobbyUpdate;
 
@@ -48,7 +53,7 @@ public class LobbyController : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        testPlayerName = $"TestPlayer {UnityEngine.Random.Range(0, 1000)}";
+        localPlayerName = $"TestPlayer {UnityEngine.Random.Range(0, 1000)}";
         lobbyUI = FindObjectOfType<MainMenuUI>();
 
         InitializeUnityAuthentication();
@@ -97,6 +102,10 @@ public class LobbyController : MonoBehaviour
         {
             LoadingScreen.Instance.ShowGenericLoadingScreen();
             InitializationOptions options = new InitializationOptions();
+
+            string eviromentName = Debug.isDebugBuild ? "development" : "production";
+            options.SetEnvironmentName(eviromentName);
+
             options.SetProfile(UnityEngine.Random.Range(0,1000).ToString());
 
             await UnityServices.InitializeAsync(options);
@@ -105,7 +114,7 @@ public class LobbyController : MonoBehaviour
 
             localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>
             {
-                {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, testPlayerName)},
+                {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, localPlayerName)},
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
                 {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ShortToBase64(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
@@ -113,6 +122,42 @@ public class LobbyController : MonoBehaviour
             });
 
             LoadingScreen.Instance.HideGenericLoadingScreen();
+        }
+    }
+
+    private async Task SubscribeToLobbyEvents(string lobbyID)
+    {
+        var lobbyEventCallbacks = new LobbyEventCallbacks();
+
+        lobbyEventCallbacks.KickedFromLobby += () =>
+        {
+            partyLobby = null;
+            NetworkManager.Singleton.Shutdown();
+            if (lobbyUI != null)
+            {
+                lobbyUI.ShowMainMenuUI();
+            }
+        };
+
+        lobbyEventCallbacks.LobbyChanged += (changes) =>
+        {
+            changes.ApplyToLobby(partyLobby);
+            onLobbyUpdate?.Invoke(Lobby);
+        };
+
+        try
+        {
+            lobbyEvents = await Lobbies.Instance.SubscribeToLobbyEventsAsync(lobbyID, lobbyEventCallbacks);
+        }
+        catch (LobbyServiceException ex)
+        {
+            switch (ex.Reason)
+            {
+                case LobbyExceptionReason.AlreadySubscribedToLobby: Debug.LogWarning($"Already subscribed to lobby[{Lobby.Id}]. We did not need to try and subscribe again. Exception Message: {ex.Message}"); break;
+                case LobbyExceptionReason.SubscriptionToLobbyLostWhileBusy: Debug.LogError($"Subscription to lobby events was lost while it was busy trying to subscribe. Exception Message: {ex.Message}"); throw;
+                case LobbyExceptionReason.LobbyEventServiceConnectionError: Debug.LogError($"Failed to connect to lobby events. Exception Message: {ex.Message}"); throw;
+                default: Debug.LogError(ex.Message); return;
+            }
         }
     }
 
@@ -175,7 +220,7 @@ public class LobbyController : MonoBehaviour
                 Data = new Dictionary<string, DataObject>
                 {
                     {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, "RemoatStadium")}
-                }
+                },
             };
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
             partyLobby = await LobbyService.Instance.CreateLobbyAsync(partyLobbyName, maxPartyMembers, partyLobbyOptions);
@@ -192,6 +237,8 @@ public class LobbyController : MonoBehaviour
                     {"RelayJoinCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)}
                 }
             });
+
+            await SubscribeToLobbyEvents(partyLobby.Id);
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, "dtls"));
 
@@ -225,6 +272,9 @@ public class LobbyController : MonoBehaviour
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
             Debug.Log($"Joined lobby: {partyLobby.Name}");
+
+            await SubscribeToLobbyEvents(partyLobby.Id);
+
             CheckIfShouldChangePos();
             NetworkManager.Singleton.StartClient();
             lobbyUI.ShowLobbyUI();
@@ -237,6 +287,49 @@ public class LobbyController : MonoBehaviour
         {
             LoadingScreen.Instance.HideGenericLoadingScreen();
             Debug.LogError($"Failed to join party lobby: {e.Message}");
+        }
+    }
+
+    public async Task<bool> QuickJoin()
+    {
+        try
+        {
+            QuickJoinLobbyOptions options = new QuickJoinLobbyOptions();
+
+            options.Player = localPlayer;
+
+            /*options.Filter = new List<QueryFilter>()
+            {
+                new QueryFilter(
+                    field: QueryFilter.FieldOptions.MaxPlayers,
+                    op: QueryFilter.OpOptions.GE,
+                    value: "10")
+             };*/
+
+            partyLobby = await LobbyService.Instance.QuickJoinLobbyAsync(options);
+
+            LoadingScreen.Instance.ShowGenericLoadingScreen();
+
+            JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
+
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+            Debug.Log($"Joined lobby: {partyLobby.Name}");
+
+            await SubscribeToLobbyEvents(partyLobby.Id);
+
+            CheckIfShouldChangePos();
+            NetworkManager.Singleton.StartClient();
+            lobbyUI.ShowLobbyUI();
+
+            onLobbyUpdate?.Invoke(partyLobby);
+
+            LoadingScreen.Instance.HideGenericLoadingScreen();
+            return true;
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogWarning(e);
+            return false;
         }
     }
 
@@ -275,9 +368,31 @@ public class LobbyController : MonoBehaviour
 
     private async void UpdatePlayerData(UpdatePlayerOptions options)
     {
+        if (Lobby == null || localPlayer == null)
+        {
+            return;
+        }
+
         try
         {
             await LobbyService.Instance.UpdatePlayerAsync(Lobby.Id, localPlayer.Id, options);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError(e);
+        }
+    }
+
+    private async void UpdateLobbyData(UpdateLobbyOptions options)
+    {
+        if (Lobby == null)
+        {
+            return;
+        }
+
+        try
+        {
+            await LobbyService.Instance.UpdateLobbyAsync(Lobby.Id, options);
         }
         catch (LobbyServiceException e)
         {
@@ -298,6 +413,16 @@ public class LobbyController : MonoBehaviour
             Debug.LogError(e);
             return default;
         }
+    }
+
+    public async void KickPlayer(string playerID)
+    {
+        if (partyLobby.HostId != localPlayer.Id)
+        {
+            return;
+        }
+
+        await RemoveFromParty(playerID);
     }
 
     public void PlayerSwitchTeam()
@@ -355,9 +480,26 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerOptions options = new UpdatePlayerOptions();
         options.Data = localPlayer.Data;
         options.Data["PlayerName"].Value = newName;
-        Debug.Log($"Changed name to {options.Data["PlayerName"]}");
+        Debug.Log($"Changed name to {options.Data["PlayerName"].Value}");
 
         UpdatePlayerData(options);
+    }
+
+    public void ChangeLobbyVisibility(bool isPrivate)
+    {
+        if (partyLobby.HostId != localPlayer.Id)
+        {
+            return;
+        }
+
+        UpdateLobbyOptions options = new UpdateLobbyOptions();
+        options.Data = partyLobby.Data;
+        options.MaxPlayers = partyLobby.MaxPlayers;
+        options.HostId = partyLobby.HostId;
+        options.Name = partyLobby.Name;
+        options.IsPrivate = isPrivate;
+
+        UpdateLobbyData(options);
     }
 
     private async Task<Allocation> AllocateRelay()
@@ -407,6 +549,11 @@ public class LobbyController : MonoBehaviour
 
     public void StartGame()
     {
+        if (partyLobby.HostId != localPlayer.Id)
+        {
+            return;
+        }
+        ChangeLobbyVisibility(true);
         NetworkManager.Singleton.SceneManager.LoadScene("CharacterSelect", LoadSceneMode.Single);
     }
 

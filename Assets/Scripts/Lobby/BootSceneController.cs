@@ -7,10 +7,12 @@ public class BootSceneController : MonoBehaviour
 {
     [SerializeField] private Button startButton;
     [SerializeField] private TMP_InputField playerNameInputField;
+    [SerializeField] private TMP_Text versionText;
 
     private void Start()
     {
         startButton.onClick.AddListener(OnStartButtonClicked);
+        versionText.text = $"v.{Application.version}";
 
         AudioManager.PlayMusic(DefaultAudioMusic.MainTheme);
     }
