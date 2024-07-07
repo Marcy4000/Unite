@@ -11,19 +11,22 @@ public class WildPokemonSpawner : NetworkBehaviour
         SpecificTimesRespawn
     }
 
-    [SerializeField] private GameObject pokemon;
+    [SerializeField] private GameObject pokemonPrefab;
     [SerializeField] private short wildPokemonID;
     [SerializeField] private float firstSpawnTime = 600f;
     [SerializeField] private float respawnCooldown;
     [SerializeField] private RespawnType respawnType;
     [SerializeField] private List<float> specificRespawnTimes;
+    [SerializeField] private float despawnTime;
     [SerializeField] private bool isObjective;
     [SerializeField] private bool isSpawnedOnMap;
 
     private float timer;
     private bool spawnedFirstTime = false;
 
-    public GameObject Pokemon => pokemon;
+    private WildPokemon wildPokemon;
+
+    public WildPokemon WildPokemon => wildPokemon;
     public float RespawnCooldown => respawnCooldown;
     public RespawnType PokemonRespawnType => respawnType;
 
@@ -31,6 +34,12 @@ public class WildPokemonSpawner : NetworkBehaviour
     {
         if (!IsServer)
         {
+            return;
+        }
+
+        if (despawnTime > 0f && GameManager.Instance.GameTime <= despawnTime)
+        {
+            DespawnPokemon(false);
             return;
         }
 
@@ -84,14 +93,23 @@ public class WildPokemonSpawner : NetworkBehaviour
         }
     }
 
+    public void EnableSpawner()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+        firstSpawnTime = GameManager.Instance.GameTime;
+    }
+
     public void SpawnPokemon()
     {
-        if (IsPokemonSpawned())
+        if (IsPokemonSpawned() || !IsServer)
         {
             return;
         }
 
-        WildPokemon wildPokemon = Instantiate(pokemon, transform.position, transform.rotation, transform).GetComponent<WildPokemon>();
+        wildPokemon = Instantiate(pokemonPrefab, transform.position, transform.rotation, transform).GetComponent<WildPokemon>();
         var instanceNetworkObject = wildPokemon.GetComponent<NetworkObject>();
         instanceNetworkObject.Spawn();
         wildPokemon.SetWildPokemonInfoRPC(wildPokemonID, isObjective);
@@ -99,9 +117,24 @@ public class WildPokemonSpawner : NetworkBehaviour
         isSpawnedOnMap = true;
     }
 
+    public void DespawnPokemon(bool canRespawn)
+    {
+        if (!IsPokemonSpawned() || !IsServer)
+        {
+            return;
+        }
+
+        if (!canRespawn)
+        {
+            respawnType = RespawnType.NoRespawn;
+        }
+        wildPokemon.Pokemon.TakeDamage(new DamageInfo(wildPokemon.NetworkObjectId, 999f, 999, 9999, DamageType.True));
+    }
+
     private void HandlePokemonDeath(DamageInfo info)
     {
         isSpawnedOnMap = false;
+        wildPokemon = null;
         if (respawnType == RespawnType.TimedRespawn)
         {
             timer = respawnCooldown;

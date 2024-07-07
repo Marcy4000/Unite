@@ -39,7 +39,7 @@ public class JoltSwift : MoveBase
 
     public override void Finish()
     {
-        if (IsActive)
+        if (IsActive && direction.magnitude != 0)
         {
             playerManager.MovesController.onObjectSpawned += (obj) =>
             {

@@ -227,7 +227,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 530
   respawnCooldown: 0
@@ -238,6 +239,7 @@ MonoBehaviour:
   - 260
   - 170
   - 80
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &22404329
@@ -543,6 +545,131 @@ PrefabInstance:
         type: 3}
       propertyPath: shieldAmount
       value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 252396149}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 1680269744}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Target
+      value: 
+      objectReference: {fileID: 307001325}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Target
+      value: 
+      objectReference: {fileID: 1213569658}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -1212,12 +1339,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 2
   firstSpawnTime: 120
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 1
   isSpawnedOnMap: 0
 --- !u!114 &130434158
@@ -1343,12 +1472,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 9
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &137488119
@@ -1417,7 +1548,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 530
   respawnCooldown: 0
@@ -1428,6 +1560,7 @@ MonoBehaviour:
   - 260
   - 170
   - 80
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &140559079
@@ -1658,12 +1791,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 3
   firstSpawnTime: 590
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &196930369
@@ -1695,12 +1830,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 196930367}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: -9.6, y: 0.077, z: -40.41}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &203219726
 MonoBehaviour:
@@ -1766,12 +1901,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 1
   firstSpawnTime: 580
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &207354124
@@ -1859,12 +1996,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &214711419
@@ -1952,12 +2091,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 6
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &216969513
@@ -2210,7 +2351,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1043116970}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &235902774
 MonoBehaviour:
@@ -2224,12 +2365,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 475
   respawnCooldown: 65
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &235902775
@@ -2291,6 +2434,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &252396147
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 252396148}
+  - component: {fileID: 252396150}
+  - component: {fileID: 252396149}
+  m_Layer: 0
+  m_Name: Corpish (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &252396148
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 252396147}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.95180875, z: 0, w: 0.30669224}
+  m_LocalPosition: {x: -37.01, y: 0.077, z: 15.12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 684872321}
+  m_LocalEulerAnglesHint: {x: 0, y: 144.28, z: 0}
+--- !u!114 &252396149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 252396147}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 6
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &252396150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 252396147}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1394712874
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &255877869
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2412,7 +2631,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 10
   firstSpawnTime: 530
   respawnCooldown: 0
@@ -2423,6 +2643,7 @@ MonoBehaviour:
   - 260
   - 170
   - 80
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &271591097
@@ -2465,6 +2686,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 1
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &275815968
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 275815969}
+  - component: {fileID: 275815971}
+  - component: {fileID: 275815970}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint (4)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &275815969
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 275815968}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.9429325, z: -0, w: -0.33298406}
+  m_LocalPosition: {x: 51.27, y: 0.077, z: 27.08}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1140479091}
+  m_LocalEulerAnglesHint: {x: 0, y: 218.9, z: 0}
+--- !u!114 &275815970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 275815968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &275815971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 275815968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 513692505
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &293916778
 GameObject:
   m_ObjectHideFlags: 0
@@ -2495,12 +2792,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 3
   firstSpawnTime: 590
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &293916780
@@ -2532,12 +2831,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 293916778}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: -14.85, y: 0.077, z: -44.77}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &306560000
 GameObject:
@@ -2584,7 +2883,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 530
   respawnCooldown: 0
@@ -2595,6 +2895,7 @@ MonoBehaviour:
   - 260
   - 170
   - 80
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &306560003
@@ -2610,6 +2911,82 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1395904802
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &307001323
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 307001324}
+  - component: {fileID: 307001326}
+  - component: {fileID: 307001325}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &307001324
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 307001323}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.93636626, z: 0, w: 0.35102466}
+  m_LocalPosition: {x: -51.27, y: 0.077, z: 27.08}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1140479091}
+  m_LocalEulerAnglesHint: {x: 0, y: 138.9, z: 0}
+--- !u!114 &307001325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 307001323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &307001326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 307001323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 3225794708
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -2936,12 +3313,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 340118044}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: -29.32, y: 0.077, z: 38.45}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1140479091}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &340118046
 MonoBehaviour:
@@ -2955,12 +3332,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 540
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &340118047
@@ -3202,12 +3581,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 3
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &354184051
@@ -3239,12 +3620,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 354184049}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 0, y: 0.077, z: -23.23}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &370426710
 GameObject:
@@ -3291,7 +3672,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 10
   firstSpawnTime: 530
   respawnCooldown: 0
@@ -3302,6 +3684,7 @@ MonoBehaviour:
   - 260
   - 170
   - 80
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &370426713
@@ -3317,6 +3700,82 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2495889565
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &372802523
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 372802524}
+  - component: {fileID: 372802526}
+  - component: {fileID: 372802525}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &372802524
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 372802523}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.20022316, z: -0, w: -0.97975034}
+  m_LocalPosition: {x: 40.99, y: 0.077, z: -35.12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 336.9, z: 0}
+--- !u!114 &372802525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 372802523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &372802526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 372802523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2150177402
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -3515,7 +3974,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 418235538}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 0, y: 0.09, z: 32.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3524,7 +3983,7 @@ Transform:
   - {fileID: 22404327}
   - {fileID: 1828691963}
   - {fileID: 140559077}
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1140479091}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &419362979
 MonoBehaviour:
@@ -3762,7 +4221,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1043116970}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &461488953
 MonoBehaviour:
@@ -3776,12 +4235,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 475
   respawnCooldown: 65
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &461488954
@@ -3954,6 +4415,251 @@ PrefabInstance:
         type: 3}
       propertyPath: shieldAmount
       value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 196930368}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 293916779}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Target
+      value: 
+      objectReference: {fileID: 840601182}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Target
+      value: 
+      objectReference: {fileID: 2063227953}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_Target
+      value: 
+      objectReference: {fileID: 354184050}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_Target
+      value: 
+      objectReference: {fileID: 969900939}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_Target
+      value: 
+      objectReference: {fileID: 372802525}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_Target
+      value: 
+      objectReference: {fileID: 2056775306}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -4248,12 +4954,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &537720409
@@ -4353,26 +5061,12 @@ Transform:
   - {fileID: 110705270}
   - {fileID: 826105840}
   - {fileID: 1140479091}
+  - {fileID: 1769486308}
+  - {fileID: 1043116970}
   - {fileID: 684872321}
   - {fileID: 1104613439}
-  - {fileID: 1735167808}
-  - {fileID: 340118045}
-  - {fileID: 970911151}
-  - {fileID: 2060164763}
-  - {fileID: 196930370}
-  - {fileID: 293916781}
-  - {fileID: 840601181}
-  - {fileID: 2063227952}
-  - {fileID: 354184052}
-  - {fileID: 235902773}
-  - {fileID: 461488952}
-  - {fileID: 791589067}
-  - {fileID: 1977492661}
   - {fileID: 130434156}
   - {fileID: 1402253060}
-  - {fileID: 1408970596}
-  - {fileID: 418235539}
-  - {fileID: 2090260799}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &581706615
@@ -4451,7 +5145,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 530
   respawnCooldown: 0
@@ -4462,6 +5157,7 @@ MonoBehaviour:
   - 260
   - 170
   - 80
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &591988860
@@ -4549,12 +5245,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &600937420
@@ -4971,6 +5669,8 @@ Transform:
   - {fileID: 1150773257}
   - {fileID: 1976357252}
   - {fileID: 718153252}
+  - {fileID: 1699846499}
+  - {fileID: 252396148}
   - {fileID: 1453973502}
   - {fileID: 137488117}
   m_Father: {fileID: 577624592}
@@ -5115,12 +5815,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 6
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &718153254
@@ -5189,12 +5891,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &718621752
@@ -5282,12 +5986,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 6
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &727283513
@@ -5466,12 +6172,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 9
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &779546791
@@ -5578,7 +6286,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 530
   respawnCooldown: 0
@@ -5589,6 +6298,7 @@ MonoBehaviour:
   - 260
   - 170
   - 80
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &789237702
@@ -5643,7 +6353,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1043116970}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &791589068
 MonoBehaviour:
@@ -5657,12 +6367,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 475
   respawnCooldown: 65
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &791589069
@@ -5903,12 +6615,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 840601180}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 9.6, y: 0.077, z: -40.41}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &840601182
 MonoBehaviour:
@@ -5922,12 +6634,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 3
   firstSpawnTime: 590
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &840601183
@@ -5996,12 +6710,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 7
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &842219820
@@ -6584,12 +7300,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 480
   respawnCooldown: 90
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 150
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &923477803
@@ -6719,6 +7437,251 @@ PrefabInstance:
         type: 3}
       propertyPath: shieldAmount
       value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 196930368}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 293916779}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Target
+      value: 
+      objectReference: {fileID: 840601182}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Target
+      value: 
+      objectReference: {fileID: 2063227953}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_Target
+      value: 
+      objectReference: {fileID: 354184050}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_Target
+      value: 
+      objectReference: {fileID: 1699846500}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_Target
+      value: 
+      objectReference: {fileID: 1284298013}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_Target
+      value: 
+      objectReference: {fileID: 2143322476}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_MethodName
+      value: DespawnPokemon
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[5].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[6].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[7].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -7041,6 +8004,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &969900937
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 969900938}
+  - component: {fileID: 969900940}
+  - component: {fileID: 969900939}
+  m_Layer: 0
+  m_Name: Corpish (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &969900938
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969900937}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.31647703, z: 0, w: 0.9486002}
+  m_LocalPosition: {x: 37.01, y: 0.077, z: -15.12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1104613439}
+  m_LocalEulerAnglesHint: {x: 0, y: -36.9, z: 0}
+--- !u!114 &969900939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969900937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 6
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &969900940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969900937}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2450497950
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &970911150
 GameObject:
   m_ObjectHideFlags: 0
@@ -7072,7 +8111,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1140479091}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &970911152
 MonoBehaviour:
@@ -7086,12 +8125,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 540
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &970911153
@@ -7160,12 +8201,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &989684360
@@ -28215,12 +29258,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 580
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1036044031
@@ -28282,6 +29327,42 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &1043116969
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1043116970}
+  m_Layer: 0
+  m_Name: MidLane
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1043116970
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1043116969}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 235902773}
+  - {fileID: 461488952}
+  - {fileID: 791589067}
+  - {fileID: 1977492661}
+  - {fileID: 2090260799}
+  m_Father: {fileID: 577624592}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1045831739
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29053,12 +30134,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1080029332
@@ -29127,12 +30210,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1080102617
@@ -29338,6 +30423,8 @@ Transform:
   - {fileID: 216969511}
   - {fileID: 1297598482}
   - {fileID: 779546789}
+  - {fileID: 969900938}
+  - {fileID: 1635789421}
   m_Father: {fileID: 577624592}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1111903922
@@ -29412,6 +30499,15 @@ Transform:
   - {fileID: 1909128278}
   - {fileID: 1519989490}
   - {fileID: 1036044029}
+  - {fileID: 340118045}
+  - {fileID: 970911151}
+  - {fileID: 418235539}
+  - {fileID: 1680269743}
+  - {fileID: 307001324}
+  - {fileID: 1213569657}
+  - {fileID: 1892033835}
+  - {fileID: 275815969}
+  - {fileID: 1713548879}
   m_Father: {fileID: 577624592}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1142140043
@@ -29497,12 +30593,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 7
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1150773259
@@ -30050,12 +31148,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1189646370
@@ -30243,6 +31343,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &1213569656
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1213569657}
+  - component: {fileID: 1213569659}
+  - component: {fileID: 1213569658}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1213569657
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213569656}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.9707165, z: 0, w: 0.24022801}
+  m_LocalPosition: {x: -40.29, y: 0.077, z: 33.82}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1140479091}
+  m_LocalEulerAnglesHint: {x: 0, y: 152.2, z: 0}
+--- !u!114 &1213569658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213569656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &1213569659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213569656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1348169547
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1001 &1218500427
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30856,12 +32032,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 480
   respawnCooldown: 90
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 150
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1276204355
@@ -30877,6 +32055,82 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3976403134
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &1284298011
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1284298012}
+  - component: {fileID: 1284298014}
+  - component: {fileID: 1284298013}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1284298012
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1284298011}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.3971479, z: 0, w: 0.91775465}
+  m_LocalPosition: {x: -54.26, y: 0.077, z: -23.7}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 46.8, z: 0}
+--- !u!114 &1284298013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1284298011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &1284298014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1284298011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 3181736604
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -30934,12 +32188,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1286241337
@@ -31042,12 +32298,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 8
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1297598484
@@ -31264,12 +32522,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1318274106
@@ -31338,12 +32598,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1319574839
@@ -31731,12 +32993,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 12
   firstSpawnTime: 420
   respawnCooldown: 120
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 120
   isObjective: 1
   isSpawnedOnMap: 0
 --- !u!114 &1402253062
@@ -31841,7 +33105,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1408970595}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 0, y: 0.09, z: -32.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -31850,7 +33114,7 @@ Transform:
   - {fileID: 306560001}
   - {fileID: 591988858}
   - {fileID: 789237700}
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &1417024744
 MonoBehaviour:
@@ -32090,12 +33354,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 8
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1453973504
@@ -32276,6 +33542,31 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: notificationTimes.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: notificationTimes.Array.data[0]
+      value: 300
+      objectReference: {fileID: 0}
+    - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: notificationTimes.Array.data[1]
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: notificationTimes.Array.data[2]
+      value: 120
+      objectReference: {fileID: 0}
+    - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: notificationTimes.Array.data[3]
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 7597068249424976980, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
@@ -32803,12 +34094,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 1
   firstSpawnTime: 580
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1519989492
@@ -32930,12 +34223,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 10
   firstSpawnTime: 480
   respawnCooldown: 90
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 150
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1532169710
@@ -34448,12 +35743,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1627575462
@@ -34511,6 +35808,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &1635789420
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1635789421}
+  - component: {fileID: 1635789423}
+  - component: {fileID: 1635789422}
+  m_Layer: 0
+  m_Name: Corpish (4)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1635789421
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1635789420}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.9515944, z: -0, w: -0.30735666}
+  m_LocalPosition: {x: 37.01, y: 0.077, z: 15.12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1104613439}
+  m_LocalEulerAnglesHint: {x: 0, y: 215.8, z: 0}
+--- !u!114 &1635789422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1635789420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 6
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &1635789423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1635789420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 734874135
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &1641519582
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34606,6 +35979,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &1680269742
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1680269743}
+  - component: {fileID: 1680269745}
+  - component: {fileID: 1680269744}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1680269743
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1680269742}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.8681989, z: 0, w: 0.49621648}
+  m_LocalPosition: {x: -57.53, y: 0.077, z: 19.16}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1140479091}
+  m_LocalEulerAnglesHint: {x: 0, y: 120.5, z: 0}
+--- !u!114 &1680269744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1680269742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &1680269745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1680269742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2136973056
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &1680369500
 GameObject:
   m_ObjectHideFlags: 0
@@ -34651,12 +36100,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1680369503
@@ -34699,6 +36150,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &1699846498
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1699846499}
+  - component: {fileID: 1699846501}
+  - component: {fileID: 1699846500}
+  m_Layer: 0
+  m_Name: Corpish (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1699846499
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699846498}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.30943188, z: 0, w: 0.95092165}
+  m_LocalPosition: {x: -37.01, y: 0.077, z: -15.12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 684872321}
+  m_LocalEulerAnglesHint: {x: 0, y: 36.05, z: 0}
+--- !u!114 &1699846500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699846498}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 6
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &1699846501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699846498}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2053727761
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &1700702786
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34966,12 +36493,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1710480048
@@ -34987,6 +36516,82 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1890676710
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &1713548878
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1713548879}
+  - component: {fileID: 1713548881}
+  - component: {fileID: 1713548880}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint (5)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1713548879
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713548878}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.967046, z: -0, w: -0.25460184}
+  m_LocalPosition: {x: 40.29, y: 0.077, z: 33.82}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1140479091}
+  m_LocalEulerAnglesHint: {x: 0, y: 209.5, z: 0}
+--- !u!114 &1713548880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713548878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &1713548881
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713548878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1199368562
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -35097,12 +36702,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1735167807}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: -28.26, y: 0.077, z: -38.68}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &1735167809
 MonoBehaviour:
@@ -35116,12 +36721,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 540
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1735167810
@@ -35375,6 +36982,49 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &1769486307
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1769486308}
+  m_Layer: 0
+  m_Name: BotPath
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1769486308
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1769486307}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 196930370}
+  - {fileID: 293916781}
+  - {fileID: 840601181}
+  - {fileID: 2063227952}
+  - {fileID: 354184052}
+  - {fileID: 2143322475}
+  - {fileID: 1284298012}
+  - {fileID: 372802524}
+  - {fileID: 2056775305}
+  - {fileID: 1735167808}
+  - {fileID: 2060164763}
+  - {fileID: 1408970596}
+  m_Father: {fileID: 577624592}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1771213115
 GameObject:
   m_ObjectHideFlags: 0
@@ -35420,12 +37070,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1771213118
@@ -35741,7 +37393,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 530
   respawnCooldown: 0
@@ -35752,6 +37405,7 @@ MonoBehaviour:
   - 260
   - 170
   - 80
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1828691965
@@ -36097,6 +37751,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 1
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &1892033834
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1892033835}
+  - component: {fileID: 1892033837}
+  - component: {fileID: 1892033836}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1892033835
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1892033834}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.8733476, z: -0, w: -0.48709753}
+  m_LocalPosition: {x: 57.53, y: 0.077, z: 19.16}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1140479091}
+  m_LocalEulerAnglesHint: {x: 0, y: 238.3, z: 0}
+--- !u!114 &1892033836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1892033834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &1892033837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1892033834}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1826115954
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!114 &1895189732
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36211,12 +37941,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 1
   firstSpawnTime: 580
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1909128280
@@ -36789,6 +38521,131 @@ PrefabInstance:
       propertyPath: shieldAmount
       value: 0.1
       objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1635789422}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 1892033836}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Target
+      value: 
+      objectReference: {fileID: 275815970}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Target
+      value: 
+      objectReference: {fileID: 1713548880}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
+      value: EnableSpawner
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
@@ -36893,12 +38750,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 1
   firstSpawnTime: 580
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1958743743
@@ -37077,12 +38936,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 6
   firstSpawnTime: 585
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1976357254
@@ -37137,7 +38998,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1043116970}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1977492662
 MonoBehaviour:
@@ -37151,12 +39012,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 475
   respawnCooldown: 65
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1977492663
@@ -37263,12 +39126,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 11
   firstSpawnTime: 480
   respawnCooldown: 90
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 150
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &1988771093
@@ -37584,12 +39449,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 4
   firstSpawnTime: 600
   respawnCooldown: 0
   respawnType: 0
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &2031992846
@@ -37670,6 +39537,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &2056775304
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2056775305}
+  - component: {fileID: 2056775307}
+  - component: {fileID: 2056775306}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2056775305
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056775304}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.38992786, z: -0, w: -0.92084545}
+  m_LocalPosition: {x: 54.26, y: 0.077, z: -23.7}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 314.1, z: 0}
+--- !u!114 &2056775306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056775304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &2056775307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2056775304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2481344659
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &2058561395
 GameObject:
   m_ObjectHideFlags: 0
@@ -37754,7 +39697,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2060164764
 MonoBehaviour:
@@ -37768,12 +39711,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 5
   firstSpawnTime: 540
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &2060164765
@@ -37842,12 +39787,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2063227951}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 14.85, y: 0.077, z: -44.77}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &2063227953
 MonoBehaviour:
@@ -37861,12 +39806,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd, type: 3}
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
   wildPokemonID: 3
   firstSpawnTime: 590
   respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
 --- !u!114 &2063227954
@@ -38132,7 +40079,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2090260798}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
   m_LocalPosition: {x: 0, y: 0.09, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -38141,7 +40088,7 @@ Transform:
   - {fileID: 1276204353}
   - {fileID: 923477801}
   - {fileID: 1988771091}
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1043116970}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &2090877153
 GameObject:
@@ -38497,6 +40444,82 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!1 &2143322474
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2143322475}
+  - component: {fileID: 2143322477}
+  - component: {fileID: 2143322476}
+  m_Layer: 0
+  m_Name: AudinoSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2143322475
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2143322474}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.21388295, z: 0, w: 0.97685933}
+  m_LocalPosition: {x: -40.99, y: 0.077, z: -35.12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 24.7, z: 0}
+--- !u!114 &2143322476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2143322474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  firstSpawnTime: -1
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+--- !u!114 &2143322477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2143322474}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2938026452
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &2143641354
 GameObject:
   m_ObjectHideFlags: 0

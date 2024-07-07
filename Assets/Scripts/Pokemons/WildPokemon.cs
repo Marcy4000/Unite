@@ -4,6 +4,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using WebSocketSharp;
 
 public class WildPokemon : NetworkBehaviour
 {
@@ -45,6 +46,12 @@ public class WildPokemon : NetworkBehaviour
 
     private void Die(DamageInfo info)
     {
+        if (info.attackerId == NetworkObjectId)
+        {
+            StartCoroutine(DumbDespawn());
+            return;
+        }
+
         if (pokemon.Type == PokemonType.Objective)
         {
             ShowKillRpc(info);
@@ -71,9 +78,9 @@ public class WildPokemon : NetworkBehaviour
 
                 foreach (var playerManager in GameManager.Instance.Players)
                 {
-                    if (playerManager != null && playerManager.OrangeTeam == teamToBuff)
+                    if (playerManager != null && playerManager.OrangeTeam == teamToBuff && playerManager.PlayerState != PlayerState.Dead)
                     {
-                        playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.Rayquaza, 20f, true));
+                        playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.Rayquaza, 25f, true));
                     }
                 }
 
@@ -92,6 +99,10 @@ public class WildPokemon : NetworkBehaviour
                     if (playerManager != null && playerManager.OrangeTeam == teamtToGiveExp)
                     {
                         playerManager.Pokemon.GainExperience(Mathf.RoundToInt(ExpYield * 0.50f));
+                        if (playerManager.PlayerState != PlayerState.Dead)
+                        {
+                            playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 60f, true));
+                        }
                     }
                 }
 

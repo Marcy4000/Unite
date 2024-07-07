@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -19,7 +17,7 @@ public class BlazingBycicleKick : MoveBase
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeAutoAim(11, 90, AimTarget.Enemy);
+        Aim.Instance.InitializeAutoAim(11, 90, AimTarget.NonAlly);
     }
 
     public override void Update()

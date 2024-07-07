@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class GoalZone : NetworkBehaviour
 {
@@ -15,6 +16,10 @@ public class GoalZone : NetworkBehaviour
     [SerializeField] private int goalLaneId;
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private GameObject orangeModel, blueModel;
+
+    [Space]
+    // Used to trigger farm when goal is destroyed, use the normal event for c# code
+    [SerializeField] private UnityEvent onGoalZoneDestroyedUnityEvent = new UnityEvent();
 
     private StatChange statChange = new StatChange(60, Stat.Speed, 0, false, true, true, 1);
 
@@ -162,6 +167,7 @@ public class GoalZone : NetworkBehaviour
         }
         gameObject.SetActive(false);
         onGoalZoneDestroyed?.Invoke(goalLaneId, goalTier);
+        onGoalZoneDestroyedUnityEvent.Invoke();
     }
 
     public void SetIsActive(bool value)
