@@ -34,6 +34,8 @@ public class GameManager : NetworkBehaviour
 
     private List<ResultScoreInfo> blueTeamScores;
     private List<ResultScoreInfo> orangeTeamScores;
+    
+    private bool isSurrendering = false;
 
     public float GameTime => gameTime.Value;
     public int BlueTeamScore => blueTeamScore.Value;
@@ -43,6 +45,8 @@ public class GameManager : NetworkBehaviour
     public List<PlayerManager> Players => players;
 
     private NetworkVariable<GameState> gameState = new NetworkVariable<GameState>(GameState.Waiting);
+
+    public GameState GameState => gameState.Value;
 
     public event Action<int> onUpdatePassiveExp;
     public event Action<GameState> onGameStateChanged;
@@ -210,6 +214,7 @@ public class GameManager : NetworkBehaviour
         {
             BlueTeamWon = blueTeamScore.Value > orangeTeamScore.Value,
             BlueTeamScore = blueTeamScore.Value,
+            Surrendered = false,
             OrangeTeamScore = orangeTeamScore.Value,
             TotalGameTime = MAX_GAME_TIME - gameTime.Value,
             BlueTeamScores = blueTeamScores.ToArray(),
@@ -244,6 +249,35 @@ public class GameManager : NetworkBehaviour
         ShowGoalScoredRpc(info);
     }
 
+    public void StartSurrenderVote()
+    {
+        if (isSurrendering || GameState != GameState.Playing)
+        {
+            return;
+        }
+
+        // TODO: implement an anctual surrender vote
+        Unity.Services.Lobbies.Models.Player[] teamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
+        if (teamPlayers.Length > 1f)
+        {
+            isSurrendering = false;
+            return;
+        }
+
+        isSurrendering = true;
+        OnTeamSurrenderedRPC(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
+    }
+
+    [Rpc(SendTo.Server)]
+    private void OnTeamSurrenderedRPC(bool orangeTeam)
+    {
+        GameResults results = GenerateGameResults();
+        results.Surrendered = true;
+        results.BlueTeamWon = orangeTeam;
+
+        EndGameRPC(results);
+    }
+
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowGoalScoredRpc(ScoreInfo info)
     {
@@ -263,6 +297,15 @@ public class GameManager : NetworkBehaviour
     void EndGameRPC(GameResults gameResults)
     {
         LobbyController.Instance.GameResults = gameResults;
+
+        if (gameResults.Surrendered)
+        {
+            bool localTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+            bool yourTeamSurrendered = localTeam == gameResults.BlueTeamWon;
+
+            BattleUIManager.instance.ShowSurrenderTextbox(yourTeamSurrendered);
+        }
+
         StartCoroutine(EndGameRoutine());
     }
 

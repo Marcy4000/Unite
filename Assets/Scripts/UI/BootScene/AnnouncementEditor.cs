@@ -20,6 +20,17 @@ public class AnnouncementEditor : MonoBehaviour
         SaveJsonToFile(json, "announcement.json");
     }
 
+    public void LoadAnnouncement()
+    {
+        string path = Application.dataPath + "/announcement.json";
+        string json = System.IO.File.ReadAllText(path);
+        Debug.Log(json);
+
+        Announcement announcement = JsonUtility.FromJson<Announcement>(json);
+        titleField.text = announcement.title;
+        contentField.text = announcement.message;
+    }
+
     void SaveJsonToFile(string json, string fileName)
     {
         string path = Application.dataPath + "/" + fileName;

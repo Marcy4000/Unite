@@ -286,10 +286,10 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(SendTo.Owner)]
     public void UpdatePosAndRotRPC(Vector3 pos, Quaternion rot)
     {
-        playerMovement.CharacterController.enabled = false;
+        //playerMovement.CharacterController.enabled = false;
         transform.position = pos;
         transform.rotation = rot;
-        playerMovement.CharacterController.enabled = true;
+        //playerMovement.CharacterController.enabled = true;
     }
 
     private void OnPlayerStateChange(PlayerState prev, PlayerState curr)

@@ -16,6 +16,7 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private GoalStateUI goalStateUI;
     [SerializeField] private RecallBarUI recallBarUI;
     [SerializeField] private ScoreboardUI scoreboardUI;
+    [SerializeField] private SurrenderTextbox surrenderTextbox;
 
     private PlayerControls playerControls;
 
@@ -45,8 +46,10 @@ public class BattleUIManager : MonoBehaviour
 
     private IEnumerator InitializeDelayed()
     {
-        yield return new WaitForSeconds(0.4f);
+        scoreboardUI.CloseScoreboard();
+        yield return new WaitUntil(() => GameManager.Instance.GameState == GameState.Playing);
 
+        scoreboardUI.OpenScoreboard();
         scoreboardUI.Initialize();
         scoreboardUI.CloseScoreboard();
     }
@@ -201,5 +204,10 @@ public class BattleUIManager : MonoBehaviour
     public void SetRecallBarActive(bool active)
     {
         recallBarUI.SetRecallBarActive(active);
+    }
+
+    public void ShowSurrenderTextbox(bool yourTeamSurrendered)
+    {
+        surrenderTextbox.ShowSurrenderTextbox(yourTeamSurrendered);
     }
 }
