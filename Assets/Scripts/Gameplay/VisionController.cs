@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class VisionController : MonoBehaviour
@@ -11,7 +10,7 @@ public class VisionController : MonoBehaviour
     private bool isBlinded = false;
 
     public bool TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; }
-    public bool IsEnabled { get => isEnabled; set => isEnabled = value; }
+    public bool IsEnabled { get => isEnabled; set => UpdateIsEnabled(value); }
     public bool IsBlinded { get => isBlinded; set => UpdateBlindState(value); }
 
     private List<Vision> visibleObjects = new List<Vision>();
@@ -50,6 +49,27 @@ public class VisionController : MonoBehaviour
                 {
                     vision.SetVisibility(false);
                 }
+            }
+        }
+    }
+
+    private void UpdateIsEnabled(bool state)
+    {
+        isEnabled = state;
+        if (isEnabled) {
+            foreach (Vision vision in visibleObjects)
+            {
+                if (vision.IsVisible && !vision.IsRendered && !isBlinded)
+                {
+                    vision.SetVisibility(true);
+                }
+            }
+        }
+        else
+        {
+            foreach (Vision vision in visibleObjects)
+            {
+                vision.SetVisibility(false);
             }
         }
     }

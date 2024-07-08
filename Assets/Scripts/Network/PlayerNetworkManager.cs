@@ -40,7 +40,15 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     public override void OnDestroy()
     {
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        try
+        {
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        }
+        catch (System.Exception)
+        {
+            // Do nothing
+        }
+
         LobbyController.Instance.onLobbyUpdate -= HandleLobbyUpdate;
         playerStats.OnValueChanged -= HandlePlayerStatsChange;
     }

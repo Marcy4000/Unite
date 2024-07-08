@@ -134,8 +134,6 @@ public class PartyScreenUI : MonoBehaviour
         }
     }
 
-
-
     public void StartGame()
     {
         LobbyController.Instance.StartGame();

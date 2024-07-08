@@ -77,6 +77,13 @@ public class SettingsManager : MonoBehaviour
         sfxVolumeSlider.value = AudioManager.SoundVolume;
         masterVolumeSlider.value = AudioManager.MasterVolume;
 
+        if (Application.platform == RuntimePlatform.WebGLPlayer)
+        {
+            fullscreenToggle.interactable = false;
+            vsyncToggle.interactable = false;
+            resolutionDropdown.interactable = false;
+        }
+
         CloseSettings();
     }
 

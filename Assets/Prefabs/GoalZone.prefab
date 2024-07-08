@@ -1,5 +1,72 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5463151713287268300
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8595658182664552546}
+  - component: {fileID: 1110153990479030922}
+  - component: {fileID: 1171317877783702685}
+  m_Layer: 0
+  m_Name: VisionController
+  m_TagString: VisionController
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8595658182664552546
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5463151713287268300}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5272365574644050205}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1110153990479030922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5463151713287268300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 111be0fc4c7809843a89ad4511e30980, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visionRange: 10
+--- !u!135 &1171317877783702685
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5463151713287268300}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &5974925819969918814
 GameObject:
   m_ObjectHideFlags: 0
@@ -36,6 +103,7 @@ Transform:
   - {fileID: 8097527377463285852}
   - {fileID: 8211905116295370380}
   - {fileID: 2373850219768659705}
+  - {fileID: 8595658182664552546}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7146186341011684014
@@ -74,11 +142,16 @@ MonoBehaviour:
   maxScore: 80
   orangeTeam: 0
   healAmount: 0
+  shieldAmount: 0
   goalTier: 0
   goalLaneId: 0
   scoreText: {fileID: 7422740956712573315}
   orangeModel: {fileID: 8875436615242302182}
   blueModel: {fileID: 8844327073734446134}
+  visionController: {fileID: 1110153990479030922}
+  onGoalZoneDestroyedUnityEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!135 &6194622396516041565
 SphereCollider:
   m_ObjectHideFlags: 0

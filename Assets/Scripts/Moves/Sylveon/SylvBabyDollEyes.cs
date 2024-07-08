@@ -35,7 +35,7 @@ public class SylvBabyDollEyes : MoveBase
         if (direction.magnitude != 0 && IsActive)
         {
             Vector2 direction = new Vector2(this.direction.x, this.direction.z);
-            playerManager.MovesController.LaunchMoveForwardProjRpc(direction, damageInfo, distance, "Moves/Cinderace/CinderPyroball");
+            playerManager.MovesController.LaunchMoveForwardProjRpc(direction, damageInfo, distance, "Assets/Prefabs/Objects/Moves/Cinderace/CinderPyroball.prefab");
             playerManager.StopMovementForTime(0.25f);
             playerManager.AnimationManager.PlayAnimation($"ani_spell2_bat_0133");
             playerManager.transform.rotation = Quaternion.LookRotation(this.direction);

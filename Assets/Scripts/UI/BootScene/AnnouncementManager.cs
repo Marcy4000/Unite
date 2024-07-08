@@ -5,12 +5,19 @@ using UnityEngine.Networking;
 public class AnnouncementManager : MonoBehaviour
 {
     [SerializeField] private AnnouncementMessageBox messageBox;
-    private string jsonFileUrl = "https://drive.google.com/uc?export=download&id=1lzgromQKs8eySkDQdo3f1vCs4PKENZ1D";
+    private string jsonFileUrl = "https://drive.google.com/uc?export=download&id=1lzgromQKs8eySkDQdo3f1vCs4PKENZ1D"; // This doesn't work on WebGL
 
     private Announcement loadingAnnouncement = new Announcement
     {
         title = "Loading...",
         message = "Downloading latest announcement, please wait...",
+        date = ""
+    };
+
+    private Announcement webGlAnnouncement = new Announcement
+    {
+        title = "WebGL Notice",
+        message = "WebGL build currently does not support downloading announcements.",
         date = ""
     };
 
@@ -32,6 +39,13 @@ public class AnnouncementManager : MonoBehaviour
     private IEnumerator DownloadAndDisplayAnnouncement()
     {
         messageBox.SetAnnouncement(loadingAnnouncement);
+
+        if (Application.platform == RuntimePlatform.WebGLPlayer)
+        {
+            messageBox.SetAnnouncement(webGlAnnouncement);
+            yield break;
+        }
+
         UnityWebRequest request = UnityWebRequest.Get(jsonFileUrl);
         yield return request.SendWebRequest();
 

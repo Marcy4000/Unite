@@ -4,7 +4,6 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using WebSocketSharp;
 
 public class WildPokemon : NetworkBehaviour
 {

@@ -16,6 +16,7 @@ public class GoalZone : NetworkBehaviour
     [SerializeField] private int goalLaneId;
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private GameObject orangeModel, blueModel;
+    [SerializeField] private VisionController visionController;
 
     [Space]
     // Used to trigger farm when goal is destroyed, use the normal event for c# code
@@ -48,6 +49,10 @@ public class GoalZone : NetworkBehaviour
         Destroy(orangeTeam ? blueModel : orangeModel);
         scoreText.text = $"{maxScore - currentScore.Value}/{maxScore}";
         currentScore.OnValueChanged += UpdateGraphics;
+
+        visionController.TeamToIgnore = orangeTeam;
+        visionController.IsEnabled = orangeTeam == (LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
+        visionController.transform.parent = null;
 
         MinimapManager.Instance.CreateGoalzoneIcon(this);
 
@@ -166,6 +171,7 @@ public class GoalZone : NetworkBehaviour
             player.ScoreStatus.AddStatus(ActionStatusType.Disabled);
         }
         gameObject.SetActive(false);
+        visionController.IsEnabled = false;
         onGoalZoneDestroyed?.Invoke(goalLaneId, goalTier);
         onGoalZoneDestroyedUnityEvent.Invoke();
     }

@@ -34,6 +34,12 @@ public class LobbyController : MonoBehaviour
 
     private GameResults gameResults;
 
+#if UNITY_WEBGL
+    private string connectionType = "wss";
+#else
+    private string connectionType = "dtls";
+#endif
+
     public Lobby Lobby => partyLobby;
     public Player Player => localPlayer;
 
@@ -120,6 +126,10 @@ public class LobbyController : MonoBehaviour
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")}
             });
+
+#if UNITY_WEBGL
+            NetworkManager.Singleton.GetComponent<UnityTransport>().UseWebSockets = true;
+#endif
 
             LoadingScreen.Instance.HideGenericLoadingScreen();
         }
@@ -227,7 +237,6 @@ public class LobbyController : MonoBehaviour
             Debug.Log($"Joined lobby: {partyLobby.Name}, code: {partyLobby.LobbyCode}");
 
             Allocation allocation = await AllocateRelay();
-
             string relayJoinCode = await GetRelayJoinCode(allocation);
 
             await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, new UpdateLobbyOptions()
@@ -240,7 +249,7 @@ public class LobbyController : MonoBehaviour
 
             await SubscribeToLobbyEvents(partyLobby.Id);
 
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, "dtls"));
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, connectionType));
 
             NetworkManager.Singleton.StartHost();
             lobbyUI.ShowLobbyUI();
@@ -270,7 +279,7 @@ public class LobbyController : MonoBehaviour
 
             JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
 
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, connectionType));
             Debug.Log($"Joined lobby: {partyLobby.Name}");
 
             await SubscribeToLobbyEvents(partyLobby.Id);
@@ -312,7 +321,7 @@ public class LobbyController : MonoBehaviour
 
             JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
 
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, "dtls"));
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, connectionType));
             Debug.Log($"Joined lobby: {partyLobby.Name}");
 
             await SubscribeToLobbyEvents(partyLobby.Id);
@@ -340,8 +349,12 @@ public class LobbyController : MonoBehaviour
         // Track all used positions
         foreach (var player in partyLobby.Players)
         {
+            if (player.Id == localPlayer.Id)
+            {
+                continue;
+            }
             string playerTeam = player.Data["PlayerTeam"].Value;
-            string playerPos = NumberEncoder.Base64ToInt(player.Data["PlayerPos"].Value).ToString();
+            string playerPos = NumberEncoder.Base64ToShort(player.Data["PlayerPos"].Value).ToString();
             usedPositions.Add(playerTeam + playerPos);
         }
 
