@@ -8,7 +8,7 @@ using JSAM;
 
 public class CharacterSelectController : NetworkBehaviour
 {
-#if UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
     private const float SELECTION_TIME = 10f;
 #else
     private const float SELECTION_TIME = 35f;
@@ -57,7 +57,7 @@ public class CharacterSelectController : NetworkBehaviour
         AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon);
 
-        Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
+        Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam());
         foreach (var player in localTeamPlayers)
         {
             GameObject playerIcon = Instantiate(playerIconPrefab, playerIconsHolder);
@@ -135,7 +135,7 @@ public class CharacterSelectController : NetworkBehaviour
 
     private bool IsCharacterAvailable(string characterName)
     {
-        Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
+        Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam());
         foreach (var player in localTeamPlayers)
         {
             if (player.Id != LobbyController.Instance.Player.Id)

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -17,7 +16,7 @@ public class SpawnArea : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        bool localPlayerTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
         wallCollider.enabled = orangeTeam != localPlayerTeam;
         healTimer = HEAL_INTERVAL;
@@ -25,7 +24,7 @@ public class SpawnArea : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsServer)
+        if (!IsServer || GameManager.Instance.GameState != GameState.Playing)
         {
             return;
         }

@@ -9,6 +9,7 @@ public class SettingsManager : MonoBehaviour
     public static SettingsManager Instance { get; private set; }
 
     [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private GameObject creditsPanel;
     [SerializeField] private ScrollRect settingsScrollRect;
 
     [SerializeField] private TMP_Dropdown resolutionDropdown;
@@ -79,12 +80,12 @@ public class SettingsManager : MonoBehaviour
 
         if (Application.platform == RuntimePlatform.WebGLPlayer)
         {
-            fullscreenToggle.interactable = false;
             vsyncToggle.interactable = false;
             resolutionDropdown.interactable = false;
         }
 
         CloseSettings();
+        CloseCredits();
     }
 
     private void UpdateOptions()
@@ -123,6 +124,17 @@ public class SettingsManager : MonoBehaviour
     public void CloseSettings()
     {
         settingsPanel.SetActive(false);
+        CloseCredits();
+    }
+
+    public void OpenCredits()
+    {
+        creditsPanel.SetActive(true);
+    }
+
+    public void CloseCredits()
+    {
+        creditsPanel.SetActive(false);
     }
 
     public void SetResolution(int resolutionIndex)

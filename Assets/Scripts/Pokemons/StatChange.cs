@@ -1,7 +1,7 @@
 using System;
 using Unity.Netcode;
 
-public enum Stat
+public enum Stat : byte
 {
     Attack,
     Defense,
@@ -11,7 +11,8 @@ public enum Stat
     Cdr,
     LifeSteal,
     AtkSpeed,
-    Speed
+    Speed,
+    DamageReduction
 }
 
 [Serializable]

@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public abstract class PassiveBase
 {
     public PlayerManager playerManager;
@@ -33,6 +29,8 @@ public static class PassiveDatabase
                 return new JoltPassive();
             case AvailablePassives.FlygonPassive:
                 return new FlygonPassive();
+            case AvailablePassives.MeowsticMPassive:
+                return new MeowsticPassiveM();
             default:
                 return new EmptyPassive();
         }
@@ -47,5 +45,6 @@ public enum AvailablePassives
     SylveonPassive,
     VaporeonPassive,
     JolteonPassive,
-    FlygonPassive
+    FlygonPassive,
+    MeowsticMPassive,
 }

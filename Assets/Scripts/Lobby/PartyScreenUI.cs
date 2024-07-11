@@ -122,7 +122,7 @@ public class PartyScreenUI : MonoBehaviour
 
         for (int i = 0; i < lobby.Players.Count; i++)
         {
-            int playerPos = NumberEncoder.Base64ToShort(lobby.Players[i].Data["PlayerPos"].Value);
+            int playerPos = NumberEncoder.FromBase64<short>(lobby.Players[i].Data["PlayerPos"].Value);
             if (lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
             {
                 playerIconsBlueTeam[playerPos].InitializePlayer(lobby.Players[i]);

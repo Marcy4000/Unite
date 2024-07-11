@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -39,7 +38,7 @@ public class BattleNotificationUI : MonoBehaviour
 
     private void ShowNotification()
     {
-        bool localPlayerOrangeTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        bool localPlayerOrangeTeam = LobbyController.Instance.GetLocalPlayerTeam();
         int pointDifference = localPlayerOrangeTeam ? GameManager.Instance.OrangeTeamScore - GameManager.Instance.BlueTeamScore : GameManager.Instance.BlueTeamScore - GameManager.Instance.OrangeTeamScore;
 
         HideAllNotification();

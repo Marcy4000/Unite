@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public class FullHeal : BattleItemBase
 {
     StatusEffect statusEffect = new StatusEffect(StatusType.Unstoppable, 1.5f, true, 0);

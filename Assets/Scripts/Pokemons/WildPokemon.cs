@@ -38,7 +38,10 @@ public class WildPokemon : NetworkBehaviour
     private void AssignVisionObjects()
     {
         vision.ResetObjects();
-        vision.AddObject(pokemon.ActiveModel);
+        if (pokemon.Type != PokemonType.Objective)
+        {
+            vision.AddObject(pokemon.ActiveModel);
+        }
         vision.AddObject(hpBar.gameObject);
         vision.SetVisibility(false);
     }

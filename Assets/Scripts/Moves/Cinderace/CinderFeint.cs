@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public class CinderFeint : MoveBase
 {
     private StatusEffect invincibleEffect = new StatusEffect(StatusType.Invincible, 3f, true, 0);

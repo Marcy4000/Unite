@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 public class JoltAgility : MoveBase
 {
     private StatusEffect hinderanceResistance = new StatusEffect(StatusType.HindranceResistance, 0.5f, true, 0);

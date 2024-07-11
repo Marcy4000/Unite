@@ -44,6 +44,11 @@ public class PlayerMovement : NetworkBehaviour
         canMove = IsOwner;
     }
 
+    private void UpdateSpeed(NetworkListEvent<StatChange> changeEvent)
+    {
+        moveSpeed = pokemon.GetSpeed() / 1000f;
+    }
+
     private void UpdateSpeed()
     {
         moveSpeed = pokemon.GetSpeed() / 1000f;

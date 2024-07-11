@@ -138,7 +138,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         if (IsOwner)
         {
-            bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+            bool currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
             SpawnPlayerRpc(OwnerClientId, currentTeam);
         }
     }
@@ -170,7 +170,6 @@ public class PlayerNetworkManager : NetworkBehaviour
                     player.ChangeCurrentTeam(orangeTeam);
                     player.Initialize();
 
-                    // THIS IS TEMPORARY, REMOVE ONCE IT'S FINISHED
                     MinimapManager.Instance.CreatePlayerIcon(player);
 
                     if (IsOwner)
@@ -181,7 +180,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                         player.onGoalScored += OnGoalScored;
                         player.Pokemon.onOtherPokemonKilled += OnOtherPokemonKilled;
 
-                        short pos = NumberEncoder.Base64ToShort(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+                        short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
                         Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
                         playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
                         playerManager.PlayerMovement.CanMove = false;

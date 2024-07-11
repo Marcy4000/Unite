@@ -227,6 +227,11 @@ public class Aim : NetworkBehaviour
 
     public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target)
     {
+        return AimInCircleAtPosition(position, radius, target, teamToIgnore);
+    }
+
+    public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, bool teamToIgnore)
+    {
         List<GameObject> foundTargets = new List<GameObject>();
 
         Collider[] hitColliders = Physics.OverlapSphere(position, radius);
@@ -238,7 +243,7 @@ public class Aim : NetworkBehaviour
                 continue;
             }
 
-            if (!CanPokemonBeTargeted(hitCollider.gameObject, target))
+            if (!CanPokemonBeTargeted(hitCollider.gameObject, target, teamToIgnore))
             {
                 continue;
             }
@@ -361,6 +366,11 @@ public class Aim : NetworkBehaviour
     }
 
     public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType)
+    {
+        return CanPokemonBeTargeted(pokemonObject, targetType, teamToIgnore);
+    }
+
+    public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType, bool teamToIgnore)
     {
         switch (targetType)
         {

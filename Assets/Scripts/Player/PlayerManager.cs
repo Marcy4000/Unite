@@ -9,7 +9,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-public enum PlayerState
+public enum PlayerState : byte
 {
     Alive,
     Dead,
@@ -130,7 +130,7 @@ public class PlayerManager : NetworkBehaviour
 
     public void Initialize()
     {
-        bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        bool currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
         aim.TeamToIgnore = orangeTeam;
         visionController.TeamToIgnore = orangeTeam;
@@ -161,6 +161,10 @@ public class PlayerManager : NetworkBehaviour
             scoreStatus.OnStatusChange += () =>
             {
                 bool showLock = scoreStatus.HasStatus(ActionStatusType.Busy) || scoreStatus.HasStatus(ActionStatusType.Stunned);
+                if (showLock || scoreStatus.HasStatus(ActionStatusType.Disabled))
+                {
+                    EndScoring();
+                }
                 BattleUIManager.instance.SetEnergyBallLock(showLock);
             };
 
@@ -232,7 +236,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonInitialized()
     {
-        bool currentTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        bool currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
         vision.SetVisibility(currentTeam == OrangeTeam);
 
         passiveController.LearnPassive();
@@ -296,7 +300,7 @@ public class PlayerManager : NetworkBehaviour
     {
         if (curr != PlayerState.Dead && transform.position.y == deathPosition.y)
         {
-            short pos = NumberEncoder.Base64ToShort(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+            short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
             Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
             UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
             playerMovement.CanMove = true;
@@ -419,7 +423,7 @@ public class PlayerManager : NetworkBehaviour
 
             if (recallTime <= 0)
             {
-                short pos = NumberEncoder.Base64ToShort(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+                short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
                 Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
                 UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
                 isRecalling = false;
@@ -432,17 +436,16 @@ public class PlayerManager : NetworkBehaviour
             }
         }
 
-        if (Debug.isDebugBuild)
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        if (Keyboard.current.nKey.wasPressedThisFrame)
         {
-            if (Keyboard.current.nKey.wasPressedThisFrame)
-            {
-                GainEnergyRPC(5);
-            }
-            if (Keyboard.current.mKey.wasPressedThisFrame)
-            {
-                LoseEnergyRPC(5);
-            }
+            GainEnergyRPC(5);
         }
+        if (Keyboard.current.mKey.wasPressedThisFrame)
+        {
+            LoseEnergyRPC(5);
+        }
+#endif
     }
 
     private void CancelRecall()

@@ -122,7 +122,7 @@ public class LobbyController : MonoBehaviour
             {
                 {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, localPlayerName)},
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
-                {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ShortToBase64(0))},
+                {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")}
             });
@@ -354,12 +354,12 @@ public class LobbyController : MonoBehaviour
                 continue;
             }
             string playerTeam = player.Data["PlayerTeam"].Value;
-            string playerPos = NumberEncoder.Base64ToShort(player.Data["PlayerPos"].Value).ToString();
+            string playerPos = NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value).ToString();
             usedPositions.Add(playerTeam + playerPos);
         }
 
         string localTeam = localPlayer.Data["PlayerTeam"].Value;
-        short localPos = NumberEncoder.Base64ToShort(localPlayer.Data["PlayerPos"].Value);
+        short localPos = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
 
         // Check if local player's position is already taken
         if (usedPositions.Contains(localTeam + localPos.ToString()))
@@ -462,7 +462,7 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerOptions options = new UpdatePlayerOptions();
         options.Data = localPlayer.Data;
         options.Data["PlayerTeam"].Value = team;
-        options.Data["PlayerPos"].Value = NumberEncoder.ShortToBase64(pos);
+        options.Data["PlayerPos"].Value = NumberEncoder.ToBase64(pos);
         Debug.Log($"Changed team to {options.Data["PlayerTeam"].Value} and pos to {options.Data["PlayerPos"].Value}");
 
         UpdatePlayerData(options);
@@ -614,11 +614,16 @@ public class LobbyController : MonoBehaviour
         // Sort the players by their position
         teamPlayers.Sort((p1, p2) =>
         {
-            int pos1 = NumberEncoder.Base64ToInt(p1.Data["PlayerPos"].Value);
-            int pos2 = NumberEncoder.Base64ToInt(p2.Data["PlayerPos"].Value);
+            short pos1 = NumberEncoder.FromBase64<short>(p1.Data["PlayerPos"].Value);
+            short pos2 = NumberEncoder.FromBase64<short>(p2.Data["PlayerPos"].Value);
             return pos1.CompareTo(pos2);
         });
 
         return teamPlayers.ToArray();
+    }
+
+    public bool GetLocalPlayerTeam()
+    {
+        return localPlayer.Data["PlayerTeam"].Value == "Orange";
     }
 }

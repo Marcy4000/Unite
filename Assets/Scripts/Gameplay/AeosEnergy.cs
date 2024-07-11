@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
@@ -49,15 +47,16 @@ public class AeosEnergy : NetworkBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            PlayerManager playerManager = other.GetComponent<PlayerManager>();
-            if (playerManager.IsEnergyFull())
-            {
-                return;
-            }
-
-            ushort energy = (ushort)(IsBigEnergy ? 5 : 1);
             if (IsServer)
             {
+                PlayerManager playerManager = other.GetComponent<PlayerManager>();
+                if (playerManager.IsEnergyFull())
+                {
+                    return;
+                }
+
+                ushort energy = (ushort)(IsBigEnergy ? 5 : 1);
+
                 playerManager.GainEnergyRPC(energy);
                 gameObject.GetComponent<NetworkObject>().Despawn(true);
             }

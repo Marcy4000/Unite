@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
@@ -33,6 +34,9 @@ public class Pokemon : NetworkBehaviour
     private NetworkList<StatusEffect> statusEffects;
     private List<float> statusTimers = new List<float>();
 
+    // This is so stupid, only implemented for meowstic's wonder room and likely has no other use otherwise
+    private NetworkVariable<bool> flipAtkStat = new NetworkVariable<bool>();
+
     public int CurrentHp { get { return currentHp.Value; } }
     public int ShieldHp { get { return GetShieldsAsInt(); } }
     public int CurrentLevel { get { return currentLevel.Value; } }
@@ -44,6 +48,8 @@ public class Pokemon : NetworkBehaviour
     public int LocalExp { get { return localExp; } }
     public int LocalStoredExp { get { return localStoredExp; } }
     public int LocalLevel { get { return localLevel; } }
+
+    public bool SwitchAtkStat { get { return flipAtkStat.Value; } }
 
     public PokemonType Type { get { return type; } set { type = value; } }
 
@@ -67,7 +73,7 @@ public class Pokemon : NetworkBehaviour
     public event Action<ulong, int> onDamageDealt;
     public event Action<ulong> onOtherPokemonKilled;
 
-    public event Action OnStatChange;
+    public event Action<NetworkListEvent<StatChange>> OnStatChange;
     public event Action<StatusEffect, bool> OnStatusChange;
 
     private DamageInfo lastHit;
@@ -115,6 +121,8 @@ public class Pokemon : NetworkBehaviour
             SetCurrentEXPServerRPC(0);
             ClearShieldsRPC();
         }
+        FlipAtkStatsRPC(false);
+
         currentHp.OnValueChanged += CurrentHpChanged;
         storedExp.OnValueChanged += StoredExpChanged;
         currentExp.OnValueChanged += CurrentExpValueChanged;
@@ -137,6 +145,12 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void OnShieldListChangedRPC()
     {
+        StartCoroutine(ShieldListChanged());
+    }
+
+    private IEnumerator ShieldListChanged()
+    {
+        yield return null;
         OnHpOrShieldChange?.Invoke();
     }
 
@@ -161,7 +175,7 @@ public class Pokemon : NetworkBehaviour
 
     private void OnStatListChanged(NetworkListEvent<StatChange> changeEvent)
     {
-        OnStatChange?.Invoke();
+        OnStatChange?.Invoke(changeEvent);
     }
 
     public int GetMaxHp()
@@ -470,6 +484,25 @@ public class Pokemon : NetworkBehaviour
         return trueSpeed;
     }
 
+    public float GetDamageReduction()
+    {
+        // Step 1: Sum together all flat modifiers
+        float flatModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.DamageReduction && !change.Percentage)
+            {
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        flatModifierSum /= 100f;
+
+        flatModifierSum = Mathf.Clamp01(flatModifierSum);
+
+        return flatModifierSum;
+    }
+
     public void AddStatChange(StatChange change)
     {
         if (IsServer)
@@ -483,7 +516,12 @@ public class Pokemon : NetworkBehaviour
             {
                 statTimers.Add(-1);
             }
-            OnStatChange?.Invoke();
+            NetworkListEvent<StatChange> networkListEvent = new NetworkListEvent<StatChange>();
+            networkListEvent.PreviousValue = change;
+            networkListEvent.Value = change;
+            networkListEvent.Type = NetworkListEvent<StatChange>.EventType.Add;
+            networkListEvent.Index = statChanges.Count - 1;
+            OnStatChange?.Invoke(networkListEvent);
         }
         else
         {
@@ -537,6 +575,33 @@ public class Pokemon : NetworkBehaviour
                 return;
             }
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void RemoveStatChangeRPC(StatChange change)
+    {
+        for (int i = 0; i < statChanges.Count; i++)
+        {
+            if (statChanges[i].Equals(change))
+            {
+                statTimers.RemoveAt(i);
+                statChanges.RemoveAt(i);
+                return;
+            }
+        }
+    }
+
+    public int GetStatChange(Stat affectedStat)
+    {
+        int result = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == affectedStat)
+            {
+                result += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+        return result;
     }
 
     public void AddStatusEffect(StatusEffect effect)
@@ -754,41 +819,40 @@ public class Pokemon : NetworkBehaviour
 
         // TODO: remove all this debug stuff once ready for release
         // Update: Only available in debug builds now
-        if (Debug.isDebugBuild)
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        if (Keyboard.current.tKey.wasPressedThisFrame)
         {
-            if (Keyboard.current.tKey.wasPressedThisFrame)
-            {
-                TakeDamage(new DamageInfo(NetworkObjectId, 3.45f, 32, 820, DamageType.Physical));
-            }
-            if (Keyboard.current.yKey.wasPressedThisFrame)
-            {
-                HealDamage(300);
-            }
-
-            if (Keyboard.current.hKey.wasPressedThisFrame)
-            {
-                AddShieldRPC(new ShieldInfo(300, 6969, 0, 3, true));
-            }
-            if (Keyboard.current.jKey.wasPressedThisFrame)
-            {
-                RemoveShieldWithIDRPC(6969);
-            }
-
-            if (Keyboard.current.kKey.wasPressedThisFrame)
-            {
-                GainExperience(100);
-            }
-
-            if (Keyboard.current.lKey.wasPressedThisFrame)
-            {
-                AddStatChange(new StatChange(1000, Stat.Speed, 5, true, false, false, 0));
-            }
-
-            if (Keyboard.current.zKey.wasPressedThisFrame)
-            {
-                AddStatusEffect(new StatusEffect(StatusType.VisionObscuring, 3f, true, 0));
-            }
+            TakeDamage(new DamageInfo(NetworkObjectId, 3.45f, 32, 820, DamageType.Physical));
         }
+        if (Keyboard.current.yKey.wasPressedThisFrame)
+        {
+            HealDamage(300);
+        }
+
+        if (Keyboard.current.hKey.wasPressedThisFrame)
+        {
+            AddShieldRPC(new ShieldInfo(300, 6969, 0, 3, true));
+        }
+        if (Keyboard.current.jKey.wasPressedThisFrame)
+        {
+            RemoveShieldWithIDRPC(6969);
+        }
+
+        if (Keyboard.current.kKey.wasPressedThisFrame)
+        {
+            GainExperience(100);
+        }
+
+        if (Keyboard.current.lKey.wasPressedThisFrame)
+        {
+            AddStatChange(new StatChange(1000, Stat.Speed, 5, true, false, false, 0));
+        }
+
+        if (Keyboard.current.zKey.wasPressedThisFrame)
+        {
+            AddStatusEffect(new StatusEffect(StatusType.VisionObscuring, 3f, true, 0));
+        }
+#endif
     }
 
     public void TakeDamage(DamageInfo damage)
@@ -827,12 +891,10 @@ public class Pokemon : NetworkBehaviour
         if (IsServer)
         {
             currentHp.Value = localHp;
-            //shieldHp.Value = localShield;
         }
         else
         {
             SetCurrentHPServerRPC(localHp);
-            //SetShieldServerRPC(localShield);
         }
 
         OnDamageTakenRpc(damage);
@@ -850,6 +912,21 @@ public class Pokemon : NetworkBehaviour
     public int CalculateDamage(DamageInfo damage, Pokemon attacker)
     {
         int atkStat;
+
+        if (attacker.SwitchAtkStat)
+        {
+            switch (damage.type)
+            {
+                case DamageType.Physical:
+                    damage.type = DamageType.Special;
+                    break;
+                case DamageType.Special:
+                    damage.type = DamageType.Physical;
+                    break;
+                default:
+                    break;
+            }
+        }
 
         switch (damage.type)
         {
@@ -881,7 +958,9 @@ public class Pokemon : NetworkBehaviour
                 break;
         }
 
-        return Mathf.FloorToInt((float)attackDamage * 600 / (600 + defStat));
+        float finalDamage = (float)attackDamage * 600 / (600 + defStat);
+
+        return Mathf.FloorToInt(finalDamage * (1f-GetDamageReduction()));
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)
@@ -1023,7 +1102,7 @@ public class Pokemon : NetworkBehaviour
         }
         else
         {
-            statTimers.Add(-1);
+            shieldTimers.Add(-1);
         }
         OnShieldListChangedRPC();
     }
@@ -1201,6 +1280,12 @@ public class Pokemon : NetworkBehaviour
     private void SetStoredExpServerRPC(int amount)
     {
         storedExp.Value = amount;
+    }
+
+    [Rpc(SendTo.Server)]
+    public void FlipAtkStatsRPC(bool value)
+    {
+        flipAtkStat.Value = value;
     }
 
     public void StoreExperience(int amount)

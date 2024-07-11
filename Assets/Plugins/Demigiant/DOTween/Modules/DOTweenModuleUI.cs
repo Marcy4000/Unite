@@ -3,7 +3,6 @@
 
 #if true // MODULE_MARKER
 
-using System;
 using System.Globalization;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,7 +16,7 @@ using Text = UnityEngine.UI.Text;
 #pragma warning disable 1591
 namespace DG.Tweening
 {
-	public static class DOTweenModuleUI
+    public static class DOTweenModuleUI
     {
         #region Shortcuts
 

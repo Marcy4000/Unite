@@ -1,10 +1,7 @@
 using JSAM;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using Unity.Netcode;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -142,7 +139,7 @@ public class SettlementManager : MonoBehaviour
         blueScoreText.text = blueScoreValue.ToString();
         orangeScoreText.text = orangeScoreValue.ToString();
 
-        bool localPlayerTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
         bool gameWon = LobbyController.Instance.GameResults.BlueTeamWon == !localPlayerTeam;
         StartCoroutine(PlayResultSound(gameWon));
     }

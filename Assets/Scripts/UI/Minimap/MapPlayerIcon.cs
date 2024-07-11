@@ -28,7 +28,7 @@ public class MapPlayerIcon : MonoBehaviour
                 ShowIcon();
             }
         };
-        bool localPlayerTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
         isTeammate = player.OrangeTeam == localPlayerTeam;
         if (!isTeammate)
         {

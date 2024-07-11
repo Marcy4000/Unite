@@ -121,13 +121,29 @@ public static class MoveDatabase
                 return new FlygonEarthquake();
             case AvailableMoves.FlygonUnite:
                 return new FlygonUnite();
+
+            case AvailableMoves.MeowsticMScratch:
+                return new MeowsticMScratch();
+            case AvailableMoves.MeowsticMLeer:
+                return new MeowsticMLeer();
+            case AvailableMoves.MeowsticMReflect:
+                return new MeowsticMReflect();
+            case AvailableMoves.MeowsticMMagicCoat:
+                return new MeowsticMMagicCoat();
+            case AvailableMoves.MeowsticMPsychic:
+                return new MeowsticMPsychic();
+            case AvailableMoves.MeowsticMWonderRoom:
+                return new MeowsticMWonderRoom();
+            case AvailableMoves.MeowsticMUnite:
+                return new MeowsticMUnite();
+
             default:
                 return null;
         }
     }
 }
 
-public enum AvailableMoves
+public enum AvailableMoves : uint
 {
     LockedMove,
 
@@ -177,4 +193,12 @@ public enum AvailableMoves
     FlygonEarthquake,
     FlygonSandstorm,
     FlygonUnite,
+
+    MeowsticMScratch,
+    MeowsticMLeer,
+    MeowsticMReflect,
+    MeowsticMMagicCoat,
+    MeowsticMWonderRoom,
+    MeowsticMPsychic,
+    MeowsticMUnite,
 }

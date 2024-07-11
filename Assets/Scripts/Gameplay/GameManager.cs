@@ -6,6 +6,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public enum GameState
 {
@@ -23,6 +24,9 @@ public class GameManager : NetworkBehaviour
     private const float MAX_GAME_TIME = 600f;
     private const float FINAL_STRETCH_TIME = 120f;
 
+    [SerializeField] private SurrenderManager surrenderManager;
+    [SerializeField] private Button surrenderButton; //This shouldn't be here but eh
+
     private NetworkVariable<float> gameTime = new NetworkVariable<float>(MAX_GAME_TIME);
     private NetworkVariable<ushort> blueTeamScore = new NetworkVariable<ushort>(0);
     private NetworkVariable<ushort> orangeTeamScore = new NetworkVariable<ushort>(0);
@@ -35,8 +39,6 @@ public class GameManager : NetworkBehaviour
     private List<ResultScoreInfo> blueTeamScores;
     private List<ResultScoreInfo> orangeTeamScores;
     
-    private bool isSurrendering = false;
-
     public float GameTime => gameTime.Value;
     public int BlueTeamScore => blueTeamScore.Value;
     public int OrangeTeamScore => orangeTeamScore.Value;
@@ -101,6 +103,11 @@ public class GameManager : NetworkBehaviour
 
         blueTeamScores = new List<ResultScoreInfo>();
         orangeTeamScores = new List<ResultScoreInfo>();
+
+        if (IsServer && surrenderManager != null)
+        {
+            surrenderManager.onSurrenderVoteResult += OnTeamSurrendered;
+        }
 
         StartCoroutine(HandlePassiveExp());
     }
@@ -181,21 +188,20 @@ public class GameManager : NetworkBehaviour
                 }
 
                 // Debug
-                if (Debug.isDebugBuild)
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                if (Keyboard.current.oKey.wasPressedThisFrame)
                 {
-                    if (Keyboard.current.oKey.wasPressedThisFrame)
-                    {
-                        gameTime.Value = 0f;
-                    }
-                    if (Keyboard.current.iKey.wasPressedThisFrame)
-                    {
-                        gameTime.Value = 140f;
-                    }
-                    if (Keyboard.current.uKey.wasPressedThisFrame)
-                    {
-                        gameTime.Value = 430f;
-                    }
+                    gameTime.Value = 0f;
                 }
+                if (Keyboard.current.iKey.wasPressedThisFrame)
+                {
+                    gameTime.Value = 140f;
+                }
+                if (Keyboard.current.uKey.wasPressedThisFrame)
+                {
+                    gameTime.Value = 430f;
+                }
+#endif
             }
         }
     }
@@ -251,26 +257,30 @@ public class GameManager : NetworkBehaviour
 
     public void StartSurrenderVote()
     {
-        if (isSurrendering || GameState != GameState.Playing)
+        if (GameState != GameState.Playing || surrenderManager == null)
         {
             return;
         }
 
         // TODO: implement an anctual surrender vote
-        Unity.Services.Lobbies.Models.Player[] teamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
-        if (teamPlayers.Length > 1f)
+        surrenderManager.StartSurrenderVoteRPC(LobbyController.Instance.GetLocalPlayerTeam());
+        StartCoroutine(SurrenderCooldown());
+    }
+
+    private IEnumerator SurrenderCooldown()
+    {
+        surrenderButton.interactable = false;
+        yield return new WaitForSeconds(35f);
+        surrenderButton.interactable = true;
+    }
+
+    private void OnTeamSurrendered(bool orangeTeam, bool surrenderResults)
+    {
+        if (!surrenderResults)
         {
-            isSurrendering = false;
             return;
         }
 
-        isSurrendering = true;
-        OnTeamSurrenderedRPC(LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
-    }
-
-    [Rpc(SendTo.Server)]
-    private void OnTeamSurrenderedRPC(bool orangeTeam)
-    {
         GameResults results = GenerateGameResults();
         results.Surrendered = true;
         results.BlueTeamWon = orangeTeam;
@@ -300,7 +310,7 @@ public class GameManager : NetworkBehaviour
 
         if (gameResults.Surrendered)
         {
-            bool localTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+            bool localTeam = LobbyController.Instance.GetLocalPlayerTeam();
             bool yourTeamSurrendered = localTeam == gameResults.BlueTeamWon;
 
             BattleUIManager.instance.ShowSurrenderTextbox(yourTeamSurrendered);

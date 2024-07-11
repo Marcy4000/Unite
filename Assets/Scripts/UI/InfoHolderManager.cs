@@ -1,8 +1,4 @@
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 public class InfoHolderManager : MonoBehaviour
@@ -28,7 +24,7 @@ public class InfoHolderManager : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
 
-        bool orangeTeam = LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange";
+        bool orangeTeam = LobbyController.Instance.GetLocalPlayerTeam();
         foreach (var player in GameManager.Instance.Players)
         {
             if (player.IsLocalPlayer || player.OrangeTeam != orangeTeam)

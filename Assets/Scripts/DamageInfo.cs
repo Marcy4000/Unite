@@ -1,9 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
-using UnityEngine;
 
-public enum DamageType { Physical, Special, True }
+public enum DamageType : byte { Physical, Special, True }
 
 public struct DamageInfo : INetworkSerializable
 {

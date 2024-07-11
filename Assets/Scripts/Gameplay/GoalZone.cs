@@ -51,7 +51,7 @@ public class GoalZone : NetworkBehaviour
         currentScore.OnValueChanged += UpdateGraphics;
 
         visionController.TeamToIgnore = orangeTeam;
-        visionController.IsEnabled = orangeTeam == (LobbyController.Instance.Player.Data["PlayerTeam"].Value == "Orange");
+        visionController.IsEnabled = orangeTeam == LobbyController.Instance.GetLocalPlayerTeam();
         visionController.transform.parent = null;
 
         MinimapManager.Instance.CreateGoalzoneIcon(this);

@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -55,6 +53,8 @@ public static class BasicAttacksDatabase
                 return new JoltBasicAtk();
             case "flygon":
                 return new FlygonBasicAtk();
+            case "meowstic":
+                return new MeowsticMBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }
