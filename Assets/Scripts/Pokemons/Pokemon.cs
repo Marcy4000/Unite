@@ -1024,7 +1024,7 @@ public class Pokemon : NetworkBehaviour
         indicator.ShowHeal(actualHeal);
     }
 
-    [Rpc(SendTo.Owner)]
+    [Rpc(SendTo.Everyone)]
     private void OnDamageTakenRpc(DamageInfo damage)
     {
         OnDamageTaken?.Invoke(damage);

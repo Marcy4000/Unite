@@ -46,7 +46,8 @@ public class MeowsticMLeer : MoveBase
     {
         playerManager.MovesController.LockEveryAction();
 
-        playerManager.AnimationManager.PlayAnimation("Armature_pm0733_00_ba21_tokusyu01");
+        string animationName = playerManager.Pokemon.CurrentLevel >= 3 ? "Armature_pm0734_00_ba21_tokusyu01" : "Armature_pm0733_00_ba21_tokusyu01";
+        playerManager.AnimationManager.PlayAnimation(animationName);
         playerManager.StopMovementForTime(1f);
         playerManager.transform.rotation = Quaternion.LookRotation(direction);
 

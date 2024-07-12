@@ -16,10 +16,8 @@ public class MeowsticMWonderRoomArea : NetworkBehaviour
     public void InitializeRPC(Vector3 position, Vector3 playerPos, bool orangeTeam)
     {
         transform.position = position;
-        if(playerPos - position != Vector3.zero)
-        {
-            transform.rotation = Quaternion.LookRotation(playerPos - position, Vector3.up);
-        }
+        transform.rotation = Quaternion.LookRotation(playerPos - position, Vector3.up);
+        transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
         this.orangeTeam = orangeTeam;
 
         initialized = true;
