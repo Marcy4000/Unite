@@ -1,5 +1,6 @@
 using JSAM;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,13 @@ public class BootSceneController : MonoBehaviour
 
     private void Start()
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.unityLogger.logEnabled = true;
+        NetworkManager.Singleton.LogLevel = LogLevel.Developer;
+#else
+        Debug.unityLogger.logEnabled = false;
+        NetworkManager.Singleton.LogLevel = LogLevel.Error;
+#endif
         startButton.onClick.AddListener(OnStartButtonClicked);
         versionText.text = $"v.{Application.version}";
 

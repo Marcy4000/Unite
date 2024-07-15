@@ -76,14 +76,22 @@ public class PlayerMovement : NetworkBehaviour
             currentMovement += dashDirection * (dashDistance / dashDuration);
         }
 
-        SnapToGround();
-
         // Apply accumulated movement
         characterController.Move(currentMovement * Time.deltaTime);
 
         currentMovement = Vector3.zero; // Reset current movement at the start of each frame
 
         HandleAnimations();
+    }
+
+    private void FixedUpdate()
+    {
+        if (!canMove || !IsOwner)
+        {
+            return;
+        }
+
+        SnapToGround();
     }
 
     private void Move(Vector2 playerInput)

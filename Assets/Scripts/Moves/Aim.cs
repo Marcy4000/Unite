@@ -63,6 +63,7 @@ public class Aim : NetworkBehaviour
         hyperVoiceIndicator.SetActive(false);
         circleAreaIndicator.SetActive(false);
         indicatorHolders.transform.SetParent(null);
+        indicatorHolders.transform.rotation = Quaternion.identity;
     }
 
     private void Update()
@@ -304,6 +305,12 @@ public class Aim : NetworkBehaviour
 
     public Vector3 CircleAreaAim()
     {
+#if UNITY_ANDROID
+        // Read input
+        Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>();
+
+        circleAimPosition = new Vector3(input.x, 0, input.y) * maxCircleAimRadius;
+#else
         // Read input and normalize it
         Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>().normalized;
 
@@ -319,6 +326,7 @@ public class Aim : NetworkBehaviour
         {
             circleAimPosition = circleAimPosition.normalized * maxCircleAimRadius;
         }
+#endif
 
         // Update the indicator position
         circleAreaIndicator.transform.localPosition = new Vector3(circleAimPosition.x, circleAreaIndicator.transform.localPosition.y, circleAimPosition.z);

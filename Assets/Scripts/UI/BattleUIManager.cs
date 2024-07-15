@@ -5,11 +5,8 @@ public class BattleUIManager : MonoBehaviour
 {
     public static BattleUIManager instance;
 
-    [SerializeField] private MoveUI[] moveUIs;
-    [SerializeField] private UniteMoveUI uniteMoveUI;
-    [SerializeField] private MoveLearnPanel moveLearnPanel;
-    [SerializeField] private BattleItemUI battleItemUI;
-    [SerializeField] private EnergyUI energyUI;
+    [SerializeField] private MovesHolderUI desktopUI;
+    [SerializeField] private MovesHolderUI mobileUI;
     [SerializeField] private ScoreUI blueScoreUI, orangeScoreUI;
     [SerializeField] private DeathScreenUI deathScreenUI;
     [SerializeField] private KillNotificationUI killNotificationUI;
@@ -17,6 +14,8 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private RecallBarUI recallBarUI;
     [SerializeField] private ScoreboardUI scoreboardUI;
     [SerializeField] private SurrenderTextbox surrenderTextbox;
+
+    private MovesHolderUI currentUI;
 
     private PlayerControls playerControls;
 
@@ -27,6 +26,16 @@ public class BattleUIManager : MonoBehaviour
             Destroy(instance.gameObject);
         }
         instance = this;
+
+#if UNITY_ANDROID
+        currentUI = mobileUI;
+        mobileUI.gameObject.SetActive(true);
+        desktopUI.gameObject.SetActive(false);
+#else
+        currentUI = desktopUI;
+        mobileUI.gameObject.SetActive(false);
+        desktopUI.gameObject.SetActive(true);
+#endif
     }
 
     private void Start()
@@ -82,17 +91,17 @@ public class BattleUIManager : MonoBehaviour
 
     public void SetEnergyBallState(bool isPressed)
     {
-        energyUI.SetBallPressed(isPressed);
+        currentUI.SetEnergyBallState(isPressed);
     }
 
     public void SetEnergyBallLock(bool isLocked)
     {
-        energyUI.SetLockIcon(isLocked);
+        currentUI.SetEnergyBallLock(isLocked);
     }
 
     public void InitializeMoveLearnPanel(MoveAsset[] moves)
     {
-        moveLearnPanel.EnqueueNewMove(moves);
+        currentUI.InitializeMoveLearnPanel(moves);
     }
 
     public void ShowKill(DamageInfo info, Pokemon killed)
@@ -118,47 +127,47 @@ public class BattleUIManager : MonoBehaviour
 
     public void ShowMoveCooldown(int id, float time)
     {
-        moveUIs[id].StartCooldown(time);
+        currentUI.ShowMoveCooldown(id, time);
     }
 
     public void ShowMoveSecondaryCooldown(int id, float time)
     {
-        moveUIs[id].ShowSecondaryCooldown(time);
+        currentUI.ShowMoveSecondaryCooldown(id, time);
     }
 
     public void ShowBattleItemCooldown(float time)
     {
-        battleItemUI.StartCooldown(time);
+        currentUI.ShowBattleItemCooldown(time);
     }
 
     public void UpdateUniteMoveCooldown(int currCharge, int maxCharge)
     {
-        uniteMoveUI.UpdateUI(currCharge, maxCharge);
+        currentUI.UpdateUniteMoveCooldown(currCharge, maxCharge);
     }
 
     public void SetUniteMoveDisabledLock(bool visible)
     {
-        uniteMoveUI.SetDisabledLock(visible);
+        currentUI.SetUniteMoveDisabledLock(visible);
     }
 
     public void SetMoveLock(int id, bool isLocked)
     {
-        moveUIs[id].SetLock(isLocked);
+        currentUI.SetMoveLock(id, isLocked);
     }
 
     public void SetBattleItemLock(bool locked)
     {
-        battleItemUI.SetLock(locked);
+        currentUI.SetBattleItemLock(locked);
     }
 
     public void UpdateEnergyUI(int currEnergy, int maxEnergy)
     {
-        energyUI.UpdateEnergyUI(currEnergy, maxEnergy);
+        currentUI.UpdateEnergyUI(currEnergy, maxEnergy);
     }
 
     public void UpdateScoreGauge(float currTime, float maxTime)
     {
-        energyUI.UpdateScoreGauge(currTime, maxTime);
+        currentUI.UpdateScoreGauge(currTime, maxTime);
     }
 
     public void UpdateGoalState(bool orangeTeam)
@@ -168,32 +177,12 @@ public class BattleUIManager : MonoBehaviour
 
     public void InitializeMoveUI(MoveAsset move)
     {
-        switch (move.moveType)
-        {
-            case MoveType.MoveA:
-                moveUIs[0].Initialize(move);
-                break;
-            case MoveType.MoveB:
-                moveUIs[1].Initialize(move);
-                break;
-            case MoveType.UniteMove:
-                uniteMoveUI.Initialize(move);
-                break;
-            case MoveType.All:
-                for (int i = 0; i < moveUIs.Length; i++)
-                {
-                    moveUIs[i].Initialize(move);
-                }
-                uniteMoveUI.Initialize(move);
-                break;
-            default:
-                break;
-        }
+        currentUI.InitializeMoveUI(move);
     }
 
     public void InitializeBattleItemUI(BattleItemAsset battleItem)
     {
-        battleItemUI.Initialize(battleItem);
+        currentUI.InitializeBattleItemUI(battleItem);
     }
 
     public void UpdateRecallBar(float value)

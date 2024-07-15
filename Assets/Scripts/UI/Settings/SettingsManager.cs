@@ -83,6 +83,13 @@ public class SettingsManager : MonoBehaviour
             vsyncToggle.interactable = false;
             resolutionDropdown.interactable = false;
         }
+        else if (Application.platform == RuntimePlatform.Android)
+        {
+            fullscreenToggle.interactable = false;
+            vsyncToggle.interactable = false;
+            resolutionDropdown.interactable = false;
+            Application.targetFrameRate = Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value);
+        }
 
         CloseSettings();
         CloseCredits();
@@ -140,7 +147,10 @@ public class SettingsManager : MonoBehaviour
     public void SetResolution(int resolutionIndex)
     {
         Resolution resolution = resolutions[resolutionIndex];
+#if !UNITY_ANDROID
         Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreenMode, resolution.refreshRateRatio);
+#endif
+        Application.targetFrameRate = Mathf.RoundToInt((float)resolution.refreshRateRatio.value);
     }
 
     public void SetFullscreen(bool isFullscreen)

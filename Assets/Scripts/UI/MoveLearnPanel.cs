@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem.OnScreen;
 
 public class MoveLearnPanel : MonoBehaviour
 {
@@ -10,6 +11,13 @@ public class MoveLearnPanel : MonoBehaviour
     private float timer;
     private MoveAsset[] moves;
     private Queue<MoveAsset[]> moveQueue = new Queue<MoveAsset[]>();
+
+    private string[] controlPaths = new string[]
+    {
+        "<Gamepad>/dpad/left",
+        "<Gamepad>/dpad/right",
+        "<Gamepad>/dpad/up"
+    };
 
     public bool IsLearningMove => isLearningMove;
     
@@ -34,7 +42,15 @@ public class MoveLearnPanel : MonoBehaviour
         this.moves = moves;
         foreach (MoveAsset move in moves)
         {
-            Instantiate(moveLearnPrefab, panelBg.transform).GetComponent<MoveUI>().Initialize(move);
+            var moveUIObject = Instantiate(moveLearnPrefab, panelBg.transform);
+            moveUIObject.GetComponent<MoveUI>().Initialize(move);
+            var screenControl = moveUIObject.GetComponent<OnScreenButton>();
+#if UNITY_ANDROID
+            screenControl.controlPath = controlPaths[moveUIObject.transform.GetSiblingIndex()];
+#else
+            screenControl.enabled = false;
+#endif
+
         }
         isLearningMove = true;
         timer = 10f;

@@ -26,6 +26,7 @@ public abstract class MoveBase
     public virtual void Finish(){
         onMoveOver?.Invoke(this);
         IsActive = false;
+        wasMoveSuccessful = false;
     }
 
     public virtual void Cancel(){
