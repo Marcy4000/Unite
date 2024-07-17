@@ -31,7 +31,7 @@ public class VaporBasicAtk : BasicAttackBase
 
             playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damage, attackPrefab);
             playerManager.AnimationManager.PlayAnimation($"ani_atk{charge + 4}_bat_0133");
-            playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
+            playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown(), playerManager.Pokemon.CurrentLevel < 3);
             playerManager.transform.LookAt(closestEnemy.transform);
             playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
             cooldown = 4.5f;

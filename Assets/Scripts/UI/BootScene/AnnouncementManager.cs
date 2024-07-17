@@ -4,22 +4,30 @@ using UnityEngine.Networking;
 
 public class AnnouncementManager : MonoBehaviour
 {
-    [SerializeField] private AnnouncementMessageBox messageBox;
+    [SerializeField] private MessageBox messageBox;
+    [SerializeField] private MessageBox wrongVersionPopup;
+
     private string jsonFileUrl = "https://drive.google.com/uc?export=download&id=1lzgromQKs8eySkDQdo3f1vCs4PKENZ1D"; // This doesn't work on WebGL
 
     private Announcement loadingAnnouncement = new Announcement
     {
         title = "Loading...",
         message = "Downloading latest announcement, please wait...",
-        date = ""
+        date = "",
     };
 
     private Announcement webGlAnnouncement = new Announcement
     {
         title = "WebGL Notice",
         message = "WebGL build currently does not support downloading announcements.",
-        date = ""
+        date = "",
     };
+
+    private void Awake()
+    {
+        loadingAnnouncement.appVersion = Application.version;
+        webGlAnnouncement.appVersion = Application.version;
+    }
 
     public void ShowAnnouncement()
     {
@@ -33,6 +41,7 @@ public class AnnouncementManager : MonoBehaviour
 
     public void Start()
     {
+        wrongVersionPopup.Hide();
         StartCoroutine(DownloadAndDisplayAnnouncement());
     }
 
@@ -56,7 +65,8 @@ public class AnnouncementManager : MonoBehaviour
             {
                 title = "Error",
                 message = "Failed to download announcement. Please try again later.",
-                date = ""
+                date = "",
+                appVersion = Application.version
             });
         }
         else
@@ -69,6 +79,15 @@ public class AnnouncementManager : MonoBehaviour
             {
                 Announcement notification = JsonUtility.FromJson<Announcement>(jsonContent);
                 messageBox.SetAnnouncement(notification);
+
+                if (!notification.appVersion.Equals(Application.version))
+                {
+                    string message = $"It appears you are using an outdated version of the game." +
+                        $"\nYou're running version {Application.version}, but {notification.appVersion} is the latest version.\n" +
+                        $"You won't be able to play with players using a differnt version, please download the latest version of the game from either itch.io or gamejolt";
+                    wrongVersionPopup.Show();
+                    wrongVersionPopup.SetMessage("Attention!", message);
+                }
             }
             catch (System.Exception e) {
                 Debug.LogError("Error parsing JSON content: " + e.Message);
@@ -76,7 +95,8 @@ public class AnnouncementManager : MonoBehaviour
                 {
                     title = "Error",
                     message = "Failed to parse announcement. If you see this error then i messed up\nPlease try again later.",
-                    date = ""
+                    date = "",
+                    appVersion = Application.version
                 });
             }
         }

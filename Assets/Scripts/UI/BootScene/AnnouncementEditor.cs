@@ -11,7 +11,8 @@ public class AnnouncementEditor : MonoBehaviour
         {
             title = titleField.text,
             message = contentField.text,
-            date = System.DateTime.Now.ToString("dd/MM/yyyy")
+            date = System.DateTime.Now.ToString("dd/MM/yyyy"),
+            appVersion = Application.version
         };
 
         string json = JsonUtility.ToJson(announcement, true);

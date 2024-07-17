@@ -12,6 +12,7 @@ public class MapBerry : NetworkBehaviour
 {
     [SerializeField] private GameObject berryModel;
     [SerializeField] private BerryType berryType;
+    [SerializeField] private Vision vision;
 
     [Space]
 
@@ -25,11 +26,12 @@ public class MapBerry : NetworkBehaviour
     private NetworkVariable<bool> isCollected = new NetworkVariable<bool>(false);
 
     private int healAmount = 1500;
-    private StatChange speedBoost = new StatChange(20, Stat.Speed, 3f, true, true, true, 0);
+    private StatChange speedBoost = new StatChange(30, Stat.Speed, 3f, true, true, true, 0);
 
     public override void OnNetworkSpawn()
     {
         isCollected.OnValueChanged += OnIsCollectedChanged;
+        vision.IsVisible = true;
         if (IsServer)
         {
             isCollected.Value = true;
@@ -78,7 +80,7 @@ public class MapBerry : NetworkBehaviour
 
         if (despawnTime > 0f && GameManager.Instance.GameTime <= despawnTime)
         {
-            isCollected.Value = true;
+            respawnCooldown = Mathf.Infinity;
             return;
         }
 

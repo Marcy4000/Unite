@@ -14,7 +14,6 @@ public class PlayerMovement : NetworkBehaviour
     private PlayerControls controls;
     private Pokemon pokemon;
     private bool canMove = true;
-    private bool lastValue = true;
     private bool isMoving = false;
     private bool canBeKnockedBack = true;
 
@@ -161,10 +160,9 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         bool isMoving = inputMovement.magnitude != 0;
-        if (isMoving != lastValue)
+        if (isMoving != animationManager.Animator.GetBool("Walking"))
         {
             UpdateAnimations(isMoving);
-            lastValue = isMoving;
         }
     }
 

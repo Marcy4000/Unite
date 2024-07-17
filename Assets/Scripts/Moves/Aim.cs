@@ -190,29 +190,9 @@ public class Aim : NetworkBehaviour
             if (collidersBuffer[i] == playerCollider || collidersBuffer[i].CompareTag("VisionController"))
                 continue;
 
-            if (collidersBuffer[i].CompareTag("Player"))
+            if (!CanPokemonBeTargeted(collidersBuffer[i].gameObject, AimTarget.NonAlly))
             {
-                var playerManager = collidersBuffer[i].GetComponent<PlayerManager>();
-                if (playerManager.OrangeTeam == teamToIgnore)
-                {
-                    continue;
-                }
-            }
-
-            if (collidersBuffer[i].TryGetComponent(out Pokemon pokemon))
-            {
-                if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
-                {
-                    continue;
-                }
-            }
-
-            if (collidersBuffer[i].TryGetComponent(out Vision vision))
-            {
-                if (!vision.IsVisible || !vision.IsRendered)
-                {
-                    continue;
-                }
+                continue;
             }
 
             float distance = Vector3.Distance(transform.position, collidersBuffer[i].transform.position);
