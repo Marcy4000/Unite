@@ -1,5 +1,9 @@
+using System.Collections.Generic;
 using Unity.Services.Lobbies.Models;
+using Unity.Multiplayer.Samples.Utilities;
 using UnityEngine;
+using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 public class LoadingScreen : MonoBehaviour
 {
@@ -9,6 +13,9 @@ public class LoadingScreen : MonoBehaviour
     [SerializeField] private Transform blueTeamSpawn, orangeTeamSpawn;
     [SerializeField] private GameObject holder;
     [SerializeField] private GameObject loadingScreen;
+    [SerializeField] private LoadingProgressManager loadingProgressManager;
+
+    private List<LoadingScreenPlayer> playerList = new List<LoadingScreenPlayer>();
 
     private void Awake()
     {
@@ -21,6 +28,27 @@ public class LoadingScreen : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         HideGenericLoadingScreen();
         HideMatchLoadingScreen();
+        loadingProgressManager.onTrackersUpdated += OnTrackersUpdated;
+    }
+
+    private void OnTrackersUpdated()
+    {
+        if (!NetworkManager.Singleton.IsServer)
+        {
+            return;
+        }
+
+        NetworkedLoadingProgressTracker[] trackers = FindObjectsOfType<NetworkedLoadingProgressTracker>();
+        List<ulong> playerIds = new List<ulong>();
+        foreach (var tracker in trackers)
+        {
+            if (playerIds.Contains(tracker.OwnerClientId))
+            {
+                tracker.NetworkObject.Despawn(true);
+                continue;
+            }
+            playerIds.Add(tracker.OwnerClientId);
+        }
     }
 
     public void ShowMatchLoadingScreen()
@@ -32,6 +60,18 @@ public class LoadingScreen : MonoBehaviour
     public void HideMatchLoadingScreen()
     {
         holder.SetActive(false);
+
+        foreach (var playerIcon in playerList)
+        {
+            ulong clientId = ulong.Parse(playerIcon.CurrentPlayer.Data["OwnerID"].Value);
+            loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
+            if (progressTracker != null)
+            {
+                progressTracker.Progress.OnValueChanged -= playerIcon.UpdateProgressBar;
+            }
+        }
+
+        playerList.Clear();
     }
 
     public void ShowGenericLoadingScreen()
@@ -56,19 +96,62 @@ public class LoadingScreen : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        playerList.Clear();
+
         Player[] orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(true);
         Player[] blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(false);
 
         foreach (var player in orangeTeamPlayers)
         {
             GameObject playerObj = Instantiate(playerPrefab, orangeTeamSpawn);
-            playerObj.GetComponent<LoadingScreenPlayer>().SetPlayerData(player);
+            var loadingScreenPlayer = playerObj.GetComponent<LoadingScreenPlayer>();
+            loadingScreenPlayer.SetPlayerData(player);
+
+            ulong clientId = ulong.Parse(player.Data["OwnerID"].Value);
+            loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
+            if (progressTracker != null)
+            {
+                progressTracker.Progress.OnValueChanged += loadingScreenPlayer.UpdateProgressBar;
+            }
+
+            playerList.Add(loadingScreenPlayer);
         }
 
         foreach (var player in blueTeamPlayers)
         {
             GameObject playerObj = Instantiate(playerPrefab, blueTeamSpawn);
-            playerObj.GetComponent<LoadingScreenPlayer>().SetPlayerData(player);
+            var loadingScreenPlayer = playerObj.GetComponent<LoadingScreenPlayer>();
+            loadingScreenPlayer.SetPlayerData(player);
+
+            ulong clientId = ulong.Parse(player.Data["OwnerID"].Value);
+            loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
+
+            if (progressTracker != null)
+            {
+                progressTracker.Progress.OnValueChanged += loadingScreenPlayer.UpdateProgressBar;
+            }
+
+            playerList.Add(loadingScreenPlayer);
+        }
+    }
+
+    public void OnSceneEvent(SceneEvent sceneEvent)
+    {
+        switch (sceneEvent.SceneEventType)
+        {
+            case SceneEventType.Load:
+                if (NetworkManager.Singleton.IsClient)
+                {
+                    if (sceneEvent.LoadSceneMode == LoadSceneMode.Single)
+                    {
+                        loadingProgressManager.LocalLoadOperation = sceneEvent.AsyncOperation;
+                    }
+                    else
+                    {
+                        loadingProgressManager.LocalLoadOperation = sceneEvent.AsyncOperation;
+                    }
+                }
+                break;
         }
     }
 }

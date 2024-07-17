@@ -48,6 +48,8 @@ public class MovesController : NetworkBehaviour
 
     public event Action<GameObject> onObjectSpawned;
 
+    private Vector3 objectSpawnPos = new Vector3(0, -20, 0);
+
     private AttackSpeedCooldown[] cooldownTable = new AttackSpeedCooldown[]
 {
         new AttackSpeedCooldown { threshold = 8.11f, cooldown = 0.93333f },
@@ -644,7 +646,7 @@ public class MovesController : NetworkBehaviour
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
                 GameObject prefab = handle.Result;
-                GameObject spawnedObject = Instantiate(prefab);
+                GameObject spawnedObject = Instantiate(prefab, objectSpawnPos, Quaternion.identity);
                 spawnedObject.GetComponent<NetworkObject>().Spawn(true);
 
                 NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);
@@ -664,7 +666,7 @@ public class MovesController : NetworkBehaviour
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
                 GameObject prefab = handle.Result;
-                GameObject spawnedObject = Instantiate(prefab);
+                GameObject spawnedObject = Instantiate(prefab, objectSpawnPos, Quaternion.identity);
                 spawnedObject.GetComponent<NetworkObject>().SpawnWithOwnership(cliendID, true);
 
                 NotifyAboutSpawnRPC(spawnedObject.GetComponent<NetworkObject>().NetworkObjectId);

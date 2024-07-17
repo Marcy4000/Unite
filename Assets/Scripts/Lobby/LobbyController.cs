@@ -73,6 +73,18 @@ public class LobbyController : MonoBehaviour
         };
     }
 
+    private void Start()
+    {
+        NetworkManager.Singleton.OnClientConnectedCallback += (clientId) =>
+        {
+            if (clientId != NetworkManager.Singleton.LocalClientId)
+            {
+                return;
+            }
+            StartCoroutine(UpdatePlayerOwnerID(clientId));
+        };
+    }
+
     public void StartGame(string playerName)
     {
         if (UnityServices.State != ServicesInitializationState.Initialized)
@@ -121,6 +133,7 @@ public class LobbyController : MonoBehaviour
             localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>
             {
                 {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, localPlayerName)},
+                {"OwnerID", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "0")},
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
                 {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
@@ -251,7 +264,10 @@ public class LobbyController : MonoBehaviour
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, connectionType));
 
-            NetworkManager.Singleton.StartHost();
+            if (NetworkManager.Singleton.StartHost())
+            {
+                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+            }
             lobbyUI.ShowLobbyUI();
 
             onLobbyUpdate?.Invoke(partyLobby);
@@ -285,7 +301,10 @@ public class LobbyController : MonoBehaviour
             await SubscribeToLobbyEvents(partyLobby.Id);
 
             CheckIfShouldChangePos();
-            NetworkManager.Singleton.StartClient();
+            if (NetworkManager.Singleton.StartClient())
+            {
+                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+            }
             lobbyUI.ShowLobbyUI();
 
             onLobbyUpdate?.Invoke(partyLobby);
@@ -327,7 +346,10 @@ public class LobbyController : MonoBehaviour
             await SubscribeToLobbyEvents(partyLobby.Id);
 
             CheckIfShouldChangePos();
-            NetworkManager.Singleton.StartClient();
+            if (NetworkManager.Singleton.StartClient())
+            {
+                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+            }
             lobbyUI.ShowLobbyUI();
 
             onLobbyUpdate?.Invoke(partyLobby);
@@ -465,6 +487,17 @@ public class LobbyController : MonoBehaviour
         options.Data["PlayerPos"].Value = NumberEncoder.ToBase64(pos);
         Debug.Log($"Changed team to {options.Data["PlayerTeam"].Value} and pos to {options.Data["PlayerPos"].Value}");
 
+        UpdatePlayerData(options);
+    }
+
+    private IEnumerator UpdatePlayerOwnerID(ulong id)
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["OwnerID"].Value = id.ToString();
+
+        Debug.Log($"Changed owner ID to {options.Data["OwnerID"].Value}");
+        yield return null;
         UpdatePlayerData(options);
     }
     

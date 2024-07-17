@@ -22,7 +22,7 @@ public class BootSceneController : MonoBehaviour
         startButton.onClick.AddListener(OnStartButtonClicked);
         versionText.text = $"v.{Application.version}";
 
-        AudioManager.PlayMusic(DefaultAudioMusic.MainTheme);
+        AudioManager.PlayMusic(DefaultAudioMusic.MainTheme, true);
     }
 
     private void OnStartButtonClicked()

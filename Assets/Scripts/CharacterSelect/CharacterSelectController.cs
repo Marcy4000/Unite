@@ -55,7 +55,7 @@ public class CharacterSelectController : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
-        AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon);
+        AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon, true);
 
         Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam());
         foreach (var player in localTeamPlayers)
@@ -117,7 +117,7 @@ public class CharacterSelectController : NetworkBehaviour
     private void ShowLoadingScreenRpc()
     {
         AudioManager.StopMusic(DefaultAudioMusic.ChoosePokemon);
-        AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme);
+        AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme, true);
         LoadingScreen.Instance.ShowMatchLoadingScreen();
     }
 

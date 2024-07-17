@@ -486,6 +486,7 @@ MonoBehaviour:
   orangeTeamSpawn: {fileID: 1215410614}
   holder: {fileID: 1497022260}
   loadingScreen: {fileID: 1786819807}
+  loadingProgressManager: {fileID: 124619330}
 --- !u!114 &48796584
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -563,6 +564,7 @@ RectTransform:
   m_Children:
   - {fileID: 1497022263}
   - {fileID: 1786819809}
+  - {fileID: 124619328}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -805,7 +807,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1529941647}
   m_Direction: 0
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.99999994
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -848,6 +850,78 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 79243400}
   m_CullTransparentMesh: 1
+--- !u!1 &124619327
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 124619328}
+  - component: {fileID: 124619329}
+  - component: {fileID: 124619330}
+  m_Layer: 5
+  m_Name: LoadingProgressManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &124619328
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 124619327}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 48796587}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &124619329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 124619327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 4214978376
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &124619330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 124619327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 831202463f434661b4f61a409b08867f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ProgressTrackerPrefab: {fileID: 3957043829337601059, guid: acae8977d3510ad45afe9362f4d5e9e9,
+    type: 3}
 --- !u!1 &162948972
 GameObject:
   m_ObjectHideFlags: 0
@@ -13066,7 +13140,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.106000006, y: 0.09200001}
   m_AnchorMax: {x: 0.887, y: 0.90700006}
-  m_AnchoredPosition: {x: 0.18572998, y: 0.045776367}
+  m_AnchoredPosition: {x: 0.18579102, y: 0.045776367}
   m_SizeDelta: {x: -1.7191162, y: -1.1306763}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2079482555

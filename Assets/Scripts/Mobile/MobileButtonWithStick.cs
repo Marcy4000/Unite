@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.InputSystem.OnScreen;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 

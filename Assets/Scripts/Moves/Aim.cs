@@ -315,8 +315,8 @@ public class Aim : NetworkBehaviour
         Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>().normalized;
 
         // Calculate the new position based on input and speed
-        float xPos = circleAimPosition.x - (input.y * Time.deltaTime * circleAimSpeed);
-        float zPos = circleAimPosition.z + (input.x * Time.deltaTime * circleAimSpeed);
+        float xPos = circleAimPosition.x + (input.x * Time.deltaTime * circleAimSpeed);
+        float zPos = circleAimPosition.z + (input.y * Time.deltaTime * circleAimSpeed);
 
         // Update the aim position
         circleAimPosition = new Vector3(xPos, 0, zPos);

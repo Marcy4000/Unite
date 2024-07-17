@@ -95,7 +95,7 @@ public class GameManager : NetworkBehaviour
             if (curr)
             {
                 AudioManager.StopMusic(DefaultAudioMusic.RemoatStadium);
-                AudioManager.PlayMusic(DefaultAudioMusic.RemoatFinalStretch);
+                AudioManager.PlayMusic(DefaultAudioMusic.RemoatFinalStretch, true);
                 onFinalStretch?.Invoke();
             }
         };
@@ -127,7 +127,7 @@ public class GameManager : NetworkBehaviour
 
         yield return new WaitForSeconds(0.2f);
 
-        AudioManager.PlayMusic(DefaultAudioMusic.RemoatStadium);
+        AudioManager.PlayMusic(DefaultAudioMusic.RemoatStadium, true);
 
         yield return new WaitForSeconds(3.1f);
 

@@ -126,7 +126,10 @@ public class GoalZone : NetworkBehaviour
             {
                 if (player.OrangeTeam == orangeTeam)
                 {
-                    player.Pokemon.HealDamage(healAmount);
+                    if (!player.Pokemon.IsHPFull())
+                    {
+                        player.Pokemon.HealDamage(healAmount);
+                    }
                     player.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * shieldAmount), 1, 0, 1.5f, true));
                 }
             }

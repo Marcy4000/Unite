@@ -37,7 +37,7 @@ public class MainMenuUI : MonoBehaviour
 
         lobbyPlayerInfoIcons.Initialize(LobbyController.Instance.Player);
 
-        AudioManager.PlayMusic(DefaultAudioMusic.LobbyTheme);
+        AudioManager.PlayMusic(DefaultAudioMusic.LobbyTheme, true);
 
         ShowMainMenuUI();
     }

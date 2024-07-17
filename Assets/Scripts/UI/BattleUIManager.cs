@@ -30,10 +30,10 @@ public class BattleUIManager : MonoBehaviour
 #if UNITY_ANDROID
         currentUI = mobileUI;
         mobileUI.gameObject.SetActive(true);
-        desktopUI.gameObject.SetActive(false);
+        Destroy(desktopUI.gameObject);
 #else
         currentUI = desktopUI;
-        mobileUI.gameObject.SetActive(false);
+        Destroy(mobileUI.gameObject);
         desktopUI.gameObject.SetActive(true);
 #endif
     }

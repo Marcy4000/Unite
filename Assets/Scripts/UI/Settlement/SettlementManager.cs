@@ -163,6 +163,6 @@ public class SettlementManager : MonoBehaviour
             yield return null;
         }
 
-        AudioManager.PlayMusic(DefaultAudioMusic.GameEnd);
+        AudioManager.PlayMusic(DefaultAudioMusic.GameEnd, true);
     }
 }

@@ -11,8 +11,15 @@ public class LoadingScreenPlayer : MonoBehaviour
     [SerializeField] private Sprite blueSprite, orangeSprite;
     [SerializeField] private GameObject localPlayerImage;
 
+    [SerializeField] private Image loadingBar;
+
+    private Player currentPlayer;
+
+    public Player CurrentPlayer => currentPlayer;
+
     public void SetPlayerData(Player player)
     {
+        currentPlayer = player;
         CharacterInfo info = CharactersList.instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value);
 
         portrait.sprite = info.portrait;
@@ -21,5 +28,10 @@ public class LoadingScreenPlayer : MonoBehaviour
         bool orangeTeam = player.Data["PlayerTeam"].Value == "Orange";
         playerBar.sprite = orangeTeam ? orangeSprite : blueSprite;
         localPlayerImage.SetActive(player.Id == LobbyController.Instance.Player.Id);
+    }
+
+    public void UpdateProgressBar(float prev, float progress)
+    {
+        loadingBar.fillAmount = progress;
     }
 }

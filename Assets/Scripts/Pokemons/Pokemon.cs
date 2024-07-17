@@ -897,7 +897,6 @@ public class Pokemon : NetworkBehaviour
             SetCurrentHPServerRPC(localHp);
         }
 
-        OnDamageTakenRpc(damage);
         ClientDamageRpc(actualDamage, damage);
         attacker.OnDamageDealtRPC(NetworkObjectId, actualDamage);
     }
@@ -1015,6 +1014,7 @@ public class Pokemon : NetworkBehaviour
         lastHit = damage;
         DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
         indicator.ShowDamage(actualDamage, damage.type);
+        OnDamageTaken?.Invoke(damage);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -1024,22 +1024,23 @@ public class Pokemon : NetworkBehaviour
         indicator.ShowHeal(actualHeal);
     }
 
-    [Rpc(SendTo.Everyone)]
-    private void OnDamageTakenRpc(DamageInfo damage)
-    {
-        OnDamageTaken?.Invoke(damage);
-    }
-
     public void HealDamage(int amount)
     {
+        int oldHp = currentHp.Value;
+        int newHp = Mathf.Min(oldHp + amount, GetMaxHp());
+
         if (IsServer)
         {
-            currentHp.Value = Mathf.Min(currentHp.Value + amount, GetMaxHp());
+            currentHp.Value = newHp;
         }
         else
         {
-            SetCurrentHPServerRPC(Mathf.Min(currentHp.Value + amount, GetMaxHp()));
+            SetCurrentHPServerRPC(newHp);
         }
+
+        int healAmount = newHp - oldHp;
+
+        ClientHealRpc(healAmount);
     }
 
     public void HealDamage(DamageInfo healInfo)
@@ -1162,22 +1163,24 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void UpdateShieldListRPC(ShieldInfo[] newShields)
     {
-        // Convert array to list and remove shields with Amount = 0
+        List<ShieldInfo> oldShields = GetShieldsAsList();
+
         List<ShieldInfo> filteredShields = new List<ShieldInfo>(newShields);
         filteredShields.RemoveAll(shield => shield.Amount == 0);
 
-        // Clear the existing lists
         shields.Clear();
         shieldTimers.Clear();
 
-        // Update the parallel lists based on filteredShields
         foreach (var shield in filteredShields)
         {
             shields.Add(shield);
-            shieldTimers.Add(shield.Duration); // Assuming the timer is based on the Duration field
+            shieldTimers.Add(shield.Duration);
         }
 
-        OnShieldListChangedRPC();
+        if (oldShields.Count != filteredShields.Count)
+        {
+            OnShieldListChangedRPC();
+        }
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -1199,19 +1202,15 @@ public class Pokemon : NetworkBehaviour
             return;
         }
 
-        // If there's stored experience, convert it first
         if (localStoredExp > 0)
         {
             int convertedExp = Mathf.Min(amount, localStoredExp);
             localStoredExp -= convertedExp;
             localExp += convertedExp;
         }
-
-        // Gain real experience
         
         localExp += amount;
 
-        // Check for level up
         while (localExp >= baseStats.GetExpForNextLevel(localLevel) && localLevel < 14)
         {
             LevelUp();
@@ -1315,5 +1314,10 @@ public class Pokemon : NetworkBehaviour
         activeModel = Instantiate(evolution.newModel, transform.position, transform.rotation, transform);
         portrait = evolution.newSprite;
         OnEvolution?.Invoke();
+    }
+
+    public bool IsHPFull()
+    {
+        return currentHp.Value == GetMaxHp();
     }
 }
