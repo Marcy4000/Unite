@@ -49,16 +49,16 @@ public class TornadoHitbox : NetworkBehaviour
 
         for (int i = 0; i < colliderCount; i++)
         {
-            if (colliders[i].TryGetComponent(out PlayerManager player))
+            if (colliders[i].TryGetComponent(out Pokemon pokemon))
             {
-                if (player.OrangeTeam == orangeTeam)
+                if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam) || stunnedPokemons.Contains(pokemon))
                 {
                     continue;
                 }
 
-                Vector3 direction = (transform.position - player.transform.position).normalized;
+                Vector3 direction = (transform.position - pokemon.transform.position).normalized;
 
-                player.PlayerMovement.KnockbackRPC(direction, 0.1f);
+                pokemon.ApplyKnockbackRPC(direction, 0.1f);
             }
         }
     }
@@ -70,22 +70,15 @@ public class TornadoHitbox : NetworkBehaviour
             return;
         }
 
-        if (other.TryGetComponent(out PlayerManager player))
-        {
-            if (player.OrangeTeam == orangeTeam)
-            {
-                return;
-            }
-        }
-
         if (other.TryGetComponent(out Pokemon pokemon))
         {
-            if (stunnedPokemons.Contains(pokemon))
+            if (stunnedPokemons.Contains(pokemon) || !Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 return;
             }
 
             pokemon.AddStatusEffect(tornadoStun);
+            pokemon.ApplyKnockupRPC(2f, 0.6f);
             stunnedPokemons.Add(pokemon);
             pokemon.StartCoroutine(DamagePokemon(pokemon));
         }
@@ -93,8 +86,12 @@ public class TornadoHitbox : NetworkBehaviour
 
     private IEnumerator DamagePokemon(Pokemon pokemon)
     {
-        yield return new WaitForSeconds(0.8f);
+        yield return new WaitForSeconds(0.6f);
 
         pokemon.TakeDamage(damageInfo);
+
+        yield return new WaitForSeconds(0.4f);
+
+        stunnedPokemons.Remove(pokemon);
     }
 }

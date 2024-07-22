@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -15,6 +16,7 @@ public class PlayerMovement : NetworkBehaviour
     private Pokemon pokemon;
     private bool canMove = true;
     private bool isMoving = false;
+    private bool isKnockedUp = false;
     private bool canBeKnockedBack = true;
 
     private bool isDashing = false;
@@ -61,7 +63,7 @@ public class PlayerMovement : NetworkBehaviour
 
     void Update()
     {
-        if (!canMove || !IsOwner)
+        if (!canMove || !IsOwner || isKnockedUp)
         {
             return;
         }
@@ -85,7 +87,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!canMove || !IsOwner)
+        if (!canMove || !IsOwner || isKnockedUp)
         {
             return;
         }
@@ -187,8 +189,18 @@ public class PlayerMovement : NetworkBehaviour
         animationManager.SetBool("Walking", isMoving);
     }
 
-    [Rpc(SendTo.Owner)]
-    public void KnockbackRPC(Vector3 direction, float force)
+    public void Knockup(float force, float duration)
+    {
+        if (!canBeKnockedBack)
+        {
+            return;
+        }
+        
+        isKnockedUp = true;
+        transform.DOJump(transform.position, force, 1, duration).OnComplete(() => isKnockedUp = false);
+    }
+
+    public void Knockback(Vector3 direction, float force)
     {
         if (!canBeKnockedBack)
         {

@@ -338,4 +338,19 @@ public class GameManager : NetworkBehaviour
             LobbyController.Instance.LoadResultsScreen();
         }
     }
+
+    public bool TryGetPlayerNetworkManager(ulong clientId, out PlayerNetworkManager playerNetworkManager)
+    {
+        playerNetworkManager = null;
+        PlayerNetworkManager[] players = FindObjectsOfType<PlayerNetworkManager>();
+        foreach (var player in players)
+        {
+            if (player.OwnerClientId == clientId)
+            {
+                playerNetworkManager = player;
+                return true;
+            }
+        }
+        return false;
+    }
 }

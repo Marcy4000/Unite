@@ -35,8 +35,7 @@ public class GlaceIcicleSpear : MoveBase
         playerManager.MovesController.onObjectSpawned += (icicleSpearHitbox) =>
         {
             this.icicleSpearHitbox = icicleSpearHitbox.GetComponent<IcicleSpearHitbox>();
-            this.icicleSpearHitbox.DamageInfo = damageInfo;
-            this.icicleSpearHitbox.TeamToIgnore = playerManager.OrangeTeam;
+            this.icicleSpearHitbox.InitializeRPC(damageInfo, playerManager.OrangeTeam, IsUpgraded);
             Debug.Log("Icicle Spear Hitbox spawned!");
         };
 
@@ -126,7 +125,7 @@ public class GlaceIcicleSpear : MoveBase
             playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
             Aim.Instance.HideSkillshotAim();
             icicleSpearHitbox = null;
-            playerManager.Pokemon.RemoveStatChangeWithID(3);
+            playerManager.Pokemon.RemoveStatChangeWithIDRPC(3);
             playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
             playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
             playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
@@ -144,7 +143,7 @@ public class GlaceIcicleSpear : MoveBase
         playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
         Aim.Instance.HideSkillshotAim();
         icicleSpearHitbox = null;
-        playerManager.Pokemon.RemoveStatChangeWithID(3);
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(3);
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
         playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);

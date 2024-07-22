@@ -28,22 +28,17 @@ public class VaporeonDiveWarning : NetworkBehaviour
 
         foreach (Collider hit in colliders)
         {
-            if (hit.TryGetComponent(out PlayerManager player))
+            if (hit.TryGetComponent(out Pokemon pokemon))
             {
-                if (player.OrangeTeam == orangeTeam)
+                if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
                     continue;
                 }
 
-                player.Pokemon.TakeDamage(damageInfo);
-                player.Pokemon.AddStatusEffect(stunEffect);
-                Vector3 direction = (player.transform.position - transform.position).normalized;
-                player.PlayerMovement.KnockbackRPC(direction, 25f);
-            }
-            else if (hit.TryGetComponent(out Pokemon pokemon))
-            {
                 pokemon.TakeDamage(damageInfo);
                 pokemon.AddStatusEffect(stunEffect);
+                Vector3 direction = (pokemon.transform.position - transform.position).normalized;
+                pokemon.ApplyKnockbackRPC(direction, 25f);
             }
         }
 

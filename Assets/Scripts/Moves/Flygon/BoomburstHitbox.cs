@@ -1,5 +1,6 @@
 using System.Collections;
 using Unity.Netcode;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 public class BoomburstHitbox : NetworkBehaviour
@@ -37,9 +38,9 @@ public class BoomburstHitbox : NetworkBehaviour
 
         foreach (Collider enemy in targets)
         {
-            if (enemy.TryGetComponent(out PlayerManager player))
+            if (enemy.TryGetComponent(out Pokemon pokemon))
             {
-                if (player.OrangeTeam == orangeTeam)
+                if (!Aim.Instance.CanPokemonBeTargeted(enemy.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
                     continue;
                 }
@@ -48,19 +49,9 @@ public class BoomburstHitbox : NetworkBehaviour
                 float fallOffFactor = Mathf.Max(0, 1 - distance / 5f);
                 float pushForce = basePushForce * fallOffFactor;
 
-                Vector3 direction = (player.transform.position - transform.position).normalized;
-                player.PlayerMovement.KnockbackRPC(direction, pushForce);
-                player.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, 0));
-            }
-
-            if (enemy.TryGetComponent(out Pokemon pokemon))
-            {
-                if (!Aim.Instance.CanPokemonBeTargeted(enemy.gameObject, AimTarget.All))
-                {
-                    continue;
-                }
-
-                float distance = Vector3.Distance(transform.position, pokemon.transform.position);
+                Vector3 direction = (enemy.transform.position - transform.position).normalized;
+                pokemon.ApplyKnockbackRPC(direction, pushForce);
+                pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, 0));
 
                 if (distance > 3f)
                 {

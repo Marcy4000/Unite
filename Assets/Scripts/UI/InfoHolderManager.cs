@@ -31,13 +31,13 @@ public class InfoHolderManager : MonoBehaviour
             {
                 continue;
             }
-            CreateAllyInfo(player.Pokemon);
+            CreateAllyInfo(player);
         }
     }
 
-    public void CreateAllyInfo(Pokemon pokemon)
+    public void CreateAllyInfo(PlayerManager player)
     {
         GameObject allyInfo = Instantiate(allyInfoPrefab, allyInfoHolder);
-        allyInfo.GetComponent<AllyInfoUI>().InitializeUI(pokemon);
+        allyInfo.GetComponent<AllyInfoUI>().InitializeUI(player);
     }
 }

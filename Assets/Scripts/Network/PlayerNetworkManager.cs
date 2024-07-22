@@ -23,7 +23,10 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     public PlayerStats PlayerStats => playerStats.Value;
 
-    private float deathTimer = 5f;
+    private NetworkVariable<float> deathTimer = new NetworkVariable<float>(5f, writePerm:NetworkVariableWritePermission.Owner);
+    public float DeathTimer => deathTimer.Value;
+    public event System.Action<float> OnDeathTimerChanged;
+    public event System.Action<PlayerStats> OnPlayerStatsChanged;
 
     public override void OnNetworkSpawn()
     {
@@ -36,6 +39,8 @@ public class PlayerNetworkManager : NetworkBehaviour
         }
         LobbyController.Instance.onLobbyUpdate += HandleLobbyUpdate;
         playerStats.OnValueChanged += HandlePlayerStatsChange;
+        deathTimer.OnValueChanged += (previous, updated) => OnDeathTimerChanged?.Invoke(updated);
+        playerStats.OnValueChanged += (previous, updated) => OnPlayerStatsChanged?.Invoke(updated);
     }
 
     public override void OnDestroy()
@@ -99,14 +104,14 @@ public class PlayerNetworkManager : NetworkBehaviour
 
         if (playerManager.PlayerState == PlayerState.Dead)
         {
-            deathTimer -= Time.deltaTime;
-            BattleUIManager.instance.UpdateDeathScreenTimer(Mathf.RoundToInt(deathTimer));
+            deathTimer.Value -= Time.deltaTime;
+            BattleUIManager.instance.UpdateDeathScreenTimer(Mathf.RoundToInt(deathTimer.Value));
 
-            if (deathTimer <= 0)
+            if (deathTimer.Value <= 0)
             {
                 BattleUIManager.instance.HideDeathScreen();
                 playerManager.Respawn();
-                deathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
+                deathTimer.Value = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
             }
         }
     }
@@ -176,9 +181,9 @@ public class PlayerNetworkManager : NetworkBehaviour
                     {
                         player.Pokemon.OnDeath += OnPlayerDeath;
                         player.Pokemon.OnDamageTaken += OnPlayerTakeDamage;
-                        player.Pokemon.onDamageDealt += OnPlayerDealDamage;
+                        player.Pokemon.OnDamageDealt += OnPlayerDealDamage;
                         player.onGoalScored += OnGoalScored;
-                        player.Pokemon.onOtherPokemonKilled += OnOtherPokemonKilled;
+                        player.Pokemon.OnOtherPokemonKilled += OnOtherPokemonKilled;
 
                         short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
                         Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
@@ -240,7 +245,7 @@ public class PlayerNetworkManager : NetworkBehaviour
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, (ushort)(playerStats.Value.deaths + 1), playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
 
         ShowKillRpc(info, !playerManager.OrangeTeam);
-        deathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
+        deathTimer.Value = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
         BattleUIManager.instance.ShowDeathScreen();
 
         killsSinceLastDeath = 0;

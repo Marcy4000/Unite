@@ -44,8 +44,8 @@ public class MeowsticMWonderRoomArea : NetworkBehaviour
                     }
                     else
                     {
-                        player.Pokemon.RemoveStatChangeWithID(15);
-                        player.Pokemon.RemoveStatChangeWithID(16);
+                        player.Pokemon.RemoveStatChangeWithIDRPC(15);
+                        player.Pokemon.RemoveStatChangeWithIDRPC(16);
                     }
                 }
             }
@@ -95,8 +95,8 @@ public class MeowsticMWonderRoomArea : NetworkBehaviour
             }
             else
             {
-                player.Pokemon.RemoveStatChangeWithID(15);
-                player.Pokemon.RemoveStatChangeWithID(16);
+                player.Pokemon.RemoveStatChangeWithIDRPC(15);
+                player.Pokemon.RemoveStatChangeWithIDRPC(16);
             }
             playersInArea.Remove(player);
         }

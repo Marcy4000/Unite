@@ -239,45 +239,46 @@ public class MovesController : NetworkBehaviour
         prevLevel = pokemon.CurrentLevel;
     }
 
-    private LearnableMove RemoveAlreadyLearnedMoves(LearnableMove LearnableMoves)
+    private LearnableMove RemoveAlreadyLearnedMoves(LearnableMove learnableMoves)
     {
         LearnableMove newLearnableMove = new LearnableMove();
-        newLearnableMove.level = LearnableMoves.level;
+        newLearnableMove.level = learnableMoves.level;
+        newLearnableMove.isUpgraded = learnableMoves.isUpgraded;
         List<MoveAsset> newMoves = new List<MoveAsset>();
-        foreach (MoveAsset move in LearnableMoves.moves)
+        foreach (MoveAsset move in learnableMoves.moves)
         {
+            move.isUpgraded = learnableMoves.isUpgraded;
             MoveBase actualMove = MoveDatabase.GetMove(move.move);
-            switch (move.moveType)
+            actualMove.IsUpgraded = move.isUpgraded;
+            if (IsMatchingMove(move.moveType, actualMove.GetType(), move.isUpgraded))
             {
-                case MoveType.MoveA:
-                    if (actualMove.GetType() != moves[0].GetType())
-                    {
-                        newMoves.Add(move);
-                    }
-                    break;
-                case MoveType.MoveB:
-                    if (actualMove.GetType() != moves[1].GetType())
-                    {
-                        newMoves.Add(move);
-                    }
-                    break;
-                case MoveType.UniteMove:
-                    if (actualMove.GetType() != uniteMove.GetType())
-                    {
-                        newMoves.Add(move);
-                    }
-                    break;
-                case MoveType.All:
-                    if (actualMove.GetType() != moves[0].GetType() && actualMove.GetType() != moves[1].GetType() && actualMove.GetType() != uniteMove.GetType())
-                    {
-                        newMoves.Add(move);
-                    }
-                    break;
+                newMoves.Add(move);
             }
         }
 
         newLearnableMove.moves = newMoves.ToArray();
         return newLearnableMove;
+    }
+
+    private bool IsMatchingMove(MoveType moveType, Type actualMoveType, bool isUpgraded)
+    {
+        Dictionary<MoveType, Type> moveTypeToClassType = new Dictionary<MoveType, Type>
+        {
+            { MoveType.MoveA, moves[0].GetType() },
+            { MoveType.MoveB, moves[1].GetType() },
+            { MoveType.UniteMove, uniteMove.GetType() }
+        };
+
+        if (moveType == MoveType.All)
+        {
+            return isUpgraded
+                ? actualMoveType == moves[0].GetType() && actualMoveType == moves[1].GetType() && actualMoveType == uniteMove.GetType()
+                : actualMoveType != moves[0].GetType() && actualMoveType != moves[1].GetType() && actualMoveType != uniteMove.GetType();
+        }
+
+        return isUpgraded
+            ? actualMoveType == moveTypeToClassType[moveType]
+            : actualMoveType != moveTypeToClassType[moveType];
     }
 
     private void TryPerformingBasicAttack()
@@ -483,15 +484,18 @@ public class MovesController : NetworkBehaviour
             case MoveType.MoveA:
                 moves[0] = MoveDatabase.GetMove(move.move);
                 moves[0].onMoveOver += OnMoveOver;
+                moves[0].IsUpgraded = move.isUpgraded;
                 break;
             case MoveType.MoveB:
                 moves[1] = MoveDatabase.GetMove(move.move);
                 moves[1].onMoveOver += OnMoveOver;
+                moves[1].IsUpgraded = move.isUpgraded;
                 break;
             case MoveType.UniteMove:
                 uniteMoveMaxCharge = move.uniteEnergyCost;
                 uniteMove = MoveDatabase.GetMove(move.move);
                 uniteMove.onMoveOver += OnMoveOver;
+                uniteMove.IsUpgraded = move.isUpgraded;
                 break;
             case MoveType.All:
                 for (int i = 0; i < moves.Length; i++)

@@ -11,7 +11,7 @@ public class FlygonPassive : PassiveBase
     {
         base.Start(controller);
         playerManager.Pokemon.OnEvolution += OnEvolution;
-        playerManager.Pokemon.onDamageDealt += OnDamageDealt;
+        playerManager.Pokemon.OnDamageDealt += OnDamageDealt;
         playerManager.Pokemon.OnStatusChange += OnStatusChange;
     }
 

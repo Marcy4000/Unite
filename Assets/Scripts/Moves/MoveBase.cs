@@ -8,6 +8,7 @@ public abstract class MoveBase
     public float Cooldown;
     public PlayerManager playerManager;
     public bool IsActive = false;
+    public bool IsUpgraded = false;
 
     public bool wasMoveSuccessful = false;
 
@@ -138,6 +139,13 @@ public static class MoveDatabase
             case AvailableMoves.MeowsticMUnite:
                 return new MeowsticMUnite();
 
+            case AvailableMoves.MarshadowDrainPunch:
+                return new MarshadowDrainPunch();
+            case AvailableMoves.MarshadowShadowSneak:
+                return new MarshadowShadowSneak();
+            case AvailableMoves.MarshadowPhantomForce:
+                return new MarshadowPhantomForce();
+
             default:
                 return null;
         }
@@ -202,4 +210,12 @@ public enum AvailableMoves : uint
     MeowsticMWonderRoom,
     MeowsticMPsychic,
     MeowsticMUnite,
+
+    MarshadowDrainPunch,
+    MarshadowShadowSneak,
+    MarshadowSpectralThief,
+    MarshadowPhantomForce,
+    MarshadowAuraSphere,
+    MarshadowCloseCombat,
+    MarshadowUnite
 }

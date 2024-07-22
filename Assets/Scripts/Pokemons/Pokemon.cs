@@ -70,11 +70,14 @@ public class Pokemon : NetworkBehaviour
     public event Action<DamageInfo> OnDamageTaken;
     public event Action OnPokemonInitialized;
 
-    public event Action<ulong, int> onDamageDealt;
-    public event Action<ulong> onOtherPokemonKilled;
+    public event Action<ulong, int> OnDamageDealt;
+    public event Action<ulong> OnOtherPokemonKilled;
 
     public event Action<NetworkListEvent<StatChange>> OnStatChange;
     public event Action<StatusEffect, bool> OnStatusChange;
+
+    public event Action<Vector3, float> OnKnockback;
+    public event Action<float, float> OnKnockup;
 
     private DamageInfo lastHit;
 
@@ -543,28 +546,8 @@ public class Pokemon : NetworkBehaviour
         }
     }
 
-    public void RemoveStatChangeWithID(ushort id)
-    {
-        if (IsServer)
-        {
-            for (int i = 0; i < statChanges.Count; i++)
-            {
-                if (statChanges[i].ID == id)
-                {
-                    statChanges.RemoveAt(i);
-                    statTimers.RemoveAt(i);
-                    return;
-                }
-            }
-        }
-        else
-        {
-            RemoveStatChangeWithIDRPC(id);
-        }
-    }
-
     [Rpc(SendTo.Server)]
-    private void RemoveStatChangeWithIDRPC(ushort id)
+    public void RemoveStatChangeWithIDRPC(ushort id)
     {
         for (int i = 0; i < statChanges.Count; i++)
         {
@@ -573,6 +556,20 @@ public class Pokemon : NetworkBehaviour
                 statChanges.RemoveAt(i);
                 statTimers.RemoveAt(i);
                 return;
+            }
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void RemoveAllStatChangeWithIDRPC(ushort id)
+    {
+        for (int i = statChanges.Count; i > 0; i--)
+        {
+            int index = i - 1;
+            if (statChanges[index].ID == id)
+            {
+                statChanges.RemoveAt(index);
+                statTimers.RemoveAt(index);
             }
         }
     }
@@ -857,7 +854,7 @@ public class Pokemon : NetworkBehaviour
 
     public void TakeDamage(DamageInfo damage)
     {
-        if (HasStatusEffect(StatusType.Invincible))
+        if (HasStatusEffect(StatusType.Invincible) || currentHp.Value <= 0)
         {
             return;
         }
@@ -1186,13 +1183,13 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     public void OnDamageDealtRPC(ulong targetID, int damage)
     {
-        onDamageDealt?.Invoke(targetID, damage);
+        OnDamageDealt?.Invoke(targetID, damage);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
     public void OnKilledPokemonRPC(ulong targetID)
     {
-        onOtherPokemonKilled?.Invoke(targetID);
+        OnOtherPokemonKilled?.Invoke(targetID);
     }
 
     public void GainExperience(int amount)
@@ -1316,8 +1313,25 @@ public class Pokemon : NetworkBehaviour
         OnEvolution?.Invoke();
     }
 
+    [Rpc(SendTo.Owner)]
+    public void ApplyKnockbackRPC(Vector3 direction, float force)
+    {
+        OnKnockback?.Invoke(direction, force);
+    }
+
+    [Rpc(SendTo.Owner)]
+    public void ApplyKnockupRPC(float force, float duration)
+    {
+        OnKnockup?.Invoke(force, duration);
+    }
+
     public bool IsHPFull()
     {
         return currentHp.Value == GetMaxHp();
+    }
+
+    public int GetMissingHp()
+    {
+        return GetMaxHp() - currentHp.Value;
     }
 }

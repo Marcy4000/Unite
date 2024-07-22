@@ -7,29 +7,30 @@ public class IcicleSpearHitbox : NetworkBehaviour
     private DamageInfo damageInfo;
     private StatChange enemySlow = new StatChange(20, Stat.Speed, 0.75f, true, false, true, 0);
     private bool teamToIgnore;
+    private bool isUpgraded;
 
-    public DamageInfo DamageInfo { get => damageInfo; set => SetDamageRPC(value); }
-    public bool TeamToIgnore { get => teamToIgnore; set => SetTeamToIgnoreRPC(value); }
+    private bool initialized = false;
+
+    public DamageInfo DamageInfo => damageInfo;
+    public bool TeamToIgnore => teamToIgnore;
+    public bool IsUpgraded => isUpgraded;
 
     private List<Pokemon> pokemonInTrigger = new List<Pokemon>();
 
     private float cooldown = 0.75f;
 
-    [Rpc(SendTo.ClientsAndHost)]
-    private void SetDamageRPC(DamageInfo damage)
+    [Rpc(SendTo.Everyone)]
+    public void InitializeRPC(DamageInfo damage, bool team, bool upgraded)
     {
         damageInfo = damage;
-    }
-
-    [Rpc(SendTo.ClientsAndHost)]
-    private void SetTeamToIgnoreRPC(bool team)
-    {
         teamToIgnore = team;
+        isUpgraded = upgraded;
+        initialized = true;
     }
 
     void Update()
     {
-        if (!IsServer)
+        if (!IsServer || !initialized)
         {
             return;
         }
@@ -48,6 +49,18 @@ public class IcicleSpearHitbox : NetworkBehaviour
 
                 pokemonInTrigger[i-1].TakeDamage(damageInfo);
                 pokemonInTrigger[i-1].AddStatChange(enemySlow);
+
+                if (isUpgraded)
+                {
+                    short damage = (short)Mathf.FloorToInt(pokemonInTrigger[i - 1].GetMissingHp() * 0.05f);
+
+                    if (pokemonInTrigger[i-1].Type == PokemonType.Wild)
+                    {
+                        damage = (short)Mathf.Clamp(damage, 0, 300);
+                    }
+
+                    pokemonInTrigger[i-1].TakeDamage(new DamageInfo(damageInfo.attackerId, 0f, 0, damage, DamageType.Special));
+                }
             }
 
             cooldown = 0.75f;

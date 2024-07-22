@@ -75,7 +75,7 @@ public class GlaceIcyWind : MoveBase
         // If an enemy is found, launch a homing projectile towards it
         if (closestEnemy != null)
         {
-            playerManager.StartCoroutine(LaunchProjectiles(closestEnemy));
+            playerManager.StartCoroutine(LaunchProjectiles(closestEnemy.GetComponent<NetworkObject>()));
 
             effectActivated = false;
             basicAtk.ChangeBasicAtkType(0);
@@ -88,11 +88,11 @@ public class GlaceIcyWind : MoveBase
         }
     }
 
-    private IEnumerator LaunchProjectiles(GameObject closestEnemy)
+    private IEnumerator LaunchProjectiles(NetworkObject closestEnemy)
     {
         for (int i = 0; i < glaceonPassive.IciclesCount; i++)
         {
-            playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, icicleDamage, attackPrefab);
+            playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.NetworkObjectId, icicleDamage, attackPrefab);
             yield return new WaitForSeconds(0.01f);
         }
 

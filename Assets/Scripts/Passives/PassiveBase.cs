@@ -31,6 +31,8 @@ public static class PassiveDatabase
                 return new FlygonPassive();
             case AvailablePassives.MeowsticMPassive:
                 return new MeowsticPassiveM();
+            case AvailablePassives.MarshadowPassive:
+                return new MarshadwPassive();
             default:
                 return new EmptyPassive();
         }
@@ -47,4 +49,5 @@ public enum AvailablePassives
     JolteonPassive,
     FlygonPassive,
     MeowsticMPassive,
+    MarshadowPassive
 }

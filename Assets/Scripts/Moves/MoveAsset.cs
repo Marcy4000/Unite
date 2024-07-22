@@ -7,6 +7,7 @@ public class MoveAsset : ScriptableObject
     public MoveType moveType;
     public MoveLabels moveLabel;
     public Sprite icon;
+    [HideInInspector] public bool isUpgraded;
     public int uniteEnergyCost;
 }
 

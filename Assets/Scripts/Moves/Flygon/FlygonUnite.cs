@@ -91,9 +91,9 @@ public class FlygonUnite : MoveBase
                 playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
 
                 playerManager.Pokemon.AddStatChange(flygonSpeed);
-                playerManager.Pokemon.RemoveStatChangeWithID(initialSpeed.ID);
-                playerManager.Pokemon.RemoveStatChangeWithID(halfSpeed.ID);
-                playerManager.Pokemon.RemoveStatChangeWithID(quarterSpeed.ID);
+                playerManager.Pokemon.RemoveStatChangeWithIDRPC(initialSpeed.ID);
+                playerManager.Pokemon.RemoveStatChangeWithIDRPC(halfSpeed.ID);
+                playerManager.Pokemon.RemoveStatChangeWithIDRPC(quarterSpeed.ID);
 
                 playerManager.Pokemon.RemoveStatusEffectWithID(tornadoStatus.ID);
 
@@ -121,7 +121,7 @@ public class FlygonUnite : MoveBase
                 playerManager.Pokemon.AddStatChange(initialSpeed);
                 break;
             case 1:
-                playerManager.Pokemon.RemoveStatChangeWithID(initialSpeed.ID);
+                playerManager.Pokemon.RemoveStatChangeWithIDRPC(initialSpeed.ID);
                 break;
             case 2:
                 playerManager.Pokemon.AddStatChange(halfSpeed);
@@ -129,7 +129,7 @@ public class FlygonUnite : MoveBase
                 break;
             case 3:
                 tornadoHitbox.UpdateDamageRPC(tornadoLower);
-                playerManager.Pokemon.RemoveStatChangeWithID(halfSpeed.ID);
+                playerManager.Pokemon.RemoveStatChangeWithIDRPC(halfSpeed.ID);
                 playerManager.Pokemon.AddStatChange(quarterSpeed);
                 break;
         }

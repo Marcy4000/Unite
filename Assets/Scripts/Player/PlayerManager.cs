@@ -86,7 +86,7 @@ public class PlayerManager : NetworkBehaviour
     private float maxScoreTime;
 
     public event Action<int> onGoalScored;
-    public event Action onRespawn;
+    public event Action OnRespawn;
 
     private Vector3 deathPosition = new Vector3(0, -50, 0);
     private Coroutine stopMovementCoroutine;
@@ -158,6 +158,9 @@ public class PlayerManager : NetworkBehaviour
             movesController.onBasicAttackPerformed += () => CancelRecall();
             movesController.onMovePerformed += (MoveBase) => CancelRecall();
 
+            pokemon.OnKnockback += playerMovement.Knockback;
+            pokemon.OnKnockup += playerMovement.Knockup;
+
             scoreStatus.OnStatusChange += () =>
             {
                 bool showLock = scoreStatus.HasStatus(ActionStatusType.Busy) || scoreStatus.HasStatus(ActionStatusType.Stunned);
@@ -175,6 +178,11 @@ public class PlayerManager : NetworkBehaviour
         {
             visionController.IsEnabled = currentTeam == OrangeTeam;
         }
+
+        vision.OnBushChanged += (bush) =>
+        {
+            visionController.CurrentBush = bush;
+        };
 
         pokemon.OnEvolution += HandleEvolution;
         currentEnergy.OnValueChanged += OnEnergyAmountChange;
@@ -206,6 +214,7 @@ public class PlayerManager : NetworkBehaviour
                     movesController.AddMoveStatus(0, ActionStatusType.Stunned);
                     movesController.AddMoveStatus(1, ActionStatusType.Stunned);
                     movesController.AddMoveStatus(2, ActionStatusType.Stunned);
+                    movesController.BasicAttackStatus.AddStatus(ActionStatusType.Stunned);
                     scoreStatus.AddStatus(ActionStatusType.Stunned);
                 }
             },
@@ -237,6 +246,7 @@ public class PlayerManager : NetworkBehaviour
     private void OnPokemonInitialized()
     {
         bool currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        AssignVisionObjects();
         vision.SetVisibility(currentTeam == OrangeTeam);
 
         passiveController.LearnPassive();
@@ -290,10 +300,8 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(SendTo.Owner)]
     public void UpdatePosAndRotRPC(Vector3 pos, Quaternion rot)
     {
-        //playerMovement.CharacterController.enabled = false;
         transform.position = pos;
         transform.rotation = rot;
-        //playerMovement.CharacterController.enabled = true;
     }
 
     private void OnPlayerStateChange(PlayerState prev, PlayerState curr)
@@ -320,6 +328,7 @@ public class PlayerManager : NetworkBehaviour
         SpawnEnergy(currentEnergy.Value);
         ResetEnergyRPC();
         playerMovement.CanMove = false;
+        movesController.CancelAllMoves();
 
         CameraController.Instance.ForcePan(true);
 
@@ -343,7 +352,7 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void NotifyRespawnRPC()
     {
-        onRespawn?.Invoke();
+        OnRespawn?.Invoke();
     }
 
     [Rpc(SendTo.Server)]
@@ -596,6 +605,7 @@ public class PlayerManager : NetworkBehaviour
         movesController.AddMoveStatus(0, ActionStatusType.Stunned);
         movesController.AddMoveStatus(1, ActionStatusType.Stunned);
         movesController.AddMoveStatus(2, ActionStatusType.Stunned);
+        movesController.BasicAttackStatus.AddStatus(ActionStatusType.Stunned);
         scoreStatus.AddStatus(ActionStatusType.Stunned);
     }
 
@@ -606,6 +616,7 @@ public class PlayerManager : NetworkBehaviour
         movesController.RemoveMoveStatus(0, ActionStatusType.Stunned);
         movesController.RemoveMoveStatus(1, ActionStatusType.Stunned);
         movesController.RemoveMoveStatus(2, ActionStatusType.Stunned);
+        movesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Stunned);
         scoreStatus.RemoveStatus(ActionStatusType.Stunned);
     }
 

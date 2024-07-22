@@ -17,7 +17,7 @@ public class JoltPassive : PassiveBase
         base.Start(controller);
         playerManager.Pokemon.OnEvolution += OnEvolution;
         playerManager.Pokemon.AddStatChange(eeveeSpdBoost);
-        playerManager.Pokemon.onDamageDealt += (target, damage) =>
+        playerManager.Pokemon.OnDamageDealt += (target, damage) =>
         {
             Pokemon targetPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[target].GetComponent<Pokemon>();
             if (targetPokemon.Type == PokemonType.Player)
@@ -29,7 +29,7 @@ public class JoltPassive : PassiveBase
                 passiveCharge += 4f;
             }
         };
-        playerManager.Pokemon.onOtherPokemonKilled += (target) =>
+        playerManager.Pokemon.OnOtherPokemonKilled += (target) =>
         {
             Pokemon targetPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[target].GetComponent<Pokemon>();
             if (targetPokemon.Type == PokemonType.Player)
@@ -52,7 +52,7 @@ public class JoltPassive : PassiveBase
     private void OnEvolution()
     {
         isEvolved = true;
-        playerManager.Pokemon.RemoveStatChangeWithID(eeveeSpdBoost.ID);
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(eeveeSpdBoost.ID);
         playerManager.HPBar.ShowGenericGuage(true);
         playerManager.HPBar.UpdateGenericGuageValue(passiveCharge, 100f);
     }

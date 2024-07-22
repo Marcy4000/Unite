@@ -95,7 +95,7 @@ public class MeowsticPassiveM : PassiveBase
             if (enemiesInArea != lastEnemiesInArea)
             {
                 lastEnemiesInArea = enemiesInArea;
-                playerManager.Pokemon.RemoveStatChangeWithID(13);
+                playerManager.Pokemon.RemoveStatChangeWithIDRPC(13);
                 if (enemiesInArea > 0)
                 {
                     playerManager.Pokemon.AddStatChange(new StatChange((short)(enemiesInArea * 5), Stat.Cdr, 0, false, true, true, 13));

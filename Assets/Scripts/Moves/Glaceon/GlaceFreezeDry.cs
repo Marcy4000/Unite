@@ -69,7 +69,8 @@ public class GlaceFreezeDry : MoveBase
 
         for (int i = 0; i < enemiesHit; i++)
         {
-            glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount + 2, 0, 8));
+            int increaseAmount = IsUpgraded ? 3 : 2;
+            glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount + increaseAmount, 0, 8));
         }
     }
 

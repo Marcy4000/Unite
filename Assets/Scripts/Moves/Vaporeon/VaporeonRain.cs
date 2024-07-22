@@ -72,12 +72,12 @@ public class VaporeonRain : NetworkBehaviour
             {
                 if (player.OrangeTeam == vaporeonTeam)
                 {
-                    player.Pokemon.RemoveStatChangeWithID(defBuff.ID);
-                    player.Pokemon.RemoveStatChangeWithID(spDefBuff.ID);
+                    player.Pokemon.RemoveStatChangeWithIDRPC(defBuff.ID);
+                    player.Pokemon.RemoveStatChangeWithIDRPC(spDefBuff.ID);
                 }
                 else
                 {
-                    player.Pokemon.RemoveStatChangeWithID(speedDebuff.ID);
+                    player.Pokemon.RemoveStatChangeWithIDRPC(speedDebuff.ID);
                 }
             }
         }
@@ -122,12 +122,12 @@ public class VaporeonRain : NetworkBehaviour
         {
             if (player.OrangeTeam == vaporeonTeam)
             {
-                player.Pokemon.RemoveStatChangeWithID(defBuff.ID);
-                player.Pokemon.RemoveStatChangeWithID(spDefBuff.ID);
+                player.Pokemon.RemoveStatChangeWithIDRPC(defBuff.ID);
+                player.Pokemon.RemoveStatChangeWithIDRPC(spDefBuff.ID);
             }
             else
             {
-                player.Pokemon.RemoveStatChangeWithID(speedDebuff.ID);
+                player.Pokemon.RemoveStatChangeWithIDRPC(speedDebuff.ID);
             }
 
             if (playerList.Contains(player))

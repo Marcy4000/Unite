@@ -55,6 +55,8 @@ public static class BasicAttacksDatabase
                 return new FlygonBasicAtk();
             case "meowstic":
                 return new MeowsticMBasicAtk();
+            case "marshadow":
+                return new MarshadowBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

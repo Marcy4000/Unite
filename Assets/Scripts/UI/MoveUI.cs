@@ -7,6 +7,7 @@ public class MoveUI : MonoBehaviour
 {
     [SerializeField] private Image moveIcon, secondaryCd, moveLabel;
     [SerializeField] private GameObject cdLine, cdBg, lockImage;
+    [SerializeField] private GameObject upgradeFrame;
     [SerializeField] private TMP_Text cdText, moveName;
 
     private Coroutine cooldownCoroutine;
@@ -25,6 +26,7 @@ public class MoveUI : MonoBehaviour
     {
         moveIcon.sprite = move.icon;
         moveName.text = MoveDatabase.GetMove(move.move).Name;
+        upgradeFrame.SetActive(move.isUpgraded);
 
         if (move.moveLabel == MoveLabels.None)
         {

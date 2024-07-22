@@ -94,7 +94,7 @@ public class GoalZone : NetworkBehaviour
             playerManager.onGoalScored -= OnScore;
             if (playerManager.OrangeTeam == orangeTeam && IsServer)
             {
-                playerManager.Pokemon.RemoveStatChangeWithID(1);
+                playerManager.Pokemon.RemoveStatChangeWithIDRPC(1);
             }
             playerManager.GoalZone = null;
             playerManagerList.Remove(playerManager);

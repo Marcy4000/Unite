@@ -33,7 +33,7 @@ public class FluxZone : NetworkBehaviour
         {
             foreach (var player in playerManagerList)
             {
-                player.Pokemon.RemoveStatChangeWithID(1);
+                player.Pokemon.RemoveStatChangeWithIDRPC(1);
             }
             playerManagerList.Clear();
         }
@@ -67,7 +67,7 @@ public class FluxZone : NetworkBehaviour
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
             playerManagerList.Remove(playerManager);
-            playerManager.Pokemon.RemoveStatChangeWithID(1);
+            playerManager.Pokemon.RemoveStatChangeWithIDRPC(1);
         }
     }
 

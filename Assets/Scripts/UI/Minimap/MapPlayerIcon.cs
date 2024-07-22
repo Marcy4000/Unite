@@ -22,7 +22,7 @@ public class MapPlayerIcon : MonoBehaviour
         minimapIcon.SetTarget(player.transform);
 
         player.Pokemon.OnDeath += (info) => { HideIcon(); };
-        player.onRespawn += () => {
+        player.OnRespawn += () => {
             if (isTeammate)
             {
                 ShowIcon();
@@ -32,7 +32,7 @@ public class MapPlayerIcon : MonoBehaviour
         isTeammate = player.OrangeTeam == localPlayerTeam;
         if (!isTeammate)
         {
-            player.Vision.onVisibilityChanged += SetVisibility;
+            player.Vision.OnVisibilityChanged += SetVisibility;
             SetVisibility(false);
         }
         player.Pokemon.OnEvolution += () => { pokemonIcon.sprite = player.Pokemon.Portrait; };

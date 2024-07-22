@@ -8,6 +8,7 @@ public class GlaceIceShard : MoveBase
     private DamageInfo damageInfo;
     private StatChange movementBuff;
     private StatChange atkSpeedBuff;
+    private StatChange atkSpeedBuffUpgrade;
 
     private float range = 7f;
 
@@ -26,6 +27,7 @@ public class GlaceIceShard : MoveBase
         attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
         movementBuff = new StatChange(40, Stat.Speed, 0.5f, true, true, true, 0);
         atkSpeedBuff = new StatChange(60, Stat.AtkSpeed, 2.5f, true, true, true, 0);
+        atkSpeedBuffUpgrade = new StatChange(100, Stat.AtkSpeed, 2.5f, true, true, true, 0);
     }
 
     public override void Start(PlayerManager controller)
@@ -69,7 +71,7 @@ public class GlaceIceShard : MoveBase
         basicAtk.ChangeBasicAtkType(1);
 
         playerManager.Pokemon.AddStatChange(movementBuff);
-        playerManager.Pokemon.AddStatChange(atkSpeedBuff);
+        playerManager.Pokemon.AddStatChange(IsUpgraded ? atkSpeedBuffUpgrade : atkSpeedBuff);
 
         playerManager.AnimationManager.PlayAnimation("ani_spell2a_bat_0471");
 

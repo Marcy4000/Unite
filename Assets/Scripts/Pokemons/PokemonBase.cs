@@ -119,4 +119,5 @@ public class LearnableMove
 {
     public MoveAsset[] moves;
     public int level;
+    public bool isUpgraded;
 }

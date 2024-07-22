@@ -126,7 +126,7 @@ public class FlygonDig : MoveBase
 
         yield return new WaitForSeconds(0.5f);
         playerManager.PlayerMovement.CanMove = true;
-        playerManager.Pokemon.RemoveStatChangeWithID(slow.ID);
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(slow.ID);
 
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);

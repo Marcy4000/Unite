@@ -33,10 +33,17 @@ public class ScoreboardPlayerItem : MonoBehaviour
 
         player.Pokemon.OnEvolution += UpdatePokemonInfo;
         player.Pokemon.OnLevelChange += UpdatePokemonInfo;
-        player.Pokemon.onOtherPokemonKilled += (killed) => {
-            kills.text = player.PlayerStats.kills.ToString();
-            assists.text = player.PlayerStats.assists.ToString();
-        };
+       
+        if (GameManager.Instance.TryGetPlayerNetworkManager(player.OwnerClientId, out PlayerNetworkManager networkManager))
+        {
+            networkManager.OnPlayerStatsChanged += UpdatePlayerStats;
+        }
+    }
+
+    public void UpdatePlayerStats(PlayerStats playerStats)
+    {
+        kills.text = playerStats.kills.ToString();
+        assists.text = playerStats.assists.ToString();
     }
 
     public void UpdatePokemonInfo()

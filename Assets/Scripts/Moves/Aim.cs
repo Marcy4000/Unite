@@ -245,7 +245,7 @@ public class Aim : NetworkBehaviour
 
         if (aimDirection.magnitude == 0)
         {
-            return null;
+            aimDirection = playerTransform.forward;
         }
 
         autoAimIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
@@ -325,7 +325,7 @@ public class Aim : NetworkBehaviour
 
         if (aimDirection.magnitude == 0)
         {
-            return Vector3.zero;
+            aimDirection = playerTransform.forward;
         }
 
         dashIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
@@ -343,7 +343,7 @@ public class Aim : NetworkBehaviour
 
         if (aimDirection.magnitude == 0)
         {
-            return Vector3.zero;
+            aimDirection = playerTransform.forward;
         }
 
         skillShotLine.transform.rotation = Quaternion.LookRotation(aimDirection);

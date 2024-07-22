@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -11,6 +12,7 @@ public class WildPokemon : NetworkBehaviour
     [SerializeField] private WildPokemonInfo wildPokemonInfo;
     [SerializeField] private HPBarWild hpBar;
     private Vision vision;
+    private Rigidbody rb;
 
     private string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
 
@@ -23,12 +25,20 @@ public class WildPokemon : NetworkBehaviour
     {
         pokemon = GetComponent<Pokemon>();
         vision = GetComponentInChildren<Vision>();
+        rb = GetComponent<Rigidbody>();
         vision.HasATeam = false;
         vision.IsVisible = true;
         //pokemon.SetNewPokemon(wildPokemonInfo.PokemonBase);
         pokemon.Type = PokemonType.Wild;
         pokemon.OnEvolution += AssignVisionObjects;
         NetworkObject.DestroyWithScene = true;
+
+        if (IsOwner)
+        {
+            pokemon.OnKnockback += Knockback;
+            pokemon.OnKnockup += Knockup;
+        }
+
         if (IsServer)
         {
             pokemon.OnDeath += Die;
@@ -280,5 +290,25 @@ public class WildPokemon : NetworkBehaviour
         {
             MinimapManager.Instance.CreateObjectiveIcon(this);
         }
+    }
+
+    public void Knockup(float force, float duration)
+    {
+        if (pokemon.Type == PokemonType.Objective)
+        {
+            return;
+        }
+        rb.velocity = Vector3.zero;
+
+        transform.DOJump(transform.position, force, 1, duration);
+    }
+
+    public void Knockback(Vector3 direction, float force)
+    {
+        if (pokemon.Type == PokemonType.Objective)
+        {
+            return;
+        }
+        rb.AddForce(direction * force, ForceMode.Impulse);
     }
 }

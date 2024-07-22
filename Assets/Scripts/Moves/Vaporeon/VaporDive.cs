@@ -58,6 +58,7 @@ public class VaporDive : MoveBase
             {
                 playerManager.Pokemon.AddStatusEffect(underwaterEffect);
                 playerManager.MovesController.AddMoveStatus(0, ActionStatusType.Disabled);
+                playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
                 playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
                 playerManager.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
                 playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
@@ -99,6 +100,7 @@ public class VaporDive : MoveBase
         yield return new WaitForSeconds(0.8f);
         playerManager.PlayerMovement.CanMove = true;
         playerManager.AnimationManager.SetTrigger("Transition");
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
     }
 
     private IEnumerator JumpOutWater()

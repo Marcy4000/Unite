@@ -14,8 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pokemonName: Cinderace
   description: 
-  model: {fileID: 0}
-  icon: {fileID: 0}
   maxHp: b80b0000da0b0000030c0000350c0000e80c0000300d0000760e0000dd0e0000590f0000ed0f0000811000007411000074120000a713000018150000
   attack: 870000008c0000009100000097000000ae000000b7000000dd000000e9000000f7000000080100001c010000350100005301000077010000a2010000
   defense: 3200000035000000380000003c0000004b000000510000006c000000750000007f0000008b0000009a000000ac000000c1000000db000000fa000000
@@ -47,20 +45,34 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 446df49aba7ef7a4cabf0b273c9d95c5, type: 2}
     - {fileID: 11400000, guid: c49d246c46e17dc43a5323648b05e4c7, type: 2}
     level: 0
+    isUpgraded: 0
   - moves:
     - {fileID: 11400000, guid: 446df49aba7ef7a4cabf0b273c9d95c5, type: 2}
     - {fileID: 11400000, guid: c49d246c46e17dc43a5323648b05e4c7, type: 2}
     level: 2
+    isUpgraded: 0
   - moves:
     - {fileID: 11400000, guid: 11728b7a73c574f4ea30bcda0001eef2, type: 2}
     level: 6
+    isUpgraded: 0
   - moves:
     - {fileID: 11400000, guid: 01e1758b619b8b842b65dd0cabd7732a, type: 2}
     - {fileID: 11400000, guid: 5d96e5df7f308494a85123be60a0a672, type: 2}
     level: 7
+    isUpgraded: 0
   - moves:
     - {fileID: 11400000, guid: 04694bc1ce8fea0449b697a3951940e3, type: 2}
     level: 8
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 11728b7a73c574f4ea30bcda0001eef2, type: 2}
+    level: 10
+    isUpgraded: 1
+  - moves:
+    - {fileID: 11400000, guid: 01e1758b619b8b842b65dd0cabd7732a, type: 2}
+    - {fileID: 11400000, guid: 5d96e5df7f308494a85123be60a0a672, type: 2}
+    level: 12
+    isUpgraded: 1
   evolutions:
   - level: 0
     newModel: {fileID: 8545688820889425709, guid: 7b9076cde0f2f504e82a12efc6bb4598,

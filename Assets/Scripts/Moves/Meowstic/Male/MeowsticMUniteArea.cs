@@ -49,7 +49,7 @@ public class MeowsticMUniteArea : NetworkBehaviour
             {
                 if (enemy != null)
                 {
-                    enemy.RemoveStatChangeWithID(speedDebuff.ID);
+                    enemy.RemoveStatChangeWithIDRPC(speedDebuff.ID);
                 }
             }
 
@@ -57,8 +57,8 @@ public class MeowsticMUniteArea : NetworkBehaviour
             {
                 if (ally != null)
                 {
-                    ally.RemoveStatChangeWithID(speedBoost.ID);
-                    ally.RemoveStatChangeWithID(cdrBoost.ID);
+                    ally.RemoveStatChangeWithIDRPC(speedBoost.ID);
+                    ally.RemoveStatChangeWithIDRPC(cdrBoost.ID);
                     if (ally.HasShieldWithID(8))
                     {
                         ally.RemoveShieldWithIDRPC(8);
@@ -138,7 +138,7 @@ public class MeowsticMUniteArea : NetworkBehaviour
 
         if (pokemon != null && enemiesInArea.Contains(pokemon))
         {
-            pokemon.RemoveStatChangeWithID(speedDebuff.ID);
+            pokemon.RemoveStatChangeWithIDRPC(speedDebuff.ID);
             if (pokemon.HasShieldWithID(8))
             {
                 pokemon.RemoveShieldWithIDRPC(8);
@@ -147,8 +147,8 @@ public class MeowsticMUniteArea : NetworkBehaviour
         }
         else if (pokemon != null && alliesInArea.Contains(pokemon))
         {
-            pokemon.RemoveStatChangeWithID(speedBoost.ID);
-            pokemon.RemoveStatChangeWithID(cdrBoost.ID);
+            pokemon.RemoveStatChangeWithIDRPC(speedBoost.ID);
+            pokemon.RemoveStatChangeWithIDRPC(cdrBoost.ID);
             alliesInArea.Remove(pokemon);
         }
     }

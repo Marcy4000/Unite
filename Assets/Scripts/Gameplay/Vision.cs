@@ -9,8 +9,12 @@ public class Vision : MonoBehaviour
     [SerializeField] private bool hasATeam = false;
     private bool currentTeam = false;
 
+    private GameObject currentBush = null;
+
     [SerializeField] private List<GameObject> objectsToDisable = new List<GameObject>();
     [SerializeField] private List<Renderer> renderersToDisable = new List<Renderer>();
+
+    private List<int> isVisibleInBush = new List<int>();
 
     public bool IsRendered => isRendered;
 
@@ -18,7 +22,13 @@ public class Vision : MonoBehaviour
     public bool HasATeam { get => hasATeam; set => hasATeam = value; }
     public bool CurrentTeam { get => currentTeam; set => currentTeam = value; }
 
-    public event System.Action<bool> onVisibilityChanged;
+    public GameObject CurrentBush => currentBush;
+    public bool IsInBush => currentBush != null;
+
+    public event System.Action<bool> OnVisibilityChanged;
+    public event System.Action<GameObject> OnBushChanged;
+
+    public List<int> IsVisibleInBush { get => isVisibleInBush; set => isVisibleInBush = value; }
 
     public void SetVisibility(bool isVisible)
     {
@@ -34,7 +44,7 @@ public class Vision : MonoBehaviour
             renderer.enabled = isVisible;
         }
 
-        onVisibilityChanged?.Invoke(isVisible);
+        OnVisibilityChanged?.Invoke(isVisible);
     }
 
     public void AddObject(GameObject obj)
@@ -55,5 +65,23 @@ public class Vision : MonoBehaviour
     public void ResetRenderers()
     {
         renderersToDisable.Clear();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.CompareTag("Bush"))
+        {
+            currentBush = other.gameObject;
+            OnBushChanged?.Invoke(other.gameObject);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.CompareTag("Bush"))
+        {
+            currentBush = null;
+            OnBushChanged?.Invoke(null);
+        }
     }
 }
