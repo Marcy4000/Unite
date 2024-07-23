@@ -105,6 +105,21 @@ public class PokemonBase : ScriptableObject
         }
         return null;
     }
+
+    public MoveAsset GetUniteMove()
+    {
+        foreach (LearnableMove learnableMove in learnableMoves)
+        {
+            foreach (var moveAsset in learnableMove.moves)
+            {
+                if (moveAsset.moveType == MoveType.UniteMove)
+                {
+                    return moveAsset;
+                }
+            }
+        }
+        return null;
+    }
 }
 
 public enum PokemonType

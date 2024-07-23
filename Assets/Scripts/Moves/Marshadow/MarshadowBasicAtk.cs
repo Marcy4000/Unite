@@ -16,9 +16,10 @@ public class MarshadowBasicAtk : BasicAttackBase
         charge = 0;
     }
 
-    public override void Perform()
+    public override void Perform(bool wildPriority)
     {
-        GameObject closestEnemy = Aim.Instance.AimInCircle(range);
+        PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
+        GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
         GameObject[] hitColliders;
         if (closestEnemy != null)
         {

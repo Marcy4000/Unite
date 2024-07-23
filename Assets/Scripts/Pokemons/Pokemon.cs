@@ -870,7 +870,15 @@ public class Pokemon : NetworkBehaviour
 
         int damageRemainder;
 
-        List<ShieldInfo> remainingShields = TakeDamageFromShields(localShields.ToArray(), actualDamage, out damageRemainder);
+        if (damage.type != DamageType.True)
+        {
+            List<ShieldInfo> remainingShields = TakeDamageFromShields(localShields.ToArray(), actualDamage, out damageRemainder);
+            UpdateShieldListRPC(remainingShields.ToArray());
+        }
+        else
+        {
+            damageRemainder = actualDamage;
+        }
 
         if (damageRemainder > 0)
         {
@@ -882,8 +890,6 @@ public class Pokemon : NetworkBehaviour
             localHp = 0;
             attacker.OnKilledPokemonRPC(NetworkObjectId);
         }
-
-        UpdateShieldListRPC(remainingShields.ToArray());
 
         if (IsServer)
         {

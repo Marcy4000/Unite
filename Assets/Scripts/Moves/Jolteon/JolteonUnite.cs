@@ -61,7 +61,6 @@ public class JolteonUnite : MoveBase
         if (IsActive && dashDirection.magnitude != 0)
         {
             StartDash();
-            wasMoveSuccessful = true;
         }
         Aim.Instance.HideDashAim();
         base.Finish();
@@ -138,7 +137,10 @@ public class JolteonUnite : MoveBase
             trailObject = null;
 
             JoltPassive passive = playerManager.PassiveController.Passive as JoltPassive;
-            passive.UniteFillCharge(5f);
+            if (passive != null)
+            {
+                passive.UniteFillCharge(5f);
+            }
 
             playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
             playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
@@ -146,6 +148,9 @@ public class JolteonUnite : MoveBase
             playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
             playerManager.MovesController.BattleItemStatus.RemoveStatus(ActionStatusType.Disabled);
             playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+
+            wasMoveSuccessful = true;
+            Finish();
         }
     }
 

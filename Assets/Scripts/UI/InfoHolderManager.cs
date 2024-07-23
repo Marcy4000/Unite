@@ -3,9 +3,10 @@ using UnityEngine;
 
 public class InfoHolderManager : MonoBehaviour
 {
-    [SerializeField] private GameObject allyInfoPrefab;
+    [SerializeField] private GameObject infoPrefab;
 
-    [SerializeField] private Transform allyInfoHolder;
+    [SerializeField] private Transform infoHolder;
+    [SerializeField] private bool enemyTeam;
 
     private void Start()
     {
@@ -27,17 +28,34 @@ public class InfoHolderManager : MonoBehaviour
         bool orangeTeam = LobbyController.Instance.GetLocalPlayerTeam();
         foreach (var player in GameManager.Instance.Players)
         {
-            if (player.IsLocalPlayer || player.OrangeTeam != orangeTeam)
+            if (!enemyTeam)
             {
-                continue;
+                if (player.IsLocalPlayer || player.OrangeTeam != orangeTeam)
+                {
+                    continue;
+                }
+                CreateAllyInfo(player);
             }
-            CreateAllyInfo(player);
+            else
+            {
+                if (player.OrangeTeam == orangeTeam)
+                {
+                    continue;
+                }
+                CreateEnemyInfo(player);
+            }
         }
     }
 
     public void CreateAllyInfo(PlayerManager player)
     {
-        GameObject allyInfo = Instantiate(allyInfoPrefab, allyInfoHolder);
+        GameObject allyInfo = Instantiate(infoPrefab, infoHolder);
         allyInfo.GetComponent<AllyInfoUI>().InitializeUI(player);
+    }
+
+    public void CreateEnemyInfo(PlayerManager player)
+    {
+        GameObject allyInfo = Instantiate(infoPrefab, infoHolder);
+        allyInfo.GetComponent<EnemyDeathInfoUI>().InitializeUI(player);
     }
 }

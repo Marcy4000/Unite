@@ -46,7 +46,7 @@ public class MarshadowDrainPunch : MoveBase
     private IEnumerator DamageRoutine()
     {
         playerManager.AnimationManager.PlayAnimation("pm0883_ba20_buturi01");
-        playerManager.StopMovementForTime(1.92f);
+        playerManager.StopMovementForTime(1.92f, false);
         playerManager.transform.rotation = Quaternion.LookRotation(direction);
 
         yield return new WaitForSeconds(0.53f);

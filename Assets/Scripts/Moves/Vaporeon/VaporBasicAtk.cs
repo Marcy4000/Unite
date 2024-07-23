@@ -20,9 +20,10 @@ public class VaporBasicAtk : BasicAttackBase
         boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.36f, 11, 180, DamageType.Special);
     }
 
-    public override void Perform()
+    public override void Perform(bool wildPriority)
     {
-        GameObject closestEnemy = Aim.Instance.AimInCircle(range);
+        PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
+        GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
 
         // If an enemy is found, launch a homing projectile towards it
         if (closestEnemy != null)

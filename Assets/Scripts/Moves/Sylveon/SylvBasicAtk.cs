@@ -22,9 +22,10 @@ public class SylvBasicAtk : BasicAttackBase
         boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.35f, 10, 180, DamageType.Special);
     }
 
-    public override void Perform()
+    public override void Perform(bool wildPriority)
     {
-        GameObject closestEnemy = Aim.Instance.AimInCircle(range);
+        PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
+        GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
 
         // If an enemy is found, launch a homing projectile towards it
         if (closestEnemy != null)

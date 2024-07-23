@@ -1,3 +1,4 @@
+using DG.Tweening;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -221,7 +222,8 @@ public class PlayerManager : NetworkBehaviour
             { StatusType.Incapacitated, ApplyStun },
             { StatusType.Asleep, ApplyStun },
             { StatusType.Bound, ApplyStun },
-            { StatusType.VisionObscuring, () => VisionController.IsBlinded = true }
+            { StatusType.VisionObscuring, () => VisionController.IsBlinded = true },
+            { StatusType.Invisible, () => SetPlayerVisibilityRPC(false) }
             // Add other statuses
         };
 
@@ -232,7 +234,8 @@ public class PlayerManager : NetworkBehaviour
             { StatusType.Incapacitated, RemoveStun },
             { StatusType.Asleep, RemoveStun },
             { StatusType.Bound, RemoveStun },
-            { StatusType.VisionObscuring, () => VisionController.IsBlinded = false }
+            { StatusType.VisionObscuring, () => VisionController.IsBlinded = false },
+            { StatusType.Invisible, () => SetPlayerVisibilityRPC(true) }
             // Add other statuses
         };
     }
@@ -327,6 +330,10 @@ public class PlayerManager : NetworkBehaviour
     {
         SpawnEnergy(currentEnergy.Value);
         ResetEnergyRPC();
+        GiveExpRpc(info.attackerId, transform.position);
+        // TODO: make moves end on death while not breaking everything
+        //transform.DOKill();
+        //StopAllCoroutines();
         playerMovement.CanMove = false;
         movesController.CancelAllMoves();
 
@@ -346,6 +353,8 @@ public class PlayerManager : NetworkBehaviour
         CameraController.Instance.ForcePan(false);
         ChangeCurrentState(PlayerState.Alive);
         pokemon.HealDamage(pokemon.GetMaxHp());
+        movesController.UnlockEveryAction();
+        scoreStatus.RemoveStatus(ActionStatusType.Busy);
         NotifyRespawnRPC();
     }
 
@@ -754,4 +763,117 @@ public class PlayerManager : NetworkBehaviour
         }
         return buffs;
     }
+
+    [Rpc(SendTo.Everyone)]
+    public void SetPlayerVisibilityRPC(bool isVisible)
+    {
+        vision.IsVisible = isVisible;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void GiveExpRpc(ulong attackerID, Vector3 deathPos)
+    {
+        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
+
+        float baseExp = GetBaseExp();
+
+        Dictionary<int, (float koerExp, float proximityExp)> expDistribution = new Dictionary<int, (float, float)>
+        {
+            {1, (1.0f, 0.0f)},
+            {2, (1.0f, 0.5f)},
+            {3, (1.0f, 0.25f)},
+            {4, (1.0f, 0.1667f)},
+            {5, (1.0f, 0.125f)}
+        };
+
+        List<Pokemon> playersInProximity;
+
+        if (attacker.TryGetComponent(out PlayerManager player))
+        {
+            playersInProximity = FindPlayersInProximity(deathPos, 6f, player.OrangeTeam);
+        }
+        else
+        {
+            return;
+        }
+
+        DistributeExperience(attacker, playersInProximity, baseExp, expDistribution);
+    }
+
+    private List<Pokemon> FindPlayersInProximity(Vector3 koPosition, float range, bool orangeTeam)
+    {
+        List<Pokemon> playersInProximity = new List<Pokemon>();
+
+        foreach (var playerObject in NetworkManager.Singleton.SpawnManager.SpawnedObjects.Values)
+        {
+            PlayerManager player = playerObject.GetComponent<PlayerManager>();
+            if (player != null && player.OrangeTeam == orangeTeam && Vector3.Distance(player.transform.position, koPosition) <= range)
+            {
+                playersInProximity.Add(player.Pokemon);
+            }
+        }
+
+        return playersInProximity;
+    }
+
+    private void DistributeExperience(Pokemon attacker, List<Pokemon> playersInProximity, float baseExp, Dictionary<int, (float koerExp, float proximityExp)> expDistribution)
+    {
+        int playersCount = playersInProximity.Count;
+        if (!expDistribution.TryGetValue(playersCount, out var expValues))
+        {
+            expValues = expDistribution[1];
+        }
+
+        float attackerExp = baseExp * expValues.koerExp;
+        attacker.GainExperience(Mathf.FloorToInt(attackerExp));
+
+        float proximityExp = baseExp * expValues.proximityExp;
+        foreach (var player in playersInProximity)
+        {
+            if (player != attacker)
+            {
+                player.GainExperience(Mathf.FloorToInt(proximityExp));
+            }
+        }
+    }
+
+    private float GetBaseExp()
+    {
+        switch (pokemon.CurrentLevel)
+        {
+            case 0:
+                return 20;
+            case 1:
+                return 60;
+            case 2:
+                return 100;
+            case 3:
+                return 140;
+            case 4:
+                return 180;
+            case 5:
+                return 220;
+            case 6:
+                return 260;
+            case 7:
+                return 300;
+            case 8:
+                return 360;
+            case 9:
+                return 420;
+            case 10:
+                return 480;
+            case 11:
+                return 540;
+            case 12:
+                return 600;
+            case 13:
+                return 700;
+            case 14:
+                return 800;
+            default:
+                return 0;
+        }
+    }
+
 }

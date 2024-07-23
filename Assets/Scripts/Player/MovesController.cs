@@ -126,11 +126,16 @@ public class MovesController : NetworkBehaviour
             return;
         }   
 
-        Aim.Instance.ShowBasicAtk(controls.Movement.BasicAttack.IsPressed(), basicAttack.range);
+        bool show = controls.Movement.BasicAttack.IsPressed() || controls.Movement.BasicAttackWild.IsPressed();
+        Aim.Instance.ShowBasicAtk(show, basicAttack.range);
 
         if (controls.Movement.BasicAttack.IsPressed())
         {
-            TryPerformingBasicAttack();
+            TryPerformingBasicAttack(false);
+        }
+        else if (controls.Movement.BasicAttackWild.IsPressed())
+        {
+            TryPerformingBasicAttack(true);
         }
 
         basicAttack.Update();
@@ -281,13 +286,13 @@ public class MovesController : NetworkBehaviour
             : actualMoveType != moveTypeToClassType[moveType];
     }
 
-    private void TryPerformingBasicAttack()
+    private void TryPerformingBasicAttack(bool wildPriority)
     {
         if (!basicAttackStatus.HasStatus(ActionStatusType.None))
         {
             return;
         }
-        basicAttack.Perform();
+        basicAttack.Perform(wildPriority);
         basicAttackStatus.Cooldown = GetAtkSpeedCooldown();
         BasicAttackStatus.AddStatus(ActionStatusType.Cooldown);
         onBasicAttackPerformed?.Invoke();

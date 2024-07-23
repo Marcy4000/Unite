@@ -51,7 +51,10 @@ public class GlaceUnite : MoveBase
                 this.uniteArea.InitializeRPC(playerManager.transform.position, Quaternion.LookRotation(direction), damageInfo, playerManager.OrangeTeam, playerManager.NetworkObjectId);
                 this.uniteArea.onGiveGlaceonSpears += () =>
                 {
-                    glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount + 1, 0, 8));
+                    if (glaceonPassive != null)
+                    {
+                        glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount + 1, 0, 8));
+                    }
                 };
                 Debug.Log("Unite area spawned!");
             };

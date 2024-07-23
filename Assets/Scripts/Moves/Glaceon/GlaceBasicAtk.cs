@@ -26,12 +26,13 @@ public class GlaceBasicAtk : BasicAttackBase
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
     }
 
-    public override void Perform()
+    public override void Perform(bool wildPriority)
     {
+        PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
         switch (basicAtkType)
         {
             case 0:
-                GameObject closestEnemy = Aim.Instance.AimInCircle(range);
+                GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
 
                 // If an enemy is found, launch a homing projectile towards it
                 if (closestEnemy != null)
@@ -60,7 +61,7 @@ public class GlaceBasicAtk : BasicAttackBase
                 }
                 break;
             case 1:
-                closestEnemy = Aim.Instance.AimInCircle(range);
+                closestEnemy = Aim.Instance.AimInCircle(range, priority);
 
                 if (closestEnemy != null)
                 {

@@ -12,7 +12,7 @@ public abstract class BasicAttackBase
         playerManager = manager;
     }
 
-    public abstract void Perform();
+    public abstract void Perform(bool wildPriority);
 
     public abstract void Update();
 }
@@ -24,7 +24,7 @@ public class EmptyBasicAtk : BasicAttackBase
         base.Initialize(manager);
     }
 
-    public override void Perform()
+    public override void Perform(bool wildPriority)
     {
         Debug.Log("Empty basic attack");
     }

@@ -116,6 +116,15 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""BasicAttackWild"",
+                    ""type"": ""Button"",
+                    ""id"": ""beb62765-5e9f-46e6-86f2-1442a2a0fcf4"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -292,6 +301,17 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Recall"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""924c9141-4158-454e-9a99-1f2f387af19b"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""BasicAttackWild"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -476,6 +496,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_Movement_CancelMove = m_Movement.FindAction("CancelMove", throwIfNotFound: true);
         m_Movement_BattleItem = m_Movement.FindAction("BattleItem", throwIfNotFound: true);
         m_Movement_Recall = m_Movement.FindAction("Recall", throwIfNotFound: true);
+        m_Movement_BasicAttackWild = m_Movement.FindAction("BasicAttackWild", throwIfNotFound: true);
         // LearnMove
         m_LearnMove = asset.FindActionMap("LearnMove", throwIfNotFound: true);
         m_LearnMove_Move1 = m_LearnMove.FindAction("Move1", throwIfNotFound: true);
@@ -560,6 +581,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Movement_CancelMove;
     private readonly InputAction m_Movement_BattleItem;
     private readonly InputAction m_Movement_Recall;
+    private readonly InputAction m_Movement_BasicAttackWild;
     public struct MovementActions
     {
         private @PlayerControls m_Wrapper;
@@ -574,6 +596,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         public InputAction @CancelMove => m_Wrapper.m_Movement_CancelMove;
         public InputAction @BattleItem => m_Wrapper.m_Movement_BattleItem;
         public InputAction @Recall => m_Wrapper.m_Movement_Recall;
+        public InputAction @BasicAttackWild => m_Wrapper.m_Movement_BasicAttackWild;
         public InputActionMap Get() { return m_Wrapper.m_Movement; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -613,6 +636,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @Recall.started += instance.OnRecall;
             @Recall.performed += instance.OnRecall;
             @Recall.canceled += instance.OnRecall;
+            @BasicAttackWild.started += instance.OnBasicAttackWild;
+            @BasicAttackWild.performed += instance.OnBasicAttackWild;
+            @BasicAttackWild.canceled += instance.OnBasicAttackWild;
         }
 
         private void UnregisterCallbacks(IMovementActions instance)
@@ -647,6 +673,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @Recall.started -= instance.OnRecall;
             @Recall.performed -= instance.OnRecall;
             @Recall.canceled -= instance.OnRecall;
+            @BasicAttackWild.started -= instance.OnBasicAttackWild;
+            @BasicAttackWild.performed -= instance.OnBasicAttackWild;
+            @BasicAttackWild.canceled -= instance.OnBasicAttackWild;
         }
 
         public void RemoveCallbacks(IMovementActions instance)
@@ -846,6 +875,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         void OnCancelMove(InputAction.CallbackContext context);
         void OnBattleItem(InputAction.CallbackContext context);
         void OnRecall(InputAction.CallbackContext context);
+        void OnBasicAttackWild(InputAction.CallbackContext context);
     }
     public interface ILearnMoveActions
     {

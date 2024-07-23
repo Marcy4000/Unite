@@ -23,6 +23,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     public PlayerStats PlayerStats => playerStats.Value;
 
+    private float localDeathTimer = 5f;
     private NetworkVariable<float> deathTimer = new NetworkVariable<float>(5f, writePerm:NetworkVariableWritePermission.Owner);
     public float DeathTimer => deathTimer.Value;
     public event System.Action<float> OnDeathTimerChanged;
@@ -104,14 +105,16 @@ public class PlayerNetworkManager : NetworkBehaviour
 
         if (playerManager.PlayerState == PlayerState.Dead)
         {
-            deathTimer.Value -= Time.deltaTime;
-            BattleUIManager.instance.UpdateDeathScreenTimer(Mathf.RoundToInt(deathTimer.Value));
+            localDeathTimer -= Time.deltaTime;
+            deathTimer.Value = localDeathTimer;
+            BattleUIManager.instance.UpdateDeathScreenTimer(Mathf.RoundToInt(localDeathTimer));
 
-            if (deathTimer.Value <= 0)
+            if (localDeathTimer <= 0)
             {
                 BattleUIManager.instance.HideDeathScreen();
                 playerManager.Respawn();
-                deathTimer.Value = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
+                localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
+                deathTimer.Value = localDeathTimer;
             }
         }
     }
@@ -245,7 +248,8 @@ public class PlayerNetworkManager : NetworkBehaviour
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, (ushort)(playerStats.Value.deaths + 1), playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
 
         ShowKillRpc(info, !playerManager.OrangeTeam);
-        deathTimer.Value = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
+        localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
+        deathTimer.Value = localDeathTimer;
         BattleUIManager.instance.ShowDeathScreen();
 
         killsSinceLastDeath = 0;

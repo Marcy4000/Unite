@@ -145,6 +145,14 @@ public static class MoveDatabase
                 return new MarshadowShadowSneak();
             case AvailableMoves.MarshadowPhantomForce:
                 return new MarshadowPhantomForce();
+            case AvailableMoves.MarshadowSpectralThief:
+                return new MarshadowSpectralThief();
+            case AvailableMoves.MarshadowCloseCombat:
+                return new MarshadowCloseCombat();
+            case AvailableMoves.MarshadowAuraSphere:
+                return new MarshadowAuraSphere();
+            case AvailableMoves.MarshadowUnite:
+                return new MarshadowUnite();
 
             default:
                 return null;

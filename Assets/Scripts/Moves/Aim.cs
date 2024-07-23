@@ -175,13 +175,17 @@ public class Aim : NetworkBehaviour
         circleIndicator.SetActive(false);
     }
 
-    public GameObject AimInCircle(float attackRadius)
+    public GameObject AimInCircle(float attackRadius, PokemonType priority = PokemonType.Player)
     {
         // Find enemies within the attack radius using OverlapSphereNonAlloc
         int numEnemies = Physics.OverlapSphereNonAlloc(transform.position, attackRadius, collidersBuffer, targetMask);
 
         GameObject closestEnemy = null;
         float closestDistance = Mathf.Infinity;
+
+        // Initialize variables to track the highest priority target
+        GameObject highestPriorityTarget = null;
+        float highestPriorityDistance = Mathf.Infinity;
 
         // Iterate through detected enemies
         for (int i = 0; i < numEnemies; i++)
@@ -190,20 +194,37 @@ public class Aim : NetworkBehaviour
             if (collidersBuffer[i] == playerCollider || collidersBuffer[i].CompareTag("VisionController"))
                 continue;
 
-            if (!CanPokemonBeTargeted(collidersBuffer[i].gameObject, AimTarget.NonAlly))
+            if (!CanPokemonBeTargeted(collidersBuffer[i].gameObject, AimTarget.NonAlly, TeamToIgnore, false))
             {
                 continue;
             }
 
             float distance = Vector3.Distance(transform.position, collidersBuffer[i].transform.position);
-            if (distance < closestDistance)
+
+            // Check if the target matches the priority
+            if ((priority == PokemonType.Player && collidersBuffer[i].CompareTag("Player")) ||
+                (priority == PokemonType.Wild && collidersBuffer[i].CompareTag("WildPokemon")))
             {
-                closestDistance = distance;
-                closestEnemy = collidersBuffer[i].gameObject;
+                // Update highest priority target if closer
+                if (distance < highestPriorityDistance)
+                {
+                    highestPriorityDistance = distance;
+                    highestPriorityTarget = collidersBuffer[i].gameObject;
+                }
+            }
+            else
+            {
+                // Update closest target if no priority target found
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestEnemy = collidersBuffer[i].gameObject;
+                }
             }
         }
 
-        return closestEnemy;
+        // Return the highest priority target if found, otherwise the closest target
+        return highestPriorityTarget != null ? highestPriorityTarget : closestEnemy;
     }
 
     public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target)
@@ -211,7 +232,7 @@ public class Aim : NetworkBehaviour
         return AimInCircleAtPosition(position, radius, target, teamToIgnore);
     }
 
-    public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, bool teamToIgnore)
+    public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, bool teamToIgnore, bool canHitInvisTargets = true)
     {
         List<GameObject> foundTargets = new List<GameObject>();
 
@@ -224,7 +245,7 @@ public class Aim : NetworkBehaviour
                 continue;
             }
 
-            if (!CanPokemonBeTargeted(hitCollider.gameObject, target, teamToIgnore))
+            if (!CanPokemonBeTargeted(hitCollider.gameObject, target, teamToIgnore, canHitInvisTargets))
             {
                 continue;
             }
@@ -271,7 +292,7 @@ public class Aim : NetworkBehaviour
                     continue;
                 }
 
-                if (!CanPokemonBeTargeted(hit.collider.gameObject, autoaimTarget))
+                if (!CanPokemonBeTargeted(hit.collider.gameObject, autoaimTarget, TeamToIgnore, false))
                 {
                     continue;
                 }
@@ -353,12 +374,7 @@ public class Aim : NetworkBehaviour
         return aimDirection;
     }
 
-    public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType)
-    {
-        return CanPokemonBeTargeted(pokemonObject, targetType, teamToIgnore);
-    }
-
-    public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType, bool teamToIgnore)
+    public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType, bool teamToIgnore, bool canHitInvisTargets=true)
     {
         switch (targetType)
         {
@@ -420,7 +436,7 @@ public class Aim : NetworkBehaviour
 
         if (pokemonObject.TryGetComponent(out Vision vision))
         {
-            if (!vision.IsRendered || !vision.IsVisible)
+            if ((!vision.IsRendered || !vision.IsVisible) && !canHitInvisTargets)
             {
                 return false;
             }

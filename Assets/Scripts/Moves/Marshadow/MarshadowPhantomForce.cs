@@ -10,11 +10,12 @@ public class MarshadowPhantomForce : MoveBase
     they collide to terrain.*/
 
     private StatusEffect invulnerableEffect = new StatusEffect(StatusType.Invincible, 0, false, 6);
+    private StatusEffect invisibleEffect = new StatusEffect(StatusType.Invisible, 0, false, 7);
     private DamageInfo damage = new DamageInfo(0, 1.2f, 7, 120, DamageType.Physical);
 
     private float range = 2.9f;
 
-    private float secondUseTimer = 3.5f;
+    private float secondUseTimer = 4f;
     private bool isSecondUse;
 
     private bool isFinishing;
@@ -22,7 +23,7 @@ public class MarshadowPhantomForce : MoveBase
     public MarshadowPhantomForce()
     {
         Name = "Phantom Force";
-        Cooldown = 8f;
+        Cooldown = 10f;
     }
 
     public override void Start(PlayerManager controller)
@@ -55,9 +56,11 @@ public class MarshadowPhantomForce : MoveBase
         {
             if (!isSecondUse)
             {
-                secondUseTimer = 3.5f;
+                secondUseTimer = 4f;
                 BattleUIManager.instance.ShowMoveSecondaryCooldown(1, secondUseTimer);
                 playerManager.Pokemon.AddStatusEffect(invulnerableEffect);
+                playerManager.Pokemon.AddStatusEffect(invisibleEffect);
+                playerManager.SetPlayerVisibilityRPC(false);
                 isFinishing = false;
                 isSecondUse = true;
             }
@@ -80,6 +83,8 @@ public class MarshadowPhantomForce : MoveBase
         playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
         playerManager.PlayerMovement.CanMove = false;
         playerManager.AnimationManager.PlayAnimation("pm0883_ba20_buturi02");
+
+        playerManager.Pokemon.RemoveStatusEffectWithID(invisibleEffect.ID);
 
         yield return new WaitForSeconds(0.63f);
 
