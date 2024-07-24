@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class LoadingScreenPlayer : MonoBehaviour
 {
-    [SerializeField] private Image portrait, playerBar;
+    [SerializeField] private Image portrait, playerBar, battleItem;
     [SerializeField] private TMP_Text playerName, pokemonName;
 
     [SerializeField] private Sprite blueSprite, orangeSprite;
@@ -27,6 +27,7 @@ public class LoadingScreenPlayer : MonoBehaviour
         pokemonName.text = info.pokemonName;
         bool orangeTeam = player.Data["PlayerTeam"].Value == "Orange";
         playerBar.sprite = orangeTeam ? orangeSprite : blueSprite;
+        battleItem.sprite = CharactersList.instance.GetBattleItemByID(int.Parse(player.Data["BattleItem"].Value)).icon;
         localPlayerImage.SetActive(player.Id == LobbyController.Instance.Player.Id);
     }
 

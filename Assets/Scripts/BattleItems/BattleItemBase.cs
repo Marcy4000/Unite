@@ -45,9 +45,9 @@ public static class BattleItemDatabase
             case AvailableBattleItems.Eject:
                 return new EjectButton();
             case AvailableBattleItems.XSpeed:
-                //return new XSpeed();
+                return new XSpeed();
             case AvailableBattleItems.XAttack:
-                //return new XAttack();
+                return new XAttack();
             case AvailableBattleItems.FullHeal:
                 return new FullHeal();
             case AvailableBattleItems.GoalGetter:
