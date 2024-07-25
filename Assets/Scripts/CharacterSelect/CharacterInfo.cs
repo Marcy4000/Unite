@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 public enum PokemonClass { Attacker, Defender, Supporter, AllRounder, Speedster }
 
@@ -6,11 +7,12 @@ public enum PokemonClass { Attacker, Defender, Supporter, AllRounder, Speedster 
 public class CharacterInfo : ScriptableObject
 {
     public string pokemonName;
-    public PokemonBase pokemon;
+    //public PokemonBase pokemon;
+    public AssetReference pokemon;
     public PokemonClass pClass;
 
     [Space]
-    public GameObject model;
+    public AssetReferenceGameObject model;
 
     public Sprite icon;
     public Sprite portrait;

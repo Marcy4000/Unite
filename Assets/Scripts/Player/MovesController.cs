@@ -95,7 +95,7 @@ public class MovesController : NetworkBehaviour
         uniteMoveStatus.AddStatus(ActionStatusType.Cooldown);
 
         LockEveryAction();
-        LearnBasicAttack(BasicAttacksDatabase.GetBasicAttack(pokemon.BaseStats.PokemonName));
+        LearnBasicAttack(BasicAttacksDatabase.GetBasicAttack(""));
         StartCoroutine(PassiveUniteCharge());
     }
 

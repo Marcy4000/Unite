@@ -7,7 +7,6 @@ public class CharactersList : MonoBehaviour
 
     [SerializeField] private CharacterInfo[] characters;
     [SerializeField] private WildPokemonInfo[] wildPokemons;
-    [SerializeField] private Sprite[] backgrounds;
     [SerializeField] private Sprite[] moveLabels;
     [SerializeField] private BattleItemAsset[] battleItems;
     [SerializeField] private MapInfo[] maps;
@@ -40,25 +39,6 @@ public class CharactersList : MonoBehaviour
         }
 
         return null;
-    }
-
-    public Sprite GetBackgroundFromClass(PokemonClass pClass)
-    {
-        switch (pClass)
-        {
-            case PokemonClass.Attacker:
-                return backgrounds[0];
-            case PokemonClass.Defender:
-                return backgrounds[1];
-            case PokemonClass.Supporter:
-                return backgrounds[2];
-            case PokemonClass.AllRounder:
-                return backgrounds[3];
-            case PokemonClass.Speedster:
-                return backgrounds[4];
-            default:
-                return null;
-        }
     }
 
     public Sprite GetMoveLabel(MoveLabels label)

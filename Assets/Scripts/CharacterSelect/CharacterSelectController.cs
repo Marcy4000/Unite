@@ -5,6 +5,8 @@ using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using JSAM;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.AddressableAssets;
 
 public class CharacterSelectController : NetworkBehaviour
 {
@@ -29,6 +31,8 @@ public class CharacterSelectController : NetworkBehaviour
     private bool isLoading = false;
     private bool startTimer = false;
     private bool hasSelectedCharacter = false;
+
+    private AsyncOperationHandle<GameObject> characterSelectModelHandle;
 
     private void OnEnable()
     {
@@ -119,6 +123,11 @@ public class CharacterSelectController : NetworkBehaviour
         AudioManager.StopMusic(DefaultAudioMusic.ChoosePokemon);
         AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme, true);
         LoadingScreen.Instance.ShowMatchLoadingScreen();
+
+        if (characterSelectModelHandle.IsValid())
+        {
+            Addressables.Release(characterSelectModelHandle);
+        }
     }
 
     private void ChangeCharacter(CharacterInfo character)
@@ -173,7 +182,28 @@ public class CharacterSelectController : NetworkBehaviour
         if (currentPokemon != null)
         {
             Destroy(currentPokemon);
+            currentPokemon = null;
         }
-        currentPokemon = Instantiate(character.model, pokemonSpawnPoint);
+
+        // Release the previous addressable handle if valid
+        if (characterSelectModelHandle.IsValid())
+        {
+            Addressables.Release(characterSelectModelHandle);
+        }
+
+        characterSelectModelHandle = Addressables.LoadAssetAsync<GameObject>(character.model);
+        characterSelectModelHandle.Completed += OnCharacterSelectModelLoaded;
+    }
+
+    private void OnCharacterSelectModelLoaded(AsyncOperationHandle<GameObject> obj)
+    {
+        if (obj.Status == AsyncOperationStatus.Succeeded)
+        {
+            currentPokemon = Instantiate(obj.Result, pokemonSpawnPoint);
+        }
+        else
+        {
+            Debug.LogError("Failed to load asset.");
+        }
     }
 }

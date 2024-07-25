@@ -92,6 +92,8 @@ public class PlayerManager : NetworkBehaviour
     private Vector3 deathPosition = new Vector3(0, -50, 0);
     private Coroutine stopMovementCoroutine;
 
+    private AsyncOperationHandle<PokemonBase> pokemonLoadHandle;
+
     private void Awake()
     {
         pokemon = GetComponent<Pokemon>();
@@ -290,14 +292,29 @@ public class PlayerManager : NetworkBehaviour
         vision.AddObject(hpBar.gameObject);
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     public void ChangeSelectedPokemonRpc(string pokemonName)
     {
-        PokemonBase newPokemon = CharactersList.Instance.GetCharacterFromString(pokemonName).pokemon;
-        selectedPokemon = newPokemon;
-        pokemon.SetNewPokemon(selectedPokemon);
-        hpBar.SetPokemon(pokemon);
-        HandleEvolution();
+        pokemonLoadHandle = Addressables.LoadAssetAsync<PokemonBase>(CharactersList.Instance.GetCharacterFromString(pokemonName).pokemon);
+        pokemonLoadHandle.Completed += (handle) =>
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                PokemonBase newPokemon = handle.Result;
+                selectedPokemon = newPokemon;
+                pokemon.SetNewPokemon(selectedPokemon);
+                hpBar.SetPokemon(pokemon);
+                HandleEvolution();
+                if (IsOwner)
+                {
+                    movesController.LearnBasicAttack(BasicAttacksDatabase.GetBasicAttack(pokemon.BaseStats.PokemonName));
+                }
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
     }
 
     [Rpc(SendTo.Owner)]
@@ -878,4 +895,12 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
+    public override void OnDestroy()
+    {
+        if (pokemonLoadHandle.IsValid())
+        {
+            Addressables.Release(pokemonLoadHandle);
+        }
+        base.OnDestroy();
+    }
 }

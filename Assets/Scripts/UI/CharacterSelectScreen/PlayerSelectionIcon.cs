@@ -9,6 +9,7 @@ public class PlayerSelectionIcon : MonoBehaviour
     [SerializeField] private Image characterIcon;
     [SerializeField] private Image battleItem;
     [SerializeField] private TMP_Text playerNameText;
+    [SerializeField] private Sprite[] backgrounds;
 
     [SerializeField] private Sprite defaultBackground;
 
@@ -42,7 +43,7 @@ public class PlayerSelectionIcon : MonoBehaviour
         {
             characterIcon.gameObject.SetActive(true);
             battleItem.gameObject.SetActive(true);
-            background.sprite = CharactersList.Instance.GetBackgroundFromClass(info.pClass);
+            background.sprite = GetBackgroundFromClass(info.pClass);
             characterIcon.sprite = info.icon;
             battleItem.sprite = CharactersList.Instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)).icon;
         }
@@ -51,6 +52,25 @@ public class PlayerSelectionIcon : MonoBehaviour
             background.sprite = defaultBackground;
             characterIcon.gameObject.SetActive(false);
             battleItem.gameObject.SetActive(false);
+        }
+    }
+
+    private Sprite GetBackgroundFromClass(PokemonClass pClass)
+    {
+        switch (pClass)
+        {
+            case PokemonClass.Attacker:
+                return backgrounds[0];
+            case PokemonClass.Defender:
+                return backgrounds[1];
+            case PokemonClass.Supporter:
+                return backgrounds[2];
+            case PokemonClass.AllRounder:
+                return backgrounds[3];
+            case PokemonClass.Speedster:
+                return backgrounds[4];
+            default:
+                return null;
         }
     }
 }

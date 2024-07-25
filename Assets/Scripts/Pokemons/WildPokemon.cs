@@ -16,6 +16,8 @@ public class WildPokemon : NetworkBehaviour
 
     private string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
 
+    private AsyncOperationHandle<PokemonBase> pokemonLoadHandle;
+
     public Pokemon Pokemon => pokemon;
     public WildPokemonInfo WildPokemonInfo { get => wildPokemonInfo; set { wildPokemonInfo = value; } }
     public int ExpYield { get => wildPokemonInfo.ExpYield; }
@@ -67,7 +69,10 @@ public class WildPokemon : NetworkBehaviour
         if (pokemon.Type == PokemonType.Objective)
         {
             ShowKillRpc(info);
-            HandleObjectiveBehaviour(ObjectivesDatabase.GetObjectiveType(wildPokemonInfo.PokemonBase.PokemonName), info);
+            if (pokemonLoadHandle.IsValid())
+            {
+                HandleObjectiveBehaviour(ObjectivesDatabase.GetObjectiveType(pokemonLoadHandle.Result.PokemonName), info);
+            }
         }
         else
         {
@@ -281,10 +286,27 @@ public class WildPokemon : NetworkBehaviour
     {
         wildPokemonInfo = CharactersList.Instance.WildPokemons[infoID];
         pokemon = GetComponent<Pokemon>();
-        pokemon.SetNewPokemon(wildPokemonInfo.PokemonBase);
+        pokemonLoadHandle = Addressables.LoadAssetAsync<PokemonBase>(wildPokemonInfo.PokemonBase);
+        pokemonLoadHandle.Completed += (handle) =>
+        {
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+            {
+                pokemon.SetNewPokemon(handle.Result);
+                hpBar.SetPokemon(pokemon);
+                hpBar.InitializeEnergyUI(EnergyYield);
+
+                if (isObjective)
+                {
+                    MinimapManager.Instance.CreateObjectiveIcon(this);
+                }
+            }
+            else
+            {
+                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+            }
+        };
+
         pokemon.Type = isObjective ? PokemonType.Objective : PokemonType.Wild;
-        hpBar.SetPokemon(pokemon);
-        hpBar.InitializeEnergyUI(EnergyYield);
 
         if (isObjective)
         {
@@ -310,5 +332,14 @@ public class WildPokemon : NetworkBehaviour
             return;
         }
         rb.AddForce(direction * force, ForceMode.Impulse);
+    }
+
+    public override void OnDestroy()
+    {
+        if (pokemonLoadHandle.IsValid())
+        {
+            Addressables.Release(pokemonLoadHandle);
+        }
+        base.OnDestroy();
     }
 }
