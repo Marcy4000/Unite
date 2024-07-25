@@ -62,4 +62,8 @@ public class VaporSwift : MoveBase
         base.Cancel();
         Aim.Instance.HideCircleAreaIndicator();
     }
+
+    public override void ResetMove()
+    {
+    }
 }

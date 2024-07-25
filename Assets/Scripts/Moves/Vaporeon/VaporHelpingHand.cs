@@ -63,4 +63,9 @@ public class VaporHelpingHand : MoveBase
         base.Cancel();
         Aim.Instance.HideAutoAim();
     }
+
+    public override void ResetMove()
+    {
+        target = null;
+    }
 }

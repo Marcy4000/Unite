@@ -39,4 +39,8 @@ public class SylvCalmMind : MoveBase
         Debug.Log($"Finished {Name}!");
         base.Finish();
     }
+
+    public override void ResetMove()
+    {
+    }
 }

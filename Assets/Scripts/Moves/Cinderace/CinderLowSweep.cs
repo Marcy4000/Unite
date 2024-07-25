@@ -47,4 +47,9 @@ public class CinderLowSweep : MoveBase
         base.Cancel();
         Aim.Instance.HideDashAim();
     }
+
+    public override void ResetMove()
+    {
+        direction = Vector3.zero;
+    }
 }

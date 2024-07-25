@@ -101,4 +101,11 @@ public class VaporRainDance : MoveBase
         base.Cancel();
         Aim.Instance.HideCircleAreaIndicator();
     }
+
+    override public void ResetMove()
+    {
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        playerManager.DOKill();
+    }
 }

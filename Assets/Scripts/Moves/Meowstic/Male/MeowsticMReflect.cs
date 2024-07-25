@@ -75,4 +75,8 @@ public class MeowsticMReflect : MoveBase
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
         }
     }
+
+    public override void ResetMove()
+    {
+    }
 }

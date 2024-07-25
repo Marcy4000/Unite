@@ -121,84 +121,82 @@ public class MovesController : NetworkBehaviour
             return;
         }
 
-        if (playerManager.PlayerState != PlayerState.Alive)
+        if (playerManager.PlayerState == PlayerState.Alive)
         {
-            return;
-        }   
+            bool show = controls.Movement.BasicAttack.IsPressed() || controls.Movement.BasicAttackWild.IsPressed();
+            Aim.Instance.ShowBasicAtk(show, basicAttack.range);
 
-        bool show = controls.Movement.BasicAttack.IsPressed() || controls.Movement.BasicAttackWild.IsPressed();
-        Aim.Instance.ShowBasicAtk(show, basicAttack.range);
+            if (controls.Movement.BasicAttack.IsPressed())
+            {
+                TryPerformingBasicAttack(false);
+            }
+            else if (controls.Movement.BasicAttackWild.IsPressed())
+            {
+                TryPerformingBasicAttack(true);
+            }
 
-        if (controls.Movement.BasicAttack.IsPressed())
-        {
-            TryPerformingBasicAttack(false);
-        }
-        else if (controls.Movement.BasicAttackWild.IsPressed())
-        {
-            TryPerformingBasicAttack(true);
-        }
+            basicAttack.Update();
 
-        basicAttack.Update();
+            if (basicAttackStatus.Cooldown > 0)
+            {
+                basicAttackStatus.Cooldown -= Time.deltaTime;
+            }
 
-        if (basicAttackStatus.Cooldown > 0)
-        {
-            basicAttackStatus.Cooldown -= Time.deltaTime;
-        }
+            if (basicAttackStatus.HasStatus(ActionStatusType.Cooldown) && basicAttackStatus.Cooldown <= 0)
+            {
+                BasicAttackStatus.RemoveStatus(ActionStatusType.Cooldown);
+            }
 
-        if (basicAttackStatus.HasStatus(ActionStatusType.Cooldown) && basicAttackStatus.Cooldown <= 0)
-        {
-            BasicAttackStatus.RemoveStatus(ActionStatusType.Cooldown);
-        }
+            if (controls.Movement.MoveA.WasPressedThisFrame())
+            {
+                TryUsingMove(0);
+            }
+            if (controls.Movement.MoveB.WasPressedThisFrame())
+            {
+                TryUsingMove(1);
+            }
+            if (controls.Movement.UniteMove.WasPressedThisFrame())
+            {
+                TryUsingUniteMove();
+            }
 
-        if (controls.Movement.MoveA.WasPressedThisFrame())
-        {
-            TryUsingMove(0);
-        }
-        if (controls.Movement.MoveB.WasPressedThisFrame())
-        {
-            TryUsingMove(1);
-        }
-        if (controls.Movement.UniteMove.WasPressedThisFrame())
-        {
-            TryUsingUniteMove();
-        }
-
-        if (controls.Movement.BattleItem.WasPressedThisFrame())
-        {
-            TryUsingBattleItem();
-        }
+            if (controls.Movement.BattleItem.WasPressedThisFrame())
+            {
+                TryUsingBattleItem();
+            }
 
 
-        moves[0].Update();
-        moves[1].Update();
-        uniteMove.Update();
+            moves[0].Update();
+            moves[1].Update();
+            uniteMove.Update();
 
-        battleItem.Update();
+            battleItem.Update();
 
-        if (controls.Movement.CancelMove.WasPressedThisFrame())
-        {
-            moves[0].Cancel();
-            moves[1].Cancel();
-            uniteMove.Cancel();
-            battleItem.Cancel();
-        }
+            if (controls.Movement.CancelMove.WasPressedThisFrame())
+            {
+                moves[0].Cancel();
+                moves[1].Cancel();
+                uniteMove.Cancel();
+                battleItem.Cancel();
+            }
 
-        if (controls.Movement.MoveA.WasReleasedThisFrame())
-        {
-            TryFinishingMove(0);
-        }
-        if (controls.Movement.MoveB.WasReleasedThisFrame())
-        {
-            TryFinishingMove(1);
-        }
-        if (controls.Movement.UniteMove.WasReleasedThisFrame())
-        {
-            TryFinishingUniteMove();
-        }
+            if (controls.Movement.MoveA.WasReleasedThisFrame())
+            {
+                TryFinishingMove(0);
+            }
+            if (controls.Movement.MoveB.WasReleasedThisFrame())
+            {
+                TryFinishingMove(1);
+            }
+            if (controls.Movement.UniteMove.WasReleasedThisFrame())
+            {
+                TryFinishingUniteMove();
+            }
 
-        if (controls.Movement.BattleItem.WasReleasedThisFrame())
-        {
-            TryFinishingBattleItem();
+            if (controls.Movement.BattleItem.WasReleasedThisFrame())
+            {
+                TryFinishingBattleItem();
+            }
         }
 
         for (int i = 0; i < moveStatuses.Length; i++)
@@ -490,17 +488,20 @@ public class MovesController : NetworkBehaviour
                 moves[0] = MoveDatabase.GetMove(move.move);
                 moves[0].onMoveOver += OnMoveOver;
                 moves[0].IsUpgraded = move.isUpgraded;
+                moves[0].playerManager = playerManager;
                 break;
             case MoveType.MoveB:
                 moves[1] = MoveDatabase.GetMove(move.move);
                 moves[1].onMoveOver += OnMoveOver;
                 moves[1].IsUpgraded = move.isUpgraded;
+                moves[1].playerManager = playerManager;
                 break;
             case MoveType.UniteMove:
                 uniteMoveMaxCharge = move.uniteEnergyCost;
                 uniteMove = MoveDatabase.GetMove(move.move);
                 uniteMove.onMoveOver += OnMoveOver;
                 uniteMove.IsUpgraded = move.isUpgraded;
+                uniteMove.playerManager = playerManager;
                 break;
             case MoveType.All:
                 for (int i = 0; i < moves.Length; i++)
@@ -533,6 +534,13 @@ public class MovesController : NetworkBehaviour
         moves[0].Cancel();
         moves[1].Cancel();
         uniteMove.Cancel();
+    }
+
+    public void ResetAllMoves()
+    {
+        moves[0].ResetMove();
+        moves[1].ResetMove();
+        uniteMove.ResetMove();
     }
 
     public void AddMoveStatus(int index, ActionStatusType statusType)

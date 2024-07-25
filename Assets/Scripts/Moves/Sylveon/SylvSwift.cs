@@ -9,6 +9,8 @@ public class SylvSwift : MoveBase
 
     private bool launching = false;
 
+    private Coroutine swiftRoutine;
+
     public SylvSwift()
     {
         Name = "Swift";
@@ -42,9 +44,8 @@ public class SylvSwift : MoveBase
     {
         if (direction.magnitude != 0 && IsActive)
         {
-            Vector2 direction = new Vector2(this.direction.x, this.direction.z);
             launching = true;
-            playerManager.StartCoroutine(LaunchSwift());
+            swiftRoutine = playerManager.StartCoroutine(LaunchSwift());
 
             wasMoveSuccessful = true;
         }
@@ -79,5 +80,14 @@ public class SylvSwift : MoveBase
     {
         base.Cancel();
         Aim.Instance.HideSkillshotAim();
+    }
+
+    public override void ResetMove()
+    {
+        if (swiftRoutine != null)
+        {
+            playerManager.StopCoroutine(swiftRoutine);
+        }
+        launching = false;
     }
 }

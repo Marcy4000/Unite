@@ -47,6 +47,7 @@ public class GlaceIcicleSpear : MoveBase
         playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
         playerManager.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
 
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
 
@@ -129,6 +130,7 @@ public class GlaceIcicleSpear : MoveBase
             playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
             playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
             playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+            playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
         }
         Debug.Log($"Finished {Name}!");
         base.Finish();
@@ -147,7 +149,23 @@ public class GlaceIcicleSpear : MoveBase
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
         playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
 
         base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        activated = false;
+        if (icicleSpearHitbox != null)
+        {
+            playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
+            icicleSpearHitbox = null;
+        }
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(3);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

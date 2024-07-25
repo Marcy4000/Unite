@@ -331,11 +331,10 @@ public class PlayerManager : NetworkBehaviour
         SpawnEnergy(currentEnergy.Value);
         ResetEnergyRPC();
         GiveExpRpc(info.attackerId, transform.position);
-        // TODO: make moves end on death while not breaking everything
-        transform.DOKill();
-        //StopAllCoroutines();
-        playerMovement.CanMove = false;
+
         movesController.CancelAllMoves();
+        movesController.ResetAllMoves();
+        playerMovement.CanMove = false;
 
         CameraController.Instance.ForcePan(true);
 

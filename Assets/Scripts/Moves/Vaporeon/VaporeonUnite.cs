@@ -10,6 +10,8 @@ public class VaporeonUnite : MoveBase
 
     private VaporUniteArea area;
 
+    private Coroutine uniteRoutine;
+
     public VaporeonUnite()
     {
         Name = "Turbo Tempest";
@@ -33,7 +35,7 @@ public class VaporeonUnite : MoveBase
     {
         if (IsActive)
         {
-            playerManager.StartCoroutine(CastUnite());
+            uniteRoutine = playerManager.StartCoroutine(CastUnite());
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideSimpleCircle();
@@ -70,6 +72,19 @@ public class VaporeonUnite : MoveBase
 
         yield return new WaitForSeconds(0.95f);
         playerManager.PlayerMovement.CanMove = true;
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+    }
+
+    public override void ResetMove()
+    {
+        if (uniteRoutine != null)
+        {
+            playerManager.StopCoroutine(uniteRoutine);
+        }
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);

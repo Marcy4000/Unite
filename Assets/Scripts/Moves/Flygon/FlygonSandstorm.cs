@@ -10,6 +10,8 @@ public class FlygonSandstorm : MoveBase
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Flygon/SandstormArea.prefab";
 
+    private Coroutine spawnRoutine;
+
     public FlygonSandstorm()
     {
         Name = "Sandstorm";
@@ -37,7 +39,7 @@ public class FlygonSandstorm : MoveBase
     {
         if (IsActive)
         {
-            playerManager.StartCoroutine(SpawnStorm());
+            spawnRoutine = playerManager.StartCoroutine(SpawnStorm());
 
             wasMoveSuccessful = true;
         }
@@ -83,5 +85,18 @@ public class FlygonSandstorm : MoveBase
     {
         Aim.Instance.HideCircleAreaIndicator();
         base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        if (spawnRoutine != null)
+        {
+            playerManager.StopCoroutine(spawnRoutine);
+        }
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

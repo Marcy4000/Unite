@@ -45,6 +45,7 @@ public class MeowsticMScratch : MoveBase
     private IEnumerator AimRoutine()
     {
         playerManager.MovesController.LockEveryAction();
+        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
 
         playerManager.AnimationManager.PlayAnimation("Armature_pm0733_00_ba20_buturi01");
         playerManager.StopMovementForTime(1f);
@@ -67,6 +68,7 @@ public class MeowsticMScratch : MoveBase
         }
 
         playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 
     private IEnumerator DamageRoutine(Pokemon pokemon)
@@ -92,5 +94,11 @@ public class MeowsticMScratch : MoveBase
     {
         Aim.Instance.HideSkillshotAim();
         base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

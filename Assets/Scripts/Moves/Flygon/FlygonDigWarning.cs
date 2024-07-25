@@ -17,6 +17,12 @@ public class FlygonDigWarning : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
+    public void DespawnRPC()
+    {
+        NetworkObject.Despawn(true);
+    }
+
+    [Rpc(SendTo.Server)]
     public void GiveDamageRPC()
     {
         Collider[] colliders = Physics.OverlapSphere(transform.position, 1f);

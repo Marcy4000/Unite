@@ -25,4 +25,8 @@ public class CinderFeint : MoveBase
         }
         base.Finish();
     }
+
+    public override void ResetMove()
+    {
+    }
 }

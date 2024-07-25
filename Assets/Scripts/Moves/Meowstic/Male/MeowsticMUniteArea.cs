@@ -26,10 +26,37 @@ public class MeowsticMUniteArea : NetworkBehaviour
     {
         meowstic = NetworkManager.Singleton.SpawnManager.SpawnedObjects[meowsticID].GetComponent<PlayerManager>();
         damage.attackerId = meowsticID;
+        meowstic.Pokemon.OnDeath += OnMeowsticDeath;
 
         initialized = true;
 
         StartCoroutine(DoDamage());
+    }
+
+    private void OnMeowsticDeath(DamageInfo info)
+    {
+        foreach (Pokemon enemy in enemiesInArea)
+        {
+            if (enemy != null)
+            {
+                enemy.RemoveStatChangeWithIDRPC(speedDebuff.ID);
+            }
+        }
+
+        foreach (Pokemon ally in alliesInArea)
+        {
+            if (ally != null)
+            {
+                ally.RemoveStatChangeWithIDRPC(speedBoost.ID);
+                ally.RemoveStatChangeWithIDRPC(cdrBoost.ID);
+                if (ally.HasShieldWithID(8))
+                {
+                    ally.RemoveShieldWithIDRPC(8);
+                }
+            }
+        }
+        meowstic.Pokemon.OnDeath -= OnMeowsticDeath;
+        NetworkObject.Despawn(true);
     }
 
     private void Update()
@@ -65,6 +92,7 @@ public class MeowsticMUniteArea : NetworkBehaviour
                     }
                 }
             }
+            meowstic.Pokemon.OnDeath -= OnMeowsticDeath;
             NetworkObject.Despawn(true);
         }
     }

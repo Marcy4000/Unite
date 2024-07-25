@@ -23,7 +23,15 @@ public class AquaRingObject : NetworkBehaviour
         target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetId].GetComponent<PlayerManager>();
         target.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(target.Pokemon.GetMaxHp()*0.20f), 2, 1, 6f, true));
         target.Pokemon.OnHpOrShieldChange += CheckIfShouldBreakEarly;
+        target.Pokemon.OnDeath += OnTargetDeath;
         initialized = true;
+    }
+
+    private void OnTargetDeath(DamageInfo info)
+    {
+        target.Pokemon.OnHpOrShieldChange -= CheckIfShouldBreakEarly;
+        target.Pokemon.OnDeath -= OnTargetDeath;
+        NetworkObject.Despawn(true);
     }
 
     private void CheckIfShouldBreakEarly()

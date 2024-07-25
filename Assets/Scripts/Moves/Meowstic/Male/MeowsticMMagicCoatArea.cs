@@ -23,7 +23,21 @@ public class MeowsticMMagicCoatArea : NetworkBehaviour
         playersInArea.Add(meowstic);
         statChangeEvents.Add(meowstic, (changeEvent) => OnPokemonStatChange(changeEvent, meowstic));
         meowstic.Pokemon.OnStatChange += statChangeEvents[meowstic];
+        meowstic.Pokemon.OnDeath += OnMeowsticDeath;
         initialized = true;
+    }
+
+    private void OnMeowsticDeath(DamageInfo info)
+    {
+        meowstic.Pokemon.OnDeath -= OnMeowsticDeath;
+        for (int i = playersInArea.Count - 1; i >= 0; i--)
+        {
+            PlayerManager player = playersInArea[i];
+            player.Pokemon.OnStatChange -= statChangeEvents[player];
+            statChangeEvents.Remove(player);
+            playersInArea.RemoveAt(i);
+        }
+        NetworkObject.Despawn(true);
     }
 
     private void Update()
@@ -39,6 +53,7 @@ public class MeowsticMMagicCoatArea : NetworkBehaviour
 
         if (activeTime <= 0)
         {
+            meowstic.Pokemon.OnDeath -= OnMeowsticDeath;
             for (int i = playersInArea.Count - 1; i >= 0; i--)
             {
                 PlayerManager player = playersInArea[i];

@@ -137,4 +137,12 @@ public class GlaceIcyWind : MoveBase
         Aim.Instance.HideDashAim();
         base.Cancel();
     }
+
+    public override void ResetMove()
+    {
+        if (effectActivated)
+        {
+            effectTimer = 0;
+        }
+    }
 }

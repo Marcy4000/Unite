@@ -20,6 +20,7 @@ public class MeowsticMReflectShield : NetworkBehaviour
     {
         target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<PlayerManager>();
         target.Pokemon.OnDamageTaken += OnDamageTaken;
+        target.Pokemon.OnDeath += OnTargetDeath;
         this.meowsticID = meowsticID;
         initialized = true;
     }
@@ -28,6 +29,13 @@ public class MeowsticMReflectShield : NetworkBehaviour
     {
         storedDamage += Mathf.FloorToInt(target.Pokemon.CalculateDamage(damage) * 0.35f);
         storedDamage = Mathf.Clamp(storedDamage, 0, 2500);
+    }
+
+    private void OnTargetDeath(DamageInfo info)
+    {
+        StartCoroutine(Explode());
+        isExploding = true;
+        initialized = false;
     }
 
     private void Update()
@@ -51,6 +59,7 @@ public class MeowsticMReflectShield : NetworkBehaviour
     private IEnumerator Explode()
     {
         target.Pokemon.OnDamageTaken -= OnDamageTaken;
+        target.Pokemon.OnDeath -= OnTargetDeath;
 
         Collider[] colliders = Physics.OverlapSphere(transform.position, 4f, pokemonMask);
 

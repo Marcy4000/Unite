@@ -9,6 +9,8 @@ public class MeowsticMLeer : MoveBase
     private StatChange defReduction = new StatChange(20, Stat.Defense, 3f, true, false, true, 0);
     private StatChange spDefReduction = new StatChange(20, Stat.SpDefense, 3f, true, false, true, 0);
 
+    private Coroutine aimRoutine;
+
     public MeowsticMLeer()
     {
         Name = "Leer";
@@ -35,7 +37,7 @@ public class MeowsticMLeer : MoveBase
     {
         if (IsActive && direction.magnitude != 0)
         {
-            playerManager.StartCoroutine(AimRoutine());
+            aimRoutine = playerManager.StartCoroutine(AimRoutine());
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideSkillshotAim();
@@ -75,5 +77,14 @@ public class MeowsticMLeer : MoveBase
     {
         Aim.Instance.HideSkillshotAim();
         base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        if (aimRoutine != null)
+        {
+            playerManager.StopCoroutine(aimRoutine);
+        }
+        playerManager.MovesController.UnlockEveryAction();
     }
 }

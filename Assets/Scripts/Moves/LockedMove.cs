@@ -16,4 +16,8 @@ public class LockedMove : MoveBase
     public override void Update()
     {
     }
+
+    public override void ResetMove()
+    {
+    }
 }

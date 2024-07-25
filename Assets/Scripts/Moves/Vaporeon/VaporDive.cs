@@ -128,4 +128,23 @@ public class VaporDive : MoveBase
 
         isUnderwater = false;
     }
+
+    public override void ResetMove()
+    {
+        if (diveWarning != null)
+        {
+            diveWarning.DespawnRPC();
+            diveWarning = null;
+        }
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        playerManager.Pokemon.RemoveStatusEffectWithID(underwaterEffect.ID);
+        isUnderwater = false;
+        isFinishing = false;
+        underwaterTime = 5f;
+        playerManager.transform.DOKill();
+    }
 }

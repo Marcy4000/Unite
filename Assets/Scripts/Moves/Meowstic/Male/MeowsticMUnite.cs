@@ -6,6 +6,8 @@ public class MeowsticMUnite : MoveBase
 {
     private string assetPath = "Assets/Prefabs/Objects/Moves/Meowstic/Male/MeowsticMUniteArea.prefab";
 
+    private Coroutine flyRoutine;
+
     public MeowsticMUnite()
     {
         Name = "Mystic Harmony";
@@ -30,7 +32,7 @@ public class MeowsticMUnite : MoveBase
     {
         if (IsActive)
         {
-            playerManager.StartCoroutine(FlyState());
+            flyRoutine = playerManager.StartCoroutine(FlyState());
             
             wasMoveSuccessful = true;
         }
@@ -71,5 +73,15 @@ public class MeowsticMUnite : MoveBase
     {
         Aim.Instance.HideSimpleCircle();
         base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        if (flyRoutine != null)
+        {
+            playerManager.StopCoroutine(flyRoutine);
+        }
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

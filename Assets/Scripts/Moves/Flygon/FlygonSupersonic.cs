@@ -6,6 +6,7 @@ public class FlygonSupersonic : MoveBase
     private Vector3 direction;
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Flygon/FlygonSupersonic.prefab";
+    private SupersonicHitbox hitbox;
 
     public FlygonSupersonic()
     {
@@ -37,6 +38,7 @@ public class FlygonSupersonic : MoveBase
             {
                 if (obj.TryGetComponent(out SupersonicHitbox hitbox))
                 {
+                    this.hitbox = hitbox;
                     hitbox.InitializeRPC(playerManager.transform.position, direction, playerManager.OrangeTeam);
                 }
             };
@@ -58,5 +60,13 @@ public class FlygonSupersonic : MoveBase
     {
         Aim.Instance.HideSkillshotAim();
         base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        if (hitbox != null)
+        {
+            playerManager.MovesController.DespawnNetworkObjectRPC(hitbox.NetworkObjectId);
+        }
     }
 }

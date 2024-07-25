@@ -8,6 +8,8 @@ public class FlygonBite : MoveBase
 
     private Vector3 direction;
 
+    private Coroutine damageRoutine;
+
     public FlygonBite()
     {
         Name = "Bite";
@@ -35,7 +37,7 @@ public class FlygonBite : MoveBase
     {
         if (IsActive && direction.magnitude != 0)
         {
-            playerManager.StartCoroutine(DamageRoutine());
+            damageRoutine = playerManager.StartCoroutine(DamageRoutine());
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideSkillshotAim();
@@ -71,4 +73,13 @@ public class FlygonBite : MoveBase
         Aim.Instance.HideSkillshotAim();
         base.Cancel();
     }
+
+    public override void ResetMove()
+    {
+        if (damageRoutine != null)
+        {
+            playerManager.StopCoroutine(damageRoutine);
+        }
+    }
+
 }

@@ -13,6 +13,8 @@ public class FlygonEarthquake : MoveBase
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Flygon/EarthquakeObject.prefab";
 
+    private Coroutine spawnRoutine;
+
     public FlygonEarthquake()
     {
         Name = "Earthquake";
@@ -42,7 +44,7 @@ public class FlygonEarthquake : MoveBase
     {
         if (IsActive)
         {
-            playerManager.StartCoroutine(SpawnEarthquake());
+            spawnRoutine = playerManager.StartCoroutine(SpawnEarthquake());
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideCircleAreaIndicator();
@@ -80,6 +82,25 @@ public class FlygonEarthquake : MoveBase
 
         yield return new WaitForSeconds(0.7f);
 
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+    }
+
+    public override void Cancel()
+    {
+        Aim.Instance.HideCircleAreaIndicator();
+        base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        if (spawnRoutine != null)
+        {
+            playerManager.StopCoroutine(spawnRoutine);
+        }
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);

@@ -47,4 +47,8 @@ public class MeowsticMMagicCoat : MoveBase
         Aim.Instance.HideSimpleCircle();
         base.Cancel();
     }
+
+    public override void ResetMove()
+    {
+    }
 }

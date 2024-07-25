@@ -77,4 +77,8 @@ public class GlaceUnite : MoveBase
         base.Cancel();
         Aim.Instance.HideGlaceonUniteAim();
     }
+
+    public override void ResetMove()
+    {
+    }
 }

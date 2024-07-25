@@ -51,4 +51,8 @@ public class SylvBabyDollEyes : MoveBase
         base.Cancel();
         Aim.Instance.HideSkillshotAim();
     }
+
+    public override void ResetMove()
+    {
+    }
 }

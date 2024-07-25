@@ -94,4 +94,12 @@ public class GlaceIceShard : MoveBase
             glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount + 2, 0, 8));
         }
     }
+
+    public override void ResetMove()
+    {
+        if (isActivated)
+        {
+            timer = 0;
+        }
+    }
 }

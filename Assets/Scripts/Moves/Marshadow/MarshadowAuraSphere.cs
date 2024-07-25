@@ -167,4 +167,21 @@ public class MarshadowAuraSphere : MoveBase
         target = null;
         Finish();
     }
+
+    public override void ResetMove()
+    {
+        if (jumpRoutine != null)
+        {
+            playerManager.StopCoroutine(jumpRoutine);
+        }
+        if (cancelRoutine != null)
+        {
+            playerManager.StopCoroutine(cancelRoutine);
+        }
+        if (sequence != null)
+        {
+            sequence.Kill();
+        }
+        target = null;
+    }
 }

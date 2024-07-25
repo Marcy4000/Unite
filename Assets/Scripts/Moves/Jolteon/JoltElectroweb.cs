@@ -54,4 +54,14 @@ public class JoltElectroweb : MoveBase
         Aim.Instance.HideSkillshotAim();
         base.Finish();
     }
+
+    public override void Cancel()
+    {
+        Aim.Instance.HideSkillshotAim();
+        base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+    }
 }

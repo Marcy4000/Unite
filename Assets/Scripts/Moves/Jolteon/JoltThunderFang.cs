@@ -156,4 +156,17 @@ public class JoltThunderFang : MoveBase
         Aim.Instance.HideDashAim();
         base.Cancel();
     }
+
+    public override void ResetMove()
+    {
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.MovesController.BattleItemStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        playerManager.DOKill();
+        isMoving = false;
+        hitAnything = false;
+    }
 }

@@ -234,4 +234,24 @@ public class FlygonUnite : MoveBase
         Aim.Instance.HideSimpleCircle();
         base.Cancel();
     }
+
+    public override void ResetMove()
+    {
+        if (tornadoHitbox != null)
+        {
+            tornadoHitbox.DespawnRPC();
+            tornadoHitbox = null;
+        }
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        playerManager.Pokemon.RemoveStatusEffectWithID(tornadoStatus.ID);
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(initialSpeed.ID);
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(halfSpeed.ID);
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(quarterSpeed.ID);
+        playerManager.HPBar.ShowGenericGuage(false);
+        isInTornado = false;
+    }
 }

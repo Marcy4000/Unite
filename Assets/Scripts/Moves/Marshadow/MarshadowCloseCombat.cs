@@ -21,6 +21,8 @@ public class MarshadowCloseCombat : MoveBase
 
     private string[] layers = { "Players", "WildPokemons" };
 
+    private Coroutine dashRoutine;
+
     public MarshadowCloseCombat()
     {
         Name = "Close Combat";
@@ -64,7 +66,7 @@ public class MarshadowCloseCombat : MoveBase
             Aim.Instance.HideDashAim();
             if (!isDashing)
             {
-                playerManager.StartCoroutine(DashRoutine());
+                dashRoutine = playerManager.StartCoroutine(DashRoutine());
             }
         }
         base.Finish();
@@ -149,5 +151,17 @@ public class MarshadowCloseCombat : MoveBase
                 }
             }
         }
+    }
+
+    public override void ResetMove()
+    {
+        if (dashRoutine != null)
+        {
+            playerManager.StopCoroutine(dashRoutine);
+        }
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        playerManager.transform.DOKill();
+        isDashing = false;
     }
 }

@@ -32,9 +32,16 @@ public class MeowsticMPsychicArea : NetworkBehaviour
         target.Pokemon.AddStatChange(defBoost);
         target.Pokemon.AddStatChange(spDefBoost);
 
+        target.Pokemon.OnDeath += OnTargetDeath;
+
         initialized = true;
 
         StartCoroutine(DoDamage());
+    }
+
+    private void OnTargetDeath(DamageInfo info)
+    {
+        activeTime = 0;
     }
 
     private void Update()
@@ -50,6 +57,7 @@ public class MeowsticMPsychicArea : NetworkBehaviour
 
         if (activeTime <= 0)
         {
+            target.Pokemon.OnDeath -= OnTargetDeath;
             NetworkObject.Despawn(true);
         }
     }

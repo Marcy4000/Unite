@@ -33,6 +33,8 @@ public abstract class MoveBase
     public virtual void Cancel(){
         IsActive = false;
     }
+
+    public abstract void ResetMove();
 }
 
 public static class MoveDatabase

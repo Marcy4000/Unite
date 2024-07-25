@@ -74,4 +74,13 @@ public class FlygonBoomburst : MoveBase
         Aim.Instance.HideSimpleCircle();
         base.Cancel();
     }
+
+    public override void ResetMove()
+    {
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+    }
 }

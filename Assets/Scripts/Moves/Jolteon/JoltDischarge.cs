@@ -178,4 +178,29 @@ public class JoltDischarge : MoveBase
         Debug.Log($"Finished {Name}!");
         base.Finish();
     }
+
+    public override void Cancel()
+    {
+        Aim.Instance.HideDashAim();
+        base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        if (dischargeHitbox != null)
+        {
+            dischargeHitbox.DespawnRPC();
+            dischargeHitbox = null;
+        }
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.MovesController.BattleItemStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        isRunning = false;
+        travelDistance = 0f;
+        secondUse = false;
+        hitAnything = false;
+    }
 }

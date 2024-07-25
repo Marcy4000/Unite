@@ -51,4 +51,9 @@ public class CinderPyroball : MoveBase
         base.Cancel();
         Aim.Instance.HideSkillshotAim();
     }
+
+    public override void ResetMove()
+    {
+        direction = Vector3.zero;
+    }
 }

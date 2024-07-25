@@ -47,10 +47,7 @@ public class SylvHyperVoice : MoveBase
             {
                 isScreaming = false;
 
-                playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
-                playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
-                playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
-                playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+                playerManager.MovesController.UnlockEveryAction();
                 playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
 
                 playerManager.HPBar.ShowGenericGuage(false);
@@ -81,10 +78,7 @@ public class SylvHyperVoice : MoveBase
 
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
 
-            playerManager.MovesController.AddMoveStatus(0, ActionStatusType.Disabled);
-            playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
-            playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
-            playerManager.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
+            playerManager.MovesController.LockEveryAction();
             playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
 
             playerManager.HPBar.ShowGenericGuage(true);
@@ -103,5 +97,20 @@ public class SylvHyperVoice : MoveBase
     {
         base.Cancel();
         Aim.Instance.HideHyperVoiceAim();
+    }
+
+    public override void ResetMove()
+    {
+        if (hypervoiceHitbox != null)
+        {
+            hypervoiceHitbox.DespawnRPC();
+            hypervoiceHitbox = null;
+        }
+        isScreaming = false;
+
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+
+        playerManager.HPBar.ShowGenericGuage(false);
     }
 }

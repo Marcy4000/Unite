@@ -25,4 +25,8 @@ public class JoltAgility : MoveBase
         }
         base.Finish();
     }
+
+    public override void ResetMove()
+    {
+    }
 }

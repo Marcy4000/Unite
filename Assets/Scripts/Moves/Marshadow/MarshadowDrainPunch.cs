@@ -9,6 +9,8 @@ public class MarshadowDrainPunch : MoveBase
 
     private Vector3 direction;
 
+    private Coroutine damageRoutine;
+
     public MarshadowDrainPunch()
     {
         Name = "Drain Punch";
@@ -36,7 +38,7 @@ public class MarshadowDrainPunch : MoveBase
     {
         if (IsActive && direction.magnitude != 0)
         {
-            playerManager.StartCoroutine(DamageRoutine());
+            damageRoutine = playerManager.StartCoroutine(DamageRoutine());
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideSkillshotAim();
@@ -79,5 +81,13 @@ public class MarshadowDrainPunch : MoveBase
     {
         Aim.Instance.HideSkillshotAim();
         base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        if (damageRoutine != null)
+        {
+            playerManager.StopCoroutine(damageRoutine);
+        }
     }
 }

@@ -207,4 +207,18 @@ public class JolteonUnite : MoveBase
         yield return new WaitForSeconds(invincibilityDuration);
         recentlyHitPokemon.Remove(pokemon);
     }
+
+    public override void ResetMove()
+    {
+        if (trailObject != null)
+        {
+            playerManager.MovesController.DespawnNetworkObjectRPC(trailObject.GetComponent<NetworkObject>().NetworkObjectId);
+            trailObject = null;
+        }
+        isDashing = false;
+        recentlyHitPokemon.Clear();
+
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+    }
 }

@@ -75,4 +75,8 @@ public class MeowsticMPsychic : MoveBase
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
         }
     }
+
+    public override void ResetMove()
+    {
+    }
 }

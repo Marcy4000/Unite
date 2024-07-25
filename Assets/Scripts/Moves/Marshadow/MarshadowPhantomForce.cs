@@ -20,6 +20,8 @@ public class MarshadowPhantomForce : MoveBase
 
     private bool isFinishing;
 
+    private Coroutine damageRoutine;
+
     public MarshadowPhantomForce()
     {
         Name = "Phantom Force";
@@ -71,7 +73,7 @@ public class MarshadowPhantomForce : MoveBase
                 wasMoveSuccessful = true;
                 BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
                 playerManager.Pokemon.RemoveStatusEffectWithID(invulnerableEffect.ID);
-                playerManager.StartCoroutine(DoKick());
+                damageRoutine = playerManager.StartCoroutine(DoKick());
             }
         }
         base.Finish();
@@ -108,6 +110,20 @@ public class MarshadowPhantomForce : MoveBase
         yield return new WaitForSeconds(0.97f);
 
         playerManager.PlayerMovement.CanMove = true;
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+    }
+
+    public override void ResetMove()
+    {
+        if (damageRoutine != null)
+        {
+            playerManager.StopCoroutine(damageRoutine);
+        }
+        isSecondUse = false;
+        isFinishing = false;
+        BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
+        playerManager.Pokemon.RemoveStatusEffectWithID(invulnerableEffect.ID);
         playerManager.MovesController.UnlockEveryAction();
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }

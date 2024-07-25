@@ -86,4 +86,8 @@ public class MarshadowUnite : MoveBase
 
         return randomPokemon;
     }
+
+    public override void ResetMove()
+    {
+    }
 }

@@ -16,6 +16,8 @@ public class MarshadowSpectralThief : MoveBase
 
     private GameObject warningObject;
 
+    private Coroutine attackRoutine;
+
     public MarshadowSpectralThief()
     {
         Name = "Spectral Thief";
@@ -52,7 +54,7 @@ public class MarshadowSpectralThief : MoveBase
             playerManager.transform.DOMove(playerManager.transform.position + dashDirection * range, 0.4f).OnComplete(() =>
             {
                 playerManager.AnimationManager.SetTrigger("Transition");
-                playerManager.StartCoroutine(AttackRoutine());
+                attackRoutine = playerManager.StartCoroutine(AttackRoutine());
             });
 
             playerManager.MovesController.onObjectSpawned += (obj) =>
@@ -117,5 +119,23 @@ public class MarshadowSpectralThief : MoveBase
     {
         Aim.Instance.HideDashAim();
         base.Cancel();
+    }
+
+    public override void ResetMove()
+    {
+        if (warningObject != null)
+        {
+            playerManager.MovesController.DespawnNetworkObjectRPC(warningObject.GetComponent<NetworkObject>().NetworkObjectId);
+            warningObject = null;
+        }
+
+        if (attackRoutine != null)
+        {
+            playerManager.StopCoroutine(attackRoutine);
+        }
+
+        playerManager.transform.DOKill();
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

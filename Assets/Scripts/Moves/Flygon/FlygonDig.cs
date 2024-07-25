@@ -137,4 +137,19 @@ public class FlygonDig : MoveBase
 
         isUnderground = false;
     }
+
+    public override void ResetMove()
+    {
+        if (diveWarning != null)
+        {
+            diveWarning.DespawnRPC();
+        }
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(slow.ID);
+        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
+        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
+        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        isUnderground = false;
+        playerManager.transform.DOKill();
+    }
 }

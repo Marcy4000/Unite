@@ -62,4 +62,8 @@ public class JoltSwift : MoveBase
         Aim.Instance.HideSkillshotAim();
         base.Cancel();
     }
+
+    public override void ResetMove()
+    {
+    }
 }

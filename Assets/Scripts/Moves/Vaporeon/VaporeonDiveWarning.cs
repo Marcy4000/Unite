@@ -20,6 +20,12 @@ public class VaporeonDiveWarning : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
+    public void DespawnRPC()
+    {
+        NetworkObject.Despawn(true);
+    }
+
+    [Rpc(SendTo.Server)]
     public void DoPushbackRPC()
     {
         warningImage.SetActive(false);

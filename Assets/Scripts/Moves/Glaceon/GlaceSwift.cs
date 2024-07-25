@@ -90,4 +90,9 @@ public class GlaceSwift : MoveBase
             }
         }
     }
+
+    public override void ResetMove()
+    {
+        timer = 0;
+    }
 }
