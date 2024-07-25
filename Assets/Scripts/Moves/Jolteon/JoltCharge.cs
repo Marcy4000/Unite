@@ -92,8 +92,11 @@ public class JoltCharge : MoveBase
 
     public override void ResetMove()
     {
-        playerManager.MovesController.DespawnNetworkObjectRPC(indicator.GetComponent<NetworkObject>().NetworkObjectId);
-        indicator = null;
+        if (indicator != null)
+        {
+            playerManager.MovesController.DespawnNetworkObjectRPC(indicator.GetComponent<NetworkObject>().NetworkObjectId);
+            indicator = null;
+        }
         startTimer = false;
     }
 }

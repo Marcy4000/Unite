@@ -336,6 +336,9 @@ public class PlayerManager : NetworkBehaviour
         movesController.ResetAllMoves();
         playerMovement.CanMove = false;
 
+        pokemon.RemoveAllStatChangesRPC();
+        pokemon.RemoveAllStatusEffectsRPC();
+
         CameraController.Instance.ForcePan(true);
 
         UpdatePosAndRotRPC(deathPosition, Quaternion.identity);

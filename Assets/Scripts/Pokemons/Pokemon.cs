@@ -588,6 +588,20 @@ public class Pokemon : NetworkBehaviour
         }
     }
 
+    [Rpc(SendTo.Server)]
+    public void RemoveAllStatChangesRPC()
+    {
+        statChanges.Clear();
+        statTimers.Clear();
+    }
+
+    [Rpc(SendTo.Server)]
+    public void RemoveAllStatusEffectsRPC()
+    {
+        statusEffects.Clear();
+        statusTimers.Clear();
+    }
+
     public int GetStatChange(Stat affectedStat)
     {
         int result = 0;

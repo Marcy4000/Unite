@@ -165,7 +165,7 @@ public class JoltThunderFang : MoveBase
         playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
         playerManager.MovesController.BattleItemStatus.RemoveStatus(ActionStatusType.Disabled);
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-        playerManager.DOKill();
+        playerManager.transform.DOKill();
         isMoving = false;
         hitAnything = false;
     }
