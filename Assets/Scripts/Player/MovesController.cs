@@ -519,7 +519,7 @@ public class MovesController : NetworkBehaviour
 
     private void SelectBattleItem()
     {
-        BattleItemAsset selectedBattleItem = CharactersList.instance.GetBattleItemByID(int.Parse(LobbyController.Instance.Player.Data["BattleItem"].Value));
+        BattleItemAsset selectedBattleItem = CharactersList.Instance.GetBattleItemByID(int.Parse(LobbyController.Instance.Player.Data["BattleItem"].Value));
 
         battleItem = BattleItemDatabase.GetBattleItem(selectedBattleItem.battleItemType);
 

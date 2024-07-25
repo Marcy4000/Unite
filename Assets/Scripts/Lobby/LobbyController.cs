@@ -548,6 +548,24 @@ public class LobbyController : MonoBehaviour
         UpdateLobbyData(options);
     }
 
+    public void ChangeLobbyMap(MapInfo map)
+    {
+        if (partyLobby.HostId != localPlayer.Id)
+        {
+            return;
+        }
+
+        UpdateLobbyOptions options = new UpdateLobbyOptions();
+        options.Data = partyLobby.Data;
+        options.MaxPlayers = partyLobby.MaxPlayers;
+        options.HostId = partyLobby.HostId;
+        options.Name = partyLobby.Name;
+        options.IsPrivate = partyLobby.IsPrivate;
+        options.Data["SelectedMap"] = new DataObject(DataObject.VisibilityOptions.Member, map.sceneName);
+
+        UpdateLobbyData(options);
+    }
+
     private async Task<Allocation> AllocateRelay()
     {
         try

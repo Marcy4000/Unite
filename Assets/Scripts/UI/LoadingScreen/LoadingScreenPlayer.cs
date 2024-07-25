@@ -20,14 +20,14 @@ public class LoadingScreenPlayer : MonoBehaviour
     public void SetPlayerData(Player player)
     {
         currentPlayer = player;
-        CharacterInfo info = CharactersList.instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value);
+        CharacterInfo info = CharactersList.Instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value);
 
         portrait.sprite = info.portrait;
         playerName.text = player.Data["PlayerName"].Value;
         pokemonName.text = info.pokemonName;
         bool orangeTeam = player.Data["PlayerTeam"].Value == "Orange";
         playerBar.sprite = orangeTeam ? orangeSprite : blueSprite;
-        battleItem.sprite = CharactersList.instance.GetBattleItemByID(int.Parse(player.Data["BattleItem"].Value)).icon;
+        battleItem.sprite = CharactersList.Instance.GetBattleItemByID(int.Parse(player.Data["BattleItem"].Value)).icon;
         localPlayerImage.SetActive(player.Id == LobbyController.Instance.Player.Id);
     }
 

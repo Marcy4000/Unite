@@ -64,7 +64,7 @@ public class CharacterSelectController : NetworkBehaviour
             playerIcon.GetComponent<PlayerSelectionIcon>().Initialize(player);
             if (player.Id == LobbyController.Instance.Player.Id && !string.IsNullOrEmpty(player.Data["SelectedCharacter"].Value))
             {
-                SpawnPokemon(CharactersList.instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value));
+                SpawnPokemon(CharactersList.Instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value));
             }
         }
 
@@ -158,7 +158,7 @@ public class CharacterSelectController : NetworkBehaviour
 
         while (!found)
         {
-            character = CharactersList.instance.Characters[UnityEngine.Random.Range(0, CharactersList.instance.Characters.Length)];
+            character = CharactersList.Instance.Characters[UnityEngine.Random.Range(0, CharactersList.Instance.Characters.Length)];
             if (IsCharacterAvailable(character.pokemonName))
             {
                 found = true;

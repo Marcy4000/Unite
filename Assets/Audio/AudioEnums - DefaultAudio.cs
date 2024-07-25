@@ -10,5 +10,9 @@
         ChoosePokemon,
         MainTheme,
         GameEnd,
-        LoadingTheme
+        LoadingTheme,
+        MerStadium,
+        MerStadiumFinalStretch,
+        TheiaSkyRuins,
+        TheiaSkyRuinsFinalStretch
     }

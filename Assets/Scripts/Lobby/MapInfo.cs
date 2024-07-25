@@ -9,6 +9,16 @@ public class MapInfo : ScriptableObject
 
     [Space]
 
+    public float gameTime;
+    public float finalStretchTime;
+
+    [Space]
+
+    public DefaultAudioMusic normalMusic;
+    public DefaultAudioMusic finalStretchMusic;
+
+    [Space]
+
     [TextArea(3, 10)]
     public string description;
 }

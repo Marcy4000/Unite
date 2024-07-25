@@ -21,13 +21,13 @@ public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
 
-    private const float MAX_GAME_TIME = 600f;
-    private const float FINAL_STRETCH_TIME = 120f;
+    private float MAX_GAME_TIME = 600f;
+    private float FINAL_STRETCH_TIME = 120f;
 
     [SerializeField] private SurrenderManager surrenderManager;
     [SerializeField] private Button surrenderButton; //This shouldn't be here but eh
 
-    private NetworkVariable<float> gameTime = new NetworkVariable<float>(MAX_GAME_TIME);
+    private NetworkVariable<float> gameTime = new NetworkVariable<float>(600f);
     private NetworkVariable<ushort> blueTeamScore = new NetworkVariable<ushort>(0);
     private NetworkVariable<ushort> orangeTeamScore = new NetworkVariable<ushort>(0);
 
@@ -38,6 +38,8 @@ public class GameManager : NetworkBehaviour
 
     private List<ResultScoreInfo> blueTeamScores;
     private List<ResultScoreInfo> orangeTeamScores;
+
+    private MapInfo currentMap;
     
     public float GameTime => gameTime.Value;
     public int BlueTeamScore => blueTeamScore.Value;
@@ -89,13 +91,15 @@ public class GameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        currentMap = CharactersList.Instance.GetCurrentMap();
+
         gameState.OnValueChanged += GameStateChanged;
         finalStretch.OnValueChanged += (prev, curr) =>
         {
             if (curr)
             {
-                AudioManager.StopMusic(DefaultAudioMusic.RemoatStadium);
-                AudioManager.PlayMusic(DefaultAudioMusic.RemoatFinalStretch, true);
+                AudioManager.StopAllMusic();
+                AudioManager.PlayMusic(currentMap.finalStretchMusic, true);
                 onFinalStretch?.Invoke();
             }
         };
@@ -104,9 +108,15 @@ public class GameManager : NetworkBehaviour
         blueTeamScores = new List<ResultScoreInfo>();
         orangeTeamScores = new List<ResultScoreInfo>();
 
-        if (IsServer && surrenderManager != null)
+        if (IsServer)
         {
-            surrenderManager.onSurrenderVoteResult += OnTeamSurrendered;
+            if (surrenderManager != null)
+            {
+                surrenderManager.onSurrenderVoteResult += OnTeamSurrendered;
+            }
+            gameTime.Value = currentMap.gameTime;
+            FINAL_STRETCH_TIME = currentMap.finalStretchTime;
+            MAX_GAME_TIME = currentMap.gameTime;
         }
 
         StartCoroutine(HandlePassiveExp());
@@ -127,7 +137,7 @@ public class GameManager : NetworkBehaviour
 
         yield return new WaitForSeconds(0.2f);
 
-        AudioManager.PlayMusic(DefaultAudioMusic.RemoatStadium, true);
+        AudioManager.PlayMusic(currentMap.normalMusic, true);
 
         yield return new WaitForSeconds(3.1f);
 

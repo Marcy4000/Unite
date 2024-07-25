@@ -293,7 +293,7 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     public void ChangeSelectedPokemonRpc(string pokemonName)
     {
-        PokemonBase newPokemon = CharactersList.instance.GetCharacterFromString(pokemonName).pokemon;
+        PokemonBase newPokemon = CharactersList.Instance.GetCharacterFromString(pokemonName).pokemon;
         selectedPokemon = newPokemon;
         pokemon.SetNewPokemon(selectedPokemon);
         hpBar.SetPokemon(pokemon);

@@ -35,7 +35,7 @@ public class MoveUI : MonoBehaviour
         else
         {
             moveLabel.gameObject.SetActive(true);
-            moveLabel.sprite = CharactersList.instance.GetMoveLabel(move.moveLabel);
+            moveLabel.sprite = CharactersList.Instance.GetMoveLabel(move.moveLabel);
         }
     }
 

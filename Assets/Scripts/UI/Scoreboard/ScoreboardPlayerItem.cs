@@ -28,7 +28,7 @@ public class ScoreboardPlayerItem : MonoBehaviour
         pokemonIcon.sprite = player.Pokemon.Portrait;
         background.sprite = player.OrangeTeam ? orangeBG : blueBG;
 
-        BattleItemAsset selectedBattleItem = CharactersList.instance.GetBattleItemByID(int.Parse(player.LobbyPlayer.Data["BattleItem"].Value));
+        BattleItemAsset selectedBattleItem = CharactersList.Instance.GetBattleItemByID(int.Parse(player.LobbyPlayer.Data["BattleItem"].Value));
         battleItem.sprite = selectedBattleItem.icon;
 
         player.Pokemon.OnEvolution += UpdatePokemonInfo;

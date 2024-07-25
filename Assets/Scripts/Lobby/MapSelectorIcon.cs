@@ -1,28 +1,50 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class MapSelectorIcon : MonoBehaviour
 {
-    [SerializeField] Image mapIcon;
-    [SerializeField] TMP_Text mapNameText;
+    [SerializeField] private Image mapIcon;
+    [SerializeField] private TMP_Text mapNameText;
+    [SerializeField] private Toggle toggle;
 
-    [SerializeField] MapInfo defaultMap;
+    [SerializeField] private MapInfo defaultMap;
 
-    Sprite MapIcon => mapIcon.sprite;
-    string MapName => mapNameText.text;
+    public MapInfo MapInfo => defaultMap;
+    public bool IsSelected => toggle.isOn;
+
+    public event Action<MapInfo, bool> OnToggleChanged;
 
     private void Start()
     {
         if (defaultMap != null)
         {
-            InitializeElement(defaultMap);
+            InitializeElement(defaultMap, null);
         }
     }
 
-    public void InitializeElement(MapInfo mapInfo)
+    public void InitializeElement(MapInfo mapInfo, ToggleGroup toggleGroup)
     {
+        defaultMap = mapInfo;
         mapIcon.sprite = mapInfo.mapIcon;
         mapNameText.text = mapInfo.mapName;
+        if (toggleGroup != null) toggle.group = toggleGroup;
+        toggle.onValueChanged.AddListener(OnToggleValueChanged);
+    }
+
+    private void OnToggleValueChanged(bool value)
+    {
+        OnToggleChanged?.Invoke(defaultMap, value);
+    }
+
+    public void SetToggleEnabled(bool enabled)
+    {
+        toggle.interactable = enabled;
+    }
+
+    public void SelectToggle()
+    {
+        toggle.isOn = true;
     }
 }

@@ -279,7 +279,7 @@ public class WildPokemon : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     public void SetWildPokemonInfoRPC(short infoID, bool isObjective = false)
     {
-        wildPokemonInfo = CharactersList.instance.WildPokemons[infoID];
+        wildPokemonInfo = CharactersList.Instance.WildPokemons[infoID];
         pokemon = GetComponent<Pokemon>();
         pokemon.SetNewPokemon(wildPokemonInfo.PokemonBase);
         pokemon.Type = isObjective ? PokemonType.Objective : PokemonType.Wild;

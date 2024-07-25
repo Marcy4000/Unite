@@ -13,6 +13,9 @@ public class PartyScreenUI : MonoBehaviour
     [SerializeField] private TMP_Text lobbyCodeText;
     [SerializeField] private Toggle openLobbyToggle;
     [SerializeField] private int maxPlayers = 10;
+
+    [SerializeField] private MapSelector mapSelector;
+
     private LobbyPlayerIcon[] playerIconsBlueTeam;
     private LobbyPlayerIcon[] playerIconsOrangeTeam;
 
@@ -50,6 +53,7 @@ public class PartyScreenUI : MonoBehaviour
     private void OnLobbyUpdate(ILobbyChanges changes)
     {
         openLobbyToggle.isOn = !LobbyController.Instance.Lobby.IsPrivate;
+        mapSelector.UpdateSelectedMap();
     }
 
     public void InitializeUI(Lobby lobby)
@@ -60,6 +64,8 @@ public class PartyScreenUI : MonoBehaviour
         ClearUI();
 
         openLobbyToggle.isOn = !lobby.IsPrivate;
+
+        mapSelector.Initialize(lobby.HostId == AuthenticationService.Instance.PlayerId);
 
         playerIconsBlueTeam = new LobbyPlayerIcon[maxPlayers/2];
         playerIconsOrangeTeam = new LobbyPlayerIcon[maxPlayers/2];

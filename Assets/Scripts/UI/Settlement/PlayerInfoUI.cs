@@ -58,7 +58,7 @@ public class PlayerInfoUI : MonoBehaviour
         playerDamageTakenHolder.SetStatInfo(playerStats.damageTaken, dmgTakenPercentage);
         playerHealingHolder.SetStatInfo(playerStats.healingDone, healingPercentage);
 
-        playerAvatarImage.sprite = CharactersList.instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value).icon;
+        playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value).icon;
 
         if (player.Data["PlayerTeam"].Value == "Blue")
         {
@@ -98,7 +98,7 @@ public class PlayerInfoUI : MonoBehaviour
         playerKillsText.text = playerStats.kills.ToString();
         playerAssistsText.text = playerStats.assists.ToString();
         playerBattleScoreText.text = playerStats.CalculateBattleScore().ToString();
-        playerAvatarImage.sprite = CharactersList.instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value).icon;
+        playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value).icon;
 
         if (player.Data["PlayerTeam"].Value == "Blue")
         {

@@ -36,15 +36,15 @@ public class PlayerSelectionIcon : MonoBehaviour
     {
         assignedPlayer = lobby.Players.Find(x => x.Id == assignedPlayer.Id);
 
-        CharacterInfo info = CharactersList.instance.GetCharacterFromString(assignedPlayer.Data["SelectedCharacter"].Value);
+        CharacterInfo info = CharactersList.Instance.GetCharacterFromString(assignedPlayer.Data["SelectedCharacter"].Value);
 
         if (info != null)
         {
             characterIcon.gameObject.SetActive(true);
             battleItem.gameObject.SetActive(true);
-            background.sprite = CharactersList.instance.GetBackgroundFromClass(info.pClass);
+            background.sprite = CharactersList.Instance.GetBackgroundFromClass(info.pClass);
             characterIcon.sprite = info.icon;
-            battleItem.sprite = CharactersList.instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)).icon;
+            battleItem.sprite = CharactersList.Instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)).icon;
         }
         else
         {

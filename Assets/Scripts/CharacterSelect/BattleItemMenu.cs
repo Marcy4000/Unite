@@ -13,9 +13,9 @@ public class BattleItemMenu : MonoBehaviour
 
     private void Start()
     {
-        selectedBattleItem = CharactersList.instance.GetBattleItemByID(0);
+        selectedBattleItem = CharactersList.Instance.GetBattleItemByID(0);
 
-        foreach (var battleItem in CharactersList.instance.BattleItems)
+        foreach (var battleItem in CharactersList.Instance.BattleItems)
         {
             if (battleItem.battleItemType == AvailableBattleItems.None)
             {
@@ -44,7 +44,7 @@ public class BattleItemMenu : MonoBehaviour
     private void OnEnable()
     {
         int selectedBattleItemId = int.Parse(LobbyController.Instance.Player.Data["BattleItem"].Value);
-        selectedBattleItem = CharactersList.instance.GetBattleItemByID(selectedBattleItemId);
+        selectedBattleItem = CharactersList.Instance.GetBattleItemByID(selectedBattleItemId);
         battleItemName.text = selectedBattleItem.itemName;
         battleItemDescription.text = selectedBattleItem.description;
 

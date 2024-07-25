@@ -1,28 +1,31 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class CharactersList : MonoBehaviour
 {
-    public static CharactersList instance { get; private set; }
+    public static CharactersList Instance { get; private set; }
 
     [SerializeField] private CharacterInfo[] characters;
     [SerializeField] private WildPokemonInfo[] wildPokemons;
     [SerializeField] private Sprite[] backgrounds;
     [SerializeField] private Sprite[] moveLabels;
     [SerializeField] private BattleItemAsset[] battleItems;
+    [SerializeField] private MapInfo[] maps;
 
     public CharacterInfo[] Characters => characters;
     public WildPokemonInfo[] WildPokemons => wildPokemons;
     public BattleItemAsset[] BattleItems => battleItems;
+    public MapInfo[] Maps => maps;
 
     private void Awake()
     {
-        if (instance != null)
+        if (Instance != null)
         {
             Destroy(gameObject);
             return;
         }
 
-        instance = this;
+        Instance = this;
         DontDestroyOnLoad(gameObject);
     }
 
@@ -71,5 +74,18 @@ public class CharactersList : MonoBehaviour
         }
 
         return battleItems[id];
+    }
+
+    public MapInfo GetCurrentMap()
+    {
+        foreach (var map in maps)
+        {
+            if (map.sceneName == SceneManager.GetActiveScene().name)
+            {
+                return map;
+            }
+        }
+
+        return null;
     }
 }

@@ -10,7 +10,7 @@ public class CharacterSelectorUI : MonoBehaviour
     {
         List<CharacterSelectIcon> characterSelectIcons = new List<CharacterSelectIcon>();
 
-        foreach (var character in CharactersList.instance.Characters)
+        foreach (var character in CharactersList.Instance.Characters)
         {
             GameObject characterIcon = Instantiate(characterPrefab, characterSpawnPoint);
             characterIcon.GetComponent<CharacterSelectIcon>().Initialize(character);
