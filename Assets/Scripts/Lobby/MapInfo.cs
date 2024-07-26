@@ -6,6 +6,7 @@ public class MapInfo : ScriptableObject
     public string mapName;
     public Sprite mapIcon;
     public string sceneName;
+    public string mapSceneKey;
 
     [Space]
 

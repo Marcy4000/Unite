@@ -32,7 +32,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsServer)
+        if (!IsServer || GameManager.Instance.GameState != GameState.Playing)
         {
             return;
         }

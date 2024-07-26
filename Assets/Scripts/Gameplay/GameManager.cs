@@ -4,7 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -33,6 +36,8 @@ public class GameManager : NetworkBehaviour
 
     private NetworkVariable<bool> finalStretch = new NetworkVariable<bool>(false);
 
+    private Dictionary<ulong, bool> playerLoadedMap = new Dictionary<ulong, bool>();
+
     private List<PlayerManager> players = new List<PlayerManager>();
     private LaneManager[] lanes;
 
@@ -56,6 +61,8 @@ public class GameManager : NetworkBehaviour
     public event Action<GameState> onGameStateChanged;
     public event Action onFinalStretch;
 
+    private AsyncOperationHandle<SceneInstance> loadHandle;
+
     private void Awake()
     {
         Instance = this;
@@ -75,8 +82,17 @@ public class GameManager : NetworkBehaviour
         string selectedMap = LobbyController.Instance.Lobby.Data["SelectedMap"].Value;
         if (sceneName.Equals(selectedMap))
         {
-            StartCoroutine(StartGameDelayed());
+            StartCoroutine(WaitForPlayersToLoad());
         }
+    }
+
+    private IEnumerator WaitForPlayersToLoad()
+    {
+        while (playerLoadedMap.ContainsValue(false))
+        {
+            yield return null;
+        }
+        StartGameRPC();
     }
 
     private IEnumerator StartGameDelayed()
@@ -92,9 +108,21 @@ public class GameManager : NetworkBehaviour
         StartCoroutine(StartGameRoutine());
     }
 
+    [Rpc(SendTo.Everyone)]
+    private void StartGameRPC()
+    {
+        StartCoroutine(StartGameDelayed());
+    }
+
     public override void OnNetworkSpawn()
     {
         currentMap = CharactersList.Instance.GetCurrentMap();
+
+        loadHandle = Addressables.LoadSceneAsync(currentMap.mapSceneKey, LoadSceneMode.Additive);
+        loadHandle.Completed += (handle) =>
+        {
+            NotifyPlayerLoadedMapRPC(NetworkManager.Singleton.LocalClientId);
+        };
 
         gameState.OnValueChanged += GameStateChanged;
         finalStretch.OnValueChanged += (prev, curr) =>
@@ -113,6 +141,12 @@ public class GameManager : NetworkBehaviour
 
         if (IsServer)
         {
+            playerLoadedMap.Clear();
+            foreach (var player in NetworkManager.Singleton.ConnectedClientsList)
+            {
+                playerLoadedMap.Add(player.ClientId, false);
+            }
+
             if (surrenderManager != null)
             {
                 surrenderManager.onSurrenderVoteResult += OnTeamSurrendered;
@@ -123,6 +157,12 @@ public class GameManager : NetworkBehaviour
         }
 
         StartCoroutine(HandlePassiveExp());
+    }
+
+    [Rpc(SendTo.Server)]
+    public void NotifyPlayerLoadedMapRPC(ulong clientId)
+    {
+        playerLoadedMap[clientId] = true;
     }
 
     private void GameStateChanged(GameState previous, GameState current)
@@ -365,5 +405,15 @@ public class GameManager : NetworkBehaviour
             }
         }
         return false;
+    }
+
+    public override void OnDestroy()
+    {
+        if (!loadHandle.Result.Scene.isLoaded)
+        {
+            return;
+        }
+        Addressables.UnloadSceneAsync(loadHandle);
+        base.OnDestroy();
     }
 }
