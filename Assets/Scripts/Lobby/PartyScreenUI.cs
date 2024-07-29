@@ -19,6 +19,8 @@ public class PartyScreenUI : MonoBehaviour
     private LobbyPlayerIcon[] playerIconsBlueTeam;
     private LobbyPlayerIcon[] playerIconsOrangeTeam;
 
+    private MapInfo selectedMap;
+
     private void Start()
     {
         openLobbyToggle.onValueChanged.AddListener((value) => LobbyController.Instance.ChangeLobbyVisibility(!value));
@@ -27,45 +29,38 @@ public class PartyScreenUI : MonoBehaviour
     private void OnEnable()
     {
         LobbyController.Instance.onLobbyUpdate += UpdatePlayers;
-        try
-        {
-            LobbyController.Instance.LobbyEvents.Callbacks.LobbyChanged += OnLobbyUpdate;
-        }
-        catch (System.Exception)
-        {
-            Debug.LogWarning("Callbacks don't exist");
-        }
+        LobbyController.Instance.onLobbyUpdate += OnLobbyUpdate;
     }
 
     private void OnDisable()
     {
         LobbyController.Instance.onLobbyUpdate -= UpdatePlayers;
-        try
-        {
-            LobbyController.Instance.LobbyEvents.Callbacks.LobbyChanged -= OnLobbyUpdate;
-        }
-        catch (System.Exception)
-        {
-            Debug.LogWarning("Callbacks don't exist");
-        }
+        LobbyController.Instance.onLobbyUpdate -= OnLobbyUpdate;
     }
 
-    private void OnLobbyUpdate(ILobbyChanges changes)
+    private void OnLobbyUpdate(Lobby lobby)
     {
-        openLobbyToggle.isOn = !LobbyController.Instance.Lobby.IsPrivate;
+        openLobbyToggle.isOn = !lobby.IsPrivate;
         mapSelector.UpdateSelectedMap();
+        Debug.Log($"{CharactersList.Instance.GetCurrentLobbyMap()} != {selectedMap}");
+        if (CharactersList.Instance.GetCurrentLobbyMap() != selectedMap)
+        {
+            selectedMap = CharactersList.Instance.GetCurrentLobbyMap();
+            LobbyController.Instance.CheckIfShouldChangePos(selectedMap.maxTeamSize);
+            InitializeUI(LobbyController.Instance.Lobby);
+        }
     }
 
     public void InitializeUI(Lobby lobby)
     {
-        int blueIndex = 0;
-        int orangeIndex = 0;
-
         ClearUI();
 
         openLobbyToggle.isOn = !lobby.IsPrivate;
 
         mapSelector.Initialize(lobby.HostId == AuthenticationService.Instance.PlayerId);
+        selectedMap = CharactersList.Instance.GetCurrentLobbyMap();
+
+        maxPlayers = selectedMap.maxTeamSize*2;
 
         playerIconsBlueTeam = new LobbyPlayerIcon[maxPlayers/2];
         playerIconsOrangeTeam = new LobbyPlayerIcon[maxPlayers/2];
@@ -93,21 +88,7 @@ public class PartyScreenUI : MonoBehaviour
             }
         }
 
-        for (int i = 0; i < lobby.Players.Count; i++)
-        {
-            if (lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
-            {
-                int index = i;
-                playerIconsBlueTeam[blueIndex].InitializePlayer(lobby.Players[i]);
-                blueIndex++;
-            }
-            else
-            {
-                int index = i;
-                playerIconsOrangeTeam[orangeIndex].InitializePlayer(lobby.Players[i]);
-                orangeIndex++;
-            }
-        }
+        UpdatePlayers(lobby);
     }
 
     public void UpdatePlayers(Lobby lobby)
@@ -128,14 +109,21 @@ public class PartyScreenUI : MonoBehaviour
 
         for (int i = 0; i < lobby.Players.Count; i++)
         {
-            int playerPos = NumberEncoder.FromBase64<short>(lobby.Players[i].Data["PlayerPos"].Value);
-            if (lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
+            try
             {
-                playerIconsBlueTeam[playerPos].InitializePlayer(lobby.Players[i]);
+                int playerPos = NumberEncoder.FromBase64<short>(lobby.Players[i].Data["PlayerPos"].Value);
+                if (lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
+                {
+                    playerIconsBlueTeam[playerPos].InitializePlayer(lobby.Players[i]);
+                }
+                else
+                {
+                    playerIconsOrangeTeam[playerPos].InitializePlayer(lobby.Players[i]);
+                }
             }
-            else
+            catch (System.Exception)
             {
-                playerIconsOrangeTeam[playerPos].InitializePlayer(lobby.Players[i]);
+                Debug.LogError("Error while updating players");
             }
         }
     }

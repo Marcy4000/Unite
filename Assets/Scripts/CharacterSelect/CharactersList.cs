@@ -1,6 +1,37 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+public enum AvailableWildPokemons : short
+{
+    Tauros,
+    Aipom,
+    Zapdos,
+    Audino,
+    StartingAipom,
+    Corpish,
+    CorpishJungle,
+    Lillipup,
+    Ludicolo,
+    Bouffalant,
+    Vespiquen,
+    Combee,
+    Drednaw,
+    Accelgor,
+    Altaria,
+    BaltoyCenter,
+    BaltoyJungle,
+    BaltoyLane,
+    Bunnelby,
+    Escavalier,
+    Indeedee,
+    StartingBunnelby,
+    Swabalu,
+    Rayquaza,
+    Xatu,
+    Registeel
+}
+
+
 public class CharactersList : MonoBehaviour
 {
     public static CharactersList Instance { get; private set; }
@@ -61,6 +92,21 @@ public class CharactersList : MonoBehaviour
         foreach (var map in maps)
         {
             if (map.sceneName == SceneManager.GetActiveScene().name)
+            {
+                return map;
+            }
+        }
+
+        return null;
+    }
+
+    public MapInfo GetCurrentLobbyMap()
+    {
+        string lobbyMap = LobbyController.Instance.Lobby.Data["SelectedMap"].Value;
+
+        foreach (var map in maps)
+        {
+            if (map.sceneName == lobbyMap)
             {
                 return map;
             }

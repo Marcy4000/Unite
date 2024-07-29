@@ -1,5 +1,6 @@
 using JSAM;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -38,9 +39,9 @@ public class BootSceneController : MonoBehaviour
         startButton.onClick.AddListener(OnStartButtonClicked);
         versionText.text = $"v.{Application.version}";
 
-        AudioManager.PlayMusic(DefaultAudioMusic.MainTheme, true);
+        Addressables.InitializeAsync();
 
-        CcdManager.EnvironmentName = Debug.isDebugBuild ? "development" : "production";
+        AudioManager.PlayMusic(DefaultAudioMusic.MainTheme, true);
 
         StartCoroutine(DownloadAssets());
     }
@@ -68,7 +69,7 @@ public class BootSceneController : MonoBehaviour
 
         if (downloadHandle.Status != AsyncOperationStatus.Succeeded)
         {
-            downloadAnnouncement.message = "Download failed!\nPlease try clearing the cache and restarting the game";
+            downloadAnnouncement.message = $"Download failed!\nPlease try clearing the cache and restarting the game\nError: {downloadHandle.OperationException.Message}";
             downloadWindow.SetAnnouncement(downloadAnnouncement);
             yield break;
         }

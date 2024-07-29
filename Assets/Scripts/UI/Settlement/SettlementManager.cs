@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
 public class SettlementManager : MonoBehaviour
@@ -17,7 +19,12 @@ public class SettlementManager : MonoBehaviour
     [SerializeField] private GameObject timerObject;
     [SerializeField] private TMP_Text timerText;
 
+    [SerializeField] private Image blueScoreboard, orangeScoreboard;
+
     [SerializeField] private Button returnLobbyButton;
+
+    private AsyncOperationHandle<Sprite> blueScoreboardHandle;
+    private AsyncOperationHandle<Sprite> orangeScoreboardHandle;
 
     private int blueScoreValue;
     private int orangeScoreValue;
@@ -35,9 +42,38 @@ public class SettlementManager : MonoBehaviour
             LobbyController.Instance.ReturnToLobby();
         });
 
+        InitializeScoreboards();
+
         LoadingScreen.Instance.HideGenericLoadingScreen();
 
         ShowScore();
+    }
+
+    private void InitializeScoreboards()
+    {
+        MapInfo currentMap = CharactersList.Instance.GetCurrentLobbyMap();
+
+        blueScoreboardHandle = Addressables.LoadAssetAsync<Sprite>(currentMap.mapResultsBlue);
+
+        blueScoreboardHandle.Completed += handle =>
+        {
+            blueScoreboard.gameObject.SetActive(true);
+            blueScoreboard.sprite = handle.Result;
+        };
+
+        orangeScoreboardHandle = Addressables.LoadAssetAsync<Sprite>(currentMap.mapResultsOrange);
+
+        orangeScoreboardHandle.Completed += handle =>
+        {
+            orangeScoreboard.gameObject.SetActive(true);
+            orangeScoreboard.sprite = handle.Result;
+        };
+    }
+
+    private void OnDestroy()
+    {
+        Addressables.Release(blueScoreboardHandle);
+        Addressables.Release(orangeScoreboardHandle);
     }
 
     public void ShowScore()

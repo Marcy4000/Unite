@@ -12,7 +12,7 @@ public class WildPokemonSpawner : NetworkBehaviour
     }
 
     [SerializeField] private GameObject pokemonPrefab;
-    [SerializeField] private short wildPokemonID;
+    [SerializeField] private AvailableWildPokemons wildPokemonID;
     [SerializeField] private float firstSpawnTime = 600f;
     [SerializeField] private float respawnCooldown;
     [SerializeField] private RespawnType respawnType;
@@ -112,7 +112,7 @@ public class WildPokemonSpawner : NetworkBehaviour
         wildPokemon = Instantiate(pokemonPrefab, transform.position, transform.rotation, transform).GetComponent<WildPokemon>();
         var instanceNetworkObject = wildPokemon.GetComponent<NetworkObject>();
         instanceNetworkObject.Spawn();
-        wildPokemon.SetWildPokemonInfoRPC(wildPokemonID, isObjective);
+        wildPokemon.SetWildPokemonInfoRPC((short)wildPokemonID, isObjective);
         wildPokemon.Pokemon.OnDeath += HandlePokemonDeath;
         isSpawnedOnMap = true;
     }

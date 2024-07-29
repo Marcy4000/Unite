@@ -32,6 +32,7 @@ public class MapBerry : NetworkBehaviour
     {
         isCollected.OnValueChanged += OnIsCollectedChanged;
         vision.IsVisible = true;
+        vision.SetVisibility(false);
         if (IsServer)
         {
             isCollected.Value = true;

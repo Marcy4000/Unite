@@ -168,6 +168,11 @@ public class LobbyController : MonoBehaviour
             onLobbyUpdate?.Invoke(Lobby);
         };
 
+        lobbyEventCallbacks.DataChanged += (changes) =>
+        {
+            onLobbyUpdate?.Invoke(Lobby);
+        };
+
         try
         {
             lobbyEvents = await Lobbies.Instance.SubscribeToLobbyEventsAsync(lobbyID, lobbyEventCallbacks);
@@ -300,7 +305,7 @@ public class LobbyController : MonoBehaviour
 
             await SubscribeToLobbyEvents(partyLobby.Id);
 
-            CheckIfShouldChangePos();
+            CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
             if (NetworkManager.Singleton.StartClient())
             {
                 NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
@@ -345,7 +350,7 @@ public class LobbyController : MonoBehaviour
 
             await SubscribeToLobbyEvents(partyLobby.Id);
 
-            CheckIfShouldChangePos();
+            CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
             if (NetworkManager.Singleton.StartClient())
             {
                 NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
@@ -364,7 +369,7 @@ public class LobbyController : MonoBehaviour
         }
     }
 
-    private void CheckIfShouldChangePos()
+    public void CheckIfShouldChangePos(int maxTeamSize)
     {
         HashSet<string> usedPositions = new HashSet<string>();
 
@@ -383,14 +388,21 @@ public class LobbyController : MonoBehaviour
         string localTeam = localPlayer.Data["PlayerTeam"].Value;
         short localPos = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
 
+        // Clamp the local player's position within the valid range
+        if (localPos >= maxTeamSize)
+        {
+            localPos = (short)(maxTeamSize - 1);
+            UpdatePlayerTeamAndPos(localTeam, localPos);
+        }
+
         // Check if local player's position is already taken
         if (usedPositions.Contains(localTeam + localPos.ToString()))
         {
             // Find the next available position
-            for (int i = 0; i < maxPartyMembers; i++)
+            for (int i = 0; i < maxTeamSize * 2; i++)
             {
-                string team = i < maxPartyMembers / 2 ? "Blue" : "Orange";
-                short pos = (short)(i % (maxPartyMembers / 2));
+                string team = i < maxTeamSize ? "Blue" : "Orange";
+                short pos = (short)(i % maxTeamSize);
 
                 if (!usedPositions.Contains(team + pos.ToString()))
                 {
@@ -400,6 +412,7 @@ public class LobbyController : MonoBehaviour
             }
         }
     }
+
 
     private async void UpdatePlayerData(UpdatePlayerOptions options)
     {
@@ -557,7 +570,7 @@ public class LobbyController : MonoBehaviour
 
         UpdateLobbyOptions options = new UpdateLobbyOptions();
         options.Data = partyLobby.Data;
-        options.MaxPlayers = partyLobby.MaxPlayers;
+        options.MaxPlayers = map.maxTeamSize*2;
         options.HostId = partyLobby.HostId;
         options.Name = partyLobby.Name;
         options.IsPrivate = partyLobby.IsPrivate;

@@ -80,7 +80,7 @@ public class GameManager : NetworkBehaviour
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
         string selectedMap = LobbyController.Instance.Lobby.Data["SelectedMap"].Value;
-        if (sceneName.Equals(selectedMap))
+        if (sceneName.Equals(selectedMap) && IsServer)
         {
             StartCoroutine(WaitForPlayersToLoad());
         }
@@ -123,6 +123,8 @@ public class GameManager : NetworkBehaviour
         {
             NotifyPlayerLoadedMapRPC(NetworkManager.Singleton.LocalClientId);
         };
+
+        LoadingScreen.Instance.SetLoadingManagerOperation(loadHandle);
 
         gameState.OnValueChanged += GameStateChanged;
         finalStretch.OnValueChanged += (prev, curr) =>

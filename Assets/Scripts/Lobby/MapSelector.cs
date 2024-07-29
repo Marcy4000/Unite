@@ -14,6 +14,13 @@ public class MapSelector : MonoBehaviour
     public void Initialize(bool isHost)
     {
         this.isHost = isHost;
+        
+        foreach (MapSelectorIcon icon in icons)
+        {
+            Destroy(icon.gameObject);
+        }
+
+        icons.Clear();
 
         foreach (MapInfo map in CharactersList.Instance.Maps)
         {
@@ -36,6 +43,11 @@ public class MapSelector : MonoBehaviour
     {
         if (value)
         {
+            if (mapInfo.maxTeamSize*2 < LobbyController.Instance.Lobby.Players.Count)
+            {
+                UpdateSelectedMap();
+                return;
+            }
             LobbyController.Instance.ChangeLobbyMap(mapInfo);
         }
     }

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class HPBarWild : MonoBehaviour
 {
     [SerializeField] private Image hpBar, shieldBar, damageBar, energyBG;
+    [SerializeField] private RectTransform bar;
     [SerializeField] private TMP_Text energyText;
     [SerializeField] private Pokemon pokemon;
 
@@ -13,6 +14,8 @@ public class HPBarWild : MonoBehaviour
     {
         this.pokemon = pokemon;
         pokemon.OnHpOrShieldChange += UpdateUI;
+        float width = pokemon.Type == PokemonType.Wild ? 1f : 2f;
+        bar.sizeDelta = new Vector2(width, bar.sizeDelta.y);
         UpdateUI();
     }
 

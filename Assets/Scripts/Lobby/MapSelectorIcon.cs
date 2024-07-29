@@ -7,6 +7,7 @@ public class MapSelectorIcon : MonoBehaviour
 {
     [SerializeField] private Image mapIcon;
     [SerializeField] private TMP_Text mapNameText;
+    [SerializeField] private TMP_Text playerCountText;
     [SerializeField] private Toggle toggle;
 
     [SerializeField] private MapInfo defaultMap;
@@ -29,6 +30,7 @@ public class MapSelectorIcon : MonoBehaviour
         defaultMap = mapInfo;
         mapIcon.sprite = mapInfo.mapIcon;
         mapNameText.text = mapInfo.mapName;
+        playerCountText.text = $"{mapInfo.maxTeamSize} vs {mapInfo.maxTeamSize}";
         if (toggleGroup != null) toggle.group = toggleGroup;
         toggle.onValueChanged.AddListener(OnToggleValueChanged);
     }

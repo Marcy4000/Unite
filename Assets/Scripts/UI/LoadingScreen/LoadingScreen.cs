@@ -4,6 +4,7 @@ using Unity.Multiplayer.Samples.Utilities;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class LoadingScreen : MonoBehaviour
 {
@@ -13,7 +14,7 @@ public class LoadingScreen : MonoBehaviour
     [SerializeField] private Transform blueTeamSpawn, orangeTeamSpawn;
     [SerializeField] private GameObject holder;
     [SerializeField] private GameObject loadingScreen;
-    [SerializeField] private LoadingProgressManager loadingProgressManager;
+    [SerializeField] private LoadingManagerTracker loadingProgressManager;
 
     private List<LoadingScreenPlayer> playerList = new List<LoadingScreenPlayer>();
 
@@ -152,6 +153,14 @@ public class LoadingScreen : MonoBehaviour
                     }
                 }
                 break;
+        }
+    }
+
+    public void SetLoadingManagerOperation(AsyncOperationHandle progress)
+    {
+        if (NetworkManager.Singleton.IsClient)
+        {
+            loadingProgressManager.LocalAddressableOperation = progress;
         }
     }
 }

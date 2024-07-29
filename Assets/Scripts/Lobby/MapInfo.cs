@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 [CreateAssetMenu(fileName = "MapInfo", menuName = "Create New Map")]
 public class MapInfo : ScriptableObject
@@ -7,6 +8,13 @@ public class MapInfo : ScriptableObject
     public Sprite mapIcon;
     public string sceneName;
     public string mapSceneKey;
+
+    public int maxTeamSize;
+
+    [Space]
+
+    public AssetReferenceSprite mapResultsBlue;
+    public AssetReferenceSprite mapResultsOrange;
 
     [Space]
 
