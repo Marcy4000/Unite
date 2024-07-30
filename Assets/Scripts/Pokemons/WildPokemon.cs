@@ -127,6 +127,30 @@ public class WildPokemon : NetworkBehaviour
                 break;
             case ObjectiveType.Rotom:
                 break;
+            case ObjectiveType.Registeel:
+                bool teamtToGiveExp2 = false;
+                if (attacker.TryGetComponent(out PlayerManager player3))
+                {
+                    teamtToGiveExp2 = player3.OrangeTeam;
+                    GiveAttackerEnergy(player3);
+                }
+
+                foreach (var playerManager in GameManager.Instance.Players)
+                {
+                    if (playerManager != null && playerManager.OrangeTeam == teamtToGiveExp2)
+                    {
+                        playerManager.Pokemon.GainExperience(Mathf.RoundToInt(ExpYield * 0.60f));
+                        if (playerManager.PlayerState != PlayerState.Dead)
+                        {
+                            playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 30f, true));
+                            playerManager.Pokemon.AddStatChange(new StatChange(15, Stat.Attack, 90f, true, true, true, 0));
+                            playerManager.Pokemon.AddStatChange(new StatChange(15, Stat.SpAttack, 90f, true, true, true, 0));
+                        }
+                    }
+                }
+
+                StartCoroutine(DumbDespawn());
+                break;
             default:
                 break;
         }
