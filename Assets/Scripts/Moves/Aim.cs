@@ -392,6 +392,15 @@ public class Aim : NetworkBehaviour
                         return false;
                     }
                 }
+
+                if (pokemonObject.CompareTag("SoldierPokemon"))
+                {
+                    var soldierPokemon = pokemonObject.GetComponent<SoldierPokemon>();
+                    if (soldierPokemon.OrangeTeam == teamToIgnore)
+                    {
+                        return false;
+                    }
+                }
                 break;
             case AimTarget.Ally:
                 if (pokemonObject.GetComponent<WildPokemon>())
@@ -403,6 +412,15 @@ public class Aim : NetworkBehaviour
                 {
                     var playerManager = pokemonObject.GetComponent<PlayerManager>();
                     if (playerManager.OrangeTeam != teamToIgnore)
+                    {
+                        return false;
+                    }
+                }
+
+                if (pokemonObject.CompareTag("SoldierPokemon"))
+                {
+                    var soldierPokemon = pokemonObject.GetComponent<SoldierPokemon>();
+                    if (soldierPokemon.OrangeTeam != teamToIgnore)
                     {
                         return false;
                     }
@@ -419,6 +437,15 @@ public class Aim : NetworkBehaviour
                 {
                     var playerManager = pokemonObject.GetComponent<PlayerManager>();
                     if (playerManager.OrangeTeam == teamToIgnore)
+                    {
+                        return false;
+                    }
+                }
+
+                if (pokemonObject.CompareTag("SoldierPokemon"))
+                {
+                    var soldierPokemon = pokemonObject.GetComponent<SoldierPokemon>();
+                    if (soldierPokemon.OrangeTeam == teamToIgnore)
                     {
                         return false;
                     }

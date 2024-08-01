@@ -2,6 +2,7 @@ using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -11,6 +12,10 @@ public class WildPokemon : NetworkBehaviour
     private Pokemon pokemon;
     [SerializeField] private WildPokemonInfo wildPokemonInfo;
     [SerializeField] private HPBarWild hpBar;
+
+    [SerializeField] private GameObject soldierPrefab;
+    private AvailableWildPokemons soldierToSpawn;
+
     private Vision vision;
     private Rigidbody rb;
 
@@ -126,6 +131,10 @@ public class WildPokemon : NetworkBehaviour
                 StartCoroutine(DumbDespawn());
                 break;
             case ObjectiveType.Rotom:
+                SpawnSoldierRPC(attacker.GetComponent<PlayerManager>().OrangeTeam);
+
+                // Spawn soldier rotom
+                GiveExpRpc(info.attackerId);
                 break;
             case ObjectiveType.Registeel:
                 bool teamtToGiveExp2 = false;
@@ -154,6 +163,14 @@ public class WildPokemon : NetworkBehaviour
             default:
                 break;
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SpawnSoldierRPC(bool orangeTeam)
+    {
+        SoldierPokemon soldier = Instantiate(soldierPrefab, transform.position, transform.rotation).GetComponent<SoldierPokemon>();
+        soldier.GetComponent<NetworkObject>().Spawn(true);
+        soldier.InitializeRPC(orangeTeam, soldierToSpawn);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -305,7 +322,7 @@ public class WildPokemon : NetworkBehaviour
         };
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     public void SetWildPokemonInfoRPC(short infoID, bool isObjective = false)
     {
         wildPokemonInfo = CharactersList.Instance.WildPokemons[infoID];
@@ -331,6 +348,7 @@ public class WildPokemon : NetworkBehaviour
         };
 
         pokemon.Type = isObjective ? PokemonType.Objective : PokemonType.Wild;
+        soldierToSpawn = wildPokemonInfo.SoldierToSpawn;
 
         if (isObjective)
         {

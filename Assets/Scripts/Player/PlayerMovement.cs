@@ -47,7 +47,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private void UpdateSpeed(NetworkListEvent<StatChange> changeEvent)
     {
-        moveSpeed = pokemon.GetSpeed() / 1000f;
+        UpdateSpeed();
     }
 
     private void UpdateSpeed()

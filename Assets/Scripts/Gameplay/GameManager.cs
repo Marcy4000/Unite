@@ -418,4 +418,9 @@ public class GameManager : NetworkBehaviour
         Addressables.UnloadSceneAsync(loadHandle);
         base.OnDestroy();
     }
+
+    public Vector3[] GetRotomPath(bool orangeTeam)
+    {
+        return orangeTeam ? lanes[0].GetRotomPositions() : lanes[lanes.Length - 1].GetRotomPositions();
+    }
 }

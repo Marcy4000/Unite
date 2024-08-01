@@ -636,18 +636,26 @@ public class LobbyController : MonoBehaviour
 
     public void LoadGameMap()
     {
+        if (partyLobby.HostId != localPlayer.Id)
+        {
+            return;
+        }
         string selectedMap = partyLobby.Data["SelectedMap"].Value;
         NetworkManager.Singleton.SceneManager.LoadScene(selectedMap, LoadSceneMode.Single);
     }
 
     public void LoadResultsScreen()
     {
+        if (partyLobby.HostId != localPlayer.Id)
+        {
+            return;
+        }
         NetworkManager.Singleton.SceneManager.LoadScene("GameResults", LoadSceneMode.Single);
     }
 
-    public void ReturnToLobby()
+    public void ReturnToLobby(bool leaveLobby)
     {
-        LeaveLobbyNoGUI();
+        if (leaveLobby) LeaveLobbyNoGUI();
         SceneManager.LoadSceneAsync("LobbyScene");
     }
 

@@ -8,6 +8,7 @@ public class LaneManager : NetworkBehaviour
 {
     [SerializeField] private bool orangeTeam;
     [SerializeField] private int maxTier = 2;
+    [SerializeField] private int rotomLane = 0;
 
     private List<GoalZone> goalZones = new List<GoalZone>();
     private List<FluxZone> fluxZones = new List<FluxZone>();
@@ -109,5 +110,24 @@ public class LaneManager : NetworkBehaviour
                 fluxZone.SetIsActive(false);
             }
         }
+    }
+
+    public Vector3[] GetRotomPositions()
+    {
+        List<GoalZone> goals = goalZones.Where(x => x.GoalLaneId == rotomLane).ToList();
+
+        goals.Add(goalZones.First(x => x.GoalLaneId == -1));
+        goals.Sort((x, y) => x.GoalTier.CompareTo(y.GoalTier));
+
+        goals.Reverse();
+
+        List<Vector3> positions = new List<Vector3>();
+
+        foreach (GoalZone goal in goals)
+        {
+            positions.Add(goal.transform.position);
+        }
+
+        return positions.ToArray();
     }
 }

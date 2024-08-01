@@ -6,6 +6,13 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
+public enum GoalStatus : byte
+{
+    Active,
+    Destroyed,
+    Weakened
+}
+
 public class GoalZone : NetworkBehaviour
 {
     [SerializeField] private int maxScore;
@@ -22,11 +29,15 @@ public class GoalZone : NetworkBehaviour
     // Used to trigger farm when goal is destroyed, use the normal event for c# code
     [SerializeField] private UnityEvent onGoalZoneDestroyedUnityEvent = new UnityEvent();
 
+    private NetworkVariable<float> weakenTime = new NetworkVariable<float>();
+
     private StatChange statChange = new StatChange(60, Stat.Speed, 0, false, true, true, 1);
 
     private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
 
     private NetworkVariable<int> currentScore = new NetworkVariable<int>();
+
+    private NetworkVariable<GoalStatus> goalStatus = new NetworkVariable<GoalStatus>();
 
     public bool IsActive { get => isActive.Value; }
     public int CurrentScore { get => currentScore.Value; set => currentScore.Value = value; }
@@ -34,6 +45,7 @@ public class GoalZone : NetworkBehaviour
     public int GoalTier { get => goalTier; }
     public int GoalLaneId { get => goalLaneId; }
     public bool OrangeTeam { get => orangeTeam; }
+    public GoalStatus GoalStatus { get => goalStatus.Value; }
 
     private List<PlayerManager> playerManagerList = new List<PlayerManager>();
 
@@ -137,7 +149,7 @@ public class GoalZone : NetworkBehaviour
         }
     }
 
-    private void OnScore(int amount)
+    public void OnScore(int amount)
     {
         if (GameManager.Instance.FinalStretch)
         {
@@ -177,6 +189,27 @@ public class GoalZone : NetworkBehaviour
         visionController.IsEnabled = false;
         onGoalZoneDestroyed?.Invoke(goalLaneId, goalTier);
         onGoalZoneDestroyedUnityEvent.Invoke();
+        if (IsServer)
+        {
+            goalStatus.Value = GoalStatus.Destroyed;
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void UpdateGoalStatusRPC(GoalStatus status)
+    {
+        if (goalStatus.Value == GoalStatus.Destroyed)
+        {
+            return;
+        }
+        goalStatus.Value = status;
+    }
+
+    [Rpc(SendTo.Server)]
+    public void WeaknenGoalZoneRPC(float time)
+    {
+        weakenTime.Value = time;
+        UpdateGoalStatusRPC(GoalStatus.Weakened);
     }
 
     public void SetIsActive(bool value)
@@ -195,5 +228,20 @@ public class GoalZone : NetworkBehaviour
     private void SetIsActiveRPC(bool value)
     {
         isActive.Value = value;
+    }
+
+    private void Update()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        weakenTime.Value -= Time.deltaTime;
+
+        if (goalStatus.Value == GoalStatus.Weakened && weakenTime.Value <= 0)
+        {
+            UpdateGoalStatusRPC(GoalStatus.Active);
+        }
     }
 }

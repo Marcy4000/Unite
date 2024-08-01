@@ -515,6 +515,12 @@ public class PlayerManager : NetworkBehaviour
         isScoring = true;
         
         maxScoreTime = ScoringSystem.CalculateTrueScoreTime(alliesInGoal, GetScoreBuffs(), currentEnergy.Value);
+
+        if (goalZone.GoalStatus == GoalStatus.Weakened)
+        {
+            maxScoreTime = 0.01f;
+        }
+
         playerMovement.CanMove = false;
         scoreStatus.Cooldown = 0;
         BattleUIManager.instance.SetEnergyBallState(true);

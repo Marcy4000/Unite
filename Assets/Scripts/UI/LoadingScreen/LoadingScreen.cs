@@ -15,6 +15,7 @@ public class LoadingScreen : MonoBehaviour
     [SerializeField] private GameObject holder;
     [SerializeField] private GameObject loadingScreen;
     [SerializeField] private LoadingManagerTracker loadingProgressManager;
+    [SerializeField] private GameBeginScreenUI gameBeginScreenUI;
 
     private List<LoadingScreenPlayer> playerList = new List<LoadingScreenPlayer>();
 
@@ -85,6 +86,20 @@ public class LoadingScreen : MonoBehaviour
         loadingScreen.SetActive(false);
     }
 
+    public void ShowGameBeginScreen()
+    {
+        int bluePlayers = LobbyController.Instance.GetTeamPlayers(false).Length;
+        int orangePlayers = LobbyController.Instance.GetTeamPlayers(true).Length;
+        gameBeginScreenUI.gameObject.SetActive(true);
+        gameBeginScreenUI.InitializeUI(bluePlayers, orangePlayers);
+        gameBeginScreenUI.FadeIn();
+    }
+
+    public void HideGameBeginScreen()
+    {
+        gameBeginScreenUI.FadeOut();
+    }
+
     private void InitializeLoadingScreen()
     {
         foreach (Transform child in blueTeamSpawn)
@@ -151,6 +166,11 @@ public class LoadingScreen : MonoBehaviour
                     {
                         loadingProgressManager.LocalLoadOperation = sceneEvent.AsyncOperation;
                     }
+                }
+
+                if (sceneEvent.SceneName.Equals("CharacterSelect"))
+                {
+                    ShowGameBeginScreen();
                 }
                 break;
         }

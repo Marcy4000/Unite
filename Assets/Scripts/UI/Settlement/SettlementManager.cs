@@ -39,7 +39,7 @@ public class SettlementManager : MonoBehaviour
         returnLobbyButton.onClick.AddListener(() =>
         {
             AudioManager.StopMusic(DefaultAudioMusic.GameEnd);
-            LobbyController.Instance.ReturnToLobby();
+            LobbyController.Instance.ReturnToLobby(true);
         });
 
         InitializeScoreboards();

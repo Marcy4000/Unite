@@ -53,6 +53,7 @@ public class CharacterSelectController : NetworkBehaviour
                 selectionTimer.Value = SELECTION_TIME;
                 startTimer = true;
             }
+            LoadingScreen.Instance.HideGameBeginScreen();
         }
     }
 

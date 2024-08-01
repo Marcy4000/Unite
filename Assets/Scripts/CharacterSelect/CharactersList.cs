@@ -28,7 +28,9 @@ public enum AvailableWildPokemons : short
     Swabalu,
     Rayquaza,
     Xatu,
-    Registeel
+    Registeel,
+    Rotom,
+    RotomSoldier
 }
 
 
