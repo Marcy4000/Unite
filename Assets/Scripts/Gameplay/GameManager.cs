@@ -421,6 +421,14 @@ public class GameManager : NetworkBehaviour
 
     public Vector3[] GetRotomPath(bool orangeTeam)
     {
-        return orangeTeam ? lanes[0].GetRotomPositions() : lanes[lanes.Length - 1].GetRotomPositions();
+        foreach (var lane in lanes)
+        {
+            if (lane.OrangeTeam == orangeTeam)
+            {
+                return lane.GetRotomPositions();
+            }
+        }
+
+        return null;
     }
 }

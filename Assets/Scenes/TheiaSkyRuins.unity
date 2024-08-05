@@ -324,6 +324,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   orangeTeam: 1
   maxTier: 2
+  rotomLane: 0
 --- !u!114 &21986129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1556,6 +1557,7 @@ Transform:
   - {fileID: 62638720}
   - {fileID: 2088246366}
   - {fileID: 926572816}
+  - {fileID: 1521213223}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &252435326
@@ -8819,6 +8821,82 @@ Transform:
   m_Children: []
   m_Father: {fileID: 614612615}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!1 &1521213220
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1521213223}
+  - component: {fileID: 1521213222}
+  - component: {fileID: 1521213221}
+  m_Layer: 0
+  m_Name: RotomSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 2488908585195742037, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1521213221
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1521213220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 28
+  firstSpawnTime: 420
+  respawnCooldown: 120
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 120
+  isObjective: 1
+  isSpawnedOnMap: 0
+--- !u!114 &1521213222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1521213220}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2049189539
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!4 &1521213223
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1521213220}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: 0.077, z: 46.31}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 251153440}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &1523540457
 GameObject:
   m_ObjectHideFlags: 0
@@ -10892,6 +10970,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   orangeTeam: 0
   maxTier: 2
+  rotomLane: 0
 --- !u!114 &1826637139
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13194,8 +13273,8 @@ SceneRoots:
   - {fileID: 1454144294}
   - {fileID: 559430008}
   - {fileID: 752425144}
-  - {fileID: 21986130}
   - {fileID: 1826637140}
+  - {fileID: 21986130}
   - {fileID: 940893562}
   - {fileID: 66204427}
   - {fileID: 1095765515}

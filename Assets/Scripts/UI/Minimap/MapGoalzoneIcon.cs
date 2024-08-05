@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,6 +7,8 @@ public class MapGoalzoneIcon : MonoBehaviour
     [SerializeField] private Image goalzoneIcon, chargeSprite;
     [SerializeField] private Sprite blueCharge, orangeCharge;
     [SerializeField] private Sprite[] backgrounds;
+
+    private float maxChargeTime = 60f;
 
     private GoalZone goalZone;
 
@@ -21,6 +24,20 @@ public class MapGoalzoneIcon : MonoBehaviour
         chargeSprite.sprite = goalZone.OrangeTeam ? orangeCharge : blueCharge;
         chargeSprite.gameObject.SetActive(false);
         minimapIcon.SetTarget(goalZone.transform);
+
+        goalZone.onGoalStatusChanged += (status) =>
+        {
+            if (status == GoalStatus.Weakened)
+            {
+                chargeSprite.gameObject.SetActive(true);
+                maxChargeTime = goalZone.WeakenTime;
+                StartCoroutine(UpdateCharge());
+            }
+            else
+            {
+                chargeSprite.gameObject.SetActive(false);
+            }
+        };
 
         goalZone.onGoalZoneDestroyed += (id, lane) => { HideIcon(); };
     }
@@ -58,5 +75,16 @@ public class MapGoalzoneIcon : MonoBehaviour
     {
         goalzoneIcon.gameObject.SetActive(isVisible);
         chargeSprite.gameObject.SetActive(isVisible);
+    }
+
+    private IEnumerator UpdateCharge()
+    {
+        while (goalZone.WeakenTime > 0)
+        {
+            chargeSprite.fillAmount = goalZone.WeakenTime / maxChargeTime;
+            yield return null;
+        }
+
+        chargeSprite.gameObject.SetActive(false);
     }
 }

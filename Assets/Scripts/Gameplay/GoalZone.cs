@@ -47,9 +47,12 @@ public class GoalZone : NetworkBehaviour
     public bool OrangeTeam { get => orangeTeam; }
     public GoalStatus GoalStatus { get => goalStatus.Value; }
 
+    public float WeakenTime { get => weakenTime.Value; }
+
     private List<PlayerManager> playerManagerList = new List<PlayerManager>();
 
     public event Action<int, int> onGoalZoneDestroyed;
+    public event Action<GoalStatus> onGoalStatusChanged;
 
     public override void OnNetworkSpawn()
     {
@@ -61,6 +64,7 @@ public class GoalZone : NetworkBehaviour
         Destroy(orangeTeam ? blueModel : orangeModel);
         scoreText.text = $"{maxScore - currentScore.Value}/{maxScore}";
         currentScore.OnValueChanged += UpdateGraphics;
+        goalStatus.OnValueChanged += (previous, current) => { onGoalStatusChanged?.Invoke(current); };
 
         visionController.TeamToIgnore = orangeTeam;
         visionController.IsEnabled = orangeTeam == LobbyController.Instance.GetLocalPlayerTeam();

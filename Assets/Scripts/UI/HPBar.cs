@@ -11,6 +11,9 @@ public class HPBar : MonoBehaviour
     [SerializeField] private Sprite orangeEnergyBG, blueEnergyBG;
     [SerializeField] private GameObject generigGuage;
 
+    [SerializeField] private GameObject linePrefab;
+    [SerializeField] private RectTransform linesHolder;
+
     [SerializeField] private Sprite[] hpBarColors;
 
     public void SetPokemon(Pokemon pokemon)
@@ -23,6 +26,7 @@ public class HPBar : MonoBehaviour
         UpdateLevel();
         UpdateExp();
         ShowGenericGuage(false);
+        CreateHPMarkers(pokemon.GetMaxHp());
     }
 
     public void UpdatePlayerName(string playerName)
@@ -128,6 +132,7 @@ public class HPBar : MonoBehaviour
     {
         lvText.text = $"{pokemon.CurrentLevel + 1}";
         UpdateExp();
+        CreateHPMarkers(pokemon.GetMaxHp());
     }
 
     private void UpdateExp()
@@ -165,5 +170,25 @@ public class HPBar : MonoBehaviour
         }
 
         damageBar.fillAmount = newHp;
+    }
+
+    public void CreateHPMarkers(int hp)
+    {
+        // Remove existing markers if any
+        foreach (Transform child in linesHolder.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        int numberOfMarkers = hp / 1000;
+        float healthBarWidth = linesHolder.rect.width;
+        float spacing = healthBarWidth / (numberOfMarkers + 1); // Divide the width by number of markers + 1
+
+        for (int i = 1; i <= numberOfMarkers; i++)
+        {
+            GameObject line = Instantiate(linePrefab, linesHolder.transform);
+            RectTransform lineRectTransform = line.GetComponent<RectTransform>();
+            lineRectTransform.anchoredPosition = new Vector2(spacing * i, 0);
+        }
     }
 }

@@ -10,7 +10,7 @@ public class FluxZone : NetworkBehaviour
     [SerializeField] private GameObject graphic;
 
     private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
-    private List<PlayerManager> playerManagerList = new List<PlayerManager>();
+    private List<Pokemon> pokemonInZone = new List<Pokemon>();
 
     public bool OrangeTeam => orangeTeam;
     public int LaneID => laneID;
@@ -31,11 +31,11 @@ public class FluxZone : NetworkBehaviour
         graphic.SetActive(newValue);
         if (!newValue)
         {
-            foreach (var player in playerManagerList)
+            foreach (var player in pokemonInZone)
             {
-                player.Pokemon.RemoveStatChangeWithIDRPC(1);
+                player.RemoveStatChangeWithIDRPC(1);
             }
-            playerManagerList.Clear();
+            pokemonInZone.Clear();
         }
     }
 
@@ -49,10 +49,18 @@ public class FluxZone : NetworkBehaviour
         if (other.CompareTag("Player"))
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
-            playerManagerList.Add(playerManager);
+            pokemonInZone.Add(playerManager.Pokemon);
             int value = (playerManager.OrangeTeam == orangeTeam) ? 60 : 50;
             StatChange statChange = new StatChange((short)value, Stat.Speed, 0, false, playerManager.OrangeTeam == orangeTeam, true, 1);
             playerManager.Pokemon.AddStatChange(statChange);
+        }
+        else if (other.CompareTag("SoldierPokemon"))
+        {
+            SoldierPokemon soldierPokemon = other.GetComponent<SoldierPokemon>();
+            pokemonInZone.Add(soldierPokemon.WildPokemon.Pokemon);
+            int value = (soldierPokemon.OrangeTeam == orangeTeam) ? 60 : 50;
+            StatChange statChange = new StatChange((short)value, Stat.Speed, 0, false, soldierPokemon.OrangeTeam == orangeTeam, true, 1);
+            soldierPokemon.WildPokemon.Pokemon.AddStatChange(statChange);
         }
     }
 
@@ -66,8 +74,14 @@ public class FluxZone : NetworkBehaviour
         if (other.CompareTag("Player"))
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
-            playerManagerList.Remove(playerManager);
+            pokemonInZone.Remove(playerManager.Pokemon);
             playerManager.Pokemon.RemoveStatChangeWithIDRPC(1);
+        }
+        else if (other.CompareTag("SoldierPokemon"))
+        {
+            SoldierPokemon soldierPokemon = other.GetComponent<SoldierPokemon>();
+            pokemonInZone.Remove(soldierPokemon.WildPokemon.Pokemon);
+            soldierPokemon.WildPokemon.Pokemon.RemoveStatChangeWithIDRPC(1);
         }
     }
 

@@ -13,6 +13,10 @@ public class LaneManager : NetworkBehaviour
     private List<GoalZone> goalZones = new List<GoalZone>();
     private List<FluxZone> fluxZones = new List<FluxZone>();
 
+    public bool OrangeTeam => orangeTeam;
+    public int MaxTier => maxTier;
+    public int RotomLane => rotomLane;
+
     public IEnumerator Start()
     {
         yield return new WaitForSeconds(0.2f);

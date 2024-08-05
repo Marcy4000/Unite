@@ -30,7 +30,9 @@ public enum AvailableWildPokemons : short
     Xatu,
     Registeel,
     Rotom,
-    RotomSoldier
+    RotomSoldier,
+    Regieleki,
+    RegielekiSoldier
 }
 
 

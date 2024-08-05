@@ -23,6 +23,16 @@ public class SoldierPokemon : NetworkBehaviour
         wildPokemon = GetComponent<WildPokemon>();
         agent = GetComponent<NavMeshAgent>();
         animationManager = GetComponent<AnimationManager>();
+        GetComponent<Pokemon>().OnEvolution += InitializeVision;
+    }
+
+    private void InitializeVision()
+    {
+        Vision vision = GetComponentInChildren<Vision>();
+        vision.HasATeam = true;
+        vision.CurrentTeam = orangeTeam;
+        vision.IsVisible = true;
+        vision.SetVisibility(LobbyController.Instance.GetLocalPlayerTeam() == orangeTeam);
     }
 
     [Rpc(SendTo.Server)]
@@ -30,22 +40,27 @@ public class SoldierPokemon : NetworkBehaviour
     {
         this.orangeTeam = orangeTeam;
 
-        wildPokemon.SetWildPokemonInfoRPC((short)pokemon, false);
-        wildPokemon.Pokemon.OnLevelChange += UpdateSpeed;
-        wildPokemon.Pokemon.OnPokemonInitialized += UpdateSpeed;
-        wildPokemon.Pokemon.OnStatChange += UpdateSpeed;
-
-        targets.Add(transform.position);
-
-        Vector3[] positions = GameManager.Instance.GetRotomPath(orangeTeam);
-        foreach (var pos in positions)
+        if (IsServer)
         {
-            targets.Add(pos);
+            wildPokemon.SetWildPokemonInfoRPC((short)pokemon, false);
+            wildPokemon.Pokemon.OnLevelChange += UpdateSpeed;
+            wildPokemon.Pokemon.OnPokemonInitialized += UpdateSpeed;
+            wildPokemon.Pokemon.OnStatChange += UpdateSpeed;
+
+            targets.Add(transform.position);
+
+            Vector3[] positions = GameManager.Instance.GetRotomPath(!orangeTeam);
+            foreach (var pos in positions)
+            {
+                targets.Add(pos);
+            }
+
+            animationManager.SetBool("Walking", true);
+
+            MoveToNextTarget();
         }
 
-        animationManager.SetBool("Walking", true);
-
-        MoveToNextTarget();
+        MinimapManager.Instance.CreateObjectiveIcon(wildPokemon);
     }
 
     private void UpdateSpeed(NetworkListEvent<StatChange> changeEvent)

@@ -13,6 +13,7 @@ public static class ObjectivesDatabase
             case "drednaw":
                 return ObjectiveType.Drednaw;
             case "rotom":
+            case "regieleki":
                 return ObjectiveType.Rotom;
             case "registeel":
                 return ObjectiveType.Registeel;

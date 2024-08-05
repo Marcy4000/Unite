@@ -41,7 +41,6 @@ public class PartyScreenUI : MonoBehaviour
     {
         openLobbyToggle.isOn = !lobby.IsPrivate;
         mapSelector.UpdateSelectedMap();
-        Debug.Log($"{CharactersList.Instance.GetCurrentLobbyMap()} != {selectedMap}");
         if (CharactersList.Instance.GetCurrentLobbyMap() != selectedMap)
         {
             selectedMap = CharactersList.Instance.GetCurrentLobbyMap();
