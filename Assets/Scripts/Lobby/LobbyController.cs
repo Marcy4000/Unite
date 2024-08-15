@@ -631,7 +631,8 @@ public class LobbyController : MonoBehaviour
             return;
         }
         ChangeLobbyVisibility(true);
-        NetworkManager.Singleton.SceneManager.LoadScene("CharacterSelect", LoadSceneMode.Single);
+        //NetworkManager.Singleton.SceneManager.LoadScene("CharacterSelect", LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene("DraftSelect", LoadSceneMode.Single);
     }
 
     public void LoadGameMap()
