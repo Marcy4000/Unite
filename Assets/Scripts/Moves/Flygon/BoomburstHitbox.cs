@@ -1,6 +1,5 @@
 using System.Collections;
 using Unity.Netcode;
-using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 public class BoomburstHitbox : NetworkBehaviour

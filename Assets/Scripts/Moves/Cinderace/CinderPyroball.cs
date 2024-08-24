@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class CinderPyroball : MoveBase
@@ -5,6 +6,8 @@ public class CinderPyroball : MoveBase
     private DamageInfo damageInfo;
     private float distance;
     private Vector3 direction;
+
+    private Coroutine moveCoroutine;
 
     public CinderPyroball()
     {
@@ -34,16 +37,24 @@ public class CinderPyroball : MoveBase
     {
         if (direction.magnitude != 0 && IsActive)
         {
-            Vector2 direction = new Vector2(this.direction.x, this.direction.z);
-            playerManager.MovesController.LaunchMoveForwardProjRpc(direction, damageInfo, distance, "Assets/Prefabs/Objects/Moves/Cinderace/CinderPyroball.prefab");
-            playerManager.StopMovementForTime(1.1f);
-            playerManager.AnimationManager.PlayAnimation($"ani_spell1a_bat_0815");
-            playerManager.transform.rotation = Quaternion.LookRotation(this.direction);
+            moveCoroutine = playerManager.StartCoroutine(LaunchPyroball());
             wasMoveSuccessful = true;
         }
         Aim.Instance.HideSkillshotAim();
         Debug.Log($"Finished {Name}!");
         base.Finish();
+    }
+
+    private IEnumerator LaunchPyroball()
+    {
+        playerManager.StopMovementForTime(1.1f);
+        Vector2 direction = new Vector2(this.direction.x, this.direction.z);
+        playerManager.transform.rotation = Quaternion.LookRotation(this.direction);
+        playerManager.AnimationManager.PlayAnimation($"ani_spell1a_bat_0815");
+
+        yield return new WaitForSeconds(0.4667f);
+
+        playerManager.MovesController.LaunchMoveForwardProjRpc(direction, damageInfo, distance, "Assets/Prefabs/Objects/Moves/Cinderace/CinderPyroball.prefab");
     }
 
     public override void Cancel()
@@ -54,6 +65,11 @@ public class CinderPyroball : MoveBase
 
     public override void ResetMove()
     {
+        if (moveCoroutine != null)
+        {
+            playerManager.StopCoroutine(moveCoroutine);
+            moveCoroutine = null;
+        }
         direction = Vector3.zero;
     }
 }

@@ -47,13 +47,9 @@ public class MoveForwardProjectile : NetworkBehaviour
             return;
         }
 
-        PlayerManager playerManager;
-        if (other.TryGetComponent(out playerManager))
+        if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
         {
-            if (playerManager.OrangeTeam == orangeTeam)
-            {
-                return;
-            }
+            return;
         }
 
         if (other.gameObject.GetComponent<Pokemon>())

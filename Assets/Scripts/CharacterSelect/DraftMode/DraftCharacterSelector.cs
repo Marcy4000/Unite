@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -16,12 +15,15 @@ public class DraftCharacterSelector : MonoBehaviour
 
     public void InitializeUI()
     {
+        icons.Clear();
+
         foreach (var character in CharactersList.Instance.Characters)
         {
             GameObject characterIcon = Instantiate(iconPrefab, holder);
             DraftCharacterSelectIcon draftCharacterIcon = characterIcon.GetComponent<DraftCharacterSelectIcon>();
             draftCharacterIcon.Initialize(character);
             draftCharacterIcon.Toggle.group = toggleGroup;
+            icons.Add(draftCharacterIcon);
         }
     }
 
@@ -31,5 +33,12 @@ public class DraftCharacterSelector : MonoBehaviour
         {
             OnCharacterSelected?.Invoke(icons.FirstOrDefault(icon => icon.Toggle.isOn).Info);
         }
+    }
+
+    public int GetSelectedCharacterID()
+    {
+        Debug.Log(icons.FirstOrDefault(icon => icon.Toggle.isOn).Info);
+        Debug.Log(CharactersList.Instance.Characters.ToList().IndexOf(icons.FirstOrDefault(icon => icon.Toggle.isOn).Info));
+        return CharactersList.Instance.Characters.ToList().IndexOf(icons.FirstOrDefault(icon => icon.Toggle.isOn).Info);
     }
 }

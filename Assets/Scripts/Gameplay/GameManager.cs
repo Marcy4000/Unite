@@ -51,9 +51,10 @@ public class GameManager : NetworkBehaviour
     public int OrangeTeamScore => orangeTeamScore.Value;
     public bool FinalStretch => finalStretch.Value;
 
-    public List<PlayerManager> Players => players;
-
     private NetworkVariable<GameState> gameState = new NetworkVariable<GameState>(GameState.Waiting);
+
+    public List<PlayerManager> Players => players;
+    public LaneManager[] Lanes => lanes;
 
     public GameState GameState => gameState.Value;
 

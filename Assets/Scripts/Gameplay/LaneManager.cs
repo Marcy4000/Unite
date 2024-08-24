@@ -13,6 +13,9 @@ public class LaneManager : NetworkBehaviour
     private List<GoalZone> goalZones = new List<GoalZone>();
     private List<FluxZone> fluxZones = new List<FluxZone>();
 
+    public List<GoalZone> GoalZones => goalZones;
+    public List<FluxZone> FluxZones => fluxZones;
+
     public bool OrangeTeam => orangeTeam;
     public int MaxTier => maxTier;
     public int RotomLane => rotomLane;

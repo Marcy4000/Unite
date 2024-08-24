@@ -1,6 +1,5 @@
 using Unity.Netcode;
 using UnityEngine;
-using static WildPokemonSpawner;
 
 public enum BerryType : byte
 {

@@ -2,7 +2,6 @@ using DG.Tweening;
 using TMPro;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public enum DraftPlayerState : byte

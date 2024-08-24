@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class BattleInfoUI : MonoBehaviour
 {
-    [SerializeField] private TMP_Text blueTeamScore, orangeTeamScore;
+    [SerializeField] private TMP_Text[] blueTeamScore, orangeTeamScore;
     [SerializeField] private Toggle[] menuOptions;
     [SerializeField] private BattleInfoMenuUI[] menuPanels;
 
@@ -28,8 +28,15 @@ public class BattleInfoUI : MonoBehaviour
 
     public void SetScore(int blueScore, int orangeScore)
     {
-        blueTeamScore.text = blueScore.ToString();
-        orangeTeamScore.text = orangeScore.ToString();
+        foreach (var score in blueTeamScore)
+        {
+            score.text = blueScore.ToString();
+        }
+
+        foreach (var score in orangeTeamScore)
+        {
+            score.text = orangeScore.ToString();
+        }
     }
 
     public void SetMenuPanel(int index)

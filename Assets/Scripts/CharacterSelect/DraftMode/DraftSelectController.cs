@@ -1,42 +1,40 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum CurrentDraftPhase : byte { Banning, Picking, Preparation }
+public enum DraftPhase : byte { Banning, Picking, Preparation }
 
 public class DraftSelectController : NetworkBehaviour
 {
-    [SerializeField] private int BansPerTeam = 2;
-
+    [SerializeField] private int maxBansPerTeam = 2;
     [SerializeField] private DraftPlayerHolder draftPlayerHolderBlue;
     [SerializeField] private DraftPlayerHolder draftPlayerHolderOrange;
-
     [SerializeField] private DraftTimerUI draftTimerUI;
     [SerializeField] private DraftCharacterSelector draftCharacterSelector;
-
     [SerializeField] private Button confirmButton, switchButton;
 
-    List<Player> blueTeamPlayers;
-    List<Player> orangeTeamPlayers;
+    private List<Player> blueTeamPlayers;
+    private List<Player> orangeTeamPlayers;
 
-    private NetworkList<byte> blueTeamPlayerStates;
-    private NetworkList<byte> orangeTeamPlayerStates;
-
-    private NetworkVariable<CurrentDraftPhase> currentDraftPhase = new NetworkVariable<CurrentDraftPhase>(CurrentDraftPhase.Banning);
-    private NetworkVariable<DraftTurnData> currentDraftTurnData = new NetworkVariable<DraftTurnData>(new DraftTurnData());
+    private NetworkVariable<DraftPhase> currentDraftPhase = new NetworkVariable<DraftPhase>(DraftPhase.Banning);
+    private NetworkVariable<int> currentTurnIndex = new NetworkVariable<int>(0);
     private NetworkVariable<float> draftTimer = new NetworkVariable<float>(0f);
 
-    private int currentBanIndex = 0;
-    private int currentPickIndex = 0;
+    private NetworkList<FixedString32Bytes> playerIDs;
+    private NetworkList<byte> playerStates;
+
+    public event Action<DraftPhase> OnPhaseChanged;
+    public event Action<string, int> OnPlayerConfirmed;
 
     private void Awake()
     {
-        blueTeamPlayerStates = new NetworkList<byte>();
-        orangeTeamPlayerStates = new NetworkList<byte>();
+        playerIDs = new NetworkList<FixedString32Bytes>();
+        playerStates = new NetworkList<byte>();
     }
 
     public override void OnNetworkSpawn()
@@ -44,279 +42,250 @@ public class DraftSelectController : NetworkBehaviour
         blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(false).ToList();
         orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(true).ToList();
 
-        draftCharacterSelector.InitializeUI();
-        draftCharacterSelector.OnCharacterSelected += OnCharacterSelected;
+        currentDraftPhase.OnValueChanged += (_, phase) => OnPhaseChanged?.Invoke(phase);
 
+        InitializeUI();
+
+        if (IsServer)
+        {
+            InitializePlayerStates();
+
+            StartPhase(DraftPhase.Banning);
+        }
+    }
+
+    private void InitializePlayerStates()
+    {
         foreach (Player player in blueTeamPlayers)
         {
-            blueTeamPlayerStates.Add((byte)DraftPlayerState.Idle);
+            playerIDs.Add(player.Id);
+            playerStates.Add((byte)DraftPlayerState.Idle);
         }
-
         foreach (Player player in orangeTeamPlayers)
         {
-            orangeTeamPlayerStates.Add((byte)DraftPlayerState.Idle);
+            playerIDs.Add(player.Id);
+            playerStates.Add((byte)DraftPlayerState.Idle);
         }
+    }
+
+    private void InitializeUI()
+    {
+        draftCharacterSelector.InitializeUI();
+        draftCharacterSelector.OnCharacterSelected += OnCharacterSelected;
 
         draftPlayerHolderBlue.Initialize(blueTeamPlayers);
         draftPlayerHolderOrange.Initialize(orangeTeamPlayers);
 
-        if (IsServer)
-        {
-            StartBanningPhase();
-        }
+        confirmButton.onClick.AddListener(OnConfirmButtonClicked);
+        switchButton.onClick.AddListener(OnSwitchButtonClicked);
     }
 
-    private void StartBanningPhase()
-    {
-        currentDraftPhase.Value = CurrentDraftPhase.Banning;
-        currentBanIndex = 0;
-
-        UpdateBanTurn();
-    }
-
-    private void UpdateBanTurn()
-    {
-        if (currentBanIndex >= BansPerTeam * 2)
-        {
-            StartPickingPhase();
-            return;
-        }
-
-        DraftTurnData draftTurnData = new DraftTurnData();
-        draftTurnData.IsOrangeTeamTurn = currentBanIndex % 2 != 0;
-
-        int playerIndex = currentBanIndex / 2;
-
-        draftTurnData.SelectedPlayerIDs = draftTurnData.IsOrangeTeamTurn
-            ? new ushort[] { (ushort)(orangeTeamPlayers.Count - 1 - playerIndex) }
-            : new ushort[] { (ushort)(blueTeamPlayers.Count - 1 - playerIndex) };
-
-        currentDraftTurnData.Value = draftTurnData;
-        currentBanIndex++;
-        draftTimer.Value = 25f;
-
-        UpdateSelectedPlayers();
-    }
-
-    private void StartPickingPhase()
-    {
-        currentDraftPhase.Value = CurrentDraftPhase.Picking;
-        currentPickIndex = 0;
-
-        UpdatePickTurn();
-    }
-
-    private void UpdatePickTurn()
-    {
-        if (currentPickIndex >= blueTeamPlayers.Count + orangeTeamPlayers.Count)
-        {
-            StartPreparationPhase();
-            return;
-        }
-
-        DraftTurnData draftTurnData = new DraftTurnData();
-
-        // Follow the specific pick order
-        if (currentPickIndex == 0 || currentPickIndex % 2 == 0)
-        {
-            draftTurnData.IsOrangeTeamTurn = (currentPickIndex % 4 != 0);
-        }
-        else
-        {
-            draftTurnData.IsOrangeTeamTurn = (currentPickIndex % 4 == 1);
-        }
-
-        int playerIndex = currentPickIndex / 2;
-
-        draftTurnData.SelectedPlayerIDs = draftTurnData.IsOrangeTeamTurn
-            ? new ushort[] { (ushort)playerIndex }
-            : new ushort[] { (ushort)playerIndex };
-
-        currentDraftTurnData.Value = draftTurnData;
-        currentPickIndex++;
-        draftTimer.Value = 25f;
-
-        UpdateSelectedPlayers();
-    }
-
-    private void StartPreparationPhase()
-    {
-        currentDraftPhase.Value = CurrentDraftPhase.Preparation;
-        draftTimer.Value = 60f; // Example time for preparation
-
-        // Notify players they can switch heroes or change equipment
-        UpdateSelectedPlayers();
-    }
-
-    private void UpdateSelectedPlayers()
+    private void StartPhase(DraftPhase phase)
     {
         if (!IsServer)
         {
             return;
         }
 
-        for (int i = 0; i < blueTeamPlayerStates.Count; i++)
-        {
-            if (blueTeamPlayerStates[i] == (byte)DraftPlayerState.Confirmed)
-            {
-                continue;
-            }
-            blueTeamPlayerStates[i] = (byte)DraftPlayerState.Idle;
-        }
+        currentDraftPhase.Value = phase;
+        currentTurnIndex.Value = 0;
+        draftTimer.Value = GetPhaseTimeLimit(phase);
 
-        for (int i = 0; i < orangeTeamPlayerStates.Count; i++)
-        {
-            if (orangeTeamPlayerStates[i] == (byte)DraftPlayerState.Confirmed)
-            {
-                continue;
-            }
-            orangeTeamPlayerStates[i] = (byte)DraftPlayerState.Idle;
-        }
-
-        DraftTurnData draftTurnData = currentDraftTurnData.Value;
-        bool isBanningPhase = currentDraftPhase.Value == CurrentDraftPhase.Banning;
-        bool isPickingPhase = currentDraftPhase.Value == CurrentDraftPhase.Picking;
-
-        // Determine if it's the current player's turn
-        bool isPlayerTurn = draftTurnData.IsOrangeTeamTurn ?
-            orangeTeamPlayerStates[draftTurnData.SelectedPlayerIDs[0]] == (byte)DraftPlayerState.Idle :
-            blueTeamPlayerStates[draftTurnData.SelectedPlayerIDs[0]] == (byte)DraftPlayerState.Idle;
-
-        // Toggle the confirm button during banning or picking if it's the player's turn
-        confirmButton.gameObject.SetActive((isBanningPhase || isPickingPhase) && isPlayerTurn);
-
-        // Toggle the switch button only during the Preparation phase
-        switchButton.gameObject.SetActive(currentDraftPhase.Value == CurrentDraftPhase.Preparation);
-
-        if (draftTurnData.IsOrangeTeamTurn)
-        {
-            foreach (ushort playerID in draftTurnData.SelectedPlayerIDs)
-            {
-                orangeTeamPlayerStates[playerID] = currentDraftPhase.Value == CurrentDraftPhase.Banning ? (byte)DraftPlayerState.Banning : (byte)DraftPlayerState.Picking;
-            }
-        }
-        else
-        {
-            foreach (ushort playerID in draftTurnData.SelectedPlayerIDs)
-            {
-                blueTeamPlayerStates[playerID] = currentDraftPhase.Value == CurrentDraftPhase.Banning ? (byte)DraftPlayerState.Banning : (byte)DraftPlayerState.Picking;
-            }
-        }
-
-        UpdatePlayerIconsRPC();
-    }
-
-    [Rpc(SendTo.Server)]
-    private void UpdatePlayerStateRPC(ushort playerID, bool orangeSide, DraftPlayerState state)
-    {
-        if (currentDraftPhase.Value == CurrentDraftPhase.Preparation)
-        {
-            return;
-        }
-
-        if (orangeSide)
-        {
-            orangeTeamPlayerStates[playerID] = (byte)state;
-        }
-        else
-        {
-            blueTeamPlayerStates[playerID] = (byte)state;
-        }
-
-        UpdatePlayerIconsRPC();
-
-        if (state == DraftPlayerState.Confirmed)
-        {
-            if (currentDraftPhase.Value == CurrentDraftPhase.Banning)
-            {
-                UpdateBanTurn();
-            }
-            else if (currentDraftPhase.Value == CurrentDraftPhase.Picking)
-            {
-                UpdatePickTurn();
-            }
-        }
+        UpdateUIForCurrentTurnRPC();
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void UpdatePlayerIconsRPC()
+    private void UpdateUIForCurrentTurnRPC()
     {
-        foreach (DraftPlayerIcon playerIcon in draftPlayerHolderBlue.PlayerIcons)
+        if (IsCurrentPlayerTurn(LobbyController.Instance.Player.Id))
         {
-            playerIcon.UpdateIconState((DraftPlayerState)blueTeamPlayerStates[blueTeamPlayers.IndexOf(playerIcon.AssignedPlayer)]);
-        }
-
-        foreach (DraftPlayerIcon playerIcon in draftPlayerHolderOrange.PlayerIcons)
-        {
-            playerIcon.UpdateIconState((DraftPlayerState)orangeTeamPlayerStates[orangeTeamPlayers.IndexOf(playerIcon.AssignedPlayer)]);
-        }
-    }
-
-    [Rpc(SendTo.Server)]
-    private void OnPlayerConfirmedCharacter(ushort playerID, int selectedCharacter)
-    {
-        DraftTurnData draftTurnData = currentDraftTurnData.Value;
-
-        // Verify that the player is allowed to confirm
-        bool isOrangeTeamTurn = draftTurnData.IsOrangeTeamTurn;
-        bool isPlayerTurn = true; // Implement this
-
-        if (!isPlayerTurn)
-        {
-            Debug.LogWarning("Player tried to confirm out of turn!");
-            return;
-        }
-
-        // Apply the confirmed character
-        if (currentDraftPhase.Value == CurrentDraftPhase.Banning)
-        {
-            // Add selectedCharacter to the banned characters list (implement this)
-        }
-        else if (currentDraftPhase.Value == CurrentDraftPhase.Picking)
-        {
-            // Assign selectedCharacter to the player's selected character (implement this)
-        }
-
-        // Update the player's state to confirmed
-        if (isOrangeTeamTurn)
-        {
-            orangeTeamPlayerStates[playerID] = (byte)DraftPlayerState.Confirmed;
+            confirmButton.gameObject.SetActive(currentDraftPhase.Value != DraftPhase.Preparation);
+            switchButton.gameObject.SetActive(currentDraftPhase.Value == DraftPhase.Preparation);
         }
         else
         {
-            blueTeamPlayerStates[playerID] = (byte)DraftPlayerState.Confirmed;
+            confirmButton.gameObject.SetActive(false);
+            switchButton.gameObject.SetActive(false);
         }
 
-        UpdatePlayerIconsRPC(); // Update the UI to reflect the new state
+        UpdatePlayerIcons();
+    }
 
-        // Progress to the next turn
-        if (currentDraftPhase.Value == CurrentDraftPhase.Banning)
+    private void OnConfirmButtonClicked()
+    {
+        string playerID = LobbyController.Instance.Player.Id;
+        int selectedCharacter = draftCharacterSelector.GetSelectedCharacterID();
+
+        if (IsCurrentPlayerTurn(playerID) && IsServer)
         {
-            UpdateBanTurn();
+            OnPlayerConfirmed?.Invoke(playerID, selectedCharacter);
+            HandlePlayerConfirmationRPC(playerID, selectedCharacter);
         }
-        else if (currentDraftPhase.Value == CurrentDraftPhase.Picking)
+    }
+
+    private void OnSwitchButtonClicked()
+    {
+        // Handle switch logic (e.g., switching selected character during preparation)
+    }
+
+    [Rpc(SendTo.Server)]
+    private void HandlePlayerConfirmationRPC(string playerID, int selectedCharacter)
+    {
+        int index = GetPlayerIndex(playerID);
+        if (index == -1)
         {
-            UpdatePickTurn();
+            Debug.LogWarning($"PlayerID {playerID} not found in player list.");
+            return;
         }
+
+        if (currentDraftPhase.Value == DraftPhase.Banning)
+        {
+            // Handle ban logic
+            playerStates[index] = (byte)DraftPlayerState.Idle;
+        }
+        else if (currentDraftPhase.Value == DraftPhase.Picking)
+        {
+            // Handle pick logic
+            playerStates[index] = (byte)DraftPlayerState.Confirmed;
+        }
+
+        ProgressTurn();
+    }
+
+    private void ProgressTurn()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        currentTurnIndex.Value++;
+
+        if (IsPhaseComplete())
+        {
+            if (currentDraftPhase.Value == DraftPhase.Banning)
+            {
+                StartPhase(DraftPhase.Picking);
+            }
+            else if (currentDraftPhase.Value == DraftPhase.Picking)
+            {
+                StartPhase(DraftPhase.Preparation);
+            }
+            else
+            {
+                // Start the match or end the draft
+                StartMatch();
+            }
+        }
+        else
+        {
+            UpdateUIForCurrentTurnRPC();
+        }
+    }
+
+    private bool IsPhaseComplete()
+    {
+        int totalTurns = currentDraftPhase.Value == DraftPhase.Banning
+            ? maxBansPerTeam * 2
+            : (blueTeamPlayers.Count + orangeTeamPlayers.Count) * 2;
+        return currentTurnIndex.Value >= totalTurns;
+    }
+
+    private bool IsCurrentPlayerTurn(string playerID)
+    {
+        return GetCurrentPlayerID() == playerID;
+    }
+
+    private int GetPlayerIndex(string playerID)
+    {
+        return playerIDs.IndexOf(playerID);
+    }
+
+    private string GetCurrentPlayerID()
+    {
+        if (currentDraftPhase.Value == DraftPhase.Banning)
+        {
+            return GetBanTurnPlayer();
+        }
+        else if (currentDraftPhase.Value == DraftPhase.Picking)
+        {
+            return GetPickTurnPlayer();
+        }
+
+        return string.Empty;
+    }
+
+    private string GetBanTurnPlayer()
+    {
+        int playerIndex = (maxBansPerTeam * 2) - 1 - currentTurnIndex.Value;
+        if (playerIndex % 2 == 0)
+        {
+            return orangeTeamPlayers[playerIndex / 2].Id;
+        }
+        else
+        {
+            return blueTeamPlayers[playerIndex / 2].Id;
+        }
+    }
+
+    private string GetPickTurnPlayer()
+    {
+        if (currentTurnIndex.Value == 0)
+        {
+            return blueTeamPlayers[0].Id;
+        }
+
+        int adjustedIndex = (currentTurnIndex.Value - 1) / 2;
+        if (currentTurnIndex.Value % 2 == 0)
+        {
+            return orangeTeamPlayers[adjustedIndex % orangeTeamPlayers.Count].Id;
+        }
+        else
+        {
+            return blueTeamPlayers[(adjustedIndex + 1) % blueTeamPlayers.Count].Id;
+        }
+    }
+
+    private float GetPhaseTimeLimit(DraftPhase phase)
+    {
+        return phase switch
+        {
+            DraftPhase.Banning => 20f,
+            DraftPhase.Picking => 25f,
+            DraftPhase.Preparation => 30f,
+            _ => 0f,
+        };
     }
 
     private void OnCharacterSelected(CharacterInfo characterInfo)
     {
-        ushort playerID = (ushort)GetCurrentPlayerIndex();
-        CharactersList.Instance.Characters.ToList().IndexOf(characterInfo);
+        // Handle character selection logic here
     }
 
-    public int GetCurrentPlayerIndex()
+    private void UpdatePlayerIcons()
     {
-        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        for (int i = 0; i < playerIDs.Count; i++)
+        {
+            string playerID = playerIDs[i].ToString();
+            DraftPlayerState state = (DraftPlayerState)playerStates[i];
 
-        if (localPlayerTeam)
-        {
-            return orangeTeamPlayers.FindIndex(player => player == LobbyController.Instance.Player);
-        }
-        else
-        {
-            return blueTeamPlayers.FindIndex(player => player == LobbyController.Instance.Player);
+            // Update the blue team icons
+            foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
+            {
+                if (playerIcon.AssignedPlayer.Id == playerID)
+                {
+                    playerIcon.UpdateIconState(state);
+                }
+            }
+
+            // Update the orange team icons
+            foreach (var playerIcon in draftPlayerHolderOrange.PlayerIcons)
+            {
+                if (playerIcon.AssignedPlayer.Id == playerID)
+                {
+                    playerIcon.UpdateIconState(state);
+                }
+            }
         }
     }
 
@@ -335,20 +304,28 @@ public class DraftSelectController : NetworkBehaviour
         }
         else
         {
-            // Handle timeouts, maybe auto-confirm the selection
-            // or progress to the next phase automatically.
+            HandleTimeout();
         }
     }
-}
 
-public struct DraftTurnData : INetworkSerializable
-{
-    public bool IsOrangeTeamTurn;
-    public ushort[] SelectedPlayerIDs;
-
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    private void HandleTimeout()
     {
-        serializer.SerializeValue(ref IsOrangeTeamTurn);
-        serializer.SerializeValue(ref SelectedPlayerIDs);
+        string playerID = GetCurrentPlayerID(); // Get the current player's ID
+        int playerIndex = GetPlayerIndex(playerID); // Get the index of the player
+
+        if (playerIndex != -1 && playerStates[playerIndex] != (byte)DraftPlayerState.Confirmed)
+        {
+            // Auto-confirm the current selection or perform other timeout actions
+            int selectedCharacterID = draftCharacterSelector.GetSelectedCharacterID();
+            OnPlayerConfirmed?.Invoke(playerID, selectedCharacterID);
+            HandlePlayerConfirmationRPC(playerID, selectedCharacterID);
+        }
+    }
+
+    private void StartMatch()
+    {
+        // Add logic to start the match here
+
+        Debug.Log("Draft phase complete! Starting match...");
     }
 }

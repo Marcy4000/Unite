@@ -8,12 +8,16 @@ using JSAM;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.AddressableAssets;
 
+public enum CharacterSelectPhase : byte { Selection, Preview }
+
 public class CharacterSelectController : NetworkBehaviour
 {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
     private const float SELECTION_TIME = 10f;
+    private const float PREVIEW_TIME = 5f;
 #else
     private const float SELECTION_TIME = 35f;
+    private const float PREVIEW_TIME = 15f;
 #endif
     private const bool ALLOW_DUPLICATE_CHARACTERS = false;
 
@@ -22,12 +26,16 @@ public class CharacterSelectController : NetworkBehaviour
 
     [SerializeField] CharacterSelectorUI characterSelectorUI;
 
+    [SerializeField] private GameObject mainScreen;
+    [SerializeField] private PreviewScreenUI previewScreenUI;
+
     [SerializeField] private Transform pokemonSpawnPoint;
     private GameObject currentPokemon;
 
     [SerializeField] private TMP_Text timerText;
 
     private NetworkVariable<float> selectionTimer = new NetworkVariable<float>(SELECTION_TIME);
+    private NetworkVariable<CharacterSelectPhase> currentPhase = new NetworkVariable<CharacterSelectPhase>(CharacterSelectPhase.Selection);
     private bool isLoading = false;
     private bool startTimer = false;
     private bool hasSelectedCharacter = false;
@@ -52,6 +60,7 @@ public class CharacterSelectController : NetworkBehaviour
             {
                 selectionTimer.Value = SELECTION_TIME;
                 startTimer = true;
+                currentPhase.Value = CharacterSelectPhase.Selection;
             }
             LoadingScreen.Instance.HideGameBeginScreen();
         }
@@ -81,6 +90,19 @@ public class CharacterSelectController : NetworkBehaviour
         }
 
         selectionTimer.OnValueChanged += UpdateTimerText;
+
+        currentPhase.OnValueChanged += (previous, current) =>
+        {
+            if (current == CharacterSelectPhase.Preview)
+            {
+                mainScreen.SetActive(false);
+                previewScreenUI.gameObject.SetActive(true);
+                previewScreenUI.InitializeUI();
+            }
+        };
+
+        mainScreen.SetActive(true);
+        previewScreenUI.gameObject.SetActive(false);
     }
 
     private void UpdateTimerText(float previous, float current)
@@ -90,7 +112,18 @@ public class CharacterSelectController : NetworkBehaviour
         {
             time = 0;
         }
-        timerText.text = time.ToString();
+
+        switch (currentPhase.Value)
+        {
+            case CharacterSelectPhase.Selection:
+                timerText.text = time.ToString();
+                break;
+            case CharacterSelectPhase.Preview:
+                previewScreenUI.UpdateTimerValue(time);
+                break;
+            default:
+                break;
+        }
     }
 
     private void Update()
@@ -102,9 +135,24 @@ public class CharacterSelectController : NetworkBehaviour
                 selectionTimer.Value -= Time.deltaTime;
                 if (selectionTimer.Value <= 0 && !isLoading)
                 {
-                    ShowLoadingScreenRpc();
-                    LobbyController.Instance.LoadGameMap();
-                    isLoading = true;
+                    switch (currentPhase.Value)
+                    {
+                        case CharacterSelectPhase.Selection:
+                            currentPhase.Value = CharacterSelectPhase.Preview;
+                            selectionTimer.Value = PREVIEW_TIME;
+                            break;
+                        case CharacterSelectPhase.Preview:
+                            if (!isLoading)
+                            {
+                                ShowLoadingScreenRpc();
+                                LobbyController.Instance.LoadGameMap();
+                                isLoading = true;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+
                 }
             }
         }

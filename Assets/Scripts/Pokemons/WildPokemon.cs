@@ -1,8 +1,8 @@
 using DG.Tweening;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -104,6 +104,13 @@ public class WildPokemon : NetworkBehaviour
                     {
                         playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.Rayquaza, 25f, true));
                     }
+                }
+
+                LaneManager opposingLane = GameManager.Instance.Lanes.ToList().Find(lane => lane.OrangeTeam != teamToBuff);
+
+                foreach (var goalZone in opposingLane.GoalZones)
+                {
+                    goalZone.WeaknenGoalZoneRPC(20f);
                 }
 
                 GiveExpRpc(info.attackerId);
