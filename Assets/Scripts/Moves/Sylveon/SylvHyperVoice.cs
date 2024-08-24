@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class SylvHyperVoice : MoveBase
 {
+    private const int wavesAmountNormal = 6;
+    private const int wavesAmountUpgraded = 7;
+
     private DamageInfo closeDamage;
     private DamageInfo farDamage;
     private Vector3 direction;
@@ -71,8 +74,8 @@ public class SylvHyperVoice : MoveBase
             playerManager.MovesController.onObjectSpawned += (hyperVoiceHitbox) =>
             {
                 hypervoiceHitbox = hyperVoiceHitbox.GetComponent<HypervoiceHitbox>();
-                hypervoiceHitbox.TeamToIgnore = playerManager.OrangeTeam;
-                hypervoiceHitbox.SetDamageRPC(closeDamage, farDamage);
+                int wavesAmount = IsUpgraded ? wavesAmountUpgraded : wavesAmountNormal;
+                hypervoiceHitbox.InitializeRPC(closeDamage, farDamage, playerManager.OrangeTeam, wavesAmount);
                 hypervoiceHitbox.transform.rotation = Quaternion.LookRotation(this.direction);
             };
 

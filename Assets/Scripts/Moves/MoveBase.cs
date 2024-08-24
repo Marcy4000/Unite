@@ -82,6 +82,8 @@ public static class MoveDatabase
                 return new SylvHyperVoice();
             case AvailableMoves.SylvCalmMind:
                 return new SylvCalmMind();
+            case AvailableMoves.SylveonUnite:
+                return new SylvUnite();
 
             case AvailableMoves.VaporSwift:
                 return new VaporSwift();

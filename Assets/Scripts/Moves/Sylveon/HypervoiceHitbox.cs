@@ -10,23 +10,19 @@ public class HypervoiceHitbox : NetworkBehaviour
     private DamageInfo farDamage;
 
     private bool teamToIgnore;
-    public bool TeamToIgnore { get => teamToIgnore; set => SetTeamToIgnoreRPC(value); }
+    //public bool TeamToIgnore { get => teamToIgnore; set => SetTeamToIgnoreRPC(value); }
 
     private List<Pokemon> pokemonInTrigger = new List<Pokemon>();
 
     private float cooldown = 0.1f;
 
-    [Rpc(SendTo.ClientsAndHost)]
-    public void SetDamageRPC(DamageInfo close, DamageInfo far)
+    [Rpc(SendTo.Everyone)]
+    public void InitializeRPC(DamageInfo close, DamageInfo far, bool team, int waves)
     {
         closeDamage = close;
         farDamage = far;
-    }
-
-    [Rpc(SendTo.ClientsAndHost)]
-    private void SetTeamToIgnoreRPC(bool team)
-    {
         teamToIgnore = team;
+        wavesAmount = waves;
     }
 
     [Rpc(SendTo.Server)]
@@ -69,18 +65,12 @@ public class HypervoiceHitbox : NetworkBehaviour
             return;
         }
 
-        PlayerManager player;
-        if (other.TryGetComponent(out player))
+        if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, teamToIgnore))
         {
-            if (player.OrangeTeam == teamToIgnore)
-            {
-                return;
-            }
+            return;
         }
 
-        Pokemon pokemon;
-
-        if (other.TryGetComponent(out pokemon))
+        if (other.TryGetComponent(out Pokemon pokemon))
         {
             if (!pokemonInTrigger.Contains(pokemon))
             {
@@ -96,9 +86,7 @@ public class HypervoiceHitbox : NetworkBehaviour
             return;
         }
 
-        Pokemon pokemon;
-
-        if (other.TryGetComponent(out pokemon))
+        if (other.TryGetComponent(out Pokemon pokemon))
         {
             if (pokemonInTrigger.Contains(pokemon))
             {

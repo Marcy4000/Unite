@@ -122,4 +122,14 @@ public class DraftPlayerIcon : MonoBehaviour
         }
         battleItemSprite.sprite = battleItem.icon;
     }
+
+    public void UpdatePlayerData(Lobby lobby)
+    {
+        assignedPlayer = lobby.Players.Find(x => x.Id == assignedPlayer.Id);
+
+        CharacterInfo info = CharactersList.Instance.GetCharacterFromString(assignedPlayer.Data["SelectedCharacter"].Value);
+
+        UpdateSelectedCharacter(info);
+        UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)));
+    }
 }

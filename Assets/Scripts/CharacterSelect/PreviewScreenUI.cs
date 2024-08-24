@@ -26,6 +26,7 @@ public class PreviewScreenUI : MonoBehaviour
             playerIcon.UpdateIconState(DraftPlayerState.Confirmed);
             playerIcon.UpdateSelectedCharacter(CharactersList.Instance.GetCharacterFromString(playerIcon.AssignedPlayer.Data["SelectedCharacter"].Value));
             playerIcon.UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(playerIcon.AssignedPlayer.Data["BattleItem"].Value)));
+            LobbyController.Instance.onLobbyUpdate += playerIcon.UpdatePlayerData;
         }
 
         foreach (var playerIcon in draftPlayerHolderOrange.PlayerIcons)
@@ -33,11 +34,25 @@ public class PreviewScreenUI : MonoBehaviour
             playerIcon.UpdateIconState(DraftPlayerState.Confirmed);
             playerIcon.UpdateSelectedCharacter(CharactersList.Instance.GetCharacterFromString(playerIcon.AssignedPlayer.Data["SelectedCharacter"].Value));
             playerIcon.UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(playerIcon.AssignedPlayer.Data["BattleItem"].Value)));
+            LobbyController.Instance.onLobbyUpdate += playerIcon.UpdatePlayerData;
         }
     }
 
     public void UpdateTimerValue(float time)
     {
         draftTimerUI.UpdateTimer(time);
+    }
+
+    private void OnDestroy()
+    {
+        foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
+        {
+            LobbyController.Instance.onLobbyUpdate -= playerIcon.UpdatePlayerData;
+        }
+
+        foreach (var playerIcon in draftPlayerHolderOrange.PlayerIcons)
+        {
+            LobbyController.Instance.onLobbyUpdate -= playerIcon.UpdatePlayerData;
+        }
     }
 }

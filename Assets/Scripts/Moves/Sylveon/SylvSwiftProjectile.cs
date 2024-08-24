@@ -57,19 +57,15 @@ public class SylvSwiftProjectile : NetworkBehaviour
             return;
         }
 
-        PlayerManager playerManager;
-        if (other.TryGetComponent(out playerManager))
+        if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
         {
-            if (playerManager.OrangeTeam == orangeTeam)
-            {
-                return;
-            }
+            return;
         }
 
-        if (other.gameObject.GetComponent<Pokemon>())
+        if (other.TryGetComponent(out Pokemon pokemon))
         {
             // Deal damage to the target
-            other.GetComponent<Pokemon>().TakeDamage(damageInfo);
+            pokemon.TakeDamage(damageInfo);
             DespawnObjectRPC();
         }
     }

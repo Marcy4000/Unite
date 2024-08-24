@@ -688,6 +688,21 @@ public class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
+    public void RemoveStatusEffectRPC(StatusEffect effect)
+    {
+        for (int i = 0; i < statusEffects.Count; i++)
+        {
+            if (statusEffects[i].Equals(effect))
+            {
+                OnStatusListChangedRPC(effect, false);
+                statusEffects.RemoveAt(i);
+                statusTimers.RemoveAt(i);
+                return;
+            }
+        }
+    }
+
+        [Rpc(SendTo.Server)]
     private void RemoveStatusEffectWithIDRPC(ushort id)
     {
         for (int i = 0; i < statusEffects.Count; i++)
