@@ -115,7 +115,7 @@ public class JoltSwiftProjectile : NetworkBehaviour
         }
         else if (other.TryGetComponent(out Pokemon pokemon))
         {
-            if (pokemon.NetworkObjectId == lastHit || Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
+            if (pokemon.NetworkObjectId == lastHit || !Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 return;
             }
