@@ -158,6 +158,21 @@ public static class MoveDatabase
             case AvailableMoves.MarshadowUnite:
                 return new MarshadowUnite();
 
+            case AvailableMoves.CresseliaSafeguard:
+                return new CresseliaSafeguard();
+            case AvailableMoves.CresseliaAuroraBeam:
+                return new CresseliaAuroraBeam();
+            case AvailableMoves.CresseliaPsybeam:
+                return new CresseliaPsybeam();
+            case AvailableMoves.CresseliaMoonblast:
+                return new CresseliaMoonblast();
+            case AvailableMoves.CresseliaMoonlight:
+                return new CresseliaMoonlight();
+            case AvailableMoves.CresseliaLunarBlessing:
+                return new CresseliaLunarBlessing();
+            case AvailableMoves.CresseliaUnite:
+                return new CresseliaUnite();
+
             default:
                 return null;
         }
@@ -229,5 +244,13 @@ public enum AvailableMoves : uint
     MarshadowPhantomForce,
     MarshadowAuraSphere,
     MarshadowCloseCombat,
-    MarshadowUnite
+    MarshadowUnite,
+
+    CresseliaSafeguard,
+    CresseliaAuroraBeam,
+    CresseliaPsybeam,
+    CresseliaMoonblast,
+    CresseliaLunarBlessing,
+    CresseliaMoonlight,
+    CresseliaUnite,
 }

@@ -10,7 +10,7 @@ public enum ActionStatusType
     Charging = 1 << 3,
     Executing = 1 << 4,
     Busy = 1 << 5
-} // For now only relevant statuses are None, Cooldown and Disabled
+}
 
 public class BattleActionStatus
 {

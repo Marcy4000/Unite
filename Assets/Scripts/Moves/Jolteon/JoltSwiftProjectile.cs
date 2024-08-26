@@ -113,18 +113,9 @@ public class JoltSwiftProjectile : NetworkBehaviour
                 direction = new Vector3(direction.x, 0, direction.z).normalized; // Ensure the direction is on the xz plane
             }
         }
-        else if (other.TryGetComponent(out PlayerManager player))
-        {
-            if (player.OrangeTeam == orangeTeam || player.Pokemon.HasAnyStatusEffect(invulnerableStatuses) || player.NetworkObjectId == lastHit)
-            {
-                return;
-            }
-
-            OnStarHit(player.Pokemon);
-        }
         else if (other.TryGetComponent(out Pokemon pokemon))
         {
-            if (pokemon.NetworkObjectId == lastHit)
+            if (pokemon.NetworkObjectId == lastHit || Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 return;
             }

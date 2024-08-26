@@ -20,6 +20,7 @@ public class WildPokemonSpawner : NetworkBehaviour
     [SerializeField] private float despawnTime;
     [SerializeField] private bool isObjective;
     [SerializeField] private bool isSpawnedOnMap;
+    [SerializeField] private int soldierLaneID;
 
     private float timer;
     private bool spawnedFirstTime = false;
@@ -113,6 +114,7 @@ public class WildPokemonSpawner : NetworkBehaviour
         var instanceNetworkObject = wildPokemon.GetComponent<NetworkObject>();
         instanceNetworkObject.Spawn();
         wildPokemon.SetWildPokemonInfoRPC((short)wildPokemonID, isObjective);
+        wildPokemon.SoldierLaneID = soldierLaneID;
         wildPokemon.Pokemon.OnDeath += HandlePokemonDeath;
         isSpawnedOnMap = true;
     }

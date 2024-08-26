@@ -33,6 +33,11 @@ public class MovesHolderUI : MonoBehaviour
         moveUIs[id].ShowSecondaryCooldown(time);
     }
 
+    public void ShowUniteMoveSecondaryCooldown(float time)
+    {
+        uniteMoveUI.ShowSecondaryCooldown(time);
+    }
+
     public void ShowBattleItemCooldown(float time)
     {
         battleItemUI.StartCooldown(time);

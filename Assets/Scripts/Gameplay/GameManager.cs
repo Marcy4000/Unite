@@ -420,13 +420,13 @@ public class GameManager : NetworkBehaviour
         base.OnDestroy();
     }
 
-    public Vector3[] GetRotomPath(bool orangeTeam)
+    public Vector3[] GetRotomPath(bool orangeTeam, int laneID)
     {
         foreach (var lane in lanes)
         {
             if (lane.OrangeTeam == orangeTeam)
             {
-                return lane.GetRotomPositions();
+                return lane.GetRotomPositions(laneID);
             }
         }
 

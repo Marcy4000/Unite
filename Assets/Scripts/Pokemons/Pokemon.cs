@@ -1168,6 +1168,19 @@ public class Pokemon : NetworkBehaviour
         return false;
     }
 
+    public ShieldInfo? GetShieldWithID(ushort id)
+    {
+        foreach (ShieldInfo shield in shields)
+        {
+            if (shield.ID == id)
+            {
+                return shield;
+            }
+        }
+
+        return null;
+    }
+
     private List<ShieldInfo> GetShieldsAsList()
     {
         List<ShieldInfo> shieldList = new List<ShieldInfo>();

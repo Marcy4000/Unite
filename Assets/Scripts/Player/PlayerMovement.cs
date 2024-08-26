@@ -18,12 +18,15 @@ public class PlayerMovement : NetworkBehaviour
     private bool isMoving = false;
     private bool isKnockedUp = false;
     private bool canBeKnockedBack = true;
+    private bool snapToGround = true;
 
     private bool isDashing = false;
     private Vector3 dashDirection;
 
     public bool CanMove { get => canMove; set => EnableMovement(value); }
     public bool CanBeKnockedBack { get => canBeKnockedBack; set => canBeKnockedBack = value; }
+    public bool SnapToGround { get => snapToGround; set => snapToGround = value; }
+    public bool IsKnockedUp => isKnockedUp;
     public bool IsDashing => isDashing;
     public bool IsMoving => isMoving;
     public CharacterController CharacterController => characterController;
@@ -87,12 +90,12 @@ public class PlayerMovement : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!canMove || !IsOwner || isKnockedUp)
+        if (!canMove || !IsOwner || isKnockedUp || !snapToGround)
         {
             return;
         }
 
-        SnapToGround();
+        SnapPlayerToGround();
     }
 
     private void Move(Vector2 playerInput)
@@ -107,7 +110,7 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
-    void SnapToGround()
+    void SnapPlayerToGround()
     {
         RaycastHit hit;
         if (Physics.Raycast(transform.position, Vector3.down, out hit))

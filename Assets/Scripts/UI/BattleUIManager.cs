@@ -135,6 +135,11 @@ public class BattleUIManager : MonoBehaviour
         currentUI.ShowMoveSecondaryCooldown(id, time);
     }
 
+    public void ShowUniteMoveSecondaryCooldown(float time)
+    {
+        currentUI.ShowUniteMoveSecondaryCooldown(time);
+    }
+
     public void ShowBattleItemCooldown(float time)
     {
         currentUI.ShowBattleItemCooldown(time);

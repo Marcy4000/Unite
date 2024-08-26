@@ -57,6 +57,8 @@ public static class BasicAttacksDatabase
                 return new MeowsticMBasicAtk();
             case "marshadow":
                 return new MarshadowBasicAtk();
+            case "cresselia":
+                return new CresseliaBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

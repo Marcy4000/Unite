@@ -27,20 +27,20 @@ public class BootSceneController : MonoBehaviour
     private void Start()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.unityLogger.logEnabled = true;
         NetworkManager.Singleton.LogLevel = LogLevel.Developer;
 #else
-        Debug.unityLogger.logEnabled = false;
         NetworkManager.Singleton.LogLevel = LogLevel.Error;
 #endif
         startButton.onClick.AddListener(OnStartButtonClicked);
         versionText.text = $"v.{Application.version}";
 
-        Addressables.InitializeAsync();
-
         AudioManager.PlayMusic(DefaultAudioMusic.MainTheme, true);
 
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
         StartCoroutine(DownloadAssets());
+#else
+        Addressables.InitializeAsync();
+#endif
     }
 
     private IEnumerator DownloadAssets()
@@ -48,9 +48,10 @@ public class BootSceneController : MonoBehaviour
         startButton.interactable = false;
         downloadWindow.Hide();
 
+        yield return Addressables.InitializeAsync();
+
         downloadHandle = Addressables.DownloadDependenciesAsync(preloadLabel, false);
         float progress = 0;
-
 
         while (downloadHandle.Status == AsyncOperationStatus.None)
         {

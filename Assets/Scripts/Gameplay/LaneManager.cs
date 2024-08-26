@@ -8,7 +8,6 @@ public class LaneManager : NetworkBehaviour
 {
     [SerializeField] private bool orangeTeam;
     [SerializeField] private int maxTier = 2;
-    [SerializeField] private int rotomLane = 0;
 
     private List<GoalZone> goalZones = new List<GoalZone>();
     private List<FluxZone> fluxZones = new List<FluxZone>();
@@ -18,7 +17,6 @@ public class LaneManager : NetworkBehaviour
 
     public bool OrangeTeam => orangeTeam;
     public int MaxTier => maxTier;
-    public int RotomLane => rotomLane;
 
     public IEnumerator Start()
     {
@@ -119,7 +117,7 @@ public class LaneManager : NetworkBehaviour
         }
     }
 
-    public Vector3[] GetRotomPositions()
+    public Vector3[] GetRotomPositions(int rotomLane)
     {
         List<GoalZone> goals = goalZones.Where(x => x.GoalLaneId == rotomLane).ToList();
 

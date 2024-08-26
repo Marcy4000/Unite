@@ -28,6 +28,8 @@ public class WildPokemon : NetworkBehaviour
     public int ExpYield { get => wildPokemonInfo.ExpYield; }
     public ushort EnergyYield { get => wildPokemonInfo.EnergyYield; }
 
+    public int SoldierLaneID { get; set; }
+
     public override void OnNetworkSpawn()
     {
         pokemon = GetComponent<Pokemon>();
@@ -177,7 +179,7 @@ public class WildPokemon : NetworkBehaviour
     {
         SoldierPokemon soldier = Instantiate(soldierPrefab, transform.position, transform.rotation).GetComponent<SoldierPokemon>();
         soldier.GetComponent<NetworkObject>().Spawn(true);
-        soldier.InitializeRPC(orangeTeam, soldierToSpawn);
+        soldier.InitializeRPC(orangeTeam, soldierToSpawn, SoldierLaneID);
     }
 
     [Rpc(SendTo.ClientsAndHost)]

@@ -36,7 +36,7 @@ public class SoldierPokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(bool orangeTeam, AvailableWildPokemons pokemon)
+    public void InitializeRPC(bool orangeTeam, AvailableWildPokemons pokemon, int laneID)
     {
         this.orangeTeam = orangeTeam;
 
@@ -49,7 +49,7 @@ public class SoldierPokemon : NetworkBehaviour
 
             targets.Add(transform.position);
 
-            Vector3[] positions = GameManager.Instance.GetRotomPath(!orangeTeam);
+            Vector3[] positions = GameManager.Instance.GetRotomPath(!orangeTeam, laneID);
             foreach (var pos in positions)
             {
                 targets.Add(pos);
