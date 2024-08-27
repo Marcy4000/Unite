@@ -1,0 +1,149 @@
+v1.17
+------------------------------------------------------------------------------
+- Due to what is most likely a bug in Unity 2020.2, Graphics.CopyTexture()
+  no longer supports anti-aliasing. Because of this, UIObject3D now has
+  anti-aliasing disabled in Unity 2020.2 and newer versions, as otherwise
+  it does not render at all.
+------------------------------------------------------------------------------
+
+v1.16
+------------------------------------------------------------------------------
+- Changed the render texture format from ARGB32 to 'Default' in Unity 2019
+  (and newer versions)
+------------------------------------------------------------------------------
+
+v1.15
+------------------------------------------------------------------------------
+- UIObject3D will no longer clear the GL buffer before rendering each frame;
+  this was previously in place to prevent ghosting issues however it no longer
+  appears to be necessary and it was causing a flickering issue when using
+  the Metal rendering API on iOS.
+  If necessary, you can re-enable the buffer clear by setting the new
+  'ClearGLBufferBeforeRendering' property to 'true'.
+------------------------------------------------------------------------------
+
+v1.14
+------------------------------------------------------------------------------
+- UIObject3D will now briefly hide itself (for 0.05 seconds) when switching
+  models to avoid a flash/flicker which can occur when rendering from scratch.
+- Added 'Inertia' to DragRotateUIObject3D
+  Please be advised that this is a work in progress and may be subject to changes.
+------------------------------------------------------------------------------
+
+v1.13
+------------------------------------------------------------------------------
+- Added the 'UIObject3DLight' component
+  You can add this component to any UIObject3D instance to render a light in
+  the UIObject3D scene, specifying the location (relative to the object),
+  color, and intensity. You can add multiple 'UIObject3DLight' components
+  to a single UIObject3D instance to add multiple lights if you wish.
+- Added additional cleanup code to remove orphaned UIObject3D scenes.
+- Some improvements to timing code to use less memory.
+- Some performance improvements to rendering code.
+- Added a lot more comments/API documentation to UIObject3D code.
+------------------------------------------------------------------------------
+
+v1.12
+------------------------------------------------------------------------------
+- If 'Limit Frame Rate' is enabled, the RotateUIObject3D component will now
+  only update rotation at the frame rate limit rather than every frame.
+  (this should improve performance slightly)
+------------------------------------------------------------------------------
+
+v1.11
+------------------------------------------------------------------------------
+- Added the 'Performance -> Render Scale' option to allow you to increase or
+  decrease the size of the texture rendered by UIObject3D. A lower scale
+  (less than one) will result in a lower-quality image, but will improve
+  performance.
+------------------------------------------------------------------------------
+
+v1.10
+------------------------------------------------------------------------------
+- Added a new 'RefreshTarget' method to UIObject3D - call this if you've
+  changed the target object and would like UIObject3D to update to match
+  without requiring a full rebuild from scratch (which can lead flashes)
+- (Unity 2019) Added a fix for objects not rendering in Unity 2019
+------------------------------------------------------------------------------
+
+v1.09
+------------------------------------------------------------------------------
+- Ensured that the target camera will now avoid using HDR regardless of
+  any graphics settings (in some cases HDR would cause rendering issues)
+- Fixed an issue where changing the ObjectPrefab property at runtime
+  sometimes didn't work properly
+------------------------------------------------------------------------------
+
+v1.08
+------------------------------------------------------------------------------
+- UIObject3D will now try to avoid calling DestroyImmediate() at runtime
+- Added the 'Always Look At Target' property. If this is set to true,
+  the UIObject3D camera will now be turned to face the target when the
+  'Target Offset' values are used.
+- Increased the min/max values for 'Target Offset' from -1/1 to -10/10.
+------------------------------------------------------------------------------
+
+V1.07
+------------------------------------------------------------------------------
+- UIObject3D now cleans up more aggressively. It should no longer be possible
+  to have duplicate scene containers.
+- Fixed an issue where, if UIObject3D was disabled prior to the completion of
+  its setup process, it would never render the object.
+------------------------------------------------------------------------------
+
+V1.06
+------------------------------------------------------------------------------
+- Fixed a compilation error when building for Unity 2017.2 or higher
+------------------------------------------------------------------------------
+
+V1.05
+------------------------------------------------------------------------------
+- UIObject3D will no longer intercept mouse events when using a
+  'RotateUIObject3D' component using 'Constant' rotation mode (other modes
+  will still intercept mouse events, however). If you require a solution
+  which allows UIObject3D to intercept mouse events and still pass the on
+  to a parent ScrollRect, you can use the following component:
+  https://pastebin.com/6cWULrf6
+------------------------------------------------------------------------------
+
+V1.04
+------------------------------------------------------------------------------
+- UIObject3D will no longer resize its texture/etc. immediately when its
+  dimensions change, although whenever a full cleanup is triggered (e.g.
+  when the scene starts, or when HardUpdateDisplay() is called manually),
+  the texture will be resized.
+  The reason for this change is that, as of Unity 2017.2, Layout Groups
+  appear to be triggering OnRectTransformDimensionsChange() for UIObject3D
+  instances constantly, which was causing UIObject3D to constantly resize
+  its texture/etc., which was very expensive, causing massive performance
+  problems.
+- Updated some method calls which were obsolete in 2017.2 to use non-obsolete
+  methods
+- UIObject3D will now have its image color set to transparent briefly during
+  initialization, so as to avoid the 'flash' which is sometimes visible
+  during this time.
+------------------------------------------------------------------------------
+
+V1.03
+------------------------------------------------------------------------------
+- Added the 'Override Calculated Target Scale' option which allows you to
+  specify a desired scale for the rendered object rather than using the
+  value determined by UIObject3D calculations. You can use this to ensure
+  that multiple rendered objects appear to be in the same scale.
+------------------------------------------------------------------------------
+
+V1.02
+------------------------------------------------------------------------------
+- Fixed an issue with 'Render Constantly' which could lead to unexpected
+  behaviour
+------------------------------------------------------------------------------
+
+V1.01
+------------------------------------------------------------------------------
+- Fixed a bug which could cause Unity to crash when using models with rigs
+------------------------------------------------------------------------------
+
+V1.00
+------------------------------------------------------------------------------
+- Initial Release
+------------------------------------------------------------------------------

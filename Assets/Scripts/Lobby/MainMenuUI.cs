@@ -14,10 +14,13 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private PartyScreenUI partyScreenUI;
     [SerializeField] private LobbyPlayerInfoIcons lobbyPlayerInfoIcons;
 
+    [SerializeField] private TrainerModel trainerModel;
+
     private void Start()
     {
         startLobbyButton.onClick.AddListener(() =>
         {
+            AudioManager.PlaySound(DefaultAudioSounds.Home_ui_start_04);
             LobbyController.Instance.CreateLobby();
         });
 
@@ -32,6 +35,7 @@ public class MainMenuUI : MonoBehaviour
 
         exitLobbyButton.onClick.AddListener(() =>
         {
+            AudioManager.PlaySound(DefaultAudioSounds.Home_ui_back_01);
             LobbyController.Instance.LeaveLobby();
         });
 
@@ -78,6 +82,22 @@ public class MainMenuUI : MonoBehaviour
 
         lobbyUIs[0].SetActive(true);
         lobbyScenes[0].SetActive(true);
+        trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
+    }
+
+    public void ShowClothesMenu()
+    {
+        foreach (var lobbyUI in lobbyUIs)
+        {
+            lobbyUI.SetActive(false);
+        }
+
+        foreach (var lobbyScene in lobbyScenes)
+        {
+            lobbyScene.SetActive(false);
+        }
+
+        lobbyUIs[3].SetActive(true);
     }
 
     public void UpdatePartyScreenUI()

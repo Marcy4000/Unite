@@ -97,6 +97,7 @@ public class BootSceneController : MonoBehaviour
         }
 
         AudioManager.StopMusic(DefaultAudioMusic.MainTheme);
+        AudioManager.PlaySound(DefaultAudioSounds.Home_ui_start);
 
         LobbyController.Instance.StartGame(playerNameInputField.text);
     }

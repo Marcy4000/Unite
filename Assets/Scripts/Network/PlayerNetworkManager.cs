@@ -1,3 +1,4 @@
+using JSAM;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
@@ -251,6 +252,8 @@ public class PlayerNetworkManager : NetworkBehaviour
         localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
         deathTimer.Value = localDeathTimer;
         BattleUIManager.instance.ShowDeathScreen();
+
+        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Pokemon_Dead);
 
         killsSinceLastDeath = 0;
         pointsSinceLastDeath = 0;

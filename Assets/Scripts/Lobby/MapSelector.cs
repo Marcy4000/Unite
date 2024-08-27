@@ -1,3 +1,4 @@
+using JSAM;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -66,6 +67,8 @@ public class MapSelector : MonoBehaviour
         {
             return;
         }
+
+        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_MapSwitch);
 
         foreach (MapSelectorIcon icon in icons)
         {

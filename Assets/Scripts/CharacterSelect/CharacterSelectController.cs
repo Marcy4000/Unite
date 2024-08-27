@@ -34,6 +34,8 @@ public class CharacterSelectController : NetworkBehaviour
 
     [SerializeField] private TMP_Text timerText;
 
+    [SerializeField] private TrainerModel trainerModel;
+
     private NetworkVariable<float> selectionTimer = new NetworkVariable<float>(SELECTION_TIME);
     private NetworkVariable<CharacterSelectPhase> currentPhase = new NetworkVariable<CharacterSelectPhase>(CharacterSelectPhase.Selection);
     private bool isLoading = false;
@@ -103,6 +105,8 @@ public class CharacterSelectController : NetworkBehaviour
 
         mainScreen.SetActive(true);
         previewScreenUI.gameObject.SetActive(false);
+
+        trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
     }
 
     private void UpdateTimerText(float previous, float current)
@@ -171,6 +175,7 @@ public class CharacterSelectController : NetworkBehaviour
     {
         AudioManager.StopMusic(DefaultAudioMusic.ChoosePokemon);
         AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme, true);
+        AudioManager.PlaySound(DefaultAudioSounds.Play_Load17051302578487348);
         LoadingScreen.Instance.ShowMatchLoadingScreen();
 
         if (characterSelectModelHandle.IsValid())

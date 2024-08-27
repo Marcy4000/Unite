@@ -1,3 +1,4 @@
+using JSAM;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -207,6 +208,7 @@ public class MovesController : NetworkBehaviour
             }
             else if (moveStatuses[i].HasStatus(ActionStatusType.Cooldown))
             {
+                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_CDOver);
                 moveStatuses[i].RemoveStatus(ActionStatusType.Cooldown);
             }
         }
@@ -513,6 +515,11 @@ public class MovesController : NetworkBehaviour
                 break;
             default:
                 break;
+        }
+
+        if (move != lockedMove)
+        {
+            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_LearnSkill);
         }
 
         BattleUIManager.instance.InitializeMoveUI(move);

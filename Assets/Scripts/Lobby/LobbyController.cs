@@ -137,7 +137,8 @@ public class LobbyController : MonoBehaviour
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
                 {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
-                {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")}
+                {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")},
+                {"ClothingInfo", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, new PlayerClothesInfo().Serialize())}
             });
 
 #if UNITY_WEBGL
@@ -499,6 +500,18 @@ public class LobbyController : MonoBehaviour
         options.Data["PlayerTeam"].Value = team;
         options.Data["PlayerPos"].Value = NumberEncoder.ToBase64(pos);
         Debug.Log($"Changed team to {options.Data["PlayerTeam"].Value} and pos to {options.Data["PlayerPos"].Value}");
+
+        UpdatePlayerData(options);
+    }
+
+    public void UpdatePlayerClothes(PlayerClothesInfo clothesInfo)
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["ClothingInfo"].Value = clothesInfo.Serialize();
+        Debug.Log($"Changed clothes to {options.Data["ClothingInfo"].Value}");
+
+        localPlayer.Data = options.Data;
 
         UpdatePlayerData(options);
     }

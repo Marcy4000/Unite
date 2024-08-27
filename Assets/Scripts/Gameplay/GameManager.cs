@@ -134,6 +134,7 @@ public class GameManager : NetworkBehaviour
             {
                 AudioManager.StopAllMusic();
                 AudioManager.PlayMusic(currentMap.finalStretchMusic, true);
+                AudioManager.PlaySound(DefaultAudioSounds.AnnouncerFinalStretch);
                 onFinalStretch?.Invoke();
             }
         };
@@ -180,12 +181,21 @@ public class GameManager : NetworkBehaviour
             gameState.Value = GameState.Starting;
         }
         LoadingScreen.Instance.HideMatchLoadingScreen();
+        AudioManager.PlaySound(DefaultAudioSounds.Game_ui_Rookie_Scoreboard_1);
 
         yield return new WaitForSeconds(0.2f);
 
         AudioManager.PlayMusic(currentMap.normalMusic, true);
 
-        yield return new WaitForSeconds(3.1f);
+        yield return new WaitForSeconds(0.4f);
+
+        AudioManager.PlaySound(DefaultAudioSounds.AnnouncerReady);
+
+        yield return new WaitForSeconds(1.6f);
+
+        AudioManager.PlaySound(DefaultAudioSounds.Game_ui_Rookie_Scoreboard_Go);
+
+        yield return new WaitForSeconds(0.9f);
 
         if (IsServer)
         {
@@ -349,6 +359,7 @@ public class GameManager : NetworkBehaviour
     {
         PlayerManager scorer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].GetComponent<PlayerManager>();
         BattleUIManager.instance.ShowScore(info.scoredPoints, scorer.OrangeTeam, scorer.Pokemon.Portrait);
+        AudioManager.PlaySound(DefaultAudioSounds.Game_Ui_Score_Allies);
         if (scorer.OrangeTeam)
         {
             orangeTeamScores.Add(new ResultScoreInfo(info.scoredPoints, scorer.LobbyPlayer.Id, gameTime.Value));
@@ -359,10 +370,11 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     void EndGameRPC(GameResults gameResults)
     {
         LobbyController.Instance.GameResults = gameResults;
+        AudioManager.PlaySound(DefaultAudioSounds.AnnouncerTImeUp);
 
         if (gameResults.Surrendered)
         {

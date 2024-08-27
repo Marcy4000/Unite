@@ -1,5 +1,7 @@
 using DG.Tweening;
 using System.Collections;
+using UI.ThreeDimensional;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 public class GameBeginScreenUI : MonoBehaviour
@@ -15,10 +17,26 @@ public class GameBeginScreenUI : MonoBehaviour
     [SerializeField] private RectTransform blueTeam;
     [SerializeField] private RectTransform orangeTeam;
 
+    private UIObject3D[] blueTeamObjects;
+    private UIObject3D[] orangeTeamObjects;
+
     private Coroutine fadeInRoutine;
 
     private void Start()
     {
+        blueTeamObjects = new UIObject3D[blueTeamPlayers.Length];
+        orangeTeamObjects = new UIObject3D[orangeTeamPlayers.Length];
+
+        for (int i = 0; i < blueTeamPlayers.Length; i++)
+        {
+            blueTeamObjects[i] = blueTeamPlayers[i].GetComponent<UIObject3D>();
+        }
+
+        for (int i = 0; i < orangeTeamPlayers.Length; i++)
+        {
+            orangeTeamObjects[i] = orangeTeamPlayers[i].GetComponent<UIObject3D>();
+        }
+
         gameObject.SetActive(false);
     }
 
@@ -26,30 +44,22 @@ public class GameBeginScreenUI : MonoBehaviour
     {
         for (int i = 0; i < blueTeamPlayers.Length; i++)
         {
-            blueTeamPlayers[i].gameObject.SetActive(false);
+            blueTeamPlayers[i].gameObject.SetActive(true);
         }
 
         for (int i = 0; i < orangeTeamPlayers.Length; i++)
         {
-            orangeTeamPlayers[i].gameObject.SetActive(false);
-        }
-
-        for (int i = 0; i < bluePlayers; i++)
-        {
-            blueTeamPlayers[i].gameObject.SetActive(true);
-            if (i > blueTeamPlayers.Length - 1)
-            {
-                break;
-            }
-        }
-
-        for (int i = 0; i < orangePlayers; i++)
-        {
             orangeTeamPlayers[i].gameObject.SetActive(true);
-            if (i > orangeTeamPlayers.Length - 1)
-            {
-                break;
-            }
+        }
+
+        for (int i = bluePlayers; i < blueTeamPlayers.Length; i++)
+        {
+            blueTeamPlayers[i].gameObject.SetActive(false);
+        }
+
+        for (int i = orangePlayers; i < orangeTeamPlayers.Length; i++)
+        {
+            orangeTeamPlayers[i].gameObject.SetActive(false);
         }
     }
 

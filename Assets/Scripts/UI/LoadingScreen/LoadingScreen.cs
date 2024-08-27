@@ -5,6 +5,7 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using JSAM;
 
 public class LoadingScreen : MonoBehaviour
 {
@@ -78,6 +79,7 @@ public class LoadingScreen : MonoBehaviour
 
     public void ShowGenericLoadingScreen()
     {
+        AudioManager.PlaySound(DefaultAudioSounds.Loading_Sfx);
         loadingScreen.SetActive(true);
     }
 
@@ -171,6 +173,7 @@ public class LoadingScreen : MonoBehaviour
                 if (sceneEvent.SceneName.Equals("CharacterSelect"))
                 {
                     ShowGameBeginScreen();
+                    AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Matching);
                 }
                 break;
         }

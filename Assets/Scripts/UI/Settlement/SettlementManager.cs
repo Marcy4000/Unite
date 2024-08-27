@@ -20,6 +20,10 @@ public class SettlementManager : MonoBehaviour
     [SerializeField] private TMP_Text timerText;
 
     [SerializeField] private Image blueScoreboard, orangeScoreboard;
+    [SerializeField] private Image blueResultText, orangeResultText;
+
+    [SerializeField] private Sprite[] blueTeamResults;
+    [SerializeField] private Sprite[] orangeTeamResults;
 
     [SerializeField] private Button returnLobbyButton;
 
@@ -35,6 +39,9 @@ public class SettlementManager : MonoBehaviour
         battleInfoUI.Initialize(LobbyController.Instance.GameResults);
         blueScoreText.gameObject.SetActive(false);
         orangeScoreText.gameObject.SetActive(false);
+
+        blueResultText.gameObject.SetActive(false);
+        orangeResultText.gameObject.SetActive(false);
 
         returnLobbyButton.onClick.AddListener(() =>
         {
@@ -114,6 +121,8 @@ public class SettlementManager : MonoBehaviour
         float timer = gameResults.TotalGameTime;
         Debug.Log($"Total Game Time: {timer}");
 
+        AudioManager.PlaySound(DefaultAudioSounds.Play_JieSuan_FenShu);
+
         while (!finished)
         {
             for (int i = blueTeamScores.Count-1; i >= 0; i--)
@@ -164,11 +173,18 @@ public class SettlementManager : MonoBehaviour
 
     private void OnShowScoreEnded()
     {
+        AudioManager.StopSound(DefaultAudioSounds.Play_JieSuan_FenShu);
+
         resultBarsUI.gameObject.SetActive(false);
         gameInfoUI.gameObject.SetActive(true);
 
         blueScoreText.gameObject.SetActive(true);
         orangeScoreText.gameObject.SetActive(true);
+
+        blueResultText.gameObject.SetActive(true);
+        orangeResultText.gameObject.SetActive(true);
+
+        UpdateVictoryText();
 
         timerObject.SetActive(false);
 
@@ -180,15 +196,49 @@ public class SettlementManager : MonoBehaviour
         StartCoroutine(PlayResultSound(gameWon));
     }
 
+    private void UpdateVictoryText()
+    {
+        GameResults gameResults = LobbyController.Instance.GameResults;
+
+        if (gameResults.BlueTeamWon)
+        {
+            blueResultText.sprite = blueTeamResults[0];
+            if (gameResults.Surrendered)
+            {
+                orangeResultText.sprite = orangeTeamResults[2];
+            }
+            else
+            {
+                orangeResultText.sprite = orangeTeamResults[1];
+            }
+        }
+        else
+        {
+            orangeResultText.sprite = orangeTeamResults[0];
+            if (gameResults.Surrendered)
+            {
+                blueResultText.sprite = blueTeamResults[2];
+            }
+            else
+            {
+                blueResultText.sprite = blueTeamResults[1];
+            }
+        }
+    }
+
     private IEnumerator PlayResultSound(bool gameWon)
     {
         if (gameWon)
         {
             AudioManager.PlaySound(DefaultAudioSounds.JingleVictory);
+            AudioManager.PlaySound(DefaultAudioSounds.AnnouncerYouWin);
+            AudioManager.PlaySound(DefaultAudioSounds.Play_JieSuan_ShengLi);
         }
         else
         {
             AudioManager.PlaySound(DefaultAudioSounds.JingleLose);
+            AudioManager.PlaySound(DefaultAudioSounds.AnnouncerYouLose);
+            AudioManager.PlaySound(DefaultAudioSounds.Play_JieSuan_ShiBai);
         }
 
         DefaultAudioSounds jingle = gameWon ? DefaultAudioSounds.JingleVictory : DefaultAudioSounds.JingleLose;

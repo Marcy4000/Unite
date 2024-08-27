@@ -1,3 +1,4 @@
+using JSAM;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -34,6 +35,8 @@ public class KillNotificationUI : MonoBehaviour
 
         leftPreview.sprite = attacker.Portrait;
         rightPreview.sprite = killInfo.killed.Portrait;
+
+        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_SingleKillr);
 
         StartCoroutine(KillAnimation());
     }

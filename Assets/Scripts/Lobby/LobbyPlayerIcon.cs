@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class LobbyPlayerIcon : MonoBehaviour
 {
     [SerializeField] private TMP_Text playerNameText;
-    [SerializeField] private Image playerHead;
+    [SerializeField] private GameObject playerHead;
     [SerializeField] private Button switchButton;
     [SerializeField] private Button kickButton;
     [SerializeField] private GameObject ownerStar;
@@ -31,7 +31,7 @@ public class LobbyPlayerIcon : MonoBehaviour
     public void ResetName()
     {
         playerNameText.text = "No Player";
-        playerHead.gameObject.SetActive(false);
+        playerHead.SetActive(false);
         playerNameText.color = Color.white;
         ownerStar.SetActive(false);
         kickButton.gameObject.SetActive(false);
@@ -41,7 +41,7 @@ public class LobbyPlayerIcon : MonoBehaviour
     public void InitializePlayer(Player player)
     {
         playerNameText.text = player.Data["PlayerName"].Value;
-        playerHead.gameObject.SetActive(true);
+        playerHead.SetActive(true);
 
         ownerStar.SetActive(player.Id == LobbyController.Instance.Lobby.HostId);
         kickButton.gameObject.SetActive(player.Id != LobbyController.Instance.Player.Id && LobbyController.Instance.Lobby.HostId == LobbyController.Instance.Player.Id);

@@ -1,3 +1,4 @@
+using JSAM;
 using System.Collections;
 using System.Threading.Tasks;
 using TMPro;
@@ -32,6 +33,8 @@ public class QuickJoinManager : MonoBehaviour
             return;
         }
 
+        AudioManager.PlaySound(DefaultAudioSounds.Home_ui_start_04);
+
         timeElapsed = 0f;
 
         matchmakingBarUI.SetBarVisibility(true);
@@ -53,6 +56,8 @@ public class QuickJoinManager : MonoBehaviour
             StopCoroutine(searchCoroutine);
             searchCoroutine = null;
         }
+
+        AudioManager.PlaySound(DefaultAudioSounds.Home_ui_back_01);
 
         startSearchButton.interactable = true;
         createLobbyButton.interactable = true;
