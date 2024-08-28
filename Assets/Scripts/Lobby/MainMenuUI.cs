@@ -16,6 +16,10 @@ public class MainMenuUI : MonoBehaviour
 
     [SerializeField] private TrainerModel trainerModel;
 
+    [SerializeField] private Dialogue[] clothesMenuDialogue;
+
+    private bool showedMessage = false;
+
     private void Start()
     {
         startLobbyButton.onClick.AddListener(() =>
@@ -98,6 +102,11 @@ public class MainMenuUI : MonoBehaviour
         }
 
         lobbyUIs[3].SetActive(true);
+        if (!showedMessage)
+        {
+            DialogueSystem.Instance.SetDialogues(clothesMenuDialogue);
+            showedMessage = true;
+        }
     }
 
     public void UpdatePartyScreenUI()

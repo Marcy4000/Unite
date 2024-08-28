@@ -12,6 +12,7 @@ using UnityEditor.AddressableAssets;
 public class ClothingItemGenerator : MonoBehaviour
 {
     private static string dataJsFilePath = "Assets/Clothes/ElChicoEevee_files/index_data/data.js";
+    private static string clothesIconsPath = "Assets/Clothes/ElChicoEevee_files/index_data";
 
     private static readonly Dictionary<string, (ClothingType type, string outputFolder)> folderMappings = new Dictionary<string, (ClothingType, string)>
     {
@@ -87,11 +88,11 @@ public class ClothingItemGenerator : MonoBehaviour
                                 continue;
                             }*/
 
-                            Debug.Log($"Match found: {clothingInfo.name}, isMale: {clothingInfo.isMale}, type: {clothingType}");
+                            Debug.Log($"Match found: {clothingInfo}, isMale: {isMale}, type: {clothingType}, model ID: {modelId}");
 
                             ClothingItem clothingItem = ScriptableObject.CreateInstance<ClothingItem>();
-                            clothingItem.itemName = clothingInfo.name;
-                            clothingItem.isMale = clothingInfo.isMale;
+                            clothingItem.itemName = clothingInfo;
+                            clothingItem.isMale = isMale;
                             clothingItem.clothingType = clothingType;
 
                             string prefabPath = $"{modelFolder}/{folderName}.fbx";
@@ -104,12 +105,28 @@ public class ClothingItemGenerator : MonoBehaviour
                             }
 
                             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-                            AddressableAssetGroup group = settings.DefaultGroup;
+                            AddressableAssetGroup group = settings.FindGroup("ClothingItems");
                             string guid = AssetDatabase.AssetPathToGUID(prefabPath);
                             AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group);
                             entry.address = addressableName;
 
                             clothingItem.prefab = new AssetReferenceGameObject(guid);
+
+                            string genderString = isMale ? "male" : "female";
+                            string iconPath = $"t_{folderMapping.Key}_{genderString}_{modelId}_";
+
+                            foreach (string file in Directory.GetFiles(clothesIconsPath))
+                            {
+                                if (Path.GetFileName(file).StartsWith(iconPath))
+                                {
+                                    string guidIcon = AssetDatabase.AssetPathToGUID(file);
+                                    AddressableAssetEntry entryIcon = settings.CreateOrMoveEntry(guidIcon, group);
+                                    entryIcon.address = $"Assets/AddressableAssets/{Path.GetFileName(file)}";
+
+                                    clothingItem.sprite = new AssetReferenceSprite(guidIcon);
+                                    break;
+                                }
+                            }
 
                             string assetPath = $"Assets/ScriptableObjects/{gender}/{outputFolder}/{SanitizeFileName(clothingItem.itemName)}.asset";
                             Debug.Log($"Asset path: {assetPath}");
@@ -152,9 +169,9 @@ public class ClothingItemGenerator : MonoBehaviour
         return cleanedFileName;
     }
 
-    static Dictionary<(int modelId, bool isMale, ClothingType clothingType), (string name, bool isMale, ClothingType clothingType)> ParseClothingDataFromJs(string jsFilePath)
+    static Dictionary<(int modelId, bool isMale, ClothingType clothingType), string> ParseClothingDataFromJs(string jsFilePath)
     {
-        var clothingData = new Dictionary<(int, bool, ClothingType), (string, bool, ClothingType)>();
+        var clothingData = new Dictionary<(int, bool, ClothingType), string>();
 
         string jsonContent = File.ReadAllText(jsFilePath);
         var jsonArray = JArray.Parse(jsonContent);
@@ -186,9 +203,9 @@ public class ClothingItemGenerator : MonoBehaviour
 
                         Debug.Log($"Name: {name}, Type: {clothingTypeStr}, isMale: {isMale}, Model ID: {modelId}");
 
-                        if (Enum.TryParse(clothingTypeStr, true, out ClothingType clothingType))
+                        if (folderMappings.ContainsKey(clothingTypeStr))
                         {
-                            clothingData[(modelId, isMale, clothingType)] = (name, isMale, clothingType);
+                            clothingData[(modelId, isMale, folderMappings[clothingTypeStr].type)] = name;
                         }
                     }
                     else
@@ -198,9 +215,18 @@ public class ClothingItemGenerator : MonoBehaviour
 
                         Debug.Log($"Name: {name}, Type: {clothingTypeStr}, isMale: {isMale}, Model ID: {modelId}");
 
-                        if (Enum.TryParse(clothingTypeStr, true, out ClothingType clothingType))
+                        if (clothingTypeStr.Equals("Outerwear"))
                         {
-                            clothingData[(modelId, isMale, clothingType)] = (name, isMale, clothingType);
+                            clothingTypeStr = "Outwear";
+                        }
+                        else if (clothingTypeStr.Equals("Socks"))
+                        {
+                            clothingTypeStr = "Sock";
+                        }
+
+                        if (folderMappings.ContainsKey(clothingTypeStr))
+                        {
+                            clothingData[(modelId, isMale, folderMappings[clothingTypeStr].type)] = name;
                         }
                     }
                 }

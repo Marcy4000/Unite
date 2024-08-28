@@ -119,9 +119,9 @@ public class PartyScreenUI : MonoBehaviour
                     playerIconsOrangeTeam[playerPos].InitializePlayer(lobby.Players[i]);
                 }
             }
-            catch (System.Exception)
+            catch (System.Exception ex)
             {
-                Debug.LogError("Error while updating players");
+                Debug.LogError($"Error while updating players: {ex.Message}");
             }
         }
     }
