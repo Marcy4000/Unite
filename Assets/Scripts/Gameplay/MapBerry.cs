@@ -1,3 +1,4 @@
+using JSAM;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -67,7 +68,24 @@ public class MapBerry : NetworkBehaviour
                 default:
                     break;
             }
+            PlaySoundRPC();
             isCollected.Value = true;
+        }
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void PlaySoundRPC()
+    {
+        switch (berryType)
+        {
+            case BerryType.HealBerry:
+                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_Fruit_Hp, transform);
+                break;
+            case BerryType.SpeedBerry:
+                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_Fruit_Speed, transform);
+                break;
+            default:
+                break;
         }
     }
 

@@ -359,7 +359,14 @@ public class GameManager : NetworkBehaviour
     {
         PlayerManager scorer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].GetComponent<PlayerManager>();
         BattleUIManager.instance.ShowScore(info.scoredPoints, scorer.OrangeTeam, scorer.Pokemon.Portrait);
+
         AudioManager.PlaySound(DefaultAudioSounds.Game_Ui_Score_Allies);
+
+        if (info.scoredPoints >= 50)
+        {
+            AudioManager.PlaySound(DefaultAudioSounds.AnnouncerWhatAGoal);
+        }
+
         if (scorer.OrangeTeam)
         {
             orangeTeamScores.Add(new ResultScoreInfo(info.scoredPoints, scorer.LobbyPlayer.Id, gameTime.Value));
