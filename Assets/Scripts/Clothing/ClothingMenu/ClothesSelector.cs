@@ -23,6 +23,8 @@ public class ClothesSelector : MonoBehaviour
 
     private void Start()
     {
+        genderToggles[GetPlayerClothesInfo().IsMale ? 0 : 1].isOn = true;
+
         foreach (var toggle in genderToggles)
         {
             toggle.onValueChanged.AddListener((value) =>
@@ -39,7 +41,6 @@ public class ClothesSelector : MonoBehaviour
         };
 
         InitializeMenuItems(GetPlayerClothesInfo().IsMale);
-        genderToggles[GetPlayerClothesInfo().IsMale ? 0 : 1].isOn = true;
     }
 
     private void OnEnable()
@@ -58,6 +59,9 @@ public class ClothesSelector : MonoBehaviour
         {
             yield return null;
         }
+
+        yield return null;
+
         trainerModel = trainerModelUI.TargetGameObject.GetComponent<TrainerModel>();
         trainerModel.InitializeClothes(GetPlayerClothesInfo());
     }
@@ -135,7 +139,7 @@ public class ClothesSelector : MonoBehaviour
 
         playerClothesInfo.IsMale = genderToggles[0].isOn;
 
-        trainerModel.InitializeClothes(playerClothesInfo);
+        StartCoroutine(SetTrainerModel());
         LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
 
         InitializeMenuItems(playerClothesInfo.IsMale);

@@ -18,7 +18,7 @@ public class TrainerModel : MonoBehaviour
     [SerializeField] private Transform[] clothingHoldersMale;
     [SerializeField] private Transform[] clothingHoldersFemale;
 
-    private Transform[] clothingHolders { get { return isMale ? clothingHoldersMale : clothingHoldersFemale; } }
+    private Transform[] clothingHolders => isMale ? clothingHoldersMale : clothingHoldersFemale;
     private Animator activeAnimator => isMale ? maleAnimator : femaleAnimator;
 
     private BoneSync activeBoneSync;
@@ -29,14 +29,6 @@ public class TrainerModel : MonoBehaviour
     private string assignedPlayer = "";
     private PlayerClothesInfo lastPlayerClothesInfo = new PlayerClothesInfo();
     private PlayerClothesInfo playerClothesInfo = new PlayerClothesInfo();
-
-    private void Start()
-    {
-        maleBoneSync.gameObject.SetActive(IsMale);
-        femaleBoneSync.gameObject.SetActive(!IsMale);
-
-        activeBoneSync = isMale ? maleBoneSync : femaleBoneSync;
-    }
 
     private void OnEnable()
     {
@@ -55,15 +47,28 @@ public class TrainerModel : MonoBehaviour
 
     private IEnumerator InitializeRoutine(PlayerClothesInfo info)
     {
+        yield return null;
+
         playerClothesInfo = info;
         SetGender(info.IsMale);
 
+        Debug.Log($"Initializing clothes for player. Serialized info: {info.Serialize()}");
+
         // Clear existing clothes
-        for (int i = 0; i < clothingHolders.Length; i++)
+        foreach (var holder in clothingHolders)
         {
-            foreach (Transform child in clothingHolders[i])
+            if (holder == null)
             {
-                Destroy(child.gameObject);
+                Debug.LogError("Clothing holder is null. Check inspector assignments.");
+                continue;
+            }
+
+            foreach (Transform child in holder)
+            {
+                if (child != null)
+                {
+                    Destroy(child.gameObject);
+                }
             }
         }
 
@@ -74,50 +79,70 @@ public class TrainerModel : MonoBehaviour
         // Load and instantiate new clothes
         for (int i = 0; i < clothingHolders.Length; i++)
         {
+            var holder = clothingHolders[i];
+
+            if (holder == null)
+            {
+                Debug.LogError($"Clothing holder at index {i} is null. Skipping.");
+                continue;
+            }
+
             var item = ClothesList.Instance.GetClothingItem((ClothingType)i, info.GetClothingIndex((ClothingType)i), info.IsMale);
 
             if (item == null || !item.prefab.RuntimeKeyIsValid())
             {
-                if (item == null)
-                    Debug.LogWarning($"Clothing item of type {(ClothingType)i} not found.");
-                else
-                    Debug.LogWarning("Clothing item prefab is not set.");
-
+                Debug.LogWarning(item == null
+                    ? $"Clothing item of type {(ClothingType)i} not found."
+                    : $"Clothing item prefab is not set for type {(ClothingType)i}.");
                 continue;
             }
 
-            var handle = Addressables.InstantiateAsync(item.prefab, clothingHolders[i]);
+            // Instantiate the clothing item asynchronously
+            var handle = Addressables.InstantiateAsync(item.prefab, holder);
 
-            handle.Completed += (op) =>
-            {
-                if (op.Status == AsyncOperationStatus.Succeeded)
-                {
-                    var result = op.Result;
-                    result.transform.SetParent(clothingHolders[i], false);
-                    UpdateObjectLayer(result, clothingHolders[i].gameObject.layer);
-                    bonesToSync.Add(GetChildToSync(result.transform));
-                    instantiatedClothes.Add(result);
-                    result.SetActive(false);
-                }
-                else
-                {
-                    Debug.LogError($"Failed to load clothing item: {(ClothingType)i}");
-                }
-            };
+            yield return handle;
 
-            while (!handle.IsDone)
+            if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null)
             {
-                yield return null;
+                var result = handle.Result;
+                Debug.Log($"Successfully loaded clothing item of type {(ClothingType)i}.");
+
+                result.transform.SetParent(holder, false);
+                UpdateObjectLayer(result, holder.gameObject.layer);
+                bonesToSync.Add(GetChildToSync(result.transform));
+                instantiatedClothes.Add(result);
+                result.SetActive(false);  // Start inactive until bones are synced
+            }
+            else
+            {
+                Debug.LogError($"Failed to load clothing item: {(ClothingType)i}");
             }
         }
 
-        activeBoneSync.clothingRoots = bonesToSync.ToArray();
+        // Set synced bones
+        if (activeBoneSync != null)
+        {
+            activeBoneSync.clothingRoots = bonesToSync.ToArray();
+        }
+        else
+        {
+            Debug.LogError("ActiveBoneSync is null. Cannot set clothing roots.");
+        }
 
+        // Activate instantiated clothes
         foreach (var go in instantiatedClothes)
         {
-            go.SetActive(true);
+            if (go != null)
+            {
+                go.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("An instantiated clothing item is null.");
+            }
         }
     }
+
 
     public Transform GetChildToSync(Transform parent)
     {
@@ -128,8 +153,7 @@ public class TrainerModel : MonoBehaviour
                 return child;
             }
         }
-
-        return parent.GetChild(0);
+        return parent.childCount > 0 ? parent.GetChild(0) : parent;
     }
 
     private void UpdateObjectLayer(GameObject obj, int layer)
@@ -162,14 +186,17 @@ public class TrainerModel : MonoBehaviour
             return;
         }
 
-        Player player = lobby.Players.Where(p => p.Id == assignedPlayer).FirstOrDefault();
+        Player player = lobby.Players.FirstOrDefault(p => p.Id == assignedPlayer);
 
-        PlayerClothesInfo playerClothesInfo = PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value);
-
-        if (!playerClothesInfo.Equals(lastPlayerClothesInfo))
+        if (player != null && player.Data.TryGetValue("ClothingInfo", out var clothingData))
         {
-            lastPlayerClothesInfo = playerClothesInfo;
-            InitializeClothes(playerClothesInfo);
+            var playerClothesInfo = PlayerClothesInfo.Deserialize(clothingData.Value);
+
+            if (!playerClothesInfo.Equals(lastPlayerClothesInfo))
+            {
+                lastPlayerClothesInfo = playerClothesInfo;
+                InitializeClothes(playerClothesInfo);
+            }
         }
     }
 }
