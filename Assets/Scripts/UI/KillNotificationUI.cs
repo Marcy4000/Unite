@@ -36,7 +36,7 @@ public class KillNotificationUI : MonoBehaviour
         leftPreview.sprite = attacker.Portrait;
         rightPreview.sprite = killInfo.killed.Portrait;
 
-        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_SingleKillr);
+        PlayCorrectSound(attacker, killInfo.killed);
 
         StartCoroutine(KillAnimation());
     }
@@ -61,6 +61,33 @@ public class KillNotificationUI : MonoBehaviour
         else
         {
             return backgrounds[2];
+        }
+    }
+
+    private void PlayCorrectSound(Pokemon attacker, Pokemon killed)
+    {
+        attacker.TryGetComponent(out PlayerManager attackerPlayer);
+        killed.TryGetComponent(out PlayerManager killedPlayer);
+
+        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+
+        if (attackerPlayer != null && killedPlayer != null)
+        {
+            if (attackerPlayer.OrangeTeam == localPlayerTeam)
+            {
+                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_SingleKillr);
+            }
+        }
+        else if (attackerPlayer != null && killedPlayer == null)
+        {
+            if (killed.Type == PokemonType.Objective)
+            {
+                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Boss_Defeat);
+            }
+        }
+        else if (attackerPlayer == null && killedPlayer != null)
+        {
+            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_CheckPoint_CommonEvent);
         }
     }
 

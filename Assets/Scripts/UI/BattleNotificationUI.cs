@@ -1,3 +1,4 @@
+using JSAM;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -46,22 +47,27 @@ public class BattleNotificationUI : MonoBehaviour
         if (pointDifference <= -100)
         {
             reallyStruggling.SetActive(true);
+            AudioManager.PlaySound(DefaultAudioSounds.AnnouncerDontgiveup);
         }
         else if (pointDifference <= -21)
         {
             struggling.SetActive(true);
+            AudioManager.PlaySound(DefaultAudioSounds.AnnouncerYouCanDoIt);
         }
         else if (pointDifference >= -20 && pointDifference <= 20)
         {
             closeBattle.SetActive(true);
+            AudioManager.PlaySound(DefaultAudioSounds.AnnouncerYoureInTrouble);
         }
         else if (pointDifference >= 21 && pointDifference < 100)
         {
             lead.SetActive(true);
+            AudioManager.PlaySound(DefaultAudioSounds.AnnouncerFire);
         }
         else if (pointDifference >= 100)
         {
             hugeLead.SetActive(true);
+            AudioManager.PlaySound(DefaultAudioSounds.AnnouncerFire);
         }
 
         Invoke(nameof(HideAllNotification), 3f);

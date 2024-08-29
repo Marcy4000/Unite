@@ -87,20 +87,27 @@ public class TrainerModel : MonoBehaviour
             }
 
             var handle = Addressables.InstantiateAsync(item.prefab, clothingHolders[i]);
-            yield return handle;
 
-            if (handle.Status == AsyncOperationStatus.Succeeded)
+            handle.Completed += (op) =>
             {
-                var result = handle.Result;
-                result.transform.SetParent(clothingHolders[i], false);
-                UpdateObjectLayer(result, clothingHolders[i].gameObject.layer);
-                bonesToSync.Add(GetChildToSync(result.transform));
-                instantiatedClothes.Add(result);
-                result.SetActive(false);
-            }
-            else
+                if (op.Status == AsyncOperationStatus.Succeeded)
+                {
+                    var result = op.Result;
+                    result.transform.SetParent(clothingHolders[i], false);
+                    UpdateObjectLayer(result, clothingHolders[i].gameObject.layer);
+                    bonesToSync.Add(GetChildToSync(result.transform));
+                    instantiatedClothes.Add(result);
+                    result.SetActive(false);
+                }
+                else
+                {
+                    Debug.LogError($"Failed to load clothing item: {(ClothingType)i}");
+                }
+            };
+
+            while (!handle.IsDone)
             {
-                Debug.LogError($"Failed to load clothing item: {(ClothingType)i}");
+                yield return null;
             }
         }
 

@@ -20,6 +20,6 @@ public class PlayerHeadUI : MonoBehaviour
     {
         headImage.sprite = playerClothesInfo.IsMale ? maleHeads[playerClothesInfo.Face] : femaleHeads[playerClothesInfo.Face];
         hairImage.sprite = playerClothesInfo.IsMale ? maleHairs[playerClothesInfo.Hair] : femaleHairs[playerClothesInfo.Hair];
-        eyesImage.sprite = playerClothesInfo.IsMale ? maleEyes[playerClothesInfo.Eyes] : femaleEyes[playerClothesInfo.Eyes];
+        eyesImage.sprite = playerClothesInfo.IsMale ? maleEyes[playerClothesInfo.Face] : femaleEyes[playerClothesInfo.Face];
     }
 }

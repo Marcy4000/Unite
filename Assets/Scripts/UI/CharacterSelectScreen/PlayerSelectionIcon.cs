@@ -10,6 +10,7 @@ public class PlayerSelectionIcon : MonoBehaviour
     [SerializeField] private Image battleItem;
     [SerializeField] private TMP_Text playerNameText;
     [SerializeField] private Sprite[] backgrounds;
+    [SerializeField] private PlayerHeadUI playerHeadUI;
 
     [SerializeField] private Sprite defaultBackground;
 
@@ -23,6 +24,7 @@ public class PlayerSelectionIcon : MonoBehaviour
         {
             playerNameText.color = Color.yellow;
         }
+        playerHeadUI.InitializeHead(PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value));
         characterIcon.gameObject.SetActive(false);
         LobbyController.Instance.onLobbyUpdate += UpdatePlayerData;
         UpdatePlayerData(LobbyController.Instance.Lobby);
@@ -43,6 +45,7 @@ public class PlayerSelectionIcon : MonoBehaviour
         {
             characterIcon.gameObject.SetActive(true);
             battleItem.gameObject.SetActive(true);
+            playerHeadUI.gameObject.SetActive(false);
             background.sprite = GetBackgroundFromClass(info.pClass);
             characterIcon.sprite = info.icon;
             battleItem.sprite = CharactersList.Instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)).icon;
@@ -52,6 +55,7 @@ public class PlayerSelectionIcon : MonoBehaviour
             background.sprite = defaultBackground;
             characterIcon.gameObject.SetActive(false);
             battleItem.gameObject.SetActive(false);
+            playerHeadUI.gameObject.SetActive(true);
         }
     }
 

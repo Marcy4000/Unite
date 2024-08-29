@@ -145,7 +145,7 @@ public class Pokemon : NetworkBehaviour
         OnHpOrShieldChange?.Invoke();
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     private void OnShieldListChangedRPC()
     {
         StartCoroutine(ShieldListChanged());
@@ -1040,7 +1040,7 @@ public class Pokemon : NetworkBehaviour
         return resultShields;
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     private void ClientDamageRpc(int actualDamage, DamageInfo damage)
     {
         lastHit = damage;
@@ -1049,7 +1049,7 @@ public class Pokemon : NetworkBehaviour
         OnDamageTaken?.Invoke(damage);
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     private void ClientHealRpc(int actualHeal)
     {
         DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();

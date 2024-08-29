@@ -4,7 +4,7 @@ using UnityEngine;
 public class MarshadowDrainPunch : MoveBase
 {
     // The user strikes in an area dealing damage and healing the user.
-    private DamageInfo damage = new DamageInfo(0, 0.5f, 6, 145, DamageType.Physical);
+    private DamageInfo damage = new DamageInfo(0, 0.5f, 6, 255, DamageType.Physical);
     private float range = 2.9f;
 
     private Vector3 direction;

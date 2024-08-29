@@ -39,6 +39,7 @@ public class PlayerManager : NetworkBehaviour
     private NetworkVariable<ushort> currentEnergy = new NetworkVariable<ushort>();
 
     private BattleActionStatus scoreStatus = new BattleActionStatus(0);
+    private NetworkVariable<float> scoreGuageValue = new NetworkVariable<float>(writePerm:NetworkVariableWritePermission.Owner);
     private bool isScoring = false;
 
     private bool isRecalling;
@@ -76,6 +77,7 @@ public class PlayerManager : NetworkBehaviour
     public ushort MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
     public ushort CurrentEnergy { get => currentEnergy.Value; }
     public BattleActionStatus ScoreStatus { get => scoreStatus; }
+    public float ScoreGuageValue { get => scoreGuageValue.Value; }
 
     public GoalZone GoalZone { get => goalZone; set => goalZone = value; }
 
@@ -534,6 +536,7 @@ public class PlayerManager : NetworkBehaviour
 
         scoreStatus.Cooldown += Time.deltaTime;
         BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
+        scoreGuageValue.Value = scoreStatus.Cooldown / maxScoreTime;
 
         if (scoreStatus.Cooldown >= maxScoreTime)
         {
@@ -552,6 +555,7 @@ public class PlayerManager : NetworkBehaviour
         scoreStatus.Cooldown = 0;
         playerMovement.CanMove = true;
         BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
+        scoreGuageValue.Value = scoreStatus.Cooldown / maxScoreTime;
         BattleUIManager.instance.SetEnergyBallState(false);
     }
 

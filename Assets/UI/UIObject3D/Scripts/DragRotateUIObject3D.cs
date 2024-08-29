@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Collections;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;  // New Input System
 #endregion
 
 namespace UI.ThreeDimensional
@@ -43,25 +44,33 @@ namespace UI.ThreeDimensional
 
         private Vector2 lastMousePosition = Vector2.zero;
 
+        // Input actions
+        [SerializeField] private InputActionReference pointerClickAction;
+        [SerializeField] private InputActionReference pointerPositionAction;
+
         void Awake()
         {
             UIObject3D = this.GetComponent<UIObject3D>();
 
             SetupEvents();
+
+            // Enable the input actions
+            pointerClickAction.action.Enable();
+            pointerPositionAction.action.Enable();
         }
 
         void Update()
         {
             if (UIObject3D == null || UIObject3D.targetContainer == null) return;
 
-            if (lastMousePosition == Vector2.zero) lastMousePosition = Input.mousePosition;
+            if (lastMousePosition == Vector2.zero) lastMousePosition = pointerPositionAction.action.ReadValue<Vector2>();
 
-            if (Input.GetMouseButton(0) && beingDragged)
+            if (beingDragged)
             {
-                var mouseDelta = ((Vector2)Input.mousePosition - lastMousePosition) * 100;
+                // Calculate speed based on pointer delta
+                var mouseDelta = (pointerPositionAction.action.ReadValue<Vector2>() - lastMousePosition) * 100;
                 mouseDelta.Set(mouseDelta.x / Screen.width, mouseDelta.y / Screen.height);
 
-                //speed = new Vector3((-Input.GetAxis("Mouse X")) * _xMultiplier, (Input.GetAxis("Mouse Y")) * _yMultiplier, 0.0F);
                 speed = new Vector3(-mouseDelta.x * _xMultiplier, mouseDelta.y * _yMultiplier, 0);
                 averageSpeed = Vector3.Lerp(averageSpeed, speed, Time.deltaTime * 5);
             }
@@ -90,18 +99,40 @@ namespace UI.ThreeDimensional
                 if (RotateY) UIObject3D.targetContainer.Rotate(Camera.main.transform.right * speed.y * RotationSpeed, Space.World);
                 UIObject3D.TargetRotation = UIObject3D.targetContainer.localRotation.eulerAngles;
             }
-
-            lastMousePosition = Input.mousePosition;
         }
 
         void SetupEvents()
         {
-            // get or add the event trigger
+            // Get or add the event trigger
             EventTrigger trigger = this.GetComponent<EventTrigger>() ?? this.gameObject.AddComponent<EventTrigger>();
 
             var onPointerDown = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
-            onPointerDown.callback.AddListener((e) => beingDragged = true);
+            onPointerDown.callback.AddListener((e) => OnPointerDown((PointerEventData)e));
             trigger.triggers.Add(onPointerDown);
+
+            var onPointerUp = new EventTrigger.Entry { eventID = EventTriggerType.PointerUp };
+            onPointerUp.callback.AddListener((e) => OnPointerUp((PointerEventData)e));
+            trigger.triggers.Add(onPointerUp);
+        }
+
+        private void OnPointerDown(PointerEventData eventData)
+        {
+            if (pointerClickAction.action.ReadValue<float>() > 0)
+            {
+                beingDragged = true;
+            }
+        }
+
+        private void OnPointerUp(PointerEventData eventData)
+        {
+            beingDragged = false;
+        }
+
+        private void OnDestroy()
+        {
+            // Disable the input actions when the object is destroyed
+            pointerClickAction.action.Disable();
+            pointerPositionAction.action.Disable();
         }
     }
 }

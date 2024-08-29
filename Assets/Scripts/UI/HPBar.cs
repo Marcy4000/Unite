@@ -172,17 +172,18 @@ public class HPBar : MonoBehaviour
         damageBar.fillAmount = newHp;
     }
 
-    public void CreateHPMarkers(int hp)
+    public void CreateHPMarkers(int maxHP)
     {
-        // Remove existing markers if any
         foreach (Transform child in linesHolder.transform)
         {
             Destroy(child.gameObject);
         }
 
-        int numberOfMarkers = hp / 1000;
+        int numberOfMarkers = maxHP / 1000;
+
         float healthBarWidth = linesHolder.rect.width;
-        float spacing = healthBarWidth / (numberOfMarkers + 1); // Divide the width by number of markers + 1
+
+        float spacing = (healthBarWidth * 1000f) / maxHP;
 
         for (int i = 1; i <= numberOfMarkers; i++)
         {
@@ -191,4 +192,5 @@ public class HPBar : MonoBehaviour
             lineRectTransform.anchoredPosition = new Vector2(spacing * i, 0);
         }
     }
+
 }

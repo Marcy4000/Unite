@@ -74,18 +74,12 @@ public class IcicleSpearHitbox : NetworkBehaviour
             return;
         }
 
-        PlayerManager player;
-        if (other.TryGetComponent(out player))
+        if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, teamToIgnore))
         {
-            if (player.OrangeTeam == teamToIgnore)
-            {
-                return;
-            }
+            return;
         }
 
-        Pokemon pokemon;
-
-        if (other.TryGetComponent(out pokemon))
+        if (other.TryGetComponent(out Pokemon pokemon))
         {
             if (!pokemonInTrigger.Contains(pokemon))
             {
@@ -101,9 +95,7 @@ public class IcicleSpearHitbox : NetworkBehaviour
             return;
         }
 
-        Pokemon pokemon;
-
-        if (other.TryGetComponent(out pokemon))
+        if (other.TryGetComponent(out Pokemon pokemon))
         {
             if (pokemonInTrigger.Contains(pokemon))
             {

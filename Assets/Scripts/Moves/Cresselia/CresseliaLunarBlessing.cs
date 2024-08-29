@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class CresseliaLunarBlessing : MoveBase
@@ -10,6 +11,8 @@ public class CresseliaLunarBlessing : MoveBase
     private float angle = 60f;
 
     private Coroutine moveCoroutine;
+
+    private string assetPath = "Assets/Prefabs/Objects/Moves/Cresselia/CresseliaLunarBlessing.prefab";
 
     public CresseliaLunarBlessing()
     {
@@ -58,7 +61,6 @@ public class CresseliaLunarBlessing : MoveBase
             }
 
             playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.15f), 8, 0, 5f, true));
-            playerManager.StartCoroutine(CheckForShield(playerManager.Pokemon));
 
             if (target != null)
             {
@@ -83,8 +85,18 @@ public class CresseliaLunarBlessing : MoveBase
                 }
 
                 pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.15f), 8, 0, 5f, true));
-                playerManager.StartCoroutine(CheckForShield(pokemon));
             }
+
+            playerManager.MovesController.onObjectSpawned += (obj) =>
+            {
+                LunarBlessingShield indicator = obj.GetComponent<LunarBlessingShield>();
+                indicator.SetTargetServerRPC(playerManager.NetworkObjectId);
+                if (target != null)
+                {
+                    playerManager.StartCoroutine(SpawnSecondIndicator());
+                }
+            };
+            playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
 
             wasMoveSuccessful = true;
         }
@@ -92,17 +104,19 @@ public class CresseliaLunarBlessing : MoveBase
         base.Finish();
     }
 
-    private IEnumerator CheckForShield(Pokemon pokemon)
+    private IEnumerator SpawnSecondIndicator()
     {
-        yield return new WaitForSeconds(4.9f);
+        yield return null;
 
-        if (pokemon.HasShieldWithID(8))
+        playerManager.MovesController.onObjectSpawned += (obj) =>
         {
-            pokemon.HealDamage(pokemon.GetShieldWithID(8).Value.Amount);
-        }
+            LunarBlessingShield indicator = obj.GetComponent<LunarBlessingShield>();
+            indicator.SetTargetServerRPC(target.GetComponent<NetworkObject>().NetworkObjectId);
+        };
+        playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
     }
 
-        private IEnumerator MoveLock()
+    private IEnumerator MoveLock()
     {
         playerManager.MovesController.LockEveryAction();
         playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);

@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UI.ThreeDimensional;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class ClothesSelector : MonoBehaviour
@@ -40,6 +39,7 @@ public class ClothesSelector : MonoBehaviour
         };
 
         InitializeMenuItems(GetPlayerClothesInfo().IsMale);
+        genderToggles[GetPlayerClothesInfo().IsMale ? 0 : 1].isOn = true;
     }
 
     private void OnEnable()
@@ -139,5 +139,11 @@ public class ClothesSelector : MonoBehaviour
         LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
 
         InitializeMenuItems(playerClothesInfo.IsMale);
+    }
+
+    public void SaveClothingChanges()
+    {
+        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
+        PlayerPrefs.SetString("ClothingInfo", playerClothesInfo.Serialize());
     }
 }

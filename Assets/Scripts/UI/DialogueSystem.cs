@@ -1,3 +1,4 @@
+using JSAM;
 using System.Collections;
 using TMPro;
 using UI.ThreeDimensional;
@@ -55,6 +56,7 @@ public class DialogueSystem : MonoBehaviour
 
     public void SetDialogues(Dialogue[] dialogues)
     {
+        AudioManager.PlaySound(DefaultAudioSounds.Game_Ui_Rookie_Tip_3);
         this.dialogues = dialogues;
         currentDialogueIndex = 0;
         ShowDialoguePanel();
@@ -90,6 +92,7 @@ public class DialogueSystem : MonoBehaviour
     {
         if (currentDialogueIndex < dialogues.Length - 1)
         {
+            AudioManager.PlaySound(DefaultAudioSounds.Game_Ui_Rookie_Tip_2);
             currentDialogueIndex++;
             UpdateDialogue();
             UpdateButtonInteractivity();
@@ -101,6 +104,7 @@ public class DialogueSystem : MonoBehaviour
     {
         if (currentDialogueIndex > 0)
         {
+            AudioManager.PlaySound(DefaultAudioSounds.Game_Ui_Rookie_Tip_2);
             currentDialogueIndex--;
             UpdateDialogue();
             UpdateButtonInteractivity();

@@ -130,6 +130,8 @@ public class LobbyController : MonoBehaviour
 
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
 
+            PlayerClothesInfo clothes = PlayerPrefs.HasKey("ClothingInfo") ? PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo")) : new PlayerClothesInfo();
+
             localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>
             {
                 {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, localPlayerName)},
@@ -138,7 +140,7 @@ public class LobbyController : MonoBehaviour
                 {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")},
-                {"ClothingInfo", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, new PlayerClothesInfo().Serialize())}
+                {"ClothingInfo", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, clothes.Serialize())}
             });
 
 #if UNITY_WEBGL
