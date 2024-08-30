@@ -67,7 +67,12 @@ public class TrainerModel : MonoBehaviour
             {
                 if (child != null)
                 {
-                    Destroy(child.gameObject);
+                    Addressables.ReleaseInstance(child.gameObject);
+
+                    if (child != null)
+                    {
+                        Destroy(child.gameObject);
+                    }
                 }
             }
         }
@@ -196,6 +201,30 @@ public class TrainerModel : MonoBehaviour
             {
                 lastPlayerClothesInfo = playerClothesInfo;
                 InitializeClothes(playerClothesInfo);
+            }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        foreach (var holder in clothingHolders)
+        {
+            if (holder == null)
+            {
+                continue;
+            }
+
+            foreach (Transform child in holder)
+            {
+                if (child != null)
+                {
+                    Addressables.ReleaseInstance(child.gameObject);
+                    
+                    if (child != null)
+                    {
+                        Destroy(child.gameObject);
+                    }
+                }
             }
         }
     }
