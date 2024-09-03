@@ -44,11 +44,13 @@ public class CharactersList : MonoBehaviour
     [SerializeField] private WildPokemonInfo[] wildPokemons;
     [SerializeField] private Sprite[] moveLabels;
     [SerializeField] private BattleItemAsset[] battleItems;
+    [SerializeField] private HeldItemInfo[] heldItems;
     [SerializeField] private MapInfo[] maps;
 
     public CharacterInfo[] Characters => characters;
     public WildPokemonInfo[] WildPokemons => wildPokemons;
     public BattleItemAsset[] BattleItems => battleItems;
+    public HeldItemInfo[] HeldItems => heldItems;
     public MapInfo[] Maps => maps;
 
     private void Awake()
@@ -89,6 +91,16 @@ public class CharactersList : MonoBehaviour
         }
 
         return battleItems[id];
+    }
+
+    public HeldItemInfo GetHeldItemByID(int id)
+    {
+        if (id > heldItems.Length)
+        {
+            return heldItems[0];
+        }
+
+        return heldItems[id];
     }
 
     public MapInfo GetCurrentMap()

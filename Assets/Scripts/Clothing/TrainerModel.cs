@@ -13,6 +13,9 @@ public class TrainerModel : MonoBehaviour
     [SerializeField] private Animator femaleAnimator;
     [SerializeField] private BoneSync maleBoneSync;
     [SerializeField] private BoneSync femaleBoneSync;
+
+    [SerializeField] private GameObject loadingText;
+
     [SerializeField] private bool isMale;
 
     [SerializeField] private Transform[] clothingHoldersMale;
@@ -48,6 +51,8 @@ public class TrainerModel : MonoBehaviour
     private IEnumerator InitializeRoutine(PlayerClothesInfo info)
     {
         yield return null;
+
+        loadingText.SetActive(true);
 
         playerClothesInfo = info;
         SetGender(info.IsMale);
@@ -146,6 +151,8 @@ public class TrainerModel : MonoBehaviour
                 Debug.LogWarning("An instantiated clothing item is null.");
             }
         }
+
+        loadingText.SetActive(false);
     }
 
 

@@ -28,6 +28,7 @@ public class PlayerManager : NetworkBehaviour
     private AnimationManager animationManager;
     private Vision vision;
     private PassiveController passiveController;
+    private HeldItemManager heldItemManager;
     [SerializeField] private VisionController visionController;
     [SerializeField] private HPBar hpBar;
 
@@ -68,6 +69,7 @@ public class PlayerManager : NetworkBehaviour
     public Vision Vision { get => vision; }
     public HPBar HPBar { get => hpBar; }
     public PassiveController PassiveController { get => passiveController; }
+    public HeldItemManager HeldItemManager { get => heldItemManager; }
     public PlayerControls PlayerControls { get => playerControls; }
     public bool IsScoring { get => isScoring; }
 
@@ -104,6 +106,7 @@ public class PlayerManager : NetworkBehaviour
         animationManager = GetComponent<AnimationManager>();
         vision = GetComponent<Vision>();
         passiveController = GetComponent<PassiveController>();
+        heldItemManager = GetComponent<HeldItemManager>();
 
         maxEnergyCarry = 30;
         scoreStatus.AddStatus(ActionStatusType.Disabled);
@@ -256,6 +259,7 @@ public class PlayerManager : NetworkBehaviour
         vision.SetVisibility(currentTeam == OrangeTeam);
 
         passiveController.LearnPassive();
+        heldItemManager.Initialize(this);
     }
 
     public void StopMovementForTime(float time, bool setTrigger=true)

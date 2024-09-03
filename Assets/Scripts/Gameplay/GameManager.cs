@@ -37,6 +37,7 @@ public class GameManager : NetworkBehaviour
     private NetworkVariable<bool> finalStretch = new NetworkVariable<bool>(false);
 
     private Dictionary<ulong, bool> playerLoadedMap = new Dictionary<ulong, bool>();
+    private Dictionary<ulong, bool> playerLoadedPokemons = new Dictionary<ulong, bool>();
 
     private List<PlayerManager> players = new List<PlayerManager>();
     private LaneManager[] lanes;
@@ -63,6 +64,7 @@ public class GameManager : NetworkBehaviour
     public event Action onFinalStretch;
 
     private AsyncOperationHandle<SceneInstance> loadHandle;
+    private AsyncOperationHandle<IList<PokemonBase>> pokemonHandle;
 
     private void Awake()
     {
@@ -89,7 +91,7 @@ public class GameManager : NetworkBehaviour
 
     private IEnumerator WaitForPlayersToLoad()
     {
-        while (playerLoadedMap.ContainsValue(false))
+        while (playerLoadedMap.ContainsValue(false) || playerLoadedPokemons.ContainsValue(false))
         {
             yield return null;
         }
@@ -120,9 +122,17 @@ public class GameManager : NetworkBehaviour
         currentMap = CharactersList.Instance.GetCurrentMap();
 
         loadHandle = Addressables.LoadSceneAsync(currentMap.mapSceneKey, LoadSceneMode.Additive);
+
+        pokemonHandle = Addressables.LoadAssetsAsync<PokemonBase>("characters", null);
+
         loadHandle.Completed += (handle) =>
         {
             NotifyPlayerLoadedMapRPC(NetworkManager.Singleton.LocalClientId);
+        };
+
+        pokemonHandle.Completed += (handle) =>
+        {
+            NotifyPlayerLoadedPokemonsRPC(NetworkManager.Singleton.LocalClientId);
         };
 
         LoadingScreen.Instance.SetLoadingManagerOperation(loadHandle);
@@ -151,6 +161,12 @@ public class GameManager : NetworkBehaviour
                 playerLoadedMap.Add(player.ClientId, false);
             }
 
+            playerLoadedPokemons.Clear();
+            foreach (var player in NetworkManager.Singleton.ConnectedClientsList)
+            {
+                playerLoadedPokemons.Add(player.ClientId, false);
+            }
+
             if (surrenderManager != null)
             {
                 surrenderManager.onSurrenderVoteResult += OnTeamSurrendered;
@@ -167,6 +183,12 @@ public class GameManager : NetworkBehaviour
     public void NotifyPlayerLoadedMapRPC(ulong clientId)
     {
         playerLoadedMap[clientId] = true;
+    }
+
+    [Rpc(SendTo.Server)]
+    public void NotifyPlayerLoadedPokemonsRPC(ulong clientId)
+    {
+        playerLoadedPokemons[clientId] = true;
     }
 
     private void GameStateChanged(GameState previous, GameState current)
@@ -435,6 +457,7 @@ public class GameManager : NetworkBehaviour
         {
             return;
         }
+        Addressables.Release(pokemonHandle);
         Addressables.UnloadSceneAsync(loadHandle);
         base.OnDestroy();
     }

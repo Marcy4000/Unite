@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -18,7 +19,7 @@ public class SoldierPokemon : NetworkBehaviour
     public bool OrangeTeam => orangeTeam;
     public WildPokemon WildPokemon => wildPokemon;
 
-    public override void OnNetworkSpawn()
+    public void Awake()
     {
         wildPokemon = GetComponent<WildPokemon>();
         agent = GetComponent<NavMeshAgent>();
@@ -28,6 +29,12 @@ public class SoldierPokemon : NetworkBehaviour
 
     private void InitializeVision()
     {
+        StartCoroutine(InitializeVisionCoroutine());
+    }
+
+    private IEnumerator InitializeVisionCoroutine()
+    {
+        yield return null;
         Vision vision = GetComponentInChildren<Vision>();
         vision.HasATeam = true;
         vision.CurrentTeam = orangeTeam;

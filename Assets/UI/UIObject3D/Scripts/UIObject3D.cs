@@ -151,6 +151,26 @@ namespace UI.ThreeDimensional
             }
         }
 
+        [SerializeField, Range(-10, 10)]
+        private float _LookOffsetX = 0f;
+        [SerializeField, Range(-10, 10)]
+        private float _LookOffsetY = 0f;
+
+        /// <summary>
+        /// An offset (X/Y) to apply to the target (relative to its default location of 0,0)
+        /// </summary>
+        [SerializeField]
+        public Vector2 LookTargetOffset
+        {
+            get { return new Vector2(_LookOffsetX, _LookOffsetY); }
+            set
+            {
+                _LookOffsetX = value.x;
+                _LookOffsetY = value.y;
+                UpdateDisplay();
+            }
+        }
+
         [SerializeField, HideInInspector]
         private Vector2 _textureSize = default(Vector2);
         /// <summary>
@@ -1071,7 +1091,8 @@ namespace UI.ThreeDimensional
 
             if (AlwaysLookAtTarget)
             {
-                _targetCamera.transform.LookAt(_target);
+                Vector3 lookOffset = new Vector3(LookTargetOffset.x, LookTargetOffset.y, 0);
+                _targetCamera.transform.LookAt(_target.position+lookOffset);
             }
             else
             {

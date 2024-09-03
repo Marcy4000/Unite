@@ -68,13 +68,13 @@ public class MapBerry : NetworkBehaviour
                 default:
                     break;
             }
-            PlaySoundRPC();
+            PlaySoundRPC(RpcTarget.Single(player.OwnerClientId, RpcTargetUse.Temp));
             isCollected.Value = true;
         }
     }
 
-    [Rpc(SendTo.Everyone)]
-    private void PlaySoundRPC()
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void PlaySoundRPC(RpcParams rpcParams = default)
     {
         switch (berryType)
         {

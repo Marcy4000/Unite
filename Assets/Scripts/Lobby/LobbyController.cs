@@ -140,6 +140,7 @@ public class LobbyController : MonoBehaviour
                 {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")},
+                {"HeldItems", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, HeldItemDatabase.SerializeHeldItems(new byte[] {0, 0, 0}))},
                 {"ClothingInfo", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, clothes.Serialize())}
             });
 

@@ -68,8 +68,6 @@ public class MapSelector : MonoBehaviour
             return;
         }
 
-        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_MapSwitch);
-
         foreach (MapSelectorIcon icon in icons)
         {
             if (icon.MapInfo.sceneName == LobbyController.Instance.Lobby.Data["SelectedMap"].Value)

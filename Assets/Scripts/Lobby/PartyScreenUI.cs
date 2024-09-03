@@ -1,3 +1,4 @@
+using JSAM;
 using TMPro;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies.Models;
@@ -43,6 +44,7 @@ public class PartyScreenUI : MonoBehaviour
         mapSelector.UpdateSelectedMap();
         if (CharactersList.Instance.GetCurrentLobbyMap() != selectedMap)
         {
+            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_MapSwitch);
             selectedMap = CharactersList.Instance.GetCurrentLobbyMap();
             LobbyController.Instance.CheckIfShouldChangePos(selectedMap.maxTeamSize);
             InitializeUI(LobbyController.Instance.Lobby);

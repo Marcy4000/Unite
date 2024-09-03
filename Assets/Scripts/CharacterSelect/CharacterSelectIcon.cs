@@ -10,6 +10,7 @@ public class CharacterSelectIcon : MonoBehaviour
     private CharacterInfo info;
 
     public event Action<CharacterInfo> OnCharacterSelected;
+    public CharacterInfo Info => info;
 
     public void Initialize(CharacterInfo info)
     {
