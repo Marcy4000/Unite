@@ -11,4 +11,14 @@ public class HeldItemInfo : ScriptableObject
     public AvailableHeldItems heldItemID;
 
     public Sprite icon;
+
+    public HeldItemStatBoost[] statBoosts;
+}
+
+[System.Serializable]
+public class HeldItemStatBoost
+{
+    public Stat AffectedStat;
+    public short BoostAmount;
+    public bool IsPercentage;
 }

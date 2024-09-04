@@ -11,6 +11,7 @@ public class PlayerSelectionIcon : MonoBehaviour
     [SerializeField] private TMP_Text playerNameText;
     [SerializeField] private Sprite[] backgrounds;
     [SerializeField] private PlayerHeadUI playerHeadUI;
+    [SerializeField] private PlayerHeldItemsIcons playerHeldItemsIcons;
 
     [SerializeField] private Sprite defaultBackground;
 
@@ -46,6 +47,7 @@ public class PlayerSelectionIcon : MonoBehaviour
             characterIcon.gameObject.SetActive(true);
             battleItem.gameObject.SetActive(true);
             playerHeadUI.gameObject.SetActive(false);
+            playerHeldItemsIcons.gameObject.SetActive(true);
             background.sprite = GetBackgroundFromClass(info.pClass);
             characterIcon.sprite = info.icon;
             battleItem.sprite = CharactersList.Instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)).icon;
@@ -55,8 +57,11 @@ public class PlayerSelectionIcon : MonoBehaviour
             background.sprite = defaultBackground;
             characterIcon.gameObject.SetActive(false);
             battleItem.gameObject.SetActive(false);
+            playerHeldItemsIcons.gameObject.SetActive(false);
             playerHeadUI.gameObject.SetActive(true);
         }
+
+        playerHeldItemsIcons.SetIcons(HeldItemDatabase.DeserializeHeldItems(assignedPlayer.Data["HeldItems"].Value));
     }
 
     private Sprite GetBackgroundFromClass(PokemonClass pClass)

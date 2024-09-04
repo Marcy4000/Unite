@@ -28,7 +28,7 @@ public static class HeldItemDatabase
             case AvailableHeldItems.None:
                 return new EmptyHeldItem();
             case AvailableHeldItems.Leftovers:
-                //return new Leftovers();
+                return new Leftovers();
             case AvailableHeldItems.RockyHelmet:
                 //return new RockyHelmet();
             case AvailableHeldItems.SpAtkSpecs:

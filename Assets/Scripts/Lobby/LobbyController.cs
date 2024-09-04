@@ -519,6 +519,16 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerData(options);
     }
 
+    public void UpdatePlayerHeldItems(string heldItems)
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["HeldItems"].Value = heldItems;
+        Debug.Log($"Changed held items to {options.Data["HeldItems"].Value}");
+
+        UpdatePlayerData(options);
+    }
+
     private IEnumerator UpdatePlayerOwnerID(ulong id)
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();

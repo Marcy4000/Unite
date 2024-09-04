@@ -235,6 +235,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4147954722931996296}
   - component: {fileID: 6573302529475436335}
+  - component: {fileID: 1472252220751220827}
   m_Layer: 5
   m_Name: HeldItems
   m_TagString: Untagged
@@ -290,6 +291,22 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &1472252220751220827
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497010890261985522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64556929a0716bf4f91020585bad3cf1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  icons:
+  - {fileID: 3826886483468993514}
+  - {fileID: 3235161888512358079}
+  - {fileID: 7954600425827473857}
 --- !u!1 &1708504929746310608
 GameObject:
   m_ObjectHideFlags: 0
@@ -350,6 +367,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 9963374ec04004045971207bcb12794b, type: 3}
   - {fileID: 21300000, guid: f146f453d171a4c4e8950be00959d02d, type: 3}
   playerHeadUI: {fileID: 4075231898675739549}
+  playerHeldItemsIcons: {fileID: 1472252220751220827}
   defaultBackground: {fileID: 21300000, guid: a87190fec1faa47439ea61f7bfa3dae8, type: 3}
 --- !u!1 &1995168551658496754
 GameObject:

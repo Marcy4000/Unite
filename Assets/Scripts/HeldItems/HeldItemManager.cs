@@ -15,6 +15,15 @@ public class HeldItemManager : NetworkBehaviour
             heldItemBases[i] = HeldItemDatabase.GetHeldItem(heldItems[i].heldItemID);
             heldItemBases[i].Initialize(playerManager);
         }
+
+        foreach (var heldItemInfo in heldItems)
+        {
+            foreach (var statBoost in heldItemInfo.statBoosts)
+            {
+                StatChange statChange = new StatChange(statBoost.BoostAmount, statBoost.AffectedStat, 0f, false, true, statBoost.IsPercentage, 0, false);
+                playerManager.Pokemon.AddStatChange(statChange);
+            }
+        }
     }
 
     public void Update()

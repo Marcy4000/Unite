@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -91,6 +92,25 @@ public class CharactersList : MonoBehaviour
         }
 
         return battleItems[id];
+    }
+
+    public byte[] GetHeldItemsIDs(List<HeldItemInfo> heldItems)
+    {
+        byte[] heldItemsIDs = new byte[heldItems.Count];
+
+        for (int i = 0; i < heldItems.Count; i++)
+        {
+            for (int j = 0; j < this.heldItems.Length; j++)
+            {
+                if (heldItems[i].heldItemID == this.heldItems[j].heldItemID)
+                {
+                    heldItemsIDs[i] = (byte)j;
+                    break;
+                }
+            }
+        }
+
+        return heldItemsIDs;
     }
 
     public HeldItemInfo GetHeldItemByID(int id)

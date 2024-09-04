@@ -37,6 +37,9 @@ public class Pokemon : NetworkBehaviour
     // This is so stupid, only implemented for meowstic's wonder room and likely has no other use otherwise
     private NetworkVariable<bool> flipAtkStat = new NetworkVariable<bool>();
 
+    private float outOfCombatTimer = 0;
+    private NetworkVariable<bool> isOutOfCombat = new NetworkVariable<bool>();
+
     public int CurrentHp { get { return currentHp.Value; } }
     public int ShieldHp { get { return GetShieldsAsInt(); } }
     public int CurrentLevel { get { return currentLevel.Value; } }
@@ -50,6 +53,8 @@ public class Pokemon : NetworkBehaviour
     public int LocalLevel { get { return localLevel; } }
 
     public bool SwitchAtkStat { get { return flipAtkStat.Value; } }
+
+    public bool IsOutOfCombat { get { return isOutOfCombat.Value; } }
 
     public PokemonType Type { get { return type; } set { type = value; } }
 
@@ -181,9 +186,42 @@ public class Pokemon : NetworkBehaviour
         OnStatChange?.Invoke(changeEvent);
     }
 
+    #region StatsGetters
+
     public int GetMaxHp()
     {
-        return baseStats.MaxHp[currentLevel.Value];
+        return GetMaxHp(currentLevel.Value);
+    }
+
+    public int GetMaxHp(int level)
+    {
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Hp && !change.Percentage)
+            {
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.Hp && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        int trueHp = baseStats.MaxHp[level] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueHp = Mathf.RoundToInt(trueHp * (1f + percentModifierSum / 100f));
+
+        return Mathf.Clamp(trueHp, 0, 99999);
     }
 
     public int GetAttack()
@@ -506,6 +544,8 @@ public class Pokemon : NetworkBehaviour
         return flatModifierSum;
     }
 
+    #endregion
+
     public void AddStatChange(StatChange change)
     {
         if (IsServer)
@@ -553,8 +593,11 @@ public class Pokemon : NetworkBehaviour
         {
             if (statChanges[i].ID == id)
             {
-                statChanges.RemoveAt(i);
-                statTimers.RemoveAt(i);
+                if (statChanges[i].CanBeRemoved)
+                {
+                    statChanges.RemoveAt(i);
+                    statTimers.RemoveAt(i);
+                }
                 return;
             }
         }
@@ -568,8 +611,11 @@ public class Pokemon : NetworkBehaviour
             int index = i - 1;
             if (statChanges[index].ID == id)
             {
-                statChanges.RemoveAt(index);
-                statTimers.RemoveAt(index);
+                if (statChanges[index].CanBeRemoved)
+                {
+                    statChanges.RemoveAt(index);
+                    statTimers.RemoveAt(index);
+                }
             }
         }
     }
@@ -581,8 +627,11 @@ public class Pokemon : NetworkBehaviour
         {
             if (statChanges[i].Equals(change))
             {
-                statTimers.RemoveAt(i);
-                statChanges.RemoveAt(i);
+                if (statChanges[i].CanBeRemoved)
+                {
+                    statChanges.RemoveAt(i);
+                    statTimers.RemoveAt(i);
+                }
                 return;
             }
         }
@@ -591,8 +640,15 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void RemoveAllStatChangesRPC()
     {
-        statChanges.Clear();
-        statTimers.Clear();
+        for (int i = statChanges.Count; i > 0; i--)
+        {
+            int index = i - 1;
+            if (statChanges[index].CanBeRemoved)
+            {
+                statChanges.RemoveAt(index);
+                statTimers.RemoveAt(index);
+            }
+        }
     }
 
     [Rpc(SendTo.Server)]
@@ -836,6 +892,13 @@ public class Pokemon : NetworkBehaviour
                     }
                 }
             }
+
+            if (outOfCombatTimer > 0)
+            {
+                outOfCombatTimer -= Time.deltaTime;
+            }
+
+            isOutOfCombat.Value = outOfCombatTimer < 0;
         }
 
         if (!IsOwner)
@@ -1046,6 +1109,12 @@ public class Pokemon : NetworkBehaviour
         lastHit = damage;
         DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
         indicator.ShowDamage(actualDamage, damage.type);
+
+        if (IsServer)
+        {
+            outOfCombatTimer = 5f;
+        }
+
         OnDamageTaken?.Invoke(damage);
     }
 
@@ -1228,13 +1297,17 @@ public class Pokemon : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     public void OnDamageDealtRPC(ulong targetID, int damage)
     {
+        if (IsServer)
+        {
+            outOfCombatTimer = 5f;
+        }
         OnDamageDealt?.Invoke(targetID, damage);
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     public void OnKilledPokemonRPC(ulong targetID)
     {
         OnOtherPokemonKilled?.Invoke(targetID);
@@ -1287,11 +1360,11 @@ public class Pokemon : NetworkBehaviour
 
         if (IsServer)
         {
-            currentHp.Value = Mathf.RoundToInt(baseStats.MaxHp[localLevel] * hpPercentage);
+            currentHp.Value = Mathf.RoundToInt(GetMaxHp(localLevel) * hpPercentage);
         }
         else
         {
-            SetCurrentHPServerRPC(Mathf.RoundToInt(baseStats.MaxHp[localLevel] * hpPercentage));
+            SetCurrentHPServerRPC(Mathf.RoundToInt(GetMaxHp(localLevel) * hpPercentage));
         }
     }
 
