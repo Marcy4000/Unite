@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e9da8fee8302b34283a0d5474956750, type: 3}
+  m_Name: DrainCrown
+  m_EditorClassIdentifier: 
+  heldItemName: Drain Crown
+  description: 'Restores HP equal to 7%/10%/13% of damage dealt by auto attacks that
+    are Attack damage (ie: not true damage).'
+  heldItemID: 16
+  icon: {fileID: 21300000, guid: 574eac1c04248f944a289a95eec33464, type: 3}
+  statBoosts:
+  - AffectedStat: 0
+    BoostAmount: 18
+    IsPercentage: 0
+  - AffectedStat: 10
+    BoostAmount: 120
+    IsPercentage: 0

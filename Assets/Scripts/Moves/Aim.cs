@@ -376,6 +376,18 @@ public class Aim : NetworkBehaviour
 
     public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType, bool teamToIgnore, bool canHitInvisTargets=true)
     {
+        if (pokemonObject.TryGetComponent(out Pokemon pokemon))
+        {
+            if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+
         switch (targetType)
         {
             case AimTarget.Enemy:
@@ -451,14 +463,6 @@ public class Aim : NetworkBehaviour
                     }
                 }
                 break;
-        }
-
-        if (pokemonObject.TryGetComponent(out Pokemon pokemon))
-        {
-            if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
-            {
-                return false;
-            }
         }
 
         if (pokemonObject.TryGetComponent(out Vision vision))

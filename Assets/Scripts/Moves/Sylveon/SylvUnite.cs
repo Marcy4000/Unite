@@ -35,12 +35,15 @@ public class SylvUnite : MoveBase
         }
     }
 
-    private void OnDamageDealt(ulong targetID, int amount)
+    private void OnDamageDealt(ulong targetID, DamageInfo damage)
     {
         if (!playerManager.Pokemon.HasStatusEffect(fairyFrolic.ID))
         {
             return;
         }
+
+        Pokemon target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
+        int amount = target.CalculateDamage(damage, playerManager.Pokemon);
 
         playerManager.Pokemon.HealDamage(amount / 2);
     }

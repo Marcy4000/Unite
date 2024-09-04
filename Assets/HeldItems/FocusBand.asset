@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e9da8fee8302b34283a0d5474956750, type: 3}
+  m_Name: FocusBand
+  m_EditorClassIdentifier: 
+  heldItemName: Focus Band
+  description: Upon reaching below 25% HP, recover HP each second for 3s by 6%/9%/12%
+    of your missing HP.
+  heldItemID: 13
+  icon: {fileID: 21300000, guid: 41a8f9747ce5b3d41b66cfad4ef59693, type: 3}
+  statBoosts:
+  - AffectedStat: 1
+    BoostAmount: 30
+    IsPercentage: 0
+  - AffectedStat: 3
+    BoostAmount: 30
+    IsPercentage: 0

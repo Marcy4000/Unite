@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class MarshadowBasicAtk : BasicAttackBase
 {
-    private DamageInfo normalDamage = new DamageInfo(0, 0.6f, 5, 110, DamageType.Physical);
-    private DamageInfo boostedDamage = new DamageInfo(0, 0.9f, 6, 140, DamageType.Physical);
+    private DamageInfo normalDamage = new DamageInfo(0, 0.6f, 5, 110, DamageType.Physical, DamageProprieties.IsBasicAttack);
+    private DamageInfo boostedDamage = new DamageInfo(0, 0.9f, 6, 140, DamageType.Physical, DamageProprieties.IsBasicAttack);
 
     private int charge;
 

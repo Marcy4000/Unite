@@ -4,8 +4,8 @@ public class FlygonBasicAtk : BasicAttackBase
 {
     private static readonly StatusType[] invulnerableStatuses = { StatusType.Invincible, StatusType.Untargetable, StatusType.Invisible };
 
-    private DamageInfo normalDamage = new DamageInfo(0, 0.35f, 5, 100, DamageType.Physical);
-    private DamageInfo boostedDamage = new DamageInfo(0, 0.45f, 6, 130, DamageType.Physical);
+    private DamageInfo normalDamage = new DamageInfo(0, 0.35f, 5, 100, DamageType.Physical, DamageProprieties.IsBasicAttack);
+    private DamageInfo boostedDamage = new DamageInfo(0, 0.45f, 6, 130, DamageType.Physical, DamageProprieties.IsBasicAttack);
 
     private int charge;
 

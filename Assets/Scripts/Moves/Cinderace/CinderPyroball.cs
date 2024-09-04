@@ -52,9 +52,15 @@ public class CinderPyroball : MoveBase
         playerManager.transform.rotation = Quaternion.LookRotation(this.direction);
         playerManager.AnimationManager.PlayAnimation($"ani_spell1a_bat_0815");
 
+        playerManager.MovesController.LockEveryAction();
+
         yield return new WaitForSeconds(0.4667f);
 
         playerManager.MovesController.LaunchMoveForwardProjRpc(direction, damageInfo, distance, "Assets/Prefabs/Objects/Moves/Cinderace/CinderPyroball.prefab");
+
+        yield return new WaitForSeconds(0.6333f);
+
+        playerManager.MovesController.UnlockEveryAction();
     }
 
     public override void Cancel()

@@ -20,7 +20,7 @@ public class FlygonPassive : PassiveBase
         isEvolved = true;
     }
 
-    private void OnDamageDealt(ulong attackedId, int damage)
+    private void OnDamageDealt(ulong attackedId, DamageInfo damage)
     {
         if (!isEvolved)
         {
@@ -31,7 +31,7 @@ public class FlygonPassive : PassiveBase
             }
 
             damageCd = 3f;
-            playerManager.StartCoroutine(ExtraDamage(attackedPokemon, damage));
+            playerManager.StartCoroutine(ExtraDamage(attackedPokemon, attackedPokemon.CalculateDamage(damage, playerManager.Pokemon)));
         }
     }
 

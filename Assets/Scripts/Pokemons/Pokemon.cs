@@ -75,7 +75,7 @@ public class Pokemon : NetworkBehaviour
     public event Action<DamageInfo> OnDamageTaken;
     public event Action OnPokemonInitialized;
 
-    public event Action<ulong, int> OnDamageDealt;
+    public event Action<ulong, DamageInfo> OnDamageDealt;
     public event Action<ulong> OnOtherPokemonKilled;
 
     public event Action<NetworkListEvent<StatChange>> OnStatChange;
@@ -199,7 +199,7 @@ public class Pokemon : NetworkBehaviour
         int flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.Hp && !change.Percentage)
+            if (change.AffectedStat == Stat.MaxHp && !change.Percentage)
             {
                 flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
@@ -209,7 +209,7 @@ public class Pokemon : NetworkBehaviour
         float percentModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.Hp && change.Percentage)
+            if (change.AffectedStat == Stat.MaxHp && change.Percentage)
             {
                 percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
             }
@@ -252,7 +252,7 @@ public class Pokemon : NetworkBehaviour
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueAtk = Mathf.RoundToInt(trueAtk * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueAtk, 0, 9999);
+        return Mathf.Clamp(trueAtk, 0, 2000);
     }
 
     public int GetDefense()
@@ -283,7 +283,7 @@ public class Pokemon : NetworkBehaviour
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueDef = Mathf.RoundToInt(trueDef * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueDef, 0, 9999);
+        return Mathf.Clamp(trueDef, 0, 999999);
     }
 
     public int GetSpAttack()
@@ -314,7 +314,7 @@ public class Pokemon : NetworkBehaviour
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueSpAtk = Mathf.RoundToInt(trueSpAtk * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueSpAtk, 0, 9999);
+        return Mathf.Clamp(trueSpAtk, 0, 3000);
     }
 
     public int GetSpDefense()
@@ -345,7 +345,7 @@ public class Pokemon : NetworkBehaviour
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueSpDef = Mathf.RoundToInt(trueSpDef * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueSpDef, 0, 9999);
+        return Mathf.Clamp(trueSpDef, 0, 999999);
     }
 
     public int GetCritRate()
@@ -376,7 +376,7 @@ public class Pokemon : NetworkBehaviour
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueCrit = Mathf.RoundToInt(trueCrit * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueCrit, 0, 9999);
+        return Mathf.Clamp(trueCrit, 0, 100);
     }
 
     public int GetCDR()
@@ -407,7 +407,7 @@ public class Pokemon : NetworkBehaviour
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueCDR = Mathf.RoundToInt(trueCDR * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueCDR, 0, 9999);
+        return Mathf.Clamp(trueCDR, 0, 60);
     }
 
     public int GetLifeSteal()
@@ -438,7 +438,7 @@ public class Pokemon : NetworkBehaviour
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueLifeSteal = Mathf.RoundToInt(trueLifeSteal * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueLifeSteal, 0, 9999);
+        return Mathf.Clamp(trueLifeSteal, 0, 100);
     }
 
     public float GetAtkSpeed()
@@ -539,7 +539,46 @@ public class Pokemon : NetworkBehaviour
 
         flatModifierSum /= 100f;
 
-        flatModifierSum = Mathf.Clamp01(flatModifierSum);
+        if (flatModifierSum > 1f)
+        {
+            flatModifierSum = 1f;
+        }
+
+        return flatModifierSum;
+    }
+
+    public int GetDefensePenetration()
+    {
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.DefensePenetration && !change.Percentage)
+            {
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        Mathf.Clamp(flatModifierSum, 0, 100);
+
+        return flatModifierSum;
+    }
+
+    public float GetCritModifier()
+    {
+        // Step 1: Sum together all flat modifiers
+        float flatModifierSum = 100;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.CritModifier && !change.Percentage)
+            {
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        flatModifierSum = Mathf.Clamp(flatModifierSum, 0, 400);
+
+        flatModifierSum /= 100f;
 
         return flatModifierSum;
     }
@@ -958,6 +997,14 @@ public class Pokemon : NetworkBehaviour
         int localHp = currentHp.Value;
         List<ShieldInfo> localShields = GetShieldsAsList();
 
+        if (damage.proprieties.HasFlag(DamageProprieties.CanCrit))
+        {
+            if (UnityEngine.Random.Range(0, 100) < attacker.GetCritRate())
+            {
+                damage.proprieties |= DamageProprieties.WasCriticalHit;
+            }
+        }
+
         int actualDamage = CalculateDamage(damage, attacker);
 
         int damageRemainder;
@@ -993,7 +1040,7 @@ public class Pokemon : NetworkBehaviour
         }
 
         ClientDamageRpc(actualDamage, damage);
-        attacker.OnDamageDealtRPC(NetworkObjectId, actualDamage);
+        attacker.OnDamageDealtRPC(NetworkObjectId, damage);
     }
 
     public int CalculateDamage(DamageInfo damage)
@@ -1037,6 +1084,12 @@ public class Pokemon : NetworkBehaviour
         }
 
         int attackDamage = Mathf.FloorToInt(damage.ratio * atkStat + damage.slider * attacker.CurrentLevel + damage.baseDmg);
+
+        if (damage.proprieties.HasFlag(DamageProprieties.WasCriticalHit))
+        {
+            attackDamage += Mathf.FloorToInt(attackDamage * attacker.GetCritModifier());
+        }
+
         int defStat;
         switch (damage.type)
         {
@@ -1051,6 +1104,8 @@ public class Pokemon : NetworkBehaviour
                 defStat = 0;
                 break;
         }
+
+        defStat = Mathf.Max(Mathf.FloorToInt(defStat * (1 - (attacker.GetDefensePenetration() / 100f))), 0);
 
         float finalDamage = (float)attackDamage * 600 / (600 + defStat);
 
@@ -1108,7 +1163,7 @@ public class Pokemon : NetworkBehaviour
     {
         lastHit = damage;
         DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
-        indicator.ShowDamage(actualDamage, damage.type);
+        indicator.ShowDamage(actualDamage, damage.type, damage.proprieties.HasFlag(DamageProprieties.WasCriticalHit));
 
         if (IsServer)
         {
@@ -1298,7 +1353,7 @@ public class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Everyone)]
-    public void OnDamageDealtRPC(ulong targetID, int damage)
+    public void OnDamageDealtRPC(ulong targetID, DamageInfo damage)
     {
         if (IsServer)
         {

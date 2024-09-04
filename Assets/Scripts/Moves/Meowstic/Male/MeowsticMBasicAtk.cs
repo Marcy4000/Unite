@@ -14,8 +14,8 @@ public class MeowsticMBasicAtk : BasicAttackBase
         base.Initialize(manager);
         range = 4f;
         attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
-        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1f, 0, 0, DamageType.Physical);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.1f, 0, 0, DamageType.Special);
+        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1f, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack);
+        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.1f, 0, 0, DamageType.Special, DamageProprieties.IsBasicAttack);
     }
 
     public override void Perform(bool wildPriority)

@@ -2,10 +2,8 @@ using UnityEngine;
 
 public class JoltBasicAtk : BasicAttackBase
 {
-    private static readonly StatusType[] invulnerableStatuses = { StatusType.Invincible, StatusType.Untargetable, StatusType.Invisible };
-
-    private DamageInfo normalDamage = new DamageInfo(0, 0.4f, 5, 120, DamageType.Physical);
-    private DamageInfo boostedDamage = new DamageInfo(0, 0.6f, 7, 160, DamageType.Physical);
+    private DamageInfo normalDamage = new DamageInfo(0, 0.4f, 5, 120, DamageType.Physical, DamageProprieties.IsBasicAttack);
+    private DamageInfo boostedDamage = new DamageInfo(0, 0.6f, 7, 160, DamageType.Physical, DamageProprieties.IsBasicAttack);
 
     private int charge;
 

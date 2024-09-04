@@ -16,8 +16,8 @@ public class VaporBasicAtk : BasicAttackBase
         base.Initialize(manager);
         range = 6f;
         attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
-        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.25f, 8, 170, DamageType.Special);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.36f, 11, 180, DamageType.Special);
+        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.25f, 8, 170, DamageType.Special, DamageProprieties.IsBasicAttack);
+        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.36f, 11, 180, DamageType.Special, DamageProprieties.IsBasicAttack);
     }
 
     public override void Perform(bool wildPriority)

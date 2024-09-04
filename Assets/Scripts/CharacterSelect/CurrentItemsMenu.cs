@@ -46,7 +46,7 @@ public class CurrentItemsMenu : MonoBehaviour
             itemIcon.Toggle.onValueChanged.AddListener(OnSelectedHeldItemChange);
         }
 
-        StartCoroutine(InitializeItemPicker());
+        StartCoroutine(InitializeItemPicker(heldItems[0]));
     }
 
     private void OnSelectedHeldItemChange(bool value)
@@ -61,7 +61,7 @@ public class CurrentItemsMenu : MonoBehaviour
 
             InitializeStatBoost(itemIcon.ItemInfo);
 
-            StartCoroutine(InitializeItemPicker());
+            StartCoroutine(InitializeItemPicker(null));
         }
     }
 
@@ -81,10 +81,13 @@ public class CurrentItemsMenu : MonoBehaviour
         }
     }
 
-    private IEnumerator InitializeItemPicker()
+    private IEnumerator InitializeItemPicker(HeldItemInfo heldItem)
     {
         yield return null;
-        heldItemPicker.InitializeIcons(iconHolder.GetFirstActiveToggle().GetComponent<HeldItemIcon>().ItemInfo);
+
+        HeldItemInfo selectedItem = heldItem ?? heldItemPicker.GetSelectedItem();
+
+        heldItemPicker.InitializeIcons(selectedItem);
     }
 
     private void UpdateSelectedItem(HeldItemInfo itemInfo)

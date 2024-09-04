@@ -199,7 +199,7 @@ public class PlayerNetworkManager : NetworkBehaviour
         }
     }
 
-    private void OnPlayerDealDamage(ulong attacked, int amount)
+    private void OnPlayerDealDamage(ulong attacked, DamageInfo damage)
     {
         Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attacked].GetComponent<Pokemon>();
 
@@ -207,6 +207,8 @@ public class PlayerNetworkManager : NetworkBehaviour
         {
             return;
         }
+
+        int amount = attackedPokemon.CalculateDamage(damage, playerManager.Pokemon);
 
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, playerStats.Value.deaths, playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt + (uint)amount, playerStats.Value.damageTaken, playerStats.Value.healingDone);
     }

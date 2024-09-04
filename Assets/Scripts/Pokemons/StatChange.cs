@@ -13,7 +13,9 @@ public enum Stat : byte
     AtkSpeed,
     Speed,
     DamageReduction,
-    Hp
+    MaxHp,
+    DefensePenetration,
+    CritModifier
 }
 
 [Serializable]

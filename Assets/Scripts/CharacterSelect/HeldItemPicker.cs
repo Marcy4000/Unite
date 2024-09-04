@@ -58,4 +58,12 @@ public class HeldItemPicker : MonoBehaviour
 
         OnItemPicked?.Invoke(itemIcon.ItemInfo);
     }
+
+    public HeldItemInfo GetSelectedItem()
+    {
+        var activeToggle = toggleGroup.GetFirstActiveToggle();
+        var itemIcon = activeToggle.GetComponent<HeldItemIcon>();
+
+        return itemIcon.ItemInfo;
+    }
 }

@@ -14,8 +14,10 @@ public class CinderBasicAtk : BasicAttackBase
         base.Initialize(manager);
         range = 7f;
         attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
-        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.3f, 0, 0, DamageType.Physical);
+        DamageProprieties proprieties = DamageProprieties.IsBasicAttack;
+        proprieties |= DamageProprieties.CanCrit;
+        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical, proprieties);
+        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.3f, 0, 0, DamageType.Physical, proprieties);
         manager.MovesController.onMovePerformed += OnMovePerformed;
     }
 
