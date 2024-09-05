@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 public class ResonantGuard : HeldItemBase
@@ -13,6 +14,13 @@ public class ResonantGuard : HeldItemBase
     private void OnDamageDealt(ulong attackedID, DamageInfo damage)
     {
         if (cooldown > 0f)
+        {
+            return;
+        }
+
+        Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackedID].GetComponent<Pokemon>();
+
+        if (attackedPokemon.Type != PokemonType.Player)
         {
             return;
         }

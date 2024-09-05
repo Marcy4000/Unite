@@ -16,6 +16,7 @@ public class CurrentItemsMenu : MonoBehaviour
     [SerializeField] private HeldItemPicker heldItemPicker;
 
     private List<HeldItemInfo> selectedHeldItems;
+    private List<Toggle> toggles = new List<Toggle>();
 
     public List<HeldItemInfo> SelectedHeldItems => selectedHeldItems;
 
@@ -35,6 +36,8 @@ public class CurrentItemsMenu : MonoBehaviour
             Destroy(child.gameObject);
         }
 
+        toggles.Clear();
+
         for (int i = 0; i < heldItems.Count; i++)
         {
             var obj = Instantiate(itemIconPrefab, iconHolder.transform);
@@ -44,6 +47,8 @@ public class CurrentItemsMenu : MonoBehaviour
             itemIcon.InitializeItem(heldItems[i]);
 
             itemIcon.Toggle.onValueChanged.AddListener(OnSelectedHeldItemChange);
+
+            toggles.Add(itemIcon.Toggle);
         }
 
         StartCoroutine(InitializeItemPicker(heldItems[0]));
@@ -105,6 +110,21 @@ public class CurrentItemsMenu : MonoBehaviour
         selectedIcon.InitializeItem(itemInfo);
         OnItemsChanged?.Invoke();
         OnSelectedHeldItemChange(true);
+
+        if (itemInfo.heldItemID != AvailableHeldItems.None)
+        {
+            SelectNextSlot();
+        }
+    }
+
+    private void SelectNextSlot()
+    {
+        int acriveToggleIndex = iconHolder.GetFirstActiveToggle().transform.GetSiblingIndex();
+
+        if (acriveToggleIndex + 1 < iconHolder.transform.childCount)
+        {
+            toggles[acriveToggleIndex + 1].isOn = true;
+        }
     }
 
     private bool CheckForDuplicate(HeldItemInfo itemInfo)

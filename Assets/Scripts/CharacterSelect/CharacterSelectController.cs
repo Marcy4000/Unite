@@ -16,8 +16,8 @@ public class CharacterSelectController : NetworkBehaviour
     private const float SELECTION_TIME = 10f;
     private const float PREVIEW_TIME = 5f;
 #else
-    private const float SELECTION_TIME = 35f;
-    private const float PREVIEW_TIME = 15f;
+    private const float SELECTION_TIME = 30f;
+    private const float PREVIEW_TIME = 20f;
 #endif
     private const bool ALLOW_DUPLICATE_CHARACTERS = false;
 
@@ -100,6 +100,7 @@ public class CharacterSelectController : NetworkBehaviour
                 mainScreen.SetActive(false);
                 previewScreenUI.gameObject.SetActive(true);
                 previewScreenUI.InitializeUI();
+                AudioManager.PlaySound(DefaultAudioSounds.Home_ui_dressingroom);
             }
         };
 

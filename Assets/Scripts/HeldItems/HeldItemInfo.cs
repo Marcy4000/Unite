@@ -1,5 +1,7 @@
 using UnityEngine;
 
+public enum HeldItemCategory : byte { Attack, Defense, Support, Utility }
+
 [CreateAssetMenu(fileName = "Held Item", menuName = "Create New Held Item")]
 public class HeldItemInfo : ScriptableObject
 {
@@ -7,6 +9,10 @@ public class HeldItemInfo : ScriptableObject
 
     [TextArea(3, 10)]
     public string description;
+
+    [Space]
+    public HeldItemCategory heldItemCategory;
+    public DamageType damageType;
 
     public AvailableHeldItems heldItemID;
 

@@ -1089,7 +1089,7 @@ namespace UI.ThreeDimensional
 
             _targetCamera.transform.localPosition = Vector3.zero + new Vector3(0, 0, CameraDistance);
 
-            if (AlwaysLookAtTarget)
+            if (AlwaysLookAtTarget && _target != null)
             {
                 Vector3 lookOffset = new Vector3(LookTargetOffset.x, LookTargetOffset.y, 0);
                 _targetCamera.transform.LookAt(_target.position+lookOffset);

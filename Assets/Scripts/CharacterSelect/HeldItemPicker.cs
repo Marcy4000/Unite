@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +10,7 @@ public class HeldItemPicker : MonoBehaviour
     [SerializeField] private TMP_Text itemName, itemDescription;
 
     [SerializeField] private ToggleGroup toggleGroup;
+    [SerializeField] private TMP_Dropdown categoryDropdown;
 
     public System.Action<HeldItemInfo> OnItemPicked;
 
@@ -24,6 +23,24 @@ public class HeldItemPicker : MonoBehaviour
 
         foreach (var item in CharactersList.Instance.HeldItems)
         {
+            if (categoryDropdown.value != 0 && item.heldItemID != AvailableHeldItems.None)
+            {
+                if (categoryDropdown.value >= 1 && categoryDropdown.value <= 2)
+                {
+                    if ((int)item.damageType != (categoryDropdown.value - 1))
+                    {
+                        continue;
+                    }
+                }
+                else if (categoryDropdown.value > 2)
+                {
+                    if ((int)item.heldItemCategory != (categoryDropdown.value - 3))
+                    {
+                        continue;
+                    }
+                }
+            }
+
             var obj = Instantiate(itemIconPrefab, iconHolder);
             var itemIcon = obj.GetComponent<HeldItemIcon>();
 
