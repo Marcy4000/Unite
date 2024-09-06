@@ -21,8 +21,10 @@ public class GlaceBasicAtk : BasicAttackBase
         base.Initialize(manager);
         range = 7f;
         attackPrefab = "Assets/Prefabs/Objects/BasicAtk/GlaceonBasicAtk.prefab";
-        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.39f, 4, 70, DamageType.Special, DamageProprieties.IsBasicAttack);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.47f, 5, 90, DamageType.Special, DamageProprieties.IsBasicAttack);
+        DamageProprieties proprieties = DamageProprieties.IsBasicAttack;
+        proprieties |= DamageProprieties.CanCrit;
+        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.39f, 4, 70, DamageType.Special, proprieties);
+        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.47f, 5, 90, DamageType.Special, proprieties);
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
     }
 

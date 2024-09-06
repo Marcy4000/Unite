@@ -617,6 +617,7 @@ Transform:
   - {fileID: 2373850219768659705}
   - {fileID: 1577129847259648908}
   - {fileID: 8595658182664552546}
+  - {fileID: 7923173746722179037}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7146186341011684014
@@ -662,6 +663,9 @@ MonoBehaviour:
   orangeModel: {fileID: 8875436615242302182}
   blueModel: {fileID: 8844327073734446134}
   visionController: {fileID: 1110153990479030922}
+  goalZoneShield: {fileID: 1890985525798682004}
+  orangeColor: {r: 0.7490196, g: 0.27974993, b: 0.095394015, a: 1}
+  blueColor: {r: 0.24460557, g: 0.07419533, b: 0.7490196, a: 1}
   onGoalZoneDestroyedUnityEvent:
     m_PersistentCalls:
       m_Calls: []
@@ -944,6 +948,111 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d533458e97f99140b4f11198437fd35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1001 &7673709311770419254
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5272365574644050205}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      propertyPath: m_Name
+      value: pref_fx_scorearea_bigshield02_blue_lv1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b1aed7d5fab16504597944f8ed5682ee,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1890985525798682004}
+  m_SourcePrefab: {fileID: 100100000, guid: b1aed7d5fab16504597944f8ed5682ee, type: 3}
+--- !u!23 &5949310571391625255 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -5121068281143703535, guid: b1aed7d5fab16504597944f8ed5682ee,
+    type: 3}
+  m_PrefabInstance: {fileID: 7673709311770419254}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7403658472868535655 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: b1aed7d5fab16504597944f8ed5682ee,
+    type: 3}
+  m_PrefabInstance: {fileID: 7673709311770419254}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1890985525798682004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7403658472868535655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fa6dd050aa638d4690890ad0f1e5600, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  shieldRenderer: {fileID: 5949310571391625255}
+  shieldSpeed: 0.5
+  shieldColor: {r: 0, g: 0, b: 0, a: 0}
+--- !u!4 &7923173746722179037 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b1aed7d5fab16504597944f8ed5682ee,
+    type: 3}
+  m_PrefabInstance: {fileID: 7673709311770419254}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8537757596927586663
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1006,6 +1115,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: pref_TPC_v2_NeutralScoreArea03_purple_idle_lv1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: e31567d6d3cb1fa449874da5b490cb46,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

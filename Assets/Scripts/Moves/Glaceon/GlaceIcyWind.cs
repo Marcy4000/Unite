@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GlaceIcyWind : MoveBase
 {
-    private DamageInfo icicleDamage = new DamageInfo(0, 0.20f, 2, 35, DamageType.Special);
+    private DamageInfo icicleDamage = new DamageInfo(0, 0.20f, 2, 35, DamageType.Special, DamageProprieties.CanCrit);
 
     private string attackPrefab = "Assets/Prefabs/Objects/BasicAtk/GlaceonBasicAtk.prefab";
 

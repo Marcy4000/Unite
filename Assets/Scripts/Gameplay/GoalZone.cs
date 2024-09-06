@@ -24,6 +24,11 @@ public class GoalZone : NetworkBehaviour
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private GameObject orangeModel, blueModel;
     [SerializeField] private VisionController visionController;
+    [SerializeField] private GoalZoneShield goalZoneShield;
+
+    [Space]
+    [SerializeField] [ColorUsage(true, true)] private Color orangeColor;
+    [SerializeField] [ColorUsage(true, true)] private Color blueColor;
 
     [Space]
     // Used to trigger farm when goal is destroyed, use the normal event for c# code
@@ -72,6 +77,8 @@ public class GoalZone : NetworkBehaviour
 
         MinimapManager.Instance.CreateGoalzoneIcon(this);
 
+        goalZoneShield.SetShieldColor(orangeTeam ? orangeColor : blueColor);
+
         if (goalTier == 0)
         {
             scoreText.gameObject.SetActive(false);
@@ -98,6 +105,17 @@ public class GoalZone : NetworkBehaviour
             {
                 playerManager.Pokemon.AddStatChange(statChange);
             }
+
+            GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
+
+            if (alliesInGoal >= 0)
+            {
+                goalZoneShield.ShowShield();
+            }
+            else
+            {
+                goalZoneShield.HideShield();
+            }
         }
     }
 
@@ -114,6 +132,17 @@ public class GoalZone : NetworkBehaviour
             }
             playerManager.GoalZone = null;
             playerManagerList.Remove(playerManager);
+
+            GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
+
+            if (alliesInGoal >= 0)
+            {
+                goalZoneShield.ShowShield();
+            }
+            else
+            {
+                goalZoneShield.HideShield();
+            }
         }
     }
 
@@ -241,7 +270,10 @@ public class GoalZone : NetworkBehaviour
             return;
         }
 
-        weakenTime.Value -= Time.deltaTime;
+        if (weakenTime.Value > 0)
+        {
+            weakenTime.Value -= Time.deltaTime;
+        }
 
         if (goalStatus.Value == GoalStatus.Weakened && weakenTime.Value <= 0)
         {
