@@ -26,12 +26,18 @@ public class SettlementManager : MonoBehaviour
     [SerializeField] private Sprite[] orangeTeamResults;
 
     [SerializeField] private Button returnLobbyButton;
+    [SerializeField] private GameObject mainUI;
+
+    [SerializeField] private SettlementTeamModels settlementTeamModels;
+    [SerializeField] private TeamPlayersMenu teamPlayersMenu;
 
     private AsyncOperationHandle<Sprite> blueScoreboardHandle;
     private AsyncOperationHandle<Sprite> orangeScoreboardHandle;
 
     private int blueScoreValue;
     private int orangeScoreValue;
+
+    private bool gameWon;
 
     private void Start()
     {
@@ -50,6 +56,9 @@ public class SettlementManager : MonoBehaviour
         });
 
         InitializeScoreboards();
+
+        settlementTeamModels.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam()));
+        teamPlayersMenu.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam()));
 
         LoadingScreen.Instance.HideGenericLoadingScreen();
 
@@ -87,7 +96,6 @@ public class SettlementManager : MonoBehaviour
     {
         resultBarsUI.gameObject.SetActive(true);
         gameInfoUI.gameObject.SetActive(false);
-
 
         blueScoreValue = LobbyController.Instance.GameResults.BlueTeamScore;
         orangeScoreValue = LobbyController.Instance.GameResults.OrangeTeamScore;
@@ -192,7 +200,7 @@ public class SettlementManager : MonoBehaviour
         orangeScoreText.text = orangeScoreValue.ToString();
 
         bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
-        bool gameWon = LobbyController.Instance.GameResults.BlueTeamWon == !localPlayerTeam;
+        gameWon = LobbyController.Instance.GameResults.BlueTeamWon == !localPlayerTeam;
         StartCoroutine(PlayResultSound(gameWon));
     }
 
@@ -224,6 +232,15 @@ public class SettlementManager : MonoBehaviour
                 blueResultText.sprite = blueTeamResults[1];
             }
         }
+
+        if (!LobbyController.Instance.GetLocalPlayerTeam())
+        {
+            teamPlayersMenu.SetGameResultImage(blueResultText.sprite);
+        }
+        else
+        {
+            teamPlayersMenu.SetGameResultImage(orangeResultText.sprite);
+        }
     }
 
     private IEnumerator PlayResultSound(bool gameWon)
@@ -250,5 +267,14 @@ public class SettlementManager : MonoBehaviour
         }
 
         AudioManager.PlayMusic(DefaultAudioMusic.GameEnd, true);
+    }
+
+    public void GoToNextMenu()
+    {
+        mainUI.SetActive(false);
+        teamPlayersMenu.ShowMenu();
+
+        if (gameWon)
+            settlementTeamModels.PlayVictoryAnimations();
     }
 }

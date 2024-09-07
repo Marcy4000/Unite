@@ -1,11 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Services.Lobbies.Models;
-using Unity.Services.Lobbies;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using System.Linq;
 
 public class TrainerModel : MonoBehaviour
 {
@@ -21,17 +20,23 @@ public class TrainerModel : MonoBehaviour
     [SerializeField] private Transform[] clothingHoldersMale;
     [SerializeField] private Transform[] clothingHoldersFemale;
 
+    [SerializeField] private Color32[] skinColors; 
+
     private Transform[] clothingHolders => isMale ? clothingHoldersMale : clothingHoldersFemale;
     private Animator activeAnimator => isMale ? maleAnimator : femaleAnimator;
 
     private BoneSync activeBoneSync;
 
-    public bool IsMale => isMale;
-    public Animator ActiveAnimator => activeAnimator;
-
     private string assignedPlayer = "";
     private PlayerClothesInfo lastPlayerClothesInfo = new PlayerClothesInfo();
     private PlayerClothesInfo playerClothesInfo = new PlayerClothesInfo();
+
+    public bool IsMale => isMale;
+    public Animator ActiveAnimator => activeAnimator;
+
+    public System.Action onClothesInitialized;
+
+    public PlayerClothesInfo PlayerClothesInfo => playerClothesInfo;
 
     private void OnEnable()
     {
@@ -110,6 +115,12 @@ public class TrainerModel : MonoBehaviour
             // Instantiate the clothing item asynchronously
             var handle = Addressables.InstantiateAsync(item.prefab, holder);
 
+            handle.Completed += (op) =>
+            {
+                var result = op.Result;
+                result.SetActive(false);
+            };
+
             yield return handle;
 
             if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null)
@@ -121,6 +132,28 @@ public class TrainerModel : MonoBehaviour
                 UpdateObjectLayer(result, holder.gameObject.layer);
                 bonesToSync.Add(GetChildToSync(result.transform));
                 instantiatedClothes.Add(result);
+
+                var meshRenderer = result.GetComponentInChildren<SkinnedMeshRenderer>();
+
+                foreach (var material in meshRenderer.materials)
+                {
+                    if (material.name.Contains("body_yellow") || material.name.Contains("head_yellow") || material.name.Contains("ow_yellow") || material.name.Contains("0000hand"))
+                    {
+                        material.SetColor("_BaseColor", skinColors[info.SkinColor % skinColors.Length]);
+                    }
+                    else if (material.name.Contains("hair") || material.name.Contains("00000shadow"))
+                    {
+                        material.SetColor("_BaseColor", info.HairColor);
+                    }
+                    else if (material.name.Contains("eye00"))
+                    {
+                        material.SetColor("_BaseColor", info.EyeColor);
+                    }
+
+                    material.SetFloat("_Metallic", 0.0f);
+                    material.SetFloat("_Smoothness", 0.1f);
+                }
+
                 result.SetActive(false);  // Start inactive until bones are synced
             }
             else
@@ -153,8 +186,55 @@ public class TrainerModel : MonoBehaviour
         }
 
         loadingText.SetActive(false);
+
+        onClothesInitialized?.Invoke();
     }
 
+    public void UpdateMaterialColors(PlayerClothesInfo info)
+    {
+        playerClothesInfo = info;
+
+        for (int i = 0; i < clothingHolders.Length; i++)
+        {
+            var holder = clothingHolders[i];
+
+            if (holder == null)
+            {
+                Debug.LogError($"Clothing holder at index {i} is null. Skipping.");
+                continue;
+            }
+
+            foreach (Transform child in holder)
+            {
+                if (child == null)
+                {
+                    Debug.LogError("Child transform is null. Skipping.");
+                    continue;
+                }
+
+                var meshRenderer = child.GetComponentInChildren<SkinnedMeshRenderer>();
+
+                foreach (var material in meshRenderer.materials)
+                {
+                    if (material.name.Contains("body_yellow") || material.name.Contains("head_yellow") || material.name.Contains("ow_yellow") || material.name.Contains("0000hand"))
+                    {
+                        material.SetColor("_BaseColor", skinColors[playerClothesInfo.SkinColor % skinColors.Length]);
+                    }
+                    else if (material.name.Contains("hair") || material.name.Contains("00000shadow"))
+                    {
+                        material.SetColor("_BaseColor", playerClothesInfo.HairColor);
+                    }
+                    else if (material.name.Contains("eye00"))
+                    {
+                        material.SetColor("_BaseColor", playerClothesInfo.EyeColor);
+                    }
+
+                    material.SetFloat("_Metallic", 0.0f);
+                    material.SetFloat("_Smoothness", 0.1f);
+                }
+            }
+        }
+    }
 
     public Transform GetChildToSync(Transform parent)
     {

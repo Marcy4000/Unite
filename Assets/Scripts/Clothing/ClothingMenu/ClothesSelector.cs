@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UI.ThreeDimensional;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,15 +16,23 @@ public class ClothesSelector : MonoBehaviour
 
     [SerializeField] private Toggle[] genderToggles;
 
+    [SerializeField] private GameObject colorPickersHolder;
+    [SerializeField] private FlexibleColorPicker hairColor, eyeColor;
+    [SerializeField] private TMP_Dropdown skinColor;
+
     private List<Toggle> menuToggles = new List<Toggle>();
 
     private TrainerModel trainerModel;
 
     private ClothingType currentMenu;
 
+    private bool isShowingColorPickers;
+
     private void Start()
     {
-        genderToggles[GetPlayerClothesInfo().IsMale ? 0 : 1].isOn = true;
+        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
+
+        genderToggles[playerClothesInfo.IsMale ? 0 : 1].isOn = true;
 
         foreach (var toggle in genderToggles)
         {
@@ -34,13 +43,26 @@ public class ClothesSelector : MonoBehaviour
             });
         }
 
+        hairColor.onColorChange.AddListener(ChangeHairColor);
+        eyeColor.onColorChange.AddListener(ChangeEyeColor);
+
+        hairColor.SetColorNoAlpha(playerClothesInfo.HairColor);
+        eyeColor.SetColorNoAlpha(playerClothesInfo.EyeColor);
+
+        skinColor.value = playerClothesInfo.SkinColor;
+
+        skinColor.onValueChanged.AddListener(ChangeSkinColor);
+
         clothesMenuSelector.OnSelectedMenuChanged += (type) =>
         {
             currentMenu = type;
             InitializeMenuItems(GetPlayerClothesInfo().IsMale);
         };
 
-        InitializeMenuItems(GetPlayerClothesInfo().IsMale);
+        isShowingColorPickers = false;
+        colorPickersHolder.SetActive(isShowingColorPickers);
+
+        InitializeMenuItems(playerClothesInfo.IsMale);
     }
 
     private void OnEnable()
@@ -149,5 +171,47 @@ public class ClothesSelector : MonoBehaviour
     {
         PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
         PlayerPrefs.SetString("ClothingInfo", playerClothesInfo.Serialize());
+    }
+
+    private void ChangeHairColor(Color color)
+    {
+        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
+        playerClothesInfo.HairColor = color;
+        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+
+        if (trainerModel != null)
+            trainerModel.UpdateMaterialColors(playerClothesInfo);
+    }
+
+    private void ChangeEyeColor(Color color)
+    {
+        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
+        playerClothesInfo.EyeColor = color;
+        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+
+        if (trainerModel != null)
+            trainerModel.UpdateMaterialColors(playerClothesInfo);
+    }
+
+    private void ChangeSkinColor(int index)
+    {
+        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
+        playerClothesInfo.SkinColor = (byte)index;
+        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+
+        if (trainerModel != null)
+            trainerModel.UpdateMaterialColors(playerClothesInfo);
+    }
+
+    public void ToggleColorPickers()
+    {
+        isShowingColorPickers = !isShowingColorPickers;
+        colorPickersHolder.SetActive(isShowingColorPickers);
+    }
+
+    public void CloseColorPickers()
+    {
+        isShowingColorPickers = false;
+        colorPickersHolder.SetActive(isShowingColorPickers);
     }
 }

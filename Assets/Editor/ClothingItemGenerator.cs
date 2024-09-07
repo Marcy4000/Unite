@@ -113,7 +113,19 @@ public class ClothingItemGenerator : MonoBehaviour
                             clothingItem.prefab = new AssetReferenceGameObject(guid);
 
                             string genderString = isMale ? "male" : "female";
-                            string iconPath = $"t_{folderMapping.Key}_{genderString}_{modelId}_";
+
+                            string folderMappingKey = folderMapping.Key;
+
+                            if (folderMappingKey.Equals("Outwear"))
+                            {
+                                folderMappingKey = "Outerwear";
+                            }
+                            else if (folderMappingKey.Equals("Sock"))
+                            {
+                                folderMappingKey = "Socks";
+                            }
+
+                            string iconPath = $"t_{folderMappingKey}_{genderString}_{modelId}_";
 
                             foreach (string file in Directory.GetFiles(clothesIconsPath))
                             {
@@ -215,11 +227,13 @@ public class ClothingItemGenerator : MonoBehaviour
 
                         Debug.Log($"Name: {name}, Type: {clothingTypeStr}, isMale: {isMale}, Model ID: {modelId}");
 
-                        if (clothingTypeStr.Equals("Outerwear"))
+                        var clothingTypeStrLower = clothingTypeStr.ToLower();
+
+                        if (clothingTypeStrLower.Equals("outerwear"))
                         {
                             clothingTypeStr = "Outwear";
                         }
-                        else if (clothingTypeStr.Equals("Socks"))
+                        else if (clothingTypeStrLower.Equals("socks"))
                         {
                             clothingTypeStr = "Sock";
                         }

@@ -18,8 +18,10 @@ public class PlayerHeadUI : MonoBehaviour
 
     public void InitializeHead(PlayerClothesInfo playerClothesInfo)
     {
-        headImage.sprite = playerClothesInfo.IsMale ? maleHeads[playerClothesInfo.Face] : femaleHeads[playerClothesInfo.Face];
+        headImage.sprite = playerClothesInfo.IsMale ? maleHeads[playerClothesInfo.SkinColor] : femaleHeads[playerClothesInfo.SkinColor];
         hairImage.sprite = playerClothesInfo.IsMale ? maleHairs[playerClothesInfo.Hair] : femaleHairs[playerClothesInfo.Hair];
         eyesImage.sprite = playerClothesInfo.IsMale ? maleEyes[playerClothesInfo.Face] : femaleEyes[playerClothesInfo.Face];
+
+        hairImage.color = playerClothesInfo.HairColor;
     }
 }

@@ -1,5 +1,5 @@
 using System;
-using System.Collections;
+using UnityEngine;
 
 public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
 {
@@ -14,6 +14,10 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
     public byte Socks;
 
     private byte _shoes;
+
+    public Color32 HairColor;
+    public Color32 EyeColor;
+    public byte SkinColor;
 
     public bool IsMale
     {
@@ -71,7 +75,25 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
 
     public string Serialize()
     {
-        byte[] data = new byte[] { Hat, Hair, Face, Eyes, Shirt, Overwear, Gloves, Pants, Socks, _shoes };
+        byte[] data = new byte[17];
+        data[0] = Hat;
+        data[1] = Hair;
+        data[2] = Face;
+        data[3] = Eyes;
+        data[4] = Shirt;
+        data[5] = Overwear;
+        data[6] = Gloves;
+        data[7] = Pants;
+        data[8] = Socks;
+        data[9] = _shoes;
+        data[10] = HairColor.r;
+        data[11] = HairColor.g;
+        data[12] = HairColor.b;
+        data[13] = EyeColor.r;
+        data[14] = EyeColor.g;
+        data[15] = EyeColor.b;
+        data[16] = SkinColor;
+
         return Convert.ToBase64String(data);
     }
 
@@ -79,7 +101,7 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
     {
         byte[] bytes = Convert.FromBase64String(data);
 
-        if (bytes.Length != 10)
+        if (bytes.Length != 17)
             throw new ArgumentException("Invalid data length. Expected 10 bytes.");
 
         return new PlayerClothesInfo
@@ -93,7 +115,10 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
             Gloves = bytes[6],
             Pants = bytes[7],
             Socks = bytes[8],
-            _shoes = bytes[9]
+            _shoes = bytes[9],
+            HairColor = new Color32(bytes[10], bytes[11], bytes[12], 255),
+            EyeColor = new Color32(bytes[13], bytes[14], bytes[15], 255),
+            SkinColor = bytes[16]
         };
     }
 
@@ -108,6 +133,9 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
                Gloves == other.Gloves &&
                Pants == other.Pants &&
                Socks == other.Socks &&
-               _shoes == other._shoes;
+               _shoes == other._shoes &&
+               HairColor.Equals(other.HairColor) &&
+               EyeColor.Equals(other.EyeColor) &&
+               SkinColor == other.SkinColor;
     }
 }
