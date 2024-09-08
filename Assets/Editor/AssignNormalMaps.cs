@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -51,8 +52,17 @@ public class AssignNormalMaps : EditorWindow
         foreach (var guid in modelGuids)
         {
             string modelPath = AssetDatabase.GUIDToAssetPath(guid);
-            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            string destinationPath = Path.Combine(Path.GetDirectoryName(modelPath), "ExtractedMaterials");
 
+            if (!Directory.Exists(destinationPath))
+            {
+                Directory.CreateDirectory(destinationPath);
+            }
+
+            // Extract materials before processing
+            ExtractMaterials(modelPath, destinationPath);
+
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (model == null) continue;
 
             // Find all materials used by the model
@@ -67,6 +77,32 @@ public class AssignNormalMaps : EditorWindow
             }
         }
     }
+
+
+    public static void ExtractMaterials(string assetPath, string destinationPath)
+    {
+        HashSet<string> hashSet = new HashSet<string>();
+        IEnumerable<Object> enumerable = from x in AssetDatabase.LoadAllAssetsAtPath(assetPath)
+                                         where x.GetType() == typeof(Material)
+                                         select x;
+        foreach (Object item in enumerable)
+        {
+            string path = System.IO.Path.Combine(destinationPath, item.name) + ".mat";
+            path = AssetDatabase.GenerateUniqueAssetPath(path);
+            string value = AssetDatabase.ExtractAsset(item, path);
+            if (string.IsNullOrEmpty(value))
+            {
+                hashSet.Add(assetPath);
+            }
+        }
+
+        foreach (string item2 in hashSet)
+        {
+            AssetDatabase.WriteImportSettingsIfDirty(item2);
+            AssetDatabase.ImportAsset(item2, ImportAssetOptions.ForceUpdate);
+        }
+    }
+
 
     private static void AssignNormalMapToMaterial(Material material, string folderPath)
     {
