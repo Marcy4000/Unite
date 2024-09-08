@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
+using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 
 public class SettlementManager : MonoBehaviour
 {
@@ -26,6 +27,7 @@ public class SettlementManager : MonoBehaviour
     [SerializeField] private Sprite[] orangeTeamResults;
 
     [SerializeField] private Button returnLobbyButton;
+    [SerializeField] private GameObject continueButton;
     [SerializeField] private GameObject mainUI;
 
     [SerializeField] private SettlementTeamModels settlementTeamModels;
@@ -39,7 +41,7 @@ public class SettlementManager : MonoBehaviour
 
     private bool gameWon;
 
-    private void Start()
+    private IEnumerator Start()
     {
         gameInfoUI.Initialize();
         battleInfoUI.Initialize(LobbyController.Instance.GameResults);
@@ -55,35 +57,39 @@ public class SettlementManager : MonoBehaviour
             LobbyController.Instance.ReturnToLobby(true);
         });
 
-        InitializeScoreboards();
-
         settlementTeamModels.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam()));
         teamPlayersMenu.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam()));
+
+        yield return InitializeScoreboards();
 
         LoadingScreen.Instance.HideGenericLoadingScreen();
 
         ShowScore();
     }
 
-    private void InitializeScoreboards()
+    private IEnumerator InitializeScoreboards()
     {
         MapInfo currentMap = CharactersList.Instance.GetCurrentLobbyMap();
 
         blueScoreboardHandle = Addressables.LoadAssetAsync<Sprite>(currentMap.mapResultsBlue);
 
-        blueScoreboardHandle.Completed += handle =>
+        yield return blueScoreboardHandle;
+
+        if (blueScoreboardHandle.Status == AsyncOperationStatus.Succeeded)
         {
             blueScoreboard.gameObject.SetActive(true);
-            blueScoreboard.sprite = handle.Result;
-        };
+            blueScoreboard.sprite = blueScoreboardHandle.Result;
+        }
 
         orangeScoreboardHandle = Addressables.LoadAssetAsync<Sprite>(currentMap.mapResultsOrange);
 
-        orangeScoreboardHandle.Completed += handle =>
+        yield return orangeScoreboardHandle;
+
+        if (orangeScoreboardHandle.Status == AsyncOperationStatus.Succeeded)
         {
             orangeScoreboard.gameObject.SetActive(true);
-            orangeScoreboard.sprite = handle.Result;
-        };
+            orangeScoreboard.sprite = orangeScoreboardHandle.Result;
+        }
     }
 
     private void OnDestroy()
@@ -96,6 +102,7 @@ public class SettlementManager : MonoBehaviour
     {
         resultBarsUI.gameObject.SetActive(true);
         gameInfoUI.gameObject.SetActive(false);
+        continueButton.SetActive(false);
 
         blueScoreValue = LobbyController.Instance.GameResults.BlueTeamScore;
         orangeScoreValue = LobbyController.Instance.GameResults.OrangeTeamScore;
@@ -191,6 +198,8 @@ public class SettlementManager : MonoBehaviour
 
         blueResultText.gameObject.SetActive(true);
         orangeResultText.gameObject.SetActive(true);
+
+        continueButton.SetActive(true);
 
         UpdateVictoryText();
 

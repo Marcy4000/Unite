@@ -9,7 +9,7 @@ public class ClothesSelector : MonoBehaviour
 {
     [SerializeField] private GameObject selectionPrefab;
 
-    [SerializeField] private Transform selectionHolder;
+    [SerializeField] private ScrollRect scrollRect;
     [SerializeField] private ToggleGroup selectionToggleGroup;
     [SerializeField] private UIObject3D trainerModelUI;
     [SerializeField] private ClothesMenuSelector clothesMenuSelector;
@@ -95,16 +95,17 @@ public class ClothesSelector : MonoBehaviour
             toggle.onValueChanged.RemoveAllListeners();
         }
 
-        foreach (Transform child in selectionHolder)
+        foreach (Transform child in scrollRect.content)
         {
             Destroy(child.gameObject);
         }
 
         menuToggles.Clear();
+        scrollRect.verticalNormalizedPosition = 1;
 
         foreach (var item in ClothesList.Instance.GetAvailableClothesOfType(currentMenu, isMale))
         {
-            var selectionItem = Instantiate(selectionPrefab, selectionHolder).GetComponent<ClothingSelectionItem>();
+            var selectionItem = Instantiate(selectionPrefab, scrollRect.content).GetComponent<ClothingSelectionItem>();
             selectionItem.SetItem(item);
             selectionItem.ItemToggle.group = selectionToggleGroup;
             menuToggles.Add(selectionItem.ItemToggle);

@@ -130,7 +130,16 @@ public class LobbyController : MonoBehaviour
 
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
 
-            PlayerClothesInfo clothes = PlayerPrefs.HasKey("ClothingInfo") ? PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo")) : new PlayerClothesInfo();
+            PlayerClothesInfo clothes;
+
+            try
+            {
+                clothes = PlayerPrefs.HasKey("ClothingInfo") ? PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo")) : new PlayerClothesInfo();
+            }
+            catch (Exception)
+            {
+                clothes = new PlayerClothesInfo();
+            }
 
             localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>
             {

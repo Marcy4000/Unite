@@ -133,25 +133,28 @@ public class TrainerModel : MonoBehaviour
                 bonesToSync.Add(GetChildToSync(result.transform));
                 instantiatedClothes.Add(result);
 
-                var meshRenderer = result.GetComponentInChildren<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer[] meshRenderers = result.GetComponentsInChildren<SkinnedMeshRenderer>();
 
-                foreach (var material in meshRenderer.materials)
+                foreach (var meshRenderer in meshRenderers)
                 {
-                    if (material.name.Contains("body_yellow") || material.name.Contains("head_yellow") || material.name.Contains("ow_yellow") || material.name.Contains("0000hand"))
+                    foreach (var material in meshRenderer.materials)
                     {
-                        material.SetColor("_BaseColor", skinColors[info.SkinColor % skinColors.Length]);
-                    }
-                    else if (material.name.Contains("hair") || material.name.Contains("00000shadow"))
-                    {
-                        material.SetColor("_BaseColor", info.HairColor);
-                    }
-                    else if (material.name.Contains("eye00"))
-                    {
-                        material.SetColor("_BaseColor", info.EyeColor);
-                    }
+                        if (material.name.Contains("body_yellow") || material.name.Contains("head_yellow") || material.name.Contains("ow_yellow") || material.name.Contains("0000hand"))
+                        {
+                            material.SetColor("_BaseColor", skinColors[info.SkinColor % skinColors.Length]);
+                        }
+                        else if (material.name.Contains("hair") || material.name.Contains("00000shadow"))
+                        {
+                            material.SetColor("_BaseColor", info.HairColor);
+                        }
+                        else if (material.name.Contains("eye00"))
+                        {
+                            material.SetColor("_BaseColor", info.EyeColor);
+                        }
 
-                    material.SetFloat("_Metallic", 0.0f);
-                    material.SetFloat("_Smoothness", 0.1f);
+                        material.SetFloat("_Metallic", 0.0f);
+                        material.SetFloat("_Smoothness", 0.1f);
+                    }
                 }
 
                 result.SetActive(false);  // Start inactive until bones are synced
@@ -212,25 +215,28 @@ public class TrainerModel : MonoBehaviour
                     continue;
                 }
 
-                var meshRenderer = child.GetComponentInChildren<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer[] meshRenderers = child.GetComponentsInChildren<SkinnedMeshRenderer>();
 
-                foreach (var material in meshRenderer.materials)
+                foreach (var meshRenderer in meshRenderers)
                 {
-                    if (material.name.Contains("body_yellow") || material.name.Contains("head_yellow") || material.name.Contains("ow_yellow") || material.name.Contains("0000hand"))
+                    foreach (var material in meshRenderer.materials)
                     {
-                        material.SetColor("_BaseColor", skinColors[playerClothesInfo.SkinColor % skinColors.Length]);
-                    }
-                    else if (material.name.Contains("hair") || material.name.Contains("00000shadow"))
-                    {
-                        material.SetColor("_BaseColor", playerClothesInfo.HairColor);
-                    }
-                    else if (material.name.Contains("eye00"))
-                    {
-                        material.SetColor("_BaseColor", playerClothesInfo.EyeColor);
-                    }
+                        if (material.name.Contains("body_yellow") || material.name.Contains("head_yellow") || material.name.Contains("ow_yellow") || material.name.Contains("0000hand"))
+                        {
+                            material.SetColor("_BaseColor", skinColors[info.SkinColor % skinColors.Length]);
+                        }
+                        else if (material.name.Contains("hair") || material.name.Contains("00000shadow"))
+                        {
+                            material.SetColor("_BaseColor", info.HairColor);
+                        }
+                        else if (material.name.Contains("eye00"))
+                        {
+                            material.SetColor("_BaseColor", info.EyeColor);
+                        }
 
-                    material.SetFloat("_Metallic", 0.0f);
-                    material.SetFloat("_Smoothness", 0.1f);
+                        material.SetFloat("_Metallic", 0.0f);
+                        material.SetFloat("_Smoothness", 0.1f);
+                    }
                 }
             }
         }
