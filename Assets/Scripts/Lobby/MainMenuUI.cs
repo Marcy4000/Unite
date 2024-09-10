@@ -47,7 +47,11 @@ public class MainMenuUI : MonoBehaviour
 
         AudioManager.PlayMusic(DefaultAudioMusic.LobbyTheme, true);
 
+        LoadingScreen.Instance.HideGenericLoadingScreen();
+
         ShowMainMenuUI();
+
+        UpdateTrainerModel();
     }
 
     public void ShowPlayerMenuUI()
@@ -86,7 +90,6 @@ public class MainMenuUI : MonoBehaviour
 
         lobbyUIs[0].SetActive(true);
         lobbyScenes[0].SetActive(true);
-        trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
     }
 
     public void ShowClothesMenu()
@@ -127,5 +130,10 @@ public class MainMenuUI : MonoBehaviour
     public void UpdatePartyScreenUI()
     {
         partyScreenUI.UpdatePlayers(LobbyController.Instance.Lobby);
+    }
+
+    public void UpdateTrainerModel()
+    {
+        trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
     }
 }

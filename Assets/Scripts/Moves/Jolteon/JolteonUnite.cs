@@ -175,29 +175,20 @@ public class JolteonUnite : MoveBase
                 continue;
             }
 
-            if (hit.collider.TryGetComponent(out PlayerManager player))
+            if (Aim.Instance.CanPokemonBeTargeted(hit.collider.gameObject, AimTarget.NonAlly, playerManager.OrangeTeam))
             {
-                if (player.OrangeTeam == playerManager.OrangeTeam || recentlyHitPokemon.Contains(player.Pokemon))
+                if (hit.collider.TryGetComponent(out Pokemon pokemon))
                 {
-                    continue;
-                }
+                    if (recentlyHitPokemon.Contains(pokemon))
+                    {
+                        continue;
+                    }
 
-                player.Pokemon.TakeDamage(dashDamage);
-                player.Pokemon.AddStatChange(speedDebuff);
-                recentlyHitPokemon.Add(player.Pokemon);
-                playerManager.StartCoroutine(RemoveFromRecentlyHit(player.Pokemon));
-            }
-            else if (hit.collider.TryGetComponent(out Pokemon pokemon))
-            {
-                if (recentlyHitPokemon.Contains(pokemon))
-                {
-                    continue;
+                    pokemon.TakeDamage(dashDamage);
+                    pokemon.AddStatChange(speedDebuff);
+                    recentlyHitPokemon.Add(pokemon);
+                    playerManager.StartCoroutine(RemoveFromRecentlyHit(pokemon));
                 }
-
-                pokemon.TakeDamage(dashDamage);
-                pokemon.AddStatChange(speedDebuff);
-                recentlyHitPokemon.Add(pokemon);
-                playerManager.StartCoroutine(RemoveFromRecentlyHit(pokemon));
             }
         }
     }

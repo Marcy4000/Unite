@@ -64,7 +64,7 @@ public class HeldItemPicker : MonoBehaviour
             var itemIcon = activeToggle.GetComponent<HeldItemIcon>();
 
             itemName.text = itemIcon.ItemInfo.heldItemName;
-            itemDescription.text = itemIcon.ItemInfo.description;
+            itemDescription.text = itemIcon.ItemInfo.Description;
         }
     }
 

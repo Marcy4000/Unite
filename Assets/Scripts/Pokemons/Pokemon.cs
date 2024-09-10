@@ -40,6 +40,8 @@ public class Pokemon : NetworkBehaviour
     private float outOfCombatTimer = 0;
     private NetworkVariable<bool> isOutOfCombat = new NetworkVariable<bool>();
 
+    private PokemonEvolution currentEvolution;
+
     public int CurrentHp { get { return currentHp.Value; } }
     public int ShieldHp { get { return GetShieldsAsInt(); } }
     public int CurrentLevel { get { return currentLevel.Value; } }
@@ -66,6 +68,8 @@ public class Pokemon : NetworkBehaviour
 
     public NetworkList<StatChange> StatChanges { get { return statChanges; } }
     public NetworkList<StatusEffect> StatusEffects { get { return statusEffects; } }
+
+    public PokemonEvolution CurrentEvolution { get { return currentEvolution; } }
 
     public event Action OnHpOrShieldChange;
     public event Action OnLevelChange;
@@ -1484,6 +1488,7 @@ public class Pokemon : NetworkBehaviour
         {
             Destroy(activeModel);
         }
+        currentEvolution = evolution;
         activeModel = Instantiate(evolution.newModel, transform.position, transform.rotation, transform);
         portrait = evolution.newSprite;
         OnEvolution?.Invoke();

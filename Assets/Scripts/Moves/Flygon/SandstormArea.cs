@@ -47,12 +47,9 @@ public class SandstormArea : NetworkBehaviour
                     continue;
                 }
 
-                if (pokemon.TryGetComponent(out PlayerManager player))
+                if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
-                    if (player.OrangeTeam == orangeTeam)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 pokemon.TakeDamage(damageInfo);

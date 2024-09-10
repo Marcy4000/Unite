@@ -10,9 +10,11 @@ using UnityEngine.UI;
 public class BootSceneController : MonoBehaviour
 {
     [SerializeField] private Button startButton;
+    [SerializeField] private Button clearCacheButton;
     [SerializeField] private TMP_InputField playerNameInputField;
     [SerializeField] private TMP_Text versionText;
     [SerializeField] private MessageBox downloadWindow;
+    [SerializeField] private GameObject hintIcon;
 
     private Announcement downloadAnnouncement = new Announcement
     {
@@ -40,13 +42,17 @@ public class BootSceneController : MonoBehaviour
         StartCoroutine(DownloadAssets());
 #else
         Addressables.InitializeAsync();
+        hintIcon.SetActive(true);
 #endif
     }
 
     private IEnumerator DownloadAssets()
     {
         startButton.interactable = false;
+        clearCacheButton.interactable = false;
         downloadWindow.Hide();
+
+        hintIcon.SetActive(true);
 
         yield return Addressables.InitializeAsync();
 
@@ -65,6 +71,8 @@ public class BootSceneController : MonoBehaviour
             yield return null;
         }
 
+        clearCacheButton.interactable = true;
+
         if (downloadHandle.Status != AsyncOperationStatus.Succeeded)
         {
             downloadAnnouncement.message = $"Download failed!\nPlease try clearing the cache and restarting the game\nError: {downloadHandle.OperationException.Message}";
@@ -76,6 +84,8 @@ public class BootSceneController : MonoBehaviour
         downloadAnnouncement.message = "Download complete!";
         downloadWindow.SetAnnouncement(downloadAnnouncement);
         Addressables.Release(downloadHandle); //Release the operation handle
+
+        hintIcon.SetActive(false);
     }
 
     public void ClearCache()

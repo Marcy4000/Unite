@@ -49,12 +49,9 @@ public class EarthquakeArea : NetworkBehaviour
 
             foreach (Collider col in colliders)
             {
-                if (col.TryGetComponent(out PlayerManager player))
+                if (!Aim.Instance.CanPokemonBeTargeted(col.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
-                    if (player.OrangeTeam == orangeTeam)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 if (col.TryGetComponent(out Pokemon pokemon))

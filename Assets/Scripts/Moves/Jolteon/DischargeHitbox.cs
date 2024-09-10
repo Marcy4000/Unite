@@ -61,23 +61,14 @@ public class DischargeHitbox : NetworkBehaviour
             return;
         }
 
-        if (other.TryGetComponent(out PlayerManager player))
+        if (Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, jolteon.OrangeTeam))
         {
-            if (player.OrangeTeam == jolteon.OrangeTeam)
+            if (other.TryGetComponent(out Pokemon pokemon))
             {
-                return;
-            }
-
-            if (!pokemonInTrigger.Contains(player.Pokemon))
-            {
-                pokemonInTrigger.Add(player.Pokemon);
-            }
-        }
-        else if (other.TryGetComponent(out Pokemon pokemon))
-        {
-            if (!pokemonInTrigger.Contains(pokemon))
-            {
-                pokemonInTrigger.Add(pokemon);
+                if (!pokemonInTrigger.Contains(pokemon))
+                {
+                    pokemonInTrigger.Add(pokemon);
+                }
             }
         }
     }

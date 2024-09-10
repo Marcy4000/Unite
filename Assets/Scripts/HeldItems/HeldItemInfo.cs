@@ -8,7 +8,21 @@ public class HeldItemInfo : ScriptableObject
     public string heldItemName;
 
     [TextArea(3, 10)]
-    public string description;
+    [SerializeField]
+    private string description;
+
+    public string Description
+    {
+        get
+        {
+            string desc = description;
+            foreach (HeldItemStatBoost boost in statBoosts)
+            {
+                desc += $"\n{boost.AffectedStat} +{boost.BoostAmount}{(boost.IsPercentage ? "%" : "")}";
+            }
+            return desc;
+        }
+    }
 
     [Space]
     public HeldItemCategory heldItemCategory;

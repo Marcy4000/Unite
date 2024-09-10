@@ -37,4 +37,12 @@ public class EvolutionMenu : MonoBehaviour
             }
         }
     }
+
+    private void OnDestroy()
+    {
+        foreach (Transform child in iconsHolder)
+        {
+            Destroy(child.gameObject);
+        }
+    }
 }

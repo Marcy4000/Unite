@@ -91,17 +91,12 @@ public class FreezeDryProjectile : NetworkBehaviour
             return;
         }
 
-        PlayerManager playerManager;
-        if (other.TryGetComponent(out playerManager))
+        if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
         {
-            if (playerManager.OrangeTeam == orangeTeam)
-            {
-                return;
-            }
+            return;
         }
 
-        Pokemon pokemon;
-        if (other.TryGetComponent(out pokemon))
+        if (other.TryGetComponent(out Pokemon pokemon))
         {
             GiveDamage();
         }

@@ -69,12 +69,9 @@ public class SupersonicHitbox : NetworkBehaviour
             return;
         }
 
-        if (pokemon.TryGetComponent(out PlayerManager player))
+        if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
         {
-            if (player.OrangeTeam == orangeTeam)
-            {
-                return;
-            }
+            return;
         }
 
         stunnedPokemons.Add(pokemon);

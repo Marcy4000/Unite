@@ -53,24 +53,9 @@ public class ElectroWebProjectile : NetworkBehaviour
             return;
         }
 
-        if (other.TryGetComponent(out PlayerManager player))
+        if (Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam) && other.TryGetComponent(out Pokemon pokemon))
         {
-            if (player.OrangeTeam == orangeTeam)
-            {
-                return;
-            }
-
-            if (!markedPokemons.Contains(player.Pokemon))
-            {
-                MarkPokemon(player.Pokemon);
-            }
-        }
-        else if (other.TryGetComponent(out Pokemon pokemon))
-        {
-            if (!markedPokemons.Contains(pokemon))
-            {
-                MarkPokemon(pokemon);
-            }
+            MarkPokemon(pokemon);
         }
     }
 

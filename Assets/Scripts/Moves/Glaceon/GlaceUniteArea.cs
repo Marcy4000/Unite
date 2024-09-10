@@ -86,15 +86,7 @@ public class GlaceUniteArea : NetworkBehaviour
                 yield return null;
             }
 
-            PlayerManager playerManager;
-            if (pokemon.TryGetComponent(out playerManager))
-            {
-                if (playerManager.OrangeTeam != orangeTeam)
-                {
-                    pokemon.TakeDamage(damageInfo);
-                }
-            }
-            else
+            if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 pokemon.TakeDamage(damageInfo);
             }
@@ -134,15 +126,7 @@ public class GlaceUniteArea : NetworkBehaviour
                     continue;
                 }
 
-                PlayerManager playerManager;
-                if (pokemon.TryGetComponent(out playerManager))
-                {
-                    if (playerManager.OrangeTeam != orangeTeam)
-                    {
-                        pokemon.AddStatChange(enemiesDebuff);
-                    }
-                }
-                else
+                if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
                     pokemon.AddStatChange(enemiesDebuff);
                 }

@@ -29,17 +29,12 @@ public class FlygonDigWarning : NetworkBehaviour
 
         foreach (Collider hit in colliders)
         {
-            if (hit.TryGetComponent(out PlayerManager player))
+            if (!Aim.Instance.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, orangeTeam))
             {
-                if (player.OrangeTeam == orangeTeam)
-                {
-                    continue;
-                }
-
-                player.Pokemon.TakeDamage(damageInfo);
-                player.Pokemon.AddStatChange(slow);
+                continue;
             }
-            else if (hit.TryGetComponent(out Pokemon pokemon))
+
+            if (hit.TryGetComponent(out Pokemon pokemon))
             {
                 pokemon.TakeDamage(damageInfo);
                 pokemon.AddStatChange(slow);

@@ -35,6 +35,8 @@ public static class PassiveDatabase
                 return new MarshadwPassive();
             case AvailablePassives.CresseliaPassive:
                 return new CresseliaPassive();
+            case AvailablePassives.EmboarPassive:
+                return new EmboarPassive();
             default:
                 return new EmptyPassive();
         }
@@ -52,5 +54,6 @@ public enum AvailablePassives
     FlygonPassive,
     MeowsticMPassive,
     MarshadowPassive,
-    CresseliaPassive
+    CresseliaPassive,
+    EmboarPassive
 }

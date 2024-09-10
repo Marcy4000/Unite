@@ -173,6 +173,21 @@ public static class MoveDatabase
             case AvailableMoves.CresseliaUnite:
                 return new CresseliaUnite();
 
+            case AvailableMoves.EmboarEmber:
+                return new EmboarEmber();
+            case AvailableMoves.EmboarSmog:
+                return new EmboarSmog();
+            case AvailableMoves.EmboarFirePledge:
+                return new EmboarFirePledge();
+            case AvailableMoves.EmboarReversal:
+                return new EmboarReversal();
+            case AvailableMoves.EmboarFlameCharge:
+                return new EmboarFlameCharge();
+            case AvailableMoves.EmboarHeatCrash:
+                return new EmboarHeatCrash();
+            case AvailableMoves.EmboarUnite:
+                return new EmboarUnite();
+
             default:
                 return null;
         }
@@ -253,4 +268,12 @@ public enum AvailableMoves : uint
     CresseliaLunarBlessing,
     CresseliaMoonlight,
     CresseliaUnite,
+
+    EmboarEmber,
+    EmboarSmog,
+    EmboarFirePledge,
+    EmboarReversal,
+    EmboarHeatCrash,
+    EmboarFlameCharge,
+    EmboarUnite,
 }

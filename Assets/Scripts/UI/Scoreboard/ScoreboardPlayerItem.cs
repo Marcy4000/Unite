@@ -22,7 +22,7 @@ public class ScoreboardPlayerItem : MonoBehaviour
         }
 
         playerName.text = player.LobbyPlayer.Data["PlayerName"].Value;
-        pokemonName.text = player.Pokemon.BaseStats.PokemonName;
+        pokemonName.text = player.Pokemon.CurrentEvolution.EvolutionName;
         playerLevel.text = $"{player.Pokemon.CurrentLevel+1}";
         kills.text = player.PlayerStats.kills.ToString();
         assists.text = player.PlayerStats.assists.ToString();
@@ -57,7 +57,7 @@ public class ScoreboardPlayerItem : MonoBehaviour
 
     public void UpdatePokemonInfo()
     {
-        pokemonName.text = player.Pokemon.BaseStats.PokemonName;
+        pokemonName.text = player.Pokemon.CurrentEvolution.EvolutionName;
         pokemonIcon.sprite = player.Pokemon.Portrait;
         playerLevel.text = $"{player.Pokemon.CurrentLevel + 1}";
     }

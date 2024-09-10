@@ -59,6 +59,8 @@ public static class BasicAttacksDatabase
                 return new MarshadowBasicAtk();
             case "cresselia":
                 return new CresseliaBasicAtk();
+            case "emboar":
+                return new EmboarBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

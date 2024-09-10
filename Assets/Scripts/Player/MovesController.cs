@@ -414,7 +414,7 @@ public class MovesController : NetworkBehaviour
 
     private void UpdateMoveUI(int index)
     {
-        bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned);
+        bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned) || moveStatuses[index].HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetMoveLock(index, showLock);
 
         if (moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
