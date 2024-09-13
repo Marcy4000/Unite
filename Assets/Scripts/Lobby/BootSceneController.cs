@@ -65,7 +65,8 @@ public class BootSceneController : MonoBehaviour
             if (percentageComplete > progress * 1.1) // Report at most every 10% or so
             {
                 progress = percentageComplete; // More accurate %
-                downloadAnnouncement.message = $"Downloading map assets... {string.Format("{0:0.00}", progress*100)}%\nPlease wait until the process is complete before playing";
+                downloadAnnouncement.message = $"Downloading map assets... {string.Format("{0:0.00}", progress*100)}%\nPlease wait until the process is complete before playing\n" +
+                $"Currently downloading: {downloadHandle.GetDownloadStatus().DownloadedBytes / (1024 * 1024)} MB / {downloadHandle.GetDownloadStatus().TotalBytes / (1024 * 1024)} MB";
                 downloadWindow.SetAnnouncement(downloadAnnouncement);
             }
             yield return null;

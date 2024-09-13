@@ -1,3 +1,4 @@
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
@@ -17,6 +18,12 @@ public class SurrenderTextbox : MonoBehaviour
     public void ShowSurrenderTextbox(bool yourTeamSurrendered)
     {
         surrenderTextbox.SetActive(true);
+        
+        var rectTransform = surrenderTextbox.GetComponent<RectTransform>();
+
+        rectTransform.anchoredPosition = new Vector2(0, -rectTransform.rect.height);
+        rectTransform.DOAnchorPosY(0, 0.5f).SetEase(Ease.OutBack);
+
         surrenderText.text = yourTeamSurrendered ? surrenderTextBlue : surrenderTextOrange;
     }
 }

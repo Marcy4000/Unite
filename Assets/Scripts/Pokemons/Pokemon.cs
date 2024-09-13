@@ -42,6 +42,9 @@ public class Pokemon : NetworkBehaviour
 
     private PokemonEvolution currentEvolution;
 
+    private NetworkVariable<int> killStreak = new NetworkVariable<int>();
+    private float killStreakTimer;
+
     public int CurrentHp { get { return currentHp.Value; } }
     public int ShieldHp { get { return GetShieldsAsInt(); } }
     public int CurrentLevel { get { return currentLevel.Value; } }
@@ -70,6 +73,8 @@ public class Pokemon : NetworkBehaviour
     public NetworkList<StatusEffect> StatusEffects { get { return statusEffects; } }
 
     public PokemonEvolution CurrentEvolution { get { return currentEvolution; } }
+
+    public int KillStreak { get { return killStreak.Value; } }
 
     public event Action OnHpOrShieldChange;
     public event Action OnLevelChange;
@@ -942,6 +947,15 @@ public class Pokemon : NetworkBehaviour
             }
 
             isOutOfCombat.Value = outOfCombatTimer < 0;
+
+            if (killStreakTimer > 0)
+            {
+                killStreakTimer -= Time.deltaTime;
+            }
+            else
+            {
+                killStreak.Value = 0;
+            }
         }
 
         if (!IsOwner)
@@ -1369,6 +1383,16 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     public void OnKilledPokemonRPC(ulong targetID)
     {
+        if (IsServer)
+        {
+            Pokemon killedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
+            if (killedPokemon.type == PokemonType.Player)
+            {
+                killStreak.Value = killStreak.Value + 1;
+                killStreakTimer = 5f;
+                killStreakTimer = 5f;
+            }
+        }
         OnOtherPokemonKilled?.Invoke(targetID);
     }
 

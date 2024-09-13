@@ -26,6 +26,7 @@ public class SettlementManager : MonoBehaviour
     [SerializeField] private Sprite[] orangeTeamResults;
 
     [SerializeField] private Button returnLobbyButton;
+    [SerializeField] private Button returnMainMenu;
     [SerializeField] private GameObject continueButton;
     [SerializeField] private GameObject mainUI;
 
@@ -50,10 +51,16 @@ public class SettlementManager : MonoBehaviour
         blueResultText.gameObject.SetActive(false);
         orangeResultText.gameObject.SetActive(false);
 
-        returnLobbyButton.onClick.AddListener(() =>
+        returnMainMenu.onClick.AddListener(() =>
         {
             AudioManager.StopMusic(DefaultAudioMusic.GameEnd);
             LobbyController.Instance.ReturnToLobby(true);
+        });
+
+        returnLobbyButton.onClick.AddListener(() =>
+        {
+            AudioManager.StopMusic(DefaultAudioMusic.GameEnd);
+            LobbyController.Instance.ReturnToHomeWithoutLeavingLobby();
         });
 
         settlementTeamModels.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam()));

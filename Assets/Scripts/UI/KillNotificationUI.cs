@@ -1,3 +1,4 @@
+using DG.Tweening;
 using JSAM;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,7 +11,11 @@ public class KillNotificationUI : MonoBehaviour
     [SerializeField] GameObject holder;
     [SerializeField] Image background;
     [SerializeField] Image leftPreview, rightPreview;
+    [SerializeField] Image streakImage;
     [SerializeField] Sprite[] backgrounds;
+
+    [SerializeField] Sprite[] orangeKoSprites;
+    [SerializeField] Sprite[] blueKoSprites;
 
     private bool isShowingKill;
 
@@ -32,6 +37,7 @@ public class KillNotificationUI : MonoBehaviour
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[killInfo.info.attackerId].GetComponent<Pokemon>();
 
         background.sprite = ChooseBackground(attacker, killInfo.killed);
+        SetStreakText(attacker, killInfo.killed);
 
         leftPreview.sprite = attacker.Portrait;
         rightPreview.sprite = killInfo.killed.Portrait;
@@ -39,6 +45,23 @@ public class KillNotificationUI : MonoBehaviour
         PlayCorrectSound(attacker, killInfo.killed);
 
         StartCoroutine(KillAnimation());
+    }
+
+    private void SetStreakText(Pokemon attacker, Pokemon killed)
+    {
+        if (attacker.KillStreak < 2 || attacker.Type != PokemonType.Player || killed.Type != PokemonType.Player)
+        {
+            streakImage.gameObject.SetActive(false);
+            return;
+        }
+
+        streakImage.gameObject.SetActive(true);
+
+        attacker.TryGetComponent(out PlayerManager playerManager);
+
+        int index = Mathf.Clamp(attacker.KillStreak - 2, 0, 3);
+
+        streakImage.sprite = playerManager.OrangeTeam ? orangeKoSprites[index] : blueKoSprites[index];
     }
 
     private Sprite ChooseBackground(Pokemon attacker, Pokemon killed)
@@ -75,7 +98,31 @@ public class KillNotificationUI : MonoBehaviour
         {
             if (attackerPlayer.OrangeTeam == localPlayerTeam)
             {
-                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_SingleKillr);
+                switch (attacker.KillStreak)
+                {
+                    case 2:
+                        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_DoubleKillr);
+                        break;
+                    case 3:
+                        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_TripleKillr);
+                        break;
+                    case 4:
+                        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_QuadraKillr);
+                        break;
+                    case 5:
+                        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_PentaKillr);
+                        break;
+                    default:
+                        if (attacker.KillStreak > 5)
+                        {
+                            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_PentaKillr);
+                        }
+                        else
+                        {
+                            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_SingleKillr);
+                        }
+                        break;
+                }
             }
         }
         else if (attackerPlayer != null && killedPlayer == null)
@@ -104,10 +151,20 @@ public class KillNotificationUI : MonoBehaviour
 
     private IEnumerator KillAnimation()
     {
-        holder.SetActive(true);
         isShowingKill = true;
+
+        holder.SetActive(true);
+        var rectTransform = holder.GetComponent<RectTransform>();
+
+        rectTransform.localScale = Vector3.one * 1.7f;
+        rectTransform.DOScale(Vector3.one, 0.5f).SetEase(Ease.OutBack);
+
         yield return new WaitForSeconds(2f);
-        holder.SetActive(false);
+
+        yield return rectTransform.DOScale(Vector3.one * 1.7f, 0.5f).SetEase(Ease.InBack).WaitForCompletion();
+
+        rectTransform.gameObject.SetActive(false);
+
         isShowingKill = false;
     }
 }

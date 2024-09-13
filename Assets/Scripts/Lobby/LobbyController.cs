@@ -695,6 +695,38 @@ public class LobbyController : MonoBehaviour
         SceneManager.LoadSceneAsync("LobbyScene");
     }
 
+    public void ReturnToHomeWithoutLeavingLobby()
+    {
+        StartCoroutine(ReturnToHomeWithoutLeavingLobbyAsync());
+    }
+
+    private IEnumerator ReturnToHomeWithoutLeavingLobbyAsync()
+    {
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+        var loadTask = SceneManager.LoadSceneAsync("LobbyScene");
+        NetworkManager.Singleton.Shutdown();
+
+        yield return loadTask;
+
+        yield return new WaitForSeconds(0.1f);
+
+        if (partyLobby.HostId == localPlayer.Id)
+        {
+            if (NetworkManager.Singleton.StartHost())
+            {
+                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+            }
+        }
+        else
+        {
+            if (NetworkManager.Singleton.StartClient())
+            {
+                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+            }
+        }
+        lobbyUI.ShowLobbyUI();
+    }
+
     public Player GetPlayerByID(string playerID)
     {
         foreach (var player in partyLobby.Players)

@@ -1,7 +1,6 @@
 using DG.Tweening;
 using System.Collections;
 using UI.ThreeDimensional;
-using Unity.Services.Lobbies.Models;
 using UnityEngine;
 
 public class GameBeginScreenUI : MonoBehaviour
