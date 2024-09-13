@@ -38,22 +38,18 @@ public class VaporUniteArea : NetworkBehaviour
                     continue;
                 }
 
-                if (hit.TryGetComponent(out PlayerManager player))
+                if (Aim.Instance.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, vaporeonTeam))
                 {
-                    if (player.OrangeTeam == vaporeonTeam)
+                    if (hit.TryGetComponent(out Pokemon pokemon))
                     {
-                        player.Pokemon.HealDamage(healAmount);
-                    }
-                    else
-                    {
-                        player.Pokemon.AddStatChange(defDebuff);
-                        player.Pokemon.AddStatChange(spDefDebuff);
-                        player.Pokemon.TakeDamage(damageInfo);
+                        pokemon.TakeDamage(damageInfo);
+                        pokemon.AddStatChange(defDebuff);
+                        pokemon.AddStatChange(spDefDebuff);
                     }
                 }
-                else if (hit.TryGetComponent(out Pokemon pokemon))
+                else if (hit.TryGetComponent(out Pokemon ally))
                 {
-                    pokemon.TakeDamage(damageInfo);
+                    ally.HealDamage(healAmount);
                 }
             }
 

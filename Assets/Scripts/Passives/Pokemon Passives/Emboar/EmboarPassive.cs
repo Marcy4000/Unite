@@ -72,11 +72,11 @@ public class EmboarPassive : PassiveBase
 
         if (attackedPokemon.Type == PokemonType.Player)
         {
-            recklessCharge += 7;
+            recklessCharge += 8;
         }
         else
         {
-            recklessCharge += 1;
+            recklessCharge += 2;
         }
 
         recklessCharge = Mathf.Clamp(recklessCharge, 0, 100);

@@ -454,6 +454,15 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""OpenQuickChat"",
+                    ""type"": ""Button"",
+                    ""id"": ""7dc978cb-9b1b-482c-8cc4-f1e7526ac8f7"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -476,6 +485,17 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
                     ""action"": ""CloseScoreboard"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a1f91815-b16b-4bd0-a1b9-8a2497a84c1f"",
+                    ""path"": ""<Gamepad>/select"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad"",
+                    ""action"": ""OpenQuickChat"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -538,6 +558,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_OpenScoreboard = m_UI.FindAction("OpenScoreboard", throwIfNotFound: true);
         m_UI_CloseScoreboard = m_UI.FindAction("CloseScoreboard", throwIfNotFound: true);
+        m_UI_OpenQuickChat = m_UI.FindAction("OpenQuickChat", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -843,12 +864,14 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private List<IUIActions> m_UIActionsCallbackInterfaces = new List<IUIActions>();
     private readonly InputAction m_UI_OpenScoreboard;
     private readonly InputAction m_UI_CloseScoreboard;
+    private readonly InputAction m_UI_OpenQuickChat;
     public struct UIActions
     {
         private @PlayerControls m_Wrapper;
         public UIActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
         public InputAction @OpenScoreboard => m_Wrapper.m_UI_OpenScoreboard;
         public InputAction @CloseScoreboard => m_Wrapper.m_UI_CloseScoreboard;
+        public InputAction @OpenQuickChat => m_Wrapper.m_UI_OpenQuickChat;
         public InputActionMap Get() { return m_Wrapper.m_UI; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -864,6 +887,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @CloseScoreboard.started += instance.OnCloseScoreboard;
             @CloseScoreboard.performed += instance.OnCloseScoreboard;
             @CloseScoreboard.canceled += instance.OnCloseScoreboard;
+            @OpenQuickChat.started += instance.OnOpenQuickChat;
+            @OpenQuickChat.performed += instance.OnOpenQuickChat;
+            @OpenQuickChat.canceled += instance.OnOpenQuickChat;
         }
 
         private void UnregisterCallbacks(IUIActions instance)
@@ -874,6 +900,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @CloseScoreboard.started -= instance.OnCloseScoreboard;
             @CloseScoreboard.performed -= instance.OnCloseScoreboard;
             @CloseScoreboard.canceled -= instance.OnCloseScoreboard;
+            @OpenQuickChat.started -= instance.OnOpenQuickChat;
+            @OpenQuickChat.performed -= instance.OnOpenQuickChat;
+            @OpenQuickChat.canceled -= instance.OnOpenQuickChat;
         }
 
         public void RemoveCallbacks(IUIActions instance)
@@ -938,5 +967,6 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     {
         void OnOpenScoreboard(InputAction.CallbackContext context);
         void OnCloseScoreboard(InputAction.CallbackContext context);
+        void OnOpenQuickChat(InputAction.CallbackContext context);
     }
 }

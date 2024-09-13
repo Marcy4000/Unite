@@ -16,11 +16,17 @@ public class EmboarHeatCrashArea : NetworkBehaviour
 
     private bool orangeTeam;
     private bool knockup;
+    private bool upgraded;
 
     private PlayerManager emboar;
 
+    private float waveDuration = 0.6f;
+
+    private Vector3 startingPosition;
+    private Vector3 startingScale;
+
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, Vector3 rotation, DamageInfo first, DamageInfo second, DamageInfo third, bool knockup)
+    public void InitializeRPC(Vector3 position, Vector3 rotation, DamageInfo first, DamageInfo second, DamageInfo third, bool knockup, bool upgraded)
     {
         emboar = NetworkManager.Singleton.SpawnManager.SpawnedObjects[first.attackerId].GetComponent<PlayerManager>();
 
@@ -32,6 +38,12 @@ public class EmboarHeatCrashArea : NetworkBehaviour
         secondWave = second;
         thirdWave = third;
         this.knockup = knockup;
+        this.upgraded = upgraded;
+
+        startingPosition = maskObject.transform.localPosition;
+        startingScale = maskObject.transform.localScale;
+
+        waveDuration = upgraded ? 0.4f : 0.6f;
 
         StartCoroutine(EarthquakeWaves());
     }
@@ -50,16 +62,33 @@ public class EmboarHeatCrashArea : NetworkBehaviour
         maskObject.transform.localScale += new Vector3(1.5f, 0f, 0f);
     }
 
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ResetAreaPositionRPC()
+    {
+        maskObject.transform.localPosition = startingPosition;
+        maskObject.transform.localScale = startingScale;
+        landParticles.transform.localPosition = maskObject.transform.localPosition;
+    }
+
     private IEnumerator EarthquakeWaves()
     {
-        for (int i = 0; i < 3; i++)
+        int waveNumber = upgraded ? 6 : 3;
+
+        for (int i = 0; i < waveNumber; i++)
         {
-            yield return new WaitForSeconds(0.6f);
+            yield return new WaitForSeconds(waveDuration);
             PlayParticlesRPC();
 
             if (i > 0)
             {
-                UpdateAreaPositionRPC();
+                if (i % 3 == 0)
+                {
+                    ResetAreaPositionRPC();
+                }
+                else
+                {
+                    UpdateAreaPositionRPC();
+                }
             }
 
             Collider[] colliders = Physics.OverlapBox(maskObject.transform.position, maskObject.transform.localScale / 2, maskObject.transform.rotation);
@@ -74,7 +103,7 @@ public class EmboarHeatCrashArea : NetworkBehaviour
                 if (col.TryGetComponent(out Pokemon pokemon))
                 {
                     DamageInfo damageInfo;
-                    switch (i)
+                    switch (i % 3)
                     {
                         case 0:
                             damageInfo = firstWave;
@@ -99,6 +128,7 @@ public class EmboarHeatCrashArea : NetworkBehaviour
 
                     if (knockup)
                     {
+                        pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.4f, true, 0));
                         pokemon.ApplyKnockupRPC(1f, 0.4f);
                     }
                 }

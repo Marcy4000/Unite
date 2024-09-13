@@ -22,4 +22,14 @@ public class QuickChatSelectorButton : MonoBehaviour
             OnButtonClicked?.Invoke(message);
         });
     }
+
+    public void Select()
+    {
+        button.Select();
+    }
+
+    public void Deselect()
+    {
+        button.OnDeselect(null);
+    }
 }

@@ -432,6 +432,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "OpenQuickChat",
+                    "type": "Button",
+                    "id": "7dc978cb-9b1b-482c-8cc4-f1e7526ac8f7",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -454,6 +463,17 @@
                     "processors": "",
                     "groups": "Gamepad",
                     "action": "CloseScoreboard",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a1f91815-b16b-4bd0-a1b9-8a2497a84c1f",
+                    "path": "<Gamepad>/select",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "OpenQuickChat",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

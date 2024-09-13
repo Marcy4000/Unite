@@ -48,15 +48,7 @@ public class VaporSwiftProjectile : NetworkBehaviour
 
         foreach (var hit in hits)
         {
-            if (hit.TryGetComponent(out PlayerManager playerManager))
-            {
-                if (playerManager.OrangeTeam == orangeTeam)
-                {
-                    return;
-                }
-            }
-
-            if (hit.TryGetComponent(out Pokemon pokemon))
+            if (Aim.Instance.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, orangeTeam) && hit.TryGetComponent(out Pokemon pokemon))
             {
                 pokemon.TakeDamage(damageInfo);
             }

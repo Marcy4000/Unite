@@ -73,7 +73,7 @@ public class EmboarHeatCrash : MoveBase
         {
             if (obj.TryGetComponent(out EmboarHeatCrashArea heatCrashArea))
             {
-                heatCrashArea.InitializeRPC(playerManager.transform.position + (playerManager.transform.forward * 2f), playerManager.transform.forward, first, second, third, passive.IsRecklessActive);
+                heatCrashArea.InitializeRPC(playerManager.transform.position + (playerManager.transform.forward * 2f), playerManager.transform.forward, first, second, third, passive.IsRecklessActive, IsUpgraded);
             }
         };
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);

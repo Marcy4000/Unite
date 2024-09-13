@@ -258,8 +258,11 @@ public class PlayerManager : NetworkBehaviour
         AssignVisionObjects();
         vision.SetVisibility(currentTeam == OrangeTeam);
 
-        passiveController.LearnPassive();
-        heldItemManager.Initialize(this);
+        if (IsOwner)
+        {
+            passiveController.LearnPassive();
+            heldItemManager.Initialize(this);
+        }
     }
 
     public void StopMovementForTime(float time, bool setTrigger=true)

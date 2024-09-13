@@ -22,12 +22,13 @@ public class EmboarFlameCharge : MoveBase
 
     private GameObject trailObject;
 
-    private string trailPath = "Assets/Prefabs/Objects/Moves/Jolteon/JolteonTrail.prefab";
+    private string trailPath = "Assets/Prefabs/Objects/Moves/Emboar/EmboarTrail.prefab";
 
     RaycastHit[] hits = new RaycastHit[15];
 
     private DamageInfo dashDamage = new DamageInfo(0, 1.8f, 6, 300, DamageType.Physical);
     private StatChange speedDebuff = new StatChange(20, Stat.Speed, 2f, true, false, true, 0);
+    private StatChange speedBuff = new StatChange(20, Stat.Speed, 2f, true, true, true, 0);
 
     private int dashLevel = 0;
 
@@ -158,6 +159,11 @@ public class EmboarFlameCharge : MoveBase
             playerManager.MovesController.BattleItemStatus.RemoveStatus(ActionStatusType.Disabled);
             playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
 
+            if (IsUpgraded)
+            {
+                playerManager.Pokemon.AddStatChange(speedBuff);
+            }
+
             wasMoveSuccessful = true;
             Finish();
         }
@@ -189,6 +195,7 @@ public class EmboarFlameCharge : MoveBase
 
                 pokemon.TakeDamage(dashDamage);
                 pokemon.AddStatChange(speedDebuff);
+                pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.7f, true, 0));
                 pokemon.ApplyKnockupRPC(1.5f, 0.7f);
                 recentlyHitPokemon.Add(pokemon);
                 playerManager.StartCoroutine(RemoveFromRecentlyHit(pokemon));

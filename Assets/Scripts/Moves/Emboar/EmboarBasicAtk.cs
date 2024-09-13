@@ -75,6 +75,7 @@ public class EmboarBasicAtk : BasicAttackBase
             if (charge == 2 && nextBoostedAttackKnocksUp)
             {
                 targetPokemon.ApplyKnockupRPC(1f, 1f);
+                targetPokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1f, true, 0));
                 nextBoostedAttackKnocksUp = false;
             }
         }

@@ -15,7 +15,7 @@ public class EmboarReversal : MoveBase
 
     public EmboarReversal()
     {
-        Name = "Reversal";
+        Name = "Flamethrower";
         Cooldown = 7f;
     }
 

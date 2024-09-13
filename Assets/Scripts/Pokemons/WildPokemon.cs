@@ -20,6 +20,7 @@ public class WildPokemon : NetworkBehaviour
     private Rigidbody rb;
 
     private string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
+    private float healingTick;
 
     private AsyncOperationHandle<PokemonBase> pokemonLoadHandle;
 
@@ -392,5 +393,26 @@ public class WildPokemon : NetworkBehaviour
             Addressables.Release(pokemonLoadHandle);
         }
         base.OnDestroy();
+    }
+
+    private void Update()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        if (pokemon.Type == PokemonType.Objective)
+        {
+            if (pokemon.IsOutOfCombat && !pokemon.IsHPFull())
+            {
+                healingTick -= Time.deltaTime;
+                if (healingTick <= 0)
+                {
+                    pokemon.HealDamage(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.05f));
+                    healingTick = 0.5f;
+                }
+            }
+        }
     }
 }

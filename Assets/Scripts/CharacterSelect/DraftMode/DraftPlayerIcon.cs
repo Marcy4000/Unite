@@ -50,7 +50,8 @@ public class DraftPlayerIcon : MonoBehaviour
                 confirmCheck.SetActive(false);
                 playerHead.gameObject.SetActive(true);
                 battleItemHolder.SetActive(false);
-                heldItemsHolder.gameObject.SetActive(false);
+                if (heldItemsHolder != null)
+                    heldItemsHolder.gameObject.SetActive(false);
                 break;
             case DraftPlayerState.Banning:
                 UpdateHighlitedState(true);
@@ -58,7 +59,8 @@ public class DraftPlayerIcon : MonoBehaviour
                 confirmCheck.SetActive(false);
                 playerHead.gameObject.SetActive(true);
                 battleItemHolder.SetActive(false);
-                heldItemsHolder.gameObject.SetActive(false);
+                if (heldItemsHolder != null)
+                    heldItemsHolder.gameObject.SetActive(false);
                 break;
             case DraftPlayerState.Picking:
                 UpdateHighlitedState(true);
@@ -66,7 +68,8 @@ public class DraftPlayerIcon : MonoBehaviour
                 confirmCheck.SetActive(false);
                 playerHead.gameObject.SetActive(true);
                 battleItemHolder.SetActive(false);
-                heldItemsHolder.gameObject.SetActive(false);
+                if (heldItemsHolder != null)
+                    heldItemsHolder.gameObject.SetActive(false);
                 break;
             case DraftPlayerState.Confirmed:
                 UpdateHighlitedState(false);
@@ -74,7 +77,8 @@ public class DraftPlayerIcon : MonoBehaviour
                 confirmCheck.SetActive(true);
                 playerHead.gameObject.SetActive(false);
                 battleItemHolder.SetActive(true);
-                heldItemsHolder.gameObject.SetActive(true);
+                if (heldItemsHolder != null)
+                    heldItemsHolder.gameObject.SetActive(true);
                 break;
         }
     }
