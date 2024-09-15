@@ -98,7 +98,9 @@ public class PlayerNetworkManager : NetworkBehaviour
 
         if (scene.name.Equals("GameResults"))
         {
+            matchStarted = false;
             isInResultScreen.Value = false;
+            playerStats.Value = new PlayerStats(LobbyController.Instance.Player.Id, 0, 0, 0, 0, 0, 0, 0);
         }
     }
 

@@ -1,4 +1,5 @@
 using DG.Tweening;
+using JSAM;
 using TMPro;
 using UnityEngine;
 
@@ -6,6 +7,8 @@ public class DraftTimerUI : MonoBehaviour
 {
     [SerializeField] private GameObject blueBG, orangeBG, mixedBG;
     [SerializeField] private TMP_Text messageText, timerText;
+
+    private int lastValue;
 
     public void DoFadeIn(byte bgID)
     {
@@ -49,10 +52,44 @@ public class DraftTimerUI : MonoBehaviour
     public void UpdateTimer(float time)
     {
         timerText.text = time.ToString("F0");
+
+        if (time != lastValue && time <= 15)
+        {
+            timerText.color = new Color(255 / 255f, 111 / 255f, 6 / 255f, 1f);
+            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Countdown);
+            PlayPopInAnimation();
+            PlayShadowEffect();
+        }
+        else if (time != lastValue)
+        {
+            timerText.color = Color.black;
+        }
+
+        lastValue = Mathf.FloorToInt(time);
     }
 
     public void UpdateMessage(string message)
     {
         messageText.text = message;
+    }
+
+    void PlayPopInAnimation()
+    {
+        timerText.transform.localScale = Vector3.one;
+
+        timerText.transform.DOScale(new Vector3(1.2f, 1.2f, 1.2f), 0.15f)
+            .SetEase(Ease.OutBack)
+            .OnComplete(() => timerText.transform.DOScale(Vector3.one, 0.1f));
+    }
+
+    void PlayShadowEffect()
+    {
+        TMP_Text shadowText = Instantiate(timerText, timerText.transform.parent);
+
+        shadowText.color = timerText.color;
+        shadowText.transform.localScale = timerText.transform.localScale;
+
+        shadowText.transform.DOScale(new Vector3(1.9f, 1.9f, 1.9f), 0.6f);
+        shadowText.DOFade(0, 0.6f).OnComplete(() => Destroy(shadowText.gameObject));
     }
 }

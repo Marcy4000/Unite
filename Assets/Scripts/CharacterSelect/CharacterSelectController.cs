@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using JSAM;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.AddressableAssets;
+using DG.Tweening;
 
 public enum CharacterSelectPhase : byte { Selection, Preview }
 
@@ -42,6 +43,8 @@ public class CharacterSelectController : NetworkBehaviour
     private bool isLoading = false;
     private bool startTimer = false;
     private bool hasSelectedCharacter = false;
+
+    private int lastValue = 0;
 
     private AsyncOperationHandle<GameObject> characterSelectModelHandle;
 
@@ -124,6 +127,18 @@ public class CharacterSelectController : NetworkBehaviour
         {
             case CharacterSelectPhase.Selection:
                 timerText.text = time.ToString();
+
+                if (time <= 15 && time != lastValue)
+                {
+                    timerText.color = new Color(255 / 255f, 111 / 255f, 6 / 255f, 1f);
+                    AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Countdown);
+                    PlayShadowEffect();
+                    PlayPopInAnimation();
+                }
+                else if (lastValue != time)
+                {
+                    timerText.color = Color.black;
+                }
                 break;
             case CharacterSelectPhase.Preview:
                 previewScreenUI.UpdateTimerValue(time);
@@ -131,6 +146,31 @@ public class CharacterSelectController : NetworkBehaviour
             default:
                 break;
         }
+
+        if (time != lastValue)
+        {
+            lastValue = time;
+        }
+    }
+
+    void PlayPopInAnimation()
+    {
+        timerText.transform.localScale = Vector3.one;
+
+        timerText.transform.DOScale(new Vector3(1.2f, 1.2f, 1.2f), 0.15f)
+            .SetEase(Ease.OutBack)
+            .OnComplete(() => timerText.transform.DOScale(Vector3.one, 0.1f));
+    }
+
+    void PlayShadowEffect()
+    {
+        TMP_Text shadowText = Instantiate(timerText, timerText.transform.parent);
+
+        shadowText.color = timerText.color;
+        shadowText.transform.localScale = timerText.transform.localScale;
+
+        shadowText.transform.DOScale(new Vector3(1.9f, 1.9f, 1.9f), 0.6f);
+        shadowText.DOFade(0, 0.6f).OnComplete(() => Destroy(shadowText.gameObject));
     }
 
     private void Update()
