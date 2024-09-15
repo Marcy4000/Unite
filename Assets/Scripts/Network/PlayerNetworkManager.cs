@@ -13,6 +13,9 @@ public class PlayerNetworkManager : NetworkBehaviour
     public Player LocalPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
 
     private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm: NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> isInResultScreen = new NetworkVariable<bool>(false, writePerm: NetworkVariableWritePermission.Owner);
+
+    public bool IsInResultScreen => isInResultScreen.Value;
 
     private bool matchStarted = false;
 
@@ -34,6 +37,10 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         //GameManager.instance.onGameStateChanged += HandleGameStateChanged;
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+
         if (IsOwner)
         {
             playerStats.Value = new PlayerStats(LobbyController.Instance.Player.Id, 0, 0, 0, 0, 0, 0, 0);
@@ -43,6 +50,13 @@ public class PlayerNetworkManager : NetworkBehaviour
         playerStats.OnValueChanged += HandlePlayerStatsChange;
         deathTimer.OnValueChanged += (previous, updated) => OnDeathTimerChanged?.Invoke(updated);
         playerStats.OnValueChanged += (previous, updated) => OnPlayerStatsChanged?.Invoke(updated);
+
+        LobbyController.Instance.PlayerNetworkManagers.Add(this);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        LobbyController.Instance.PlayerNetworkManagers.Remove(this);
     }
 
     public override void OnDestroy()
@@ -56,8 +70,36 @@ public class PlayerNetworkManager : NetworkBehaviour
             // Do nothing
         }
 
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
         LobbyController.Instance.onLobbyUpdate -= HandleLobbyUpdate;
         playerStats.OnValueChanged -= HandlePlayerStatsChange;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (!IsOwner)
+        {
+            return;
+        }
+
+        if (scene.name.Equals("GameResults"))
+        {
+            isInResultScreen.Value = true;
+        }
+    }
+
+    private void OnSceneUnloaded(Scene scene)
+    {
+        if (!IsOwner)
+        {
+            return;
+        }
+
+        if (scene.name.Equals("GameResults"))
+        {
+            isInResultScreen.Value = false;
+        }
     }
 
     private void HandleLobbyUpdate(Lobby lobby)

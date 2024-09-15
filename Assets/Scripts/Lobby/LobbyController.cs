@@ -34,6 +34,9 @@ public class LobbyController : MonoBehaviour
 
     private GameResults gameResults;
 
+    private List<PlayerNetworkManager> playerNetworkManagers = new List<PlayerNetworkManager>();
+    private bool loadResultsScreen = false;
+
 #if UNITY_WEBGL
     private string connectionType = "wss";
 #else
@@ -42,6 +45,9 @@ public class LobbyController : MonoBehaviour
 
     public Lobby Lobby => partyLobby;
     public Player Player => localPlayer;
+    public List<PlayerNetworkManager> PlayerNetworkManagers => playerNetworkManagers;
+
+    public bool ShouldLoadResultsScreen { get => loadResultsScreen; set => loadResultsScreen = value; }
 
     public GameResults GameResults { get => gameResults; set => gameResults = value;}
 
@@ -285,6 +291,7 @@ public class LobbyController : MonoBehaviour
             if (NetworkManager.Singleton.StartHost())
             {
                 NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+                NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
             }
             lobbyUI.ShowLobbyUI();
 
@@ -322,6 +329,7 @@ public class LobbyController : MonoBehaviour
             if (NetworkManager.Singleton.StartClient())
             {
                 NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+                NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
             }
             lobbyUI.ShowLobbyUI();
 
@@ -367,6 +375,7 @@ public class LobbyController : MonoBehaviour
             if (NetworkManager.Singleton.StartClient())
             {
                 NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+                NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
             }
             lobbyUI.ShowLobbyUI();
 
@@ -636,6 +645,9 @@ public class LobbyController : MonoBehaviour
         await RemoveFromParty(localPlayer.Id);
         partyLobby = null;
         NetworkManager.Singleton.Shutdown();
+
+        playerNetworkManagers.Clear();
+
         lobbyUI.ShowMainMenuUI();
         LoadingScreen.Instance.HideGenericLoadingScreen();
     }
@@ -645,6 +657,7 @@ public class LobbyController : MonoBehaviour
         await RemoveFromParty(localPlayer.Id);
         partyLobby = null;
         NetworkManager.Singleton.Shutdown();
+        playerNetworkManagers.Clear();
     }
 
     private async Task RemoveFromParty(string playerID)
@@ -686,13 +699,27 @@ public class LobbyController : MonoBehaviour
         {
             return;
         }
-        NetworkManager.Singleton.SceneManager.LoadScene("GameResults", LoadSceneMode.Single);
+
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+
+        NetworkManager.Singleton.SceneManager.LoadScene("LobbyScene", LoadSceneMode.Single);
+    }
+
+    private IEnumerator LoadResultsScreenAsync()
+    {
+        var task = SceneManager.LoadSceneAsync("GameResults", LoadSceneMode.Additive);
+        while (!task.isDone)
+        {
+            yield return null;
+        }
+
+        lobbyUI.DisableLobbyScene();
     }
 
     public void ReturnToLobby(bool leaveLobby)
     {
         if (leaveLobby) LeaveLobbyNoGUI();
-        SceneManager.LoadSceneAsync("LobbyScene");
+        StartCoroutine(LoadLobbyAsync());
     }
 
     public void ReturnToHomeWithoutLeavingLobby()
@@ -703,28 +730,31 @@ public class LobbyController : MonoBehaviour
     private IEnumerator ReturnToHomeWithoutLeavingLobbyAsync()
     {
         LoadingScreen.Instance.ShowGenericLoadingScreen();
-        var loadTask = SceneManager.LoadSceneAsync("LobbyScene");
-        NetworkManager.Singleton.Shutdown();
+        var loadTask = SceneManager.UnloadSceneAsync("GameResults");
 
         yield return loadTask;
 
+        lobbyUI.EnableLobbyScene();
+
         yield return new WaitForSeconds(0.1f);
 
-        if (partyLobby.HostId == localPlayer.Id)
-        {
-            if (NetworkManager.Singleton.StartHost())
-            {
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
-            }
-        }
-        else
-        {
-            if (NetworkManager.Singleton.StartClient())
-            {
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
-            }
-        }
         lobbyUI.ShowLobbyUI();
+
+        LoadingScreen.Instance.HideGenericLoadingScreen();
+    }
+
+    private void OnSceneEvent(SceneEvent sceneEvent)
+    {
+        switch (sceneEvent.SceneEventType)
+        {
+            case SceneEventType.LoadComplete:
+                if (sceneEvent.SceneName == "LobbyScene" && loadResultsScreen)
+                {
+                    StartCoroutine(LoadResultsScreenAsync());
+                    loadResultsScreen = false;
+                }
+                break;
+        }
     }
 
     public Player GetPlayerByID(string playerID)
@@ -765,5 +795,31 @@ public class LobbyController : MonoBehaviour
     public bool GetLocalPlayerTeam()
     {
         return localPlayer.Data["PlayerTeam"].Value == "Orange";
+    }
+
+    public bool IsPlayerInResultScreen(Player player)
+    {
+        foreach (var playerNetworkManager in playerNetworkManagers)
+        {
+            if (playerNetworkManager.LocalPlayer.Id == player.Id)
+            {
+                return playerNetworkManager.IsInResultScreen;
+            }
+        }
+
+        return false;
+    }
+
+    public bool IsAnyPlayerInResultScreen()
+    {
+        foreach (var playerNetworkManager in playerNetworkManagers)
+        {
+            if (playerNetworkManager.IsInResultScreen)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

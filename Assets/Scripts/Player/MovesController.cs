@@ -550,6 +550,23 @@ public class MovesController : NetworkBehaviour
         uniteMove.ResetMove();
     }
 
+    public void ReduceMoveCooldown(MoveType moveType, float amount)
+    {
+        switch (moveType)
+        {
+            case MoveType.MoveA:
+                moveStatuses[0].Cooldown -= amount;
+                UpdateMoveUI(0);
+                break;
+            case MoveType.MoveB:
+                moveStatuses[1].Cooldown -= amount;
+                UpdateMoveUI(1);
+                break;
+            default:
+                break;
+        }
+    }
+
     public void AddMoveStatus(int index, ActionStatusType statusType)
     {
         // If index is equal to the length of the moveStatuses array, it means we're adding a status to the unite move

@@ -9,7 +9,7 @@ public class PartyScreenUI : MonoBehaviour
 {
     [SerializeField] private GameObject playerIconPrefab;
     [SerializeField] private GameObject playerIconHolder;
-    [SerializeField] private GameObject startGameButton;
+    [SerializeField] private Button startGameButton;
     [SerializeField] private TMP_Text lobbyCodeText;
     [SerializeField] private Toggle openLobbyToggle;
     [SerializeField] private int maxPlayers = 10;
@@ -51,6 +51,11 @@ public class PartyScreenUI : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        startGameButton.interactable = !LobbyController.Instance.IsAnyPlayerInResultScreen();
+    }
+
     public void InitializeUI(Lobby lobby)
     {
         ClearUI();
@@ -66,7 +71,7 @@ public class PartyScreenUI : MonoBehaviour
         playerIconsOrangeTeam = new LobbyPlayerIcon[maxPlayers/2];
         lobbyCodeText.text = $"Lobby Code: {lobby.LobbyCode}";
 
-        startGameButton.SetActive(lobby.HostId == AuthenticationService.Instance.PlayerId);
+        startGameButton.gameObject.SetActive(lobby.HostId == AuthenticationService.Instance.PlayerId);
         openLobbyToggle.interactable = lobby.HostId == AuthenticationService.Instance.PlayerId;
 
         for (int i = 0; i < maxPlayers; i++)
@@ -93,7 +98,7 @@ public class PartyScreenUI : MonoBehaviour
 
     public void UpdatePlayers(Lobby lobby)
     {
-        startGameButton.SetActive(lobby.HostId == AuthenticationService.Instance.PlayerId);
+        startGameButton.gameObject.SetActive(lobby.HostId == AuthenticationService.Instance.PlayerId);
 
         for (int i = 0; i < maxPlayers; i++)
         {

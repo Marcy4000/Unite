@@ -9,6 +9,8 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button exitLobbyButton;
     [SerializeField] private TMP_InputField lobbyIdField;
 
+    [SerializeField] private GameObject sceneRoot;
+
     [SerializeField] private GameObject[] lobbyUIs;
     [SerializeField] private GameObject[] lobbyScenes;
     [SerializeField] private PartyScreenUI partyScreenUI;
@@ -45,13 +47,25 @@ public class MainMenuUI : MonoBehaviour
 
         lobbyPlayerInfoIcons.Initialize(LobbyController.Instance.Player);
 
+        AudioManager.StopAllMusic();
         AudioManager.PlayMusic(DefaultAudioMusic.LobbyTheme, true);
-
-        LoadingScreen.Instance.HideGenericLoadingScreen();
 
         ShowMainMenuUI();
 
         UpdateTrainerModel();
+    }
+
+    public void DisableLobbyScene()
+    {
+        sceneRoot.SetActive(false);
+        AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
+    }
+
+    public void EnableLobbyScene()
+    {
+        sceneRoot.SetActive(true);
+        AudioManager.StopAllMusic();
+        AudioManager.PlayMusic(DefaultAudioMusic.LobbyTheme, true);
     }
 
     public void ShowPlayerMenuUI()
@@ -90,6 +104,11 @@ public class MainMenuUI : MonoBehaviour
 
         lobbyUIs[0].SetActive(true);
         lobbyScenes[0].SetActive(true);
+
+        if (!trainerModel.IsInitialized)
+        {
+            UpdateTrainerModel();
+        }
     }
 
     public void ShowClothesMenu()

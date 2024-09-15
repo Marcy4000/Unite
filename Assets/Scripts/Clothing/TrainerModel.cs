@@ -31,12 +31,17 @@ public class TrainerModel : MonoBehaviour
     private PlayerClothesInfo lastPlayerClothesInfo = new PlayerClothesInfo();
     private PlayerClothesInfo playerClothesInfo = new PlayerClothesInfo();
 
+    private bool initialized = false;
+    private bool initializing = false;
+
     public bool IsMale => isMale;
     public Animator ActiveAnimator => activeAnimator;
 
     public System.Action onClothesInitialized;
 
     public PlayerClothesInfo PlayerClothesInfo => playerClothesInfo;
+
+    public bool IsInitialized => initialized;
 
     private void OnEnable()
     {
@@ -46,15 +51,24 @@ public class TrainerModel : MonoBehaviour
     private void OnDisable()
     {
         LobbyController.Instance.onLobbyUpdate -= OnLobbyUpdate;
+        initializing = false;
     }
 
     public void InitializeClothes(PlayerClothesInfo info)
     {
+        if (initializing)
+        {
+            return;
+        }
+
         StartCoroutine(InitializeRoutine(info));
     }
 
     private IEnumerator InitializeRoutine(PlayerClothesInfo info)
     {
+        initialized = false;
+        initializing = true;
+
         yield return null;
 
         loadingText.SetActive(true);
@@ -189,6 +203,9 @@ public class TrainerModel : MonoBehaviour
         }
 
         loadingText.SetActive(false);
+
+        initialized = true;
+        initializing = false;
 
         onClothesInitialized?.Invoke();
     }

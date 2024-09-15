@@ -1,7 +1,6 @@
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.TextCore.Text;
 
 public class SettlementTeamModels : MonoBehaviour
 {
@@ -28,7 +27,7 @@ public class SettlementTeamModels : MonoBehaviour
                     Addressables.ReleaseInstance(child.gameObject);
                 }
 
-                Addressables.InstantiateAsync(currentPokemon.model, trainerPokemonPositions[i].position, trainerPokemonPositions[i].rotation);
+                Addressables.InstantiateAsync(currentPokemon.model, trainerPokemonPositions[i].position, trainerPokemonPositions[i].rotation, trainerPokemonPositions[i]);
             }
             else
             {

@@ -28,6 +28,7 @@ public class CharacterSelectController : NetworkBehaviour
 
     [SerializeField] private GameObject mainScreen;
     [SerializeField] private PreviewScreenUI previewScreenUI;
+    [SerializeField] private PkmnListSideInfo pokemonInfo;
 
     [SerializeField] private Transform pokemonSpawnPoint;
     private GameObject currentPokemon;
@@ -106,6 +107,7 @@ public class CharacterSelectController : NetworkBehaviour
 
         mainScreen.SetActive(true);
         previewScreenUI.gameObject.SetActive(false);
+        pokemonInfo.gameObject.SetActive(false);
 
         trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
     }
@@ -194,6 +196,8 @@ public class CharacterSelectController : NetworkBehaviour
 
         hasSelectedCharacter = true;
         LobbyController.Instance.ChangePlayerCharacter(character.pokemonName);
+        pokemonInfo.gameObject.SetActive(true);
+        pokemonInfo.SetPokemonInfo(character);
         SpawnPokemon(character);
     }
 

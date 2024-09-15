@@ -93,7 +93,7 @@ public class BattleNotificationUI : MonoBehaviour
     {
         yield return new WaitForSeconds(3f);
 
-        yield return rectTransform.DOScale(Vector3.one * 1.7f, 0.5f).SetEase(Ease.InBack).WaitForCompletion();
+        yield return rectTransform.DOScale(Vector3.one / 1.7f, 0.5f).SetEase(Ease.InBack).WaitForCompletion();
 
         HideAllNotification();
     }

@@ -10,6 +10,7 @@ public class LobbyPlayerIcon : MonoBehaviour
     [SerializeField] private Button switchButton;
     [SerializeField] private Button kickButton;
     [SerializeField] private GameObject ownerStar;
+    [SerializeField] private GameObject calculatingText;
 
     private bool orangeTeam = false;
     private short position = 0;
@@ -36,6 +37,7 @@ public class LobbyPlayerIcon : MonoBehaviour
         ownerStar.SetActive(false);
         kickButton.gameObject.SetActive(false);
         kickButton.onClick.RemoveAllListeners();
+        calculatingText.SetActive(false);
     }
 
     public void InitializePlayer(Player player)
@@ -51,6 +53,6 @@ public class LobbyPlayerIcon : MonoBehaviour
 
         kickButton.onClick.AddListener(() => LobbyController.Instance.KickPlayer(player.Id));
 
-        // TODO: Let player decide which head it wants to use
+        calculatingText.SetActive(LobbyController.Instance.IsPlayerInResultScreen(player));
     }
 }

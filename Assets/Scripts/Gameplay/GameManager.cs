@@ -430,6 +430,8 @@ public class GameManager : NetworkBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
+        LobbyController.Instance.ShouldLoadResultsScreen = true;
+
         if (IsServer)
         {
             LobbyController.Instance.LoadResultsScreen();
