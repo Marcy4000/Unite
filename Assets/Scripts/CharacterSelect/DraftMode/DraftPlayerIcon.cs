@@ -25,10 +25,12 @@ public class DraftPlayerIcon : MonoBehaviour
     [SerializeField] private float playerBGIdlePos, playerBGSelectedPos;
 
     private DraftPlayerState state;
+    private CharacterInfo selectedCharacter;
 
     private Player assignedPlayer;
 
     public Player AssignedPlayer => assignedPlayer;
+    public CharacterInfo SelectedCharacter => selectedCharacter;
 
     public void Initialize(Player player)
     {
@@ -118,6 +120,8 @@ public class DraftPlayerIcon : MonoBehaviour
 
     public void UpdateSelectedCharacter(CharacterInfo info)
     {
+        selectedCharacter = info;
+
         if (info == null)
         {
             selectedCharacterHolder.gameObject.SetActive(false);

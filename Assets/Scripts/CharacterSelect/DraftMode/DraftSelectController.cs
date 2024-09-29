@@ -1,5 +1,6 @@
 using JSAM;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -19,10 +20,10 @@ public class DraftSelectController : NetworkBehaviour
     [SerializeField] private DraftPlayerHolder draftPlayerHolderOrange;
     [SerializeField] private DraftTimerUI draftTimerUI;
     [SerializeField] private DraftCharacterSelector draftCharacterSelector;
+    [SerializeField] private DraftBansShowcase draftBansShowcase;
     [SerializeField] private Button confirmButton, switchButton;
 
     [Space]
-
     [SerializeField] private Transform allyBanHolder, enemyBanHolder;
     [SerializeField] private GameObject banIconPrefab;
 
@@ -89,6 +90,8 @@ public class DraftSelectController : NetworkBehaviour
             InitializePlayerStates();
             StartPhase(DraftPhase.Banning);
         }
+
+        OnTurnIndexChanged(0, 0);
 
         AudioManager.StopAllMusic();
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon);
@@ -198,12 +201,67 @@ public class DraftSelectController : NetworkBehaviour
     private void OnDraftPhaseChanged(DraftPhase previous, DraftPhase current)
     {
         Debug.Log($"Draft phase changed to {current}");
+
+        if (current == DraftPhase.Picking)
+        {
+            StartCoroutine(ShowBansWhenUpdated());
+        }
+
         OnPhaseChanged?.Invoke(current);
+    }
+
+    private IEnumerator ShowBansWhenUpdated()
+    {
+        while (bannedCharacters.Count < maxBansPerTeam * 2)
+        {
+            yield return null;
+        }
+
+        List<CharacterInfo> bannedCharactersInfo = new List<CharacterInfo>();
+        foreach (short bannedCharacter in bannedCharacters)
+        {
+            bannedCharactersInfo.Add(CharactersList.Instance.Characters[bannedCharacter]);
+        }
+
+        draftBansShowcase.ShowBans(bannedCharactersInfo);
     }
 
     private void OnTurnIndexChanged(int previous, int current)
     {
         UpdatePlayerIcons();
+
+        switch (currentDraftPhase.Value)
+        {
+            case DraftPhase.Banning:
+
+                if ((current % 2 == 0) == !LobbyController.Instance.GetLocalPlayerTeam())
+                {
+                    draftTimerUI.DoFadeIn(0);
+                    draftTimerUI.UpdateMessage("Your team is banning");
+                }
+                else
+                {
+                    draftTimerUI.DoFadeIn(1);
+                    draftTimerUI.UpdateMessage("The opponent team is banning");
+                }
+                break;
+            case DraftPhase.Picking:
+                if ((current % 2 == 0) == !LobbyController.Instance.GetLocalPlayerTeam())
+                {
+                    draftTimerUI.DoFadeIn(0);
+                    draftTimerUI.UpdateMessage("Your team is picking pokemon");
+                }
+                else
+                {
+                    draftTimerUI.DoFadeIn(1);
+                    draftTimerUI.UpdateMessage("The opponent team is picking pokemon");
+                }
+                break;
+            case DraftPhase.Preparation:
+                draftTimerUI.DoFadeIn(2);
+                draftTimerUI.UpdateMessage("Final Preparations");
+                break;
+        }
     }
 
     [Rpc(SendTo.Server)]
@@ -227,7 +285,6 @@ public class DraftSelectController : NetworkBehaviour
         {
             playerStates[index] = (byte)DraftPlayerState.BanningConfirmed; // Update state after banning
             bannedCharacters.Add((short)selectedCharacter);
-
         }
         else if (currentDraftPhase.Value == DraftPhase.Picking)
         {
@@ -485,11 +542,45 @@ public class DraftSelectController : NetworkBehaviour
             if (playerIndex != -1 && playerStates[playerIndex] != (byte)DraftPlayerState.Confirmed)
             {
                 // Auto-confirm the current selection or perform other timeout actions
-                int selectedCharacterID = draftCharacterSelector.GetSelectedCharacterID();
+                bool isPlayerOrangeTeam = !IsPlayerOnYourTeam(playerID);
+
+                DraftPlayerIcon playerIcon = isPlayerOrangeTeam
+                    ? draftPlayerHolderOrange.PlayerIcons.First(icon => icon.AssignedPlayer.Id == playerID)
+                    : draftPlayerHolderBlue.PlayerIcons.First(icon => icon.AssignedPlayer.Id == playerID);
+
+                int selectedCharacterID = playerIcon.SelectedCharacter == null ? CharactersList.Instance.GetCharacterID(GetRandomValidCharacter()) : CharactersList.Instance.GetCharacterID(playerIcon.SelectedCharacter);
                 OnPlayerConfirmed?.Invoke(playerID, selectedCharacterID);
                 ConfirmSelectionRPC(playerID, selectedCharacterID);
             }
         }
+    }
+
+    private CharacterInfo GetRandomValidCharacter()
+    {
+        List<CharacterInfo> availableCharacters = CharactersList.Instance.Characters.Where(character => !bannedCharacters.Contains(CharactersList.Instance.GetCharacterID(character))).ToList();
+
+        bool isValid = false;
+        int index = 0;
+
+        while (!isValid)
+        {
+            index = UnityEngine.Random.Range(0, availableCharacters.Count);
+            isValid = true;
+
+            foreach (var player in LobbyController.Instance.Lobby.Players)
+            {
+                if (player.Data.ContainsKey("SelectedCharacter"))
+                {
+                    if (NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value) == CharactersList.Instance.GetCharacterID(availableCharacters[index]))
+                    {
+                        isValid = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return availableCharacters[index];
     }
 
     private List<string> GetPickTurnPlayers()
@@ -612,6 +703,18 @@ public class DraftSelectController : NetworkBehaviour
                 break;
             }
         }
+
+        if (!IsPlayerOnYourTeam(playerID) && playerStates[GetPlayerIndex(playerID)] == (byte)DraftPlayerState.Picking)
+        {
+            foreach (var playerIcon in draftPlayerHolderOrange.PlayerIcons)
+            {
+                if (playerIcon.AssignedPlayer.Id == playerID)
+                {
+                    playerIcon.UpdateSelectedCharacter(CharactersList.Instance.GetCharacterFromID(selectedCharacter));
+                    break;
+                }
+            }
+        }
     }
 
     private void UpdatePlayerSelectedCharacter(string playerID, short selectedCharacter)
@@ -633,5 +736,10 @@ public class DraftSelectController : NetworkBehaviour
                 break;
             }
         }
+    }
+
+    private bool IsPlayerOnYourTeam(string playerID)
+    {
+        return AllyTeamPlayers.Any(player => player.Id == playerID);
     }
 }
