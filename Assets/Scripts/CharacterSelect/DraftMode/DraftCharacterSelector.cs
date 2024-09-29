@@ -12,6 +12,8 @@ public class DraftCharacterSelector : MonoBehaviour
     private List<DraftCharacterSelectIcon> icons = new List<DraftCharacterSelectIcon>();
 
     public event System.Action<CharacterInfo> OnCharacterSelected;
+    public event System.Action OnSelectedToggleChanged;
+    public CharacterInfo HoveredCharacter { get; private set; }
 
     public void InitializeUI()
     {
@@ -23,8 +25,47 @@ public class DraftCharacterSelector : MonoBehaviour
             DraftCharacterSelectIcon draftCharacterIcon = characterIcon.GetComponent<DraftCharacterSelectIcon>();
             draftCharacterIcon.Initialize(character);
             draftCharacterIcon.Toggle.group = toggleGroup;
+            draftCharacterIcon.Toggle.onValueChanged.AddListener((value) =>
+            {
+                if (value)
+                {
+                    HoveredCharacter = draftCharacterIcon.Info;
+                    OnSelectedToggleChanged?.Invoke();
+                }
+            });
             icons.Add(draftCharacterIcon);
         }
+    }
+
+    public void UpdateUnavailablePokemons()
+    {
+        foreach (var icon in icons)
+        {
+            icon.Toggle.interactable = IsCharacterAvailable(icon.Info);
+            icon.Toggle.isOn = false;
+        }
+    }
+
+    private bool IsCharacterAvailable(CharacterInfo info)
+    {
+        short id = CharactersList.Instance.GetCharacterID(info);
+
+        if (DraftSelectController.Instance.BannedCharacters.Contains(id))
+        {
+            return false;
+        }
+
+        string idBase64 = NumberEncoder.ToBase64(id);
+
+        foreach (var player in LobbyController.Instance.Lobby.Players)
+        {
+            if (player.Data["SelectedCharacter"].Value == idBase64)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void OnConfirmButtonPressed()

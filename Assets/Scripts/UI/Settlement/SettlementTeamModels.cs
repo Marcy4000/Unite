@@ -20,7 +20,7 @@ public class SettlementTeamModels : MonoBehaviour
                 PlayerClothesInfo playerClothesInfo = PlayerClothesInfo.Deserialize(teamPlayers[i].Data["ClothingInfo"].Value);
                 trainerModels[i].InitializeClothes(playerClothesInfo);
 
-                CharacterInfo currentPokemon = CharactersList.Instance.GetCharacterFromString(teamPlayers[i].Data["SelectedCharacter"].Value);
+                CharacterInfo currentPokemon = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(teamPlayers[i].Data["SelectedCharacter"].Value));
 
                 foreach (Transform child in trainerPokemonPositions[i].transform)
                 {

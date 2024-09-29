@@ -24,7 +24,7 @@ public class PreviewScreenUI : MonoBehaviour
         foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
         {
             playerIcon.UpdateIconState(DraftPlayerState.Confirmed);
-            playerIcon.UpdateSelectedCharacter(CharactersList.Instance.GetCharacterFromString(playerIcon.AssignedPlayer.Data["SelectedCharacter"].Value));
+            playerIcon.UpdateSelectedCharacter(CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(playerIcon.AssignedPlayer.Data["SelectedCharacter"].Value)));
             playerIcon.UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(playerIcon.AssignedPlayer.Data["BattleItem"].Value)));
             LobbyController.Instance.onLobbyUpdate += playerIcon.UpdatePlayerData;
         }
@@ -32,7 +32,7 @@ public class PreviewScreenUI : MonoBehaviour
         foreach (var playerIcon in draftPlayerHolderOrange.PlayerIcons)
         {
             playerIcon.UpdateIconState(DraftPlayerState.Confirmed);
-            playerIcon.UpdateSelectedCharacter(CharactersList.Instance.GetCharacterFromString(playerIcon.AssignedPlayer.Data["SelectedCharacter"].Value));
+            playerIcon.UpdateSelectedCharacter(CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(playerIcon.AssignedPlayer.Data["SelectedCharacter"].Value)));
             playerIcon.UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(playerIcon.AssignedPlayer.Data["BattleItem"].Value)));
             LobbyController.Instance.onLobbyUpdate += playerIcon.UpdatePlayerData;
         }

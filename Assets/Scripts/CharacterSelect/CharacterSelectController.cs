@@ -84,7 +84,7 @@ public class CharacterSelectController : NetworkBehaviour
             playerIcon.GetComponent<PlayerSelectionIcon>().Initialize(player);
             if (player.Id == LobbyController.Instance.Player.Id && !string.IsNullOrEmpty(player.Data["SelectedCharacter"].Value))
             {
-                SpawnPokemon(CharactersList.Instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value));
+                SpawnPokemon(CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)));
             }
         }
 
@@ -235,7 +235,7 @@ public class CharacterSelectController : NetworkBehaviour
         }
 
         hasSelectedCharacter = true;
-        LobbyController.Instance.ChangePlayerCharacter(character.pokemonName);
+        LobbyController.Instance.ChangePlayerCharacter(CharactersList.Instance.GetCharacterID(character));
         pokemonInfo.gameObject.SetActive(true);
         pokemonInfo.SetPokemonInfo(character);
         SpawnPokemon(character);

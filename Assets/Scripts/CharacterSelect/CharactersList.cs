@@ -66,17 +66,27 @@ public class CharactersList : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    public CharacterInfo GetCharacterFromString(string characterName)
+    public CharacterInfo GetCharacterFromID(short characterID)
     {
-        foreach (var character in characters)
+        if (characterID > characters.Length)
         {
-            if (character.pokemonName == characterName)
+            return characters[0];
+        }
+
+        return characters[characterID];
+    }
+
+    public short GetCharacterID(CharacterInfo character)
+    {
+        for (short i = 0; i < characters.Length; i++)
+        {
+            if (characters[i] == character)
             {
-                return character;
+                return i;
             }
         }
 
-        return null;
+        return 0;
     }
 
     public Sprite GetMoveLabel(MoveLabels label)

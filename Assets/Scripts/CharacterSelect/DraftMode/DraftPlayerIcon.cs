@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 public enum DraftPlayerState : byte
 {
-    Idle, Banning, Picking, Confirmed
+    Idle, Banning, Picking, Confirmed, BanningIdle, BanningConfirmed
 }
 
 public class DraftPlayerIcon : MonoBehaviour
@@ -34,9 +34,10 @@ public class DraftPlayerIcon : MonoBehaviour
     {
         assignedPlayer = player;
         playerNameText.text = player.Data["PlayerName"].Value;
-        selectedCharacterHolder.gameObject.SetActive(false);
+        UpdateSelectedCharacter(null);
+        UpdateBannedCharacter(null);
         playerHead.InitializeHead(PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value));
-        state = DraftPlayerState.Idle;
+        UpdateIconState(DraftPlayerState.Idle);
     }
 
     public void UpdateIconState(DraftPlayerState state)
@@ -79,6 +80,24 @@ public class DraftPlayerIcon : MonoBehaviour
                 battleItemHolder.SetActive(true);
                 if (heldItemsHolder != null)
                     heldItemsHolder.gameObject.SetActive(true);
+                break;
+            case DraftPlayerState.BanningIdle:
+                UpdateHighlitedState(false);
+                banUIHolder.SetActive(true);
+                confirmCheck.SetActive(false);
+                playerHead.gameObject.SetActive(true);
+                battleItemHolder.SetActive(false);
+                if (heldItemsHolder != null)
+                    heldItemsHolder.gameObject.SetActive(false);
+                break;
+            case DraftPlayerState.BanningConfirmed:
+                UpdateHighlitedState(false);
+                banUIHolder.SetActive(true);
+                confirmCheck.SetActive(true);
+                playerHead.gameObject.SetActive(true);
+                battleItemHolder.SetActive(false);
+                if (heldItemsHolder != null)
+                    heldItemsHolder.gameObject.SetActive(false);
                 break;
         }
     }
@@ -148,7 +167,7 @@ public class DraftPlayerIcon : MonoBehaviour
     {
         assignedPlayer = lobby.Players.Find(x => x.Id == assignedPlayer.Id);
 
-        CharacterInfo info = CharactersList.Instance.GetCharacterFromString(assignedPlayer.Data["SelectedCharacter"].Value);
+        CharacterInfo info = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(assignedPlayer.Data["SelectedCharacter"].Value));
 
         UpdateSelectedCharacter(info);
         UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)));

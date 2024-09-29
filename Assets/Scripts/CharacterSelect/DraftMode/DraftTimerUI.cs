@@ -53,19 +53,21 @@ public class DraftTimerUI : MonoBehaviour
     {
         timerText.text = time.ToString("F0");
 
-        if (time != lastValue && time <= 15)
+        int timeInt = int.Parse(timerText.text);
+
+        if (timeInt != lastValue && timeInt <= 15)
         {
             timerText.color = new Color(255 / 255f, 111 / 255f, 6 / 255f, 1f);
             AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Countdown);
             PlayPopInAnimation();
             PlayShadowEffect();
         }
-        else if (time != lastValue)
+        else if (timeInt != lastValue)
         {
             timerText.color = Color.black;
         }
 
-        lastValue = Mathf.FloorToInt(time);
+        lastValue = timeInt;
     }
 
     public void UpdateMessage(string message)

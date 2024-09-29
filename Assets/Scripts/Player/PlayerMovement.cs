@@ -23,7 +23,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool isDashing = false;
     private Vector3 dashDirection;
 
-    public bool CanMove { get => canMove; set => EnableMovement(value); }
+    public bool CanMove { get => canMove; set => canMove = value; }
     public bool CanBeKnockedBack { get => canBeKnockedBack; set => canBeKnockedBack = value; }
     public bool SnapToGround { get => snapToGround; set => snapToGround = value; }
     public bool IsKnockedUp => isKnockedUp;
@@ -56,12 +56,6 @@ public class PlayerMovement : NetworkBehaviour
     private void UpdateSpeed()
     {
         moveSpeed = pokemon.GetSpeed() / 1000f;
-    }
-
-    private void EnableMovement(bool value)
-    {
-        canMove = value;
-        //characterController.enabled = value;
     }
 
     void Update()

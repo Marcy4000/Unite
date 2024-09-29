@@ -40,7 +40,7 @@ public class PlayerSelectionIcon : MonoBehaviour
     {
         assignedPlayer = lobby.Players.Find(x => x.Id == assignedPlayer.Id);
 
-        CharacterInfo info = CharactersList.Instance.GetCharacterFromString(assignedPlayer.Data["SelectedCharacter"].Value);
+        CharacterInfo info = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(assignedPlayer.Data["SelectedCharacter"].Value));
 
         if (info != null)
         {

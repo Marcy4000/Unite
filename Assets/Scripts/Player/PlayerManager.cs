@@ -131,7 +131,7 @@ public class PlayerManager : NetworkBehaviour
         if (IsOwner)
         {
             lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
-            ChangeSelectedPokemonRpc(LobbyController.Instance.Player.Data["SelectedCharacter"].Value);
+            ChangeSelectedPokemonRpc(NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["SelectedCharacter"].Value));
         }
     }
 
@@ -301,9 +301,9 @@ public class PlayerManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Everyone)]
-    public void ChangeSelectedPokemonRpc(string pokemonName)
+    public void ChangeSelectedPokemonRpc(short pokemonId)
     {
-        pokemonLoadHandle = Addressables.LoadAssetAsync<PokemonBase>(CharactersList.Instance.GetCharacterFromString(pokemonName).pokemon);
+        pokemonLoadHandle = Addressables.LoadAssetAsync<PokemonBase>(CharactersList.Instance.GetCharacterFromID(pokemonId).pokemon);
         pokemonLoadHandle.Completed += (handle) =>
         {
             if (handle.Status == AsyncOperationStatus.Succeeded)

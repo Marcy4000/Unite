@@ -20,7 +20,7 @@ public class LoadingScreenPlayer : MonoBehaviour
     public void SetPlayerData(Player player)
     {
         currentPlayer = player;
-        CharacterInfo info = CharactersList.Instance.GetCharacterFromString(player.Data["SelectedCharacter"].Value);
+        CharacterInfo info = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value));
 
         portrait.sprite = info.portrait;
         playerName.text = player.Data["PlayerName"].Value;

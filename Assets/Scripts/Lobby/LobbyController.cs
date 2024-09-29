@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -130,7 +131,12 @@ public class LobbyController : MonoBehaviour
             string eviromentName = Debug.isDebugBuild ? "development" : "production";
             options.SetEnvironmentName(eviromentName);
 
-            options.SetProfile(UnityEngine.Random.Range(0,1000).ToString());
+            //options.SetProfile(UnityEngine.Random.Range(0,1000).ToString());
+
+            string profile = SystemInfo.deviceUniqueIdentifier;
+            profile = RemoveInvalidCharacters(profile);
+            profile = TruncateProfile(profile, 30);
+            options.SetProfile(profile);
 
             await UnityServices.InitializeAsync(options);
 
@@ -165,6 +171,21 @@ public class LobbyController : MonoBehaviour
 
             LoadingScreen.Instance.HideGenericLoadingScreen();
         }
+    }
+
+    private string RemoveInvalidCharacters(string profile)
+    {
+        string validCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+        return new string(profile.Where(c => validCharacters.Contains(c)).ToArray());
+    }
+
+    private string TruncateProfile(string profile, int maxLength)
+    {
+        if (profile.Length > maxLength)
+        {
+            return profile.Substring(0, maxLength);
+        }
+        return profile;
     }
 
     private async Task SubscribeToLobbyEvents(string lobbyID)
@@ -558,11 +579,11 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerData(options);
     }
     
-    public void ChangePlayerCharacter(string characterName)
+    public void ChangePlayerCharacter(short characterName)
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();
         options.Data = localPlayer.Data;
-        options.Data["SelectedCharacter"].Value = characterName;
+        options.Data["SelectedCharacter"].Value = NumberEncoder.ToBase64(characterName);
         Debug.Log($"Changed character to {options.Data["SelectedCharacter"].Value}");
 
         UpdatePlayerData(options);
@@ -679,8 +700,8 @@ public class LobbyController : MonoBehaviour
             return;
         }
         ChangeLobbyVisibility(true);
-        NetworkManager.Singleton.SceneManager.LoadScene("CharacterSelect", LoadSceneMode.Single);
-        //NetworkManager.Singleton.SceneManager.LoadScene("DraftSelect", LoadSceneMode.Single);
+        //NetworkManager.Singleton.SceneManager.LoadScene("CharacterSelect", LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene("DraftSelect", LoadSceneMode.Single);
     }
 
     public void LoadGameMap()
