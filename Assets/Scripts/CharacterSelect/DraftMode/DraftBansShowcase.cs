@@ -44,23 +44,23 @@ public class DraftBansShowcase : MonoBehaviour
             banShowcaseIcons.Add(icon.GetComponent<DraftBanShowcaseIcon>());
         }
 
-        showcaseHolder.transform.localScale = new Vector3(0, 1, 1);
-
-        showcaseHolder.transform.DOScaleX(1, 0.2f);
-
-        StartCoroutine(HideBans());
+        StartCoroutine(DoAnimation());
     }
 
-    private IEnumerator HideBans()
+    private IEnumerator DoAnimation()
     {
-        yield return new WaitForSeconds(0.2f);
+        showcaseHolder.transform.localScale = new Vector3(0, 1, 1);
+
+        yield return showcaseHolder.transform.DOScaleX(1, 0.2f).WaitForCompletion();
+
+        yield return new WaitForSeconds(0.1f);
 
         foreach (var icon in banShowcaseIcons)
         {
             icon.DoAnimation();
         }
 
-        yield return new WaitForSeconds(2.5f);
+        yield return new WaitForSeconds(3f);
 
         yield return showcaseHolder.transform.DOScaleX(0, 0.2f).WaitForCompletion();
         showcaseBg.SetActive(false);

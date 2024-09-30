@@ -82,8 +82,8 @@ public class GameManager : NetworkBehaviour
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        string selectedMap = LobbyController.Instance.Lobby.Data["SelectedMap"].Value;
-        if (sceneName.Equals(selectedMap) && IsServer)
+        MapInfo selectedMap = CharactersList.Instance.GetCurrentLobbyMap();
+        if (sceneName.Equals(selectedMap.sceneName) && IsServer)
         {
             StartCoroutine(WaitForPlayersToLoad());
         }

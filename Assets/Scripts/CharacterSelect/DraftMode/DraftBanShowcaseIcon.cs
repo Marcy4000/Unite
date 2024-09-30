@@ -10,8 +10,16 @@ public class DraftBanShowcaseIcon : MonoBehaviour
 
     public void Initialize(CharacterInfo info, bool animateLeft)
     {
-        portrait.sprite = info.portrait;
+        if (info != null)
+            portrait.sprite = info.portrait;
+
         this.animateLeft = animateLeft;
+
+        portrait.rectTransform.localPosition += animateLeft ? new Vector3(-50, 0, 0) : new Vector3(50, 0, 0);
+        portrait.color = new Color(1, 1, 1, 0.1f);
+
+        banIcon.rectTransform.localScale = new Vector3(2f, 2f, 2f);
+        banIcon.color = new Color(1, 1, 1, 0);
     }
 
     public void DoAnimation()
@@ -27,10 +35,10 @@ public class DraftBanShowcaseIcon : MonoBehaviour
         banIcon.rectTransform.localScale = new Vector3(2f, 2f, 2f);
         banIcon.color = new Color(1, 1, 1, 0);
 
-        portrait.rectTransform.DOLocalMoveX(0, 0.3f).SetEase(Ease.OutBack);
-        portrait.DOFade(1, 0.3f);
+        portrait.rectTransform.DOLocalMoveX(0, 0.4f).SetEase(Ease.OutBack);
+        portrait.DOFade(1, 0.4f);
 
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.45f);
 
         banIcon.rectTransform.DOScale(1, 0.3f).SetEase(Ease.OutBack);
         banIcon.DOFade(1, 0.3f);

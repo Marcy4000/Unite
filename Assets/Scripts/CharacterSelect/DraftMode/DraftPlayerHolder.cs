@@ -19,8 +19,17 @@ public class DraftPlayerHolder : MonoBehaviour
         foreach (Player player in players)
         {
             DraftPlayerIcon playerIcon = Instantiate(playerIconPrefab, playerIconsHolder).GetComponent<DraftPlayerIcon>();
-            playerIcon.Initialize(player);
+            playerIcon.Initialize(player, false);
+            LobbyController.Instance.onLobbyUpdate += playerIcon.UpdatePlayerData;
             playerIcons.Add(playerIcon);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        foreach (DraftPlayerIcon playerIcon in playerIcons)
+        {
+            LobbyController.Instance.onLobbyUpdate -= playerIcon.UpdatePlayerData;
         }
     }
 }

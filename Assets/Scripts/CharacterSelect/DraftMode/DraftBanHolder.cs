@@ -15,6 +15,11 @@ public class DraftBanHolder : MonoBehaviour
 
     public void SetBanIcon(CharacterInfo info)
     {
+        if (info == null)
+        {
+            return;
+        }
+
         pokemonIconHolder.SetActive(true);
         pokemonIcon.sprite = info.icon;
 

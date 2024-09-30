@@ -68,9 +68,9 @@ public class CharactersList : MonoBehaviour
 
     public CharacterInfo GetCharacterFromID(short characterID)
     {
-        if (characterID > characters.Length)
+        if (characterID > characters.Length || characterID < 0)
         {
-            return characters[0];
+            return null;
         }
 
         return characters[characterID];
@@ -86,7 +86,7 @@ public class CharactersList : MonoBehaviour
             }
         }
 
-        return 0;
+        return -1;
     }
 
     public Sprite GetMoveLabel(MoveLabels label)
@@ -98,7 +98,7 @@ public class CharactersList : MonoBehaviour
     {
         if (id > battleItems.Length)
         {
-            return battleItems[0];
+            return null;
         }
 
         return battleItems[id];
@@ -148,16 +148,36 @@ public class CharactersList : MonoBehaviour
 
     public MapInfo GetCurrentLobbyMap()
     {
-        string lobbyMap = LobbyController.Instance.Lobby.Data["SelectedMap"].Value;
+        short lobbyMapId = NumberEncoder.FromBase64<short>(LobbyController.Instance.Lobby.Data["SelectedMap"].Value); ;
 
-        foreach (var map in maps)
+        if (lobbyMapId < maps.Length)
         {
-            if (map.sceneName == lobbyMap)
-            {
-                return map;
-            }
+            return maps[lobbyMapId];
         }
 
         return null;
+    }
+
+    public short GetMapID(MapInfo map)
+    {
+        for (short i = 0; i < maps.Length; i++)
+        {
+            if (maps[i] == map)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    public MapInfo GetMapFromID(short mapID)
+    {
+        if (mapID > maps.Length)
+        {
+            return maps[0];
+        }
+
+        return maps[mapID];
     }
 }

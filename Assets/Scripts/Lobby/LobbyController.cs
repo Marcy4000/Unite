@@ -14,6 +14,7 @@ using Unity.Services.Lobbies.Models;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
 
 public class LobbyController : MonoBehaviour
@@ -131,12 +132,14 @@ public class LobbyController : MonoBehaviour
             string eviromentName = Debug.isDebugBuild ? "development" : "production";
             options.SetEnvironmentName(eviromentName);
 
-            //options.SetProfile(UnityEngine.Random.Range(0,1000).ToString());
-
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
             string profile = SystemInfo.deviceUniqueIdentifier;
             profile = RemoveInvalidCharacters(profile);
             profile = TruncateProfile(profile, 30);
             options.SetProfile(profile);
+#else
+            options.SetProfile(UnityEngine.Random.Range(0, 1000).ToString());
+#endif
 
             await UnityServices.InitializeAsync(options);
 
@@ -159,7 +162,7 @@ public class LobbyController : MonoBehaviour
                 {"OwnerID", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "0")},
                 {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
                 {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
-                {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "")},
+                {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(-1))},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")},
                 {"HeldItems", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, HeldItemDatabase.SerializeHeldItems(new byte[] {0, 0, 0}))},
                 {"ClothingInfo", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, clothes.Serialize())}
@@ -287,7 +290,7 @@ public class LobbyController : MonoBehaviour
                 Player = localPlayer,
                 Data = new Dictionary<string, DataObject>
                 {
-                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, "RemoatStadium")}
+                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))}
                 },
             };
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
@@ -579,11 +582,11 @@ public class LobbyController : MonoBehaviour
         UpdatePlayerData(options);
     }
     
-    public void ChangePlayerCharacter(short characterName)
+    public void ChangePlayerCharacter(short characterID)
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();
         options.Data = localPlayer.Data;
-        options.Data["SelectedCharacter"].Value = NumberEncoder.ToBase64(characterName);
+        options.Data["SelectedCharacter"].Value = NumberEncoder.ToBase64(characterID);
         Debug.Log($"Changed character to {options.Data["SelectedCharacter"].Value}");
 
         UpdatePlayerData(options);
@@ -639,7 +642,7 @@ public class LobbyController : MonoBehaviour
         options.HostId = partyLobby.HostId;
         options.Name = partyLobby.Name;
         options.IsPrivate = partyLobby.IsPrivate;
-        options.Data["SelectedMap"] = new DataObject(DataObject.VisibilityOptions.Member, map.sceneName);
+        options.Data["SelectedMap"] = new DataObject(DataObject.VisibilityOptions.Member, NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)));
 
         UpdateLobbyData(options);
     }
@@ -700,8 +703,11 @@ public class LobbyController : MonoBehaviour
             return;
         }
         ChangeLobbyVisibility(true);
-        //NetworkManager.Singleton.SceneManager.LoadScene("CharacterSelect", LoadSceneMode.Single);
-        NetworkManager.Singleton.SceneManager.LoadScene("DraftSelect", LoadSceneMode.Single);
+        
+
+        string mapMode = CharactersList.Instance.GetCurrentLobbyMap().useDraftMode ? "DraftSelect" : "CharacterSelect";
+
+        NetworkManager.Singleton.SceneManager.LoadScene(mapMode, LoadSceneMode.Single);
     }
 
     public void LoadGameMap()
@@ -710,8 +716,8 @@ public class LobbyController : MonoBehaviour
         {
             return;
         }
-        string selectedMap = partyLobby.Data["SelectedMap"].Value;
-        NetworkManager.Singleton.SceneManager.LoadScene(selectedMap, LoadSceneMode.Single);
+        MapInfo selectedMap = CharactersList.Instance.GetMapFromID(NumberEncoder.FromBase64<short>(partyLobby.Data["SelectedMap"].Value));
+        NetworkManager.Singleton.SceneManager.LoadScene(selectedMap.sceneName, LoadSceneMode.Single);
     }
 
     public void LoadResultsScreen()

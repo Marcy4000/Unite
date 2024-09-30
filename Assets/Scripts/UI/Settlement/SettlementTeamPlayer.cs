@@ -22,7 +22,10 @@ public class SettlementTeamPlayer : MonoBehaviour
         }
 
         playerName.text = player.Data["PlayerName"].Value;
-        pokemonName.text = player.Data["SelectedCharacter"].Value;
+
+        CharacterInfo character = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value));
+        if (character != null)
+            pokemonName.text = character.pokemonName;
 
         pokemonName.text.FirstCharacterToUpper();
     }

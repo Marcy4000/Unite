@@ -12,9 +12,9 @@ public enum DraftPlayerState : byte
 
 public class DraftPlayerIcon : MonoBehaviour
 {
-    [SerializeField] private GameObject glowObject, playerHolder, selectedCharacterHolder, battleItemHolder, banUIHolder, confirmCheck;
+    [SerializeField] private GameObject playerHolder, selectedCharacterHolder, battleItemHolder, banUIHolder, confirmCheck;
     [SerializeField] private TMP_Text playerNameText;
-    [SerializeField] private Image selectedCharacterIcon, bannedCharacterIcon, battleItemSprite;
+    [SerializeField] private Image selectedCharacterIcon, bannedCharacterIcon, battleItemSprite, glowObject;
     [SerializeField] private PlayerHeadUI playerHead;
     [SerializeField] private PlayerHeldItemsIcons heldItemsHolder;
 
@@ -26,16 +26,21 @@ public class DraftPlayerIcon : MonoBehaviour
 
     private DraftPlayerState state;
     private CharacterInfo selectedCharacter;
+    private CharacterInfo bannedCharacter;
+
+    private bool autoSyncCharacter = true;
 
     private Player assignedPlayer;
 
     public Player AssignedPlayer => assignedPlayer;
     public CharacterInfo SelectedCharacter => selectedCharacter;
+    public CharacterInfo BannedCharacter => bannedCharacter;
 
-    public void Initialize(Player player)
+    public void Initialize(Player player, bool autoSyncCharacter=true)
     {
         assignedPlayer = player;
         playerNameText.text = player.Data["PlayerName"].Value;
+        this.autoSyncCharacter = autoSyncCharacter;
         UpdateSelectedCharacter(null);
         UpdateBannedCharacter(null);
         playerHead.InitializeHead(PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value));
@@ -109,12 +114,17 @@ public class DraftPlayerIcon : MonoBehaviour
         if (highlighted)
         {
             playerHolder.GetComponent<RectTransform>().DOAnchorPosX(playerBGSelectedPos, 0.3f);
-            glowObject.SetActive(true);
+            glowObject.gameObject.SetActive(true);
+
+            glowObject.DOColor(new Color(1, 1, 1, 0.5f), 1f).SetLoops(-1, LoopType.Yoyo);
         }
         else
         {
             playerHolder.GetComponent<RectTransform>().DOAnchorPosX(playerBGIdlePos, 0.3f);
-            glowObject.SetActive(false);
+            glowObject.gameObject.SetActive(false);
+
+            glowObject.DOKill();
+            glowObject.color = Color.white;
         }
     }
 
@@ -133,6 +143,8 @@ public class DraftPlayerIcon : MonoBehaviour
 
     public void UpdateBannedCharacter(CharacterInfo info)
     {
+        bannedCharacter = info;
+
         if (info == null)
         {
             bannedCharacterIcon.gameObject.SetActive(false);
@@ -171,9 +183,12 @@ public class DraftPlayerIcon : MonoBehaviour
     {
         assignedPlayer = lobby.Players.Find(x => x.Id == assignedPlayer.Id);
 
-        CharacterInfo info = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(assignedPlayer.Data["SelectedCharacter"].Value));
+        if (autoSyncCharacter)
+        { 
+            CharacterInfo info = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(assignedPlayer.Data["SelectedCharacter"].Value));
+            UpdateSelectedCharacter(info);
+        }
 
-        UpdateSelectedCharacter(info);
         UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)));
 
         UpdateHeldItems(HeldItemDatabase.DeserializeHeldItems(assignedPlayer.Data["HeldItems"].Value));

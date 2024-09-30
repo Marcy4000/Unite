@@ -28,6 +28,8 @@ public class MapInfo : ScriptableObject
 
     [Space]
 
+    public bool useDraftMode;
+
     [TextArea(3, 10)]
     public string description;
 }

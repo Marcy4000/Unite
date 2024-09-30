@@ -70,7 +70,7 @@ public class MapSelector : MonoBehaviour
 
         foreach (MapSelectorIcon icon in icons)
         {
-            if (icon.MapInfo.sceneName == LobbyController.Instance.Lobby.Data["SelectedMap"].Value)
+            if (icon.MapInfo == CharactersList.Instance.GetCurrentLobbyMap())
             {
                 icon.SelectToggle();
                 return;

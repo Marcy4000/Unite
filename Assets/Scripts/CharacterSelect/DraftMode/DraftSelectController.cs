@@ -7,9 +7,12 @@ using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public enum DraftPhase : byte { Banning, Picking, Preparation, Starting }
+public enum DraftPhase : byte { Banning, Picking, Preparation, Starting, Waiting }
 
 public class DraftSelectController : NetworkBehaviour
 {
@@ -21,11 +24,17 @@ public class DraftSelectController : NetworkBehaviour
     [SerializeField] private DraftTimerUI draftTimerUI;
     [SerializeField] private DraftCharacterSelector draftCharacterSelector;
     [SerializeField] private DraftBansShowcase draftBansShowcase;
-    [SerializeField] private Button confirmButton, switchButton;
+    [SerializeField] private Button confirmButton, switchButton, battlePrepButton;
+    [SerializeField] private GameObject background;
+    [SerializeField] private Transform pokemonSpawnPoint;
+    [SerializeField] private TrainerModel trainerModel;
 
     [Space]
     [SerializeField] private Transform allyBanHolder, enemyBanHolder;
     [SerializeField] private GameObject banIconPrefab;
+
+    private GameObject currentPokemon;
+    private AsyncOperationHandle<GameObject> characterSelectModelHandle;
 
     private int currentAllyBanIndex = 0;
     private int currentEnemyBanIndex = 0;
@@ -37,7 +46,7 @@ public class DraftSelectController : NetworkBehaviour
     private List<Player> EnemyTeamPlayers => LobbyController.Instance.GetLocalPlayerTeam() ? blueTeamPlayers : orangeTeamPlayers;
 
     // Network-synced variables
-    private NetworkVariable<DraftPhase> currentDraftPhase = new NetworkVariable<DraftPhase>(DraftPhase.Banning);
+    private NetworkVariable<DraftPhase> currentDraftPhase = new NetworkVariable<DraftPhase>(DraftPhase.Waiting);
     private NetworkVariable<int> currentTurnIndex = new NetworkVariable<int>(0);
     private NetworkVariable<float> draftTimer = new NetworkVariable<float>(0f);
 
@@ -88,13 +97,39 @@ public class DraftSelectController : NetworkBehaviour
         if (IsServer)
         {
             InitializePlayerStates();
-            StartPhase(DraftPhase.Banning);
         }
 
-        OnTurnIndexChanged(0, 0);
+        if (IsClient)
+        {
+            LobbyController.Instance.ChangePlayerCharacter(-1);
+            trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
+        }
 
         AudioManager.StopAllMusic();
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon);
+    }
+
+    private void OnEnable()
+    {
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        if (sceneName == "DraftSelect")
+        {
+            if (IsServer)
+            {
+                StartPhase(DraftPhase.Banning);
+            }
+            OnTurnIndexChanged(0, 0);
+            LoadingScreen.Instance.HideGameBeginScreen();
+        }
     }
 
     private void OnPlayerStatesChanged(NetworkListEvent<byte> listEvent)
@@ -129,6 +164,7 @@ public class DraftSelectController : NetworkBehaviour
         draftPlayerHolderOrange.Initialize(EnemyTeamPlayers);
 
         switchButton.onClick.AddListener(OnSwitchButtonClicked);
+        battlePrepButton.gameObject.SetActive(false);
 
         for (int i = 0; i < maxBansPerTeam; i++)
         {
@@ -212,7 +248,10 @@ public class DraftSelectController : NetworkBehaviour
 
     private IEnumerator ShowBansWhenUpdated()
     {
-        while (bannedCharacters.Count < maxBansPerTeam * 2)
+        int totalBansRequired = Mathf.Min(blueTeamPlayers.Count, maxBansPerTeam) +
+                                Mathf.Min(orangeTeamPlayers.Count, maxBansPerTeam);
+
+        while (bannedCharacters.Count < totalBansRequired)
         {
             yield return null;
         }
@@ -220,11 +259,12 @@ public class DraftSelectController : NetworkBehaviour
         List<CharacterInfo> bannedCharactersInfo = new List<CharacterInfo>();
         foreach (short bannedCharacter in bannedCharacters)
         {
-            bannedCharactersInfo.Add(CharactersList.Instance.Characters[bannedCharacter]);
+            bannedCharactersInfo.Add(CharactersList.Instance.GetCharacterFromID(bannedCharacter));
         }
 
         draftBansShowcase.ShowBans(bannedCharactersInfo);
     }
+
 
     private void OnTurnIndexChanged(int previous, int current)
     {
@@ -308,6 +348,9 @@ public class DraftSelectController : NetworkBehaviour
             {
                 CharacterInfo selectedCharacterInfo = CharactersList.Instance.Characters[selectedCharacter];
                 LobbyController.Instance.ChangePlayerCharacter((short)selectedCharacter);
+                SpawnPokemon(selectedCharacterInfo);
+                draftCharacterSelector.gameObject.SetActive(false);
+                battlePrepButton.gameObject.SetActive(true);
             }
             else if (isBan)
             {
@@ -316,13 +359,13 @@ public class DraftSelectController : NetworkBehaviour
                 if (isAllyBan)
                 {
                     Transform banHolder = allyBanHolder.GetChild(currentAllyBanIndex);
-                    banHolder.GetComponent<DraftBanHolder>().SetBanIcon(CharactersList.Instance.Characters[selectedCharacter]);
+                    banHolder.GetComponent<DraftBanHolder>().SetBanIcon(CharactersList.Instance.GetCharacterFromID((short)selectedCharacter));
                     currentAllyBanIndex++;
                 }
                 else
                 {
                     Transform banHolder = enemyBanHolder.GetChild(currentEnemyBanIndex);
-                    banHolder.GetComponent<DraftBanHolder>().SetBanIcon(CharactersList.Instance.Characters[selectedCharacter]);
+                    banHolder.GetComponent<DraftBanHolder>().SetBanIcon(CharactersList.Instance.GetCharacterFromID((short)selectedCharacter));
                     currentEnemyBanIndex++;
                 }
             }
@@ -408,9 +451,24 @@ public class DraftSelectController : NetworkBehaviour
 
     private bool IsPhaseComplete()
     {
-        int totalTurns = currentDraftPhase.Value == DraftPhase.Banning
-            ? maxBansPerTeam * 2
-            : AllyTeamPlayers.Count + EnemyTeamPlayers.Count; // Adjust for the picking offset
+        int totalTurns;
+
+        if (currentDraftPhase.Value == DraftPhase.Banning)
+        {
+            // Calculate total bans based on actual team sizes
+            int blueTeamBans = Mathf.Min(blueTeamPlayers.Count, maxBansPerTeam);
+            int orangeTeamBans = Mathf.Min(orangeTeamPlayers.Count, maxBansPerTeam);
+
+            // Total turns is the sum of bans from both teams
+            totalTurns = blueTeamBans + orangeTeamBans;
+        }
+        else
+        {
+            // Picking phase logic: total turns is the sum of both team sizes
+            totalTurns = blueTeamPlayers.Count + orangeTeamPlayers.Count;
+        }
+
+        // Check if the current turn index has reached or exceeded the total turns
         return currentTurnIndex.Value >= totalTurns;
     }
 
@@ -506,6 +564,11 @@ public class DraftSelectController : NetworkBehaviour
         AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme, true);
         AudioManager.PlaySound(DefaultAudioSounds.Play_Load17051302578487348);
         LoadingScreen.Instance.ShowMatchLoadingScreen();
+
+        if (characterSelectModelHandle.IsValid())
+        {
+            Addressables.Release(characterSelectModelHandle);
+        }
     }
 
     private void Update()
@@ -548,7 +611,11 @@ public class DraftSelectController : NetworkBehaviour
                     ? draftPlayerHolderOrange.PlayerIcons.First(icon => icon.AssignedPlayer.Id == playerID)
                     : draftPlayerHolderBlue.PlayerIcons.First(icon => icon.AssignedPlayer.Id == playerID);
 
-                int selectedCharacterID = playerIcon.SelectedCharacter == null ? CharactersList.Instance.GetCharacterID(GetRandomValidCharacter()) : CharactersList.Instance.GetCharacterID(playerIcon.SelectedCharacter);
+                int noSelectionCharacterID = currentDraftPhase.Value == DraftPhase.Banning ? -1 : CharactersList.Instance.GetCharacterID(GetRandomValidCharacter());
+                CharacterInfo selectedCharacter = currentDraftPhase.Value == DraftPhase.Banning ? playerIcon.BannedCharacter : playerIcon.SelectedCharacter;
+
+                int selectedCharacterID = selectedCharacter == null ? noSelectionCharacterID : CharactersList.Instance.GetCharacterID(selectedCharacter);
+
                 OnPlayerConfirmed?.Invoke(playerID, selectedCharacterID);
                 ConfirmSelectionRPC(playerID, selectedCharacterID);
             }
@@ -670,7 +737,7 @@ public class DraftSelectController : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     private void UpdateHoveredBanCharacterRPC(string playerID, short selectedCharacter)
     {
         foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
@@ -692,7 +759,7 @@ public class DraftSelectController : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    [Rpc(SendTo.Everyone)]
     private void UpdateHoveredSelectedCharacterRPC(string playerID, short selectedCharacter)
     {
         foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
@@ -741,5 +808,43 @@ public class DraftSelectController : NetworkBehaviour
     private bool IsPlayerOnYourTeam(string playerID)
     {
         return AllyTeamPlayers.Any(player => player.Id == playerID);
+    }
+
+    private void SpawnPokemon(CharacterInfo character)
+    {
+        if (character == null)
+        {
+            return;
+        }
+
+        if (currentPokemon != null)
+        {
+            Destroy(currentPokemon);
+            currentPokemon = null;
+        }
+
+        // Release the previous addressable handle if valid
+        if (characterSelectModelHandle.IsValid())
+        {
+            Addressables.Release(characterSelectModelHandle);
+        }
+
+        background.SetActive(true);
+
+        characterSelectModelHandle = Addressables.LoadAssetAsync<GameObject>(character.model);
+        characterSelectModelHandle.Completed += OnCharacterSelectModelLoaded;
+    }
+
+    private void OnCharacterSelectModelLoaded(AsyncOperationHandle<GameObject> obj)
+    {
+        if (obj.Status == AsyncOperationStatus.Succeeded)
+        {
+            currentPokemon = Instantiate(obj.Result, pokemonSpawnPoint);
+            background.SetActive(false);
+        }
+        else
+        {
+            Debug.LogError("Failed to load asset.");
+        }
     }
 }

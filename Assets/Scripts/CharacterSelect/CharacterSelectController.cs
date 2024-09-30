@@ -82,7 +82,7 @@ public class CharacterSelectController : NetworkBehaviour
         {
             GameObject playerIcon = Instantiate(playerIconPrefab, playerIconsHolder);
             playerIcon.GetComponent<PlayerSelectionIcon>().Initialize(player);
-            if (player.Id == LobbyController.Instance.Player.Id && !string.IsNullOrEmpty(player.Data["SelectedCharacter"].Value))
+            if (player.Id == LobbyController.Instance.Player.Id && NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value) >= 0)
             {
                 SpawnPokemon(CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)));
             }
@@ -206,7 +206,7 @@ public class CharacterSelectController : NetworkBehaviour
 
         if (selectionTimer.Value <= 0.3f && !hasSelectedCharacter)
         {
-            if (string.IsNullOrEmpty(LobbyController.Instance.Player.Data["SelectedCharacter"].Value))
+            if (NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["SelectedCharacter"].Value) < 0)
             {
                 ChangeCharacter(GetRandomCharacter());
             }
@@ -278,6 +278,11 @@ public class CharacterSelectController : NetworkBehaviour
 
     private void SpawnPokemon(CharacterInfo character)
     {
+        if(character == null)
+        {
+            return;
+        }
+
         if (currentPokemon != null)
         {
             Destroy(currentPokemon);

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,6 +9,7 @@ public class DraftCharacterSelector : MonoBehaviour
     [SerializeField] private Transform holder;
     [SerializeField] private GameObject iconPrefab;
     [SerializeField] private ToggleGroup toggleGroup;
+    [SerializeField] private TMP_Dropdown categoryDropdown;
 
     private List<DraftCharacterSelectIcon> icons = new List<DraftCharacterSelectIcon>();
 
@@ -34,6 +36,18 @@ public class DraftCharacterSelector : MonoBehaviour
                 }
             });
             icons.Add(draftCharacterIcon);
+        }
+
+        categoryDropdown.onValueChanged.AddListener(OnCategoryChange);
+    }
+
+    private void OnCategoryChange(int value)
+    {
+        foreach (var icon in icons)
+        {
+            bool shouldShow = value == 0 || (int)icon.Info.pClass == value-1;
+
+            icon.gameObject.SetActive(shouldShow);
         }
     }
 
