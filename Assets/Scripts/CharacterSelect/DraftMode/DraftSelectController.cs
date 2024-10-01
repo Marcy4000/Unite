@@ -200,9 +200,24 @@ public class DraftSelectController : NetworkBehaviour
         switch (currentDraftPhase.Value)
         {
             case DraftPhase.Banning:
-                for (int i = playerStates.Count - 1; i >= playerStates.Count - maxBansPerTeam; i--)
+                List<string> banningPlayerIDs = new List<string>();
+
+                for (int i = 0; i < maxBansPerTeam; i++)
                 {
-                    playerStates[i] = (byte)DraftPlayerState.BanningIdle;
+                    if (blueTeamPlayers.Count - 1 - i >= 0 && blueTeamPlayers.Count - 1 - i < blueTeamPlayers.Count)
+                        banningPlayerIDs.Add(blueTeamPlayers[blueTeamPlayers.Count - 1 - i].Id);
+
+                    if (orangeTeamPlayers.Count - 1 - i >= 0 && orangeTeamPlayers.Count - 1 - i < orangeTeamPlayers.Count)
+                        banningPlayerIDs.Add(orangeTeamPlayers[orangeTeamPlayers.Count - 1 - i].Id);
+                }
+
+                foreach (string playerID in banningPlayerIDs)
+                {
+                    int index = GetPlayerIndex(playerID);
+                    if (index != -1)
+                    {
+                        playerStates[index] = (byte)DraftPlayerState.BanningIdle;
+                    }
                 }
 
                 foreach (string playerID in selectedPlayers)
@@ -264,7 +279,6 @@ public class DraftSelectController : NetworkBehaviour
 
         draftBansShowcase.ShowBans(bannedCharactersInfo);
     }
-
 
     private void OnTurnIndexChanged(int previous, int current)
     {
@@ -465,7 +479,7 @@ public class DraftSelectController : NetworkBehaviour
         else
         {
             // Picking phase logic: total turns is the sum of both team sizes
-            totalTurns = blueTeamPlayers.Count + orangeTeamPlayers.Count;
+            totalTurns = 1 + (blueTeamPlayers.Count + orangeTeamPlayers.Count) / 2;
         }
 
         // Check if the current turn index has reached or exceeded the total turns
@@ -690,11 +704,11 @@ public class DraftSelectController : NetworkBehaviour
         int playerIndex = (maxBansPerTeam * 2) - 1 - currentTurnIndex.Value;
         if (playerIndex % 2 == 0)
         {
-            return orangeTeamPlayers[playerIndex / 2].Id;
+            return orangeTeamPlayers[orangeTeamPlayers.Count - 1 - playerIndex / 2].Id;
         }
         else
         {
-            return blueTeamPlayers[playerIndex / 2].Id;
+            return blueTeamPlayers[blueTeamPlayers.Count - 1 - playerIndex / 2].Id;
         }
     }
 
