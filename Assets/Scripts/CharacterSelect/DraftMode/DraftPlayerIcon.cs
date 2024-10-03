@@ -17,6 +17,7 @@ public class DraftPlayerIcon : MonoBehaviour
     [SerializeField] private Image selectedCharacterIcon, bannedCharacterIcon, battleItemSprite, glowObject;
     [SerializeField] private PlayerHeadUI playerHead;
     [SerializeField] private PlayerHeldItemsIcons heldItemsHolder;
+    [SerializeField] private DraftRequestHolder requestHolder;
 
     [SerializeField] private Sprite emptyBattleItem;
 
@@ -192,5 +193,12 @@ public class DraftPlayerIcon : MonoBehaviour
         UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(assignedPlayer.Data["BattleItem"].Value)));
 
         UpdateHeldItems(HeldItemDatabase.DeserializeHeldItems(assignedPlayer.Data["HeldItems"].Value));
+    }
+
+    public void ShowRequest(CharacterInfo requestedCharacter, bool isBanRequest)
+    {
+        if (requestHolder == null) return;
+
+        requestHolder.ShowRequest(requestedCharacter, isBanRequest);
     }
 }

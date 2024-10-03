@@ -24,7 +24,8 @@ public class DraftSelectController : NetworkBehaviour
     [SerializeField] private DraftTimerUI draftTimerUI;
     [SerializeField] private DraftCharacterSelector draftCharacterSelector;
     [SerializeField] private DraftBansShowcase draftBansShowcase;
-    [SerializeField] private Button confirmButton, switchButton, battlePrepButton;
+    [SerializeField] private DraftPicksShowcaser pickShowcaserBlue, pickShowcaserOrange;
+    [SerializeField] private Button confirmButton, switchButton, battlePrepButton, banRequestButton;
     [SerializeField] private GameObject background;
     [SerializeField] private Transform pokemonSpawnPoint;
     [SerializeField] private TrainerModel trainerModel;
@@ -164,6 +165,7 @@ public class DraftSelectController : NetworkBehaviour
         draftPlayerHolderOrange.Initialize(EnemyTeamPlayers);
 
         switchButton.onClick.AddListener(OnSwitchButtonClicked);
+        banRequestButton.onClick.AddListener(OnBanRequestButtonClicked);
         battlePrepButton.gameObject.SetActive(false);
 
         for (int i = 0; i < maxBansPerTeam; i++)
@@ -284,6 +286,8 @@ public class DraftSelectController : NetworkBehaviour
     {
         UpdatePlayerIcons();
 
+        switchButton.interactable = true;
+
         switch (currentDraftPhase.Value)
         {
             case DraftPhase.Banning:
@@ -383,6 +387,18 @@ public class DraftSelectController : NetworkBehaviour
                     currentEnemyBanIndex++;
                 }
             }
+
+            if (!isBan)
+            {
+                if (IsPlayerOnYourTeam(playerID))
+                {
+                    pickShowcaserBlue.AddPickToShow(CharactersList.Instance.GetCharacterFromID((short)selectedCharacter));
+                }
+                else
+                {
+                    pickShowcaserOrange.AddPickToShow(CharactersList.Instance.GetCharacterFromID((short)selectedCharacter));
+                }
+            }
         }
     }
 
@@ -407,6 +423,11 @@ public class DraftSelectController : NetworkBehaviour
         currentTurnIndex.Value += 1;
 
         draftTimer.Value = GetPhaseTimeLimit(currentDraftPhase.Value);
+
+        if (currentDraftPhase.Value == DraftPhase.Picking)
+        {
+            ShowTeamPicksRPC((currentTurnIndex.Value - 1) % 2 != 0, currentTurnPlayers.Count);
+        }
 
         if (IsPhaseComplete())
         {
@@ -486,6 +507,29 @@ public class DraftSelectController : NetworkBehaviour
         return currentTurnIndex.Value >= totalTurns;
     }
 
+    private bool IsPhaseComplete(int currentTurn)
+    {
+        int totalTurns;
+
+        if (currentDraftPhase.Value == DraftPhase.Banning)
+        {
+            // Calculate total bans based on actual team sizes
+            int blueTeamBans = Mathf.Min(blueTeamPlayers.Count, maxBansPerTeam);
+            int orangeTeamBans = Mathf.Min(orangeTeamPlayers.Count, maxBansPerTeam);
+
+            // Total turns is the sum of bans from both teams
+            totalTurns = blueTeamBans + orangeTeamBans;
+        }
+        else
+        {
+            // Picking phase logic: total turns is the sum of both team sizes
+            totalTurns = 1 + (blueTeamPlayers.Count + orangeTeamPlayers.Count) / 2;
+        }
+
+        // Check if the current turn index has reached or exceeded the total turns
+        return currentTurn >= totalTurns;
+    }
+
     private bool IsCurrentPlayerTurn(string playerID)
     {
         return GetCurrentPlayerIDs().Contains(playerID);
@@ -518,7 +562,8 @@ public class DraftSelectController : NetworkBehaviour
         bool isCurrentPlayer = IsCurrentPlayerTurn(LobbyController.Instance.Player.Id);
         DraftPlayerState currentPlayerState = (DraftPlayerState)playerStates[GetPlayerIndex(LobbyController.Instance.Player.Id)];
         confirmButton.gameObject.SetActive(isCurrentPlayer && currentDraftPhase.Value != DraftPhase.Preparation && (currentPlayerState == DraftPlayerState.Banning || currentPlayerState == DraftPlayerState.Picking));
-        switchButton.gameObject.SetActive(!isCurrentPlayer && currentDraftPhase.Value == DraftPhase.Picking && (currentTurnIndex.Value % 2 == 0) == LobbyController.Instance.GetLocalPlayerTeam());
+        switchButton.gameObject.SetActive(!isCurrentPlayer && currentDraftPhase.Value == DraftPhase.Picking && IsLocalTeamTurn());
+        banRequestButton.gameObject.SetActive(!isCurrentPlayer && currentDraftPhase.Value == DraftPhase.Banning && IsLocalTeamTurn());
     }
 
     private float GetPhaseTimeLimit(DraftPhase phase)
@@ -726,7 +771,20 @@ public class DraftSelectController : NetworkBehaviour
 
     private void OnSwitchButtonClicked()
     {
+        if (IsLocalTeamTurn() && !IsCurrentPlayerTurn(LobbyController.Instance.Player.Id))
+        {
+            ShowRequestRPC(LobbyController.Instance.Player.Id, CharactersList.Instance.GetCharacterID(draftCharacterSelector.HoveredCharacter), false);
+            switchButton.interactable = false;
+        }
+    }
 
+    private void OnBanRequestButtonClicked()
+    {
+        if (IsLocalTeamTurn() && !IsCurrentPlayerTurn(LobbyController.Instance.Player.Id))
+        {
+            ShowRequestRPC(LobbyController.Instance.Player.Id, CharactersList.Instance.GetCharacterID(draftCharacterSelector.HoveredCharacter), true);
+            StartCoroutine(BanRequestCooldown());
+        }
     }
 
     private void UpdateHoveredCharacter()
@@ -798,6 +856,31 @@ public class DraftSelectController : NetworkBehaviour
         }
     }
 
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShowTeamPicksRPC(bool orangeTeam, int expectedPicks)
+    {
+        bool isLocalTeamTurn = LobbyController.Instance.GetLocalPlayerTeam() == orangeTeam;
+
+        if (isLocalTeamTurn)
+        {
+            StartCoroutine(ShowTeamPicks(pickShowcaserBlue, expectedPicks));
+        }
+        else
+        {
+            StartCoroutine(ShowTeamPicks(pickShowcaserOrange, expectedPicks));
+        }
+    }
+
+    private IEnumerator ShowTeamPicks(DraftPicksShowcaser pickShowcaser, int expectedPicks)
+    {
+        while (pickShowcaser.PicksToShowCount < expectedPicks)
+        {
+            yield return null;
+        }
+
+        pickShowcaser.ShowPicks();
+    }
+
     private void UpdatePlayerSelectedCharacter(string playerID, short selectedCharacter)
     {
         foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
@@ -822,6 +905,16 @@ public class DraftSelectController : NetworkBehaviour
     private bool IsPlayerOnYourTeam(string playerID)
     {
         return AllyTeamPlayers.Any(player => player.Id == playerID);
+    }
+
+    private bool IsLocalTeamTurn()
+    {
+        return currentTurnIndex.Value % 2 == 0 == !LobbyController.Instance.GetLocalPlayerTeam();
+    }
+
+    private bool IsLocalTeamTurn(int currentTurn)
+    {
+        return currentTurn % 2 == 0 == !LobbyController.Instance.GetLocalPlayerTeam();
     }
 
     private void SpawnPokemon(CharacterInfo character)
@@ -860,5 +953,31 @@ public class DraftSelectController : NetworkBehaviour
         {
             Debug.LogError("Failed to load asset.");
         }
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void ShowRequestRPC(string playerID, short selectedCharacter, bool banRequest)
+    {
+        if (AllyTeamPlayers.Any(player => player.Id == playerID))
+        {
+            foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
+            {
+                if (playerIcon.AssignedPlayer.Id == playerID)
+                {
+                    CharacterInfo character = CharactersList.Instance.GetCharacterFromID(selectedCharacter);
+                    playerIcon.ShowRequest(character, banRequest);
+                    break;
+                }
+            }
+        }
+    }
+
+    private IEnumerator BanRequestCooldown()
+    {
+        banRequestButton.interactable = false;
+
+        yield return new WaitForSeconds(10f);
+
+        banRequestButton.interactable = true;
     }
 }

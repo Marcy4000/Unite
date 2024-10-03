@@ -55,7 +55,7 @@ public class DraftCharacterSelector : MonoBehaviour
     {
         foreach (var icon in icons)
         {
-            icon.Toggle.interactable = IsCharacterAvailable(icon.Info);
+            icon.SetEnabled(IsCharacterAvailable(icon.Info), DraftSelectController.Instance.BannedCharacters.Contains(CharactersList.Instance.GetCharacterID(icon.Info)));
             icon.Toggle.isOn = false;
         }
     }

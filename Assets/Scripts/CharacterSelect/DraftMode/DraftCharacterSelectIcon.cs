@@ -5,6 +5,7 @@ public class DraftCharacterSelectIcon : MonoBehaviour
 {
     [SerializeField] private Image charSprite;
     [SerializeField] private Toggle toggle;
+    [SerializeField] private GameObject disabledSprite, bannedSprite;
 
     private CharacterInfo info;
 
@@ -16,5 +17,14 @@ public class DraftCharacterSelectIcon : MonoBehaviour
         this.info = info;
         charSprite.sprite = info.portrait;
         toggle.isOn = false;
+        disabledSprite.SetActive(false);
+        bannedSprite.SetActive(false);
+    }
+
+    public void SetEnabled(bool enabled, bool banned)
+    {
+        toggle.interactable = enabled;
+        disabledSprite.SetActive(!enabled);
+        bannedSprite.SetActive(banned);
     }
 }
