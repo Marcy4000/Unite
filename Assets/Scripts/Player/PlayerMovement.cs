@@ -9,6 +9,7 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private float dashDistance = 5f; // Set your desired dash distance
     [SerializeField] private float dashDuration = 0.2f; // Set your desired dash duration
     [SerializeField] private AnimationManager animationManager;
+    [SerializeField] private LayerMask wallLayerMask;
     private Vector3 inputMovement;
     private Vector3 currentMovement; // Accumulated movement vector
     private CharacterController characterController;
@@ -89,6 +90,7 @@ public class PlayerMovement : NetworkBehaviour
             return;
         }
 
+        CheckIfPlayerIsInAWall();
         SnapPlayerToGround();
     }
 
@@ -104,7 +106,7 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
-    void SnapPlayerToGround()
+    private void SnapPlayerToGround()
     {
         RaycastHit hit;
         if (Physics.Raycast(transform.position, Vector3.down, out hit))
@@ -113,6 +115,63 @@ public class PlayerMovement : NetworkBehaviour
             if (distanceToGround > 0.001f) // Adjust this threshold as needed
             {
                 currentMovement += (Vector3.down * (distanceToGround - 0.001f))/Time.deltaTime; // Snap to ground
+            }
+        }
+    }
+
+    // Doesn't quite cover all cases
+    private void CheckIfPlayerIsInAWall()
+    {
+        Vector3 playerPosition = characterController.transform.position;
+        Vector3 controllerCenter = playerPosition + characterController.center;
+        float controllerRadius = characterController.radius;
+        float controllerHeight = characterController.height / 2f;
+
+        Collider[] hitColliders = Physics.OverlapCapsule(controllerCenter + Vector3.up * (controllerHeight / 2),
+                                                         controllerCenter - Vector3.up * (controllerHeight / 2),
+                                                         controllerRadius,
+                                                         wallLayerMask);
+
+        if (hitColliders.Length > 0)
+        {
+            foreach (var hitCollider in hitColliders)
+            {
+                if (hitCollider.isTrigger)
+                {
+                    continue;
+                }
+
+                if (hitCollider is MeshCollider meshCollider && !meshCollider.convex)
+                {
+                    RaycastHit hit;
+                    Vector3 rayDirection = (controllerCenter - hitCollider.bounds.center).normalized;
+
+                    if (Physics.Raycast(controllerCenter, rayDirection, out hit, controllerRadius * 2, wallLayerMask))
+                    {
+                        Vector3 pushOutDirection = hit.normal;
+
+                        pushOutDirection.y = 0;
+
+                        Vector3 newPlayerPosition = playerPosition + pushOutDirection * (controllerRadius + 0.1f);
+
+                        transform.position = newPlayerPosition;
+                    }
+                }
+                else
+                {
+                    Vector3 closestPoint = hitCollider.ClosestPoint(controllerCenter);
+
+                    if (Vector3.Distance(controllerCenter, closestPoint) < controllerRadius)
+                    {
+                        Vector3 pushOutDirection = (controllerCenter - closestPoint).normalized;
+
+                        pushOutDirection.y = 0;
+
+                        Vector3 newPlayerPosition = playerPosition + pushOutDirection * (controllerRadius + 0.1f);
+
+                        transform.position = newPlayerPosition;
+                    }
+                }
             }
         }
     }
