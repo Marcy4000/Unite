@@ -31,7 +31,7 @@ public class BattleNotificationUI : MonoBehaviour
         for (int i = notificationTimes.Count; i > 0; i--)
         {
             int index = i - 1;
-            if (GameManager.Instance.GameTime <= notificationTimes[index])
+            if (GameManager.Instance.GameTime >= notificationTimes[index])
             {
                 ShowNotification();
                 notificationTimes.RemoveAt(index);

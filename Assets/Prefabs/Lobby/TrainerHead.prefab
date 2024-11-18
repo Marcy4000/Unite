@@ -207,7 +207,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: feeef68bbb4136744b6a3480537ac5f9, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -257,6 +257,7 @@ RectTransform:
   - {fileID: 2492398706404660734}
   - {fileID: 5536357508239205584}
   - {fileID: 1674000352425557939}
+  - {fileID: 3908716477191883041}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -279,6 +280,7 @@ MonoBehaviour:
   headImage: {fileID: 6598098465142569295}
   hairImage: {fileID: 8536523785143197347}
   eyesImage: {fileID: 6140554609145130606}
+  pupilImage: {fileID: 5096950456955894936}
   maleHeads:
   - {fileID: 21300000, guid: 115fc2a829cc49246a2cf214bb125afa, type: 3}
   - {fileID: 21300000, guid: ed104571e6d5e9c4586bc50836c2d093, type: 3}
@@ -339,3 +341,92 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 96d5736d6816b444ebdeb21aa8d712a9, type: 3}
   - {fileID: 21300000, guid: e5370155580fc1c41aa5a5c5b15f5a65, type: 3}
   - {fileID: 21300000, guid: 77e8221f1da9a0247a83e1fec1cb3c7d, type: 3}
+  malePupils:
+  - {fileID: 21300000, guid: 89e69126aaeeb7b4587ccdd7af197919, type: 3}
+  - {fileID: 21300000, guid: 445d088e17803434a95b90935b468b74, type: 3}
+  - {fileID: 21300000, guid: 8be3912ec8ca69f488f277e3103b0280, type: 3}
+  - {fileID: 21300000, guid: 5ba577460f408b64f844b1804937ddfc, type: 3}
+  - {fileID: 21300000, guid: 630d4a81346c96f4bb79a1f89edba571, type: 3}
+  - {fileID: 21300000, guid: 7ea10599aa5fa39429bf95b81c83f224, type: 3}
+  femalePupils:
+  - {fileID: 21300000, guid: 847e770c4fbe44d4f90a69533b71387a, type: 3}
+  - {fileID: 21300000, guid: 9a189b631e6f88143a5a243b5ff4fdf6, type: 3}
+  - {fileID: 21300000, guid: d4f5c137272694a4c829b48a01ab12ac, type: 3}
+  - {fileID: 21300000, guid: 684c69a0cfb06be46b950130eb3ad282, type: 3}
+  - {fileID: 21300000, guid: 45b77a77b06cfd7439eebd72e1b14b2c, type: 3}
+  - {fileID: 21300000, guid: 3dd960e1455ffd542a442f7f95832f63, type: 3}
+--- !u!1 &8201449716075013387
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3908716477191883041}
+  - component: {fileID: 4948893047038913762}
+  - component: {fileID: 5096950456955894936}
+  m_Layer: 5
+  m_Name: Pupils
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &3908716477191883041
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8201449716075013387}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3181679679307859520}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &4948893047038913762
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8201449716075013387}
+  m_CullTransparentMesh: 1
+--- !u!114 &5096950456955894936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8201449716075013387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 89e69126aaeeb7b4587ccdd7af197919, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1

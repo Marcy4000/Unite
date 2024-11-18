@@ -125,9 +125,9 @@ public class BattleUIManager : MonoBehaviour
         deathScreenUI.UpdateTimerText(time);
     }
 
-    public void ShowMoveCooldown(int id, float time)
+    public void ShowMoveCooldown(int id, float time, float maxCdDuration)
     {
-        currentUI.ShowMoveCooldown(id, time);
+        currentUI.ShowMoveCooldown(id, time, maxCdDuration);
     }
 
     public void ShowMoveSecondaryCooldown(int id, float time)

@@ -140,45 +140,57 @@ public class SettlementManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.5f);
 
-        float timer = gameResults.TotalGameTime;
-        Debug.Log($"Total Game Time: {timer}");
+        // Store the total game time (the end goal)
+        float totalTime = gameResults.TotalGameTime;
+        Debug.Log($"Total Game Time: {totalTime}");
 
+        // Fixed duration for animation to take exactly 5 seconds
+        float animationDuration = 3.5f;
         AudioManager.PlaySound(DefaultAudioSounds.Play_JieSuan_FenShu);
+
+        // Start time progression: linearly interpolate from 0 to totalTime over 5 seconds
+        float timeElapsed = 0f; // Track time elapsed for animation duration
 
         while (!finished)
         {
-            for (int i = blueTeamScores.Count-1; i >= 0; i--)
+            timeElapsed += Time.deltaTime;
+
+            // Calculate the current time in the animation (0 to totalTime, but over 5 seconds)
+            float interpolatedTime = Mathf.Lerp(0f, totalTime, timeElapsed / animationDuration);
+
+            // Handle the score updates based on the interpolated time
+            for (int i = blueTeamScores.Count - 1; i >= 0; i--)
             {
-                if (blueTeamScores[i].Time >= timer)
+                if (blueTeamScores[i].Time <= interpolatedTime)
                 {
                     blueScoreValue += blueTeamScores[i].ScoredPoints;
-                    Debug.Log($"Blue Score {blueTeamScores[i].ScoredPoints} + At Time {blueTeamScores[i].Time} (Current time: {timer})");
+                    Debug.Log($"Blue Score {blueTeamScores[i].ScoredPoints} + At Time {blueTeamScores[i].Time} (Current time: {interpolatedTime})");
                     blueTeamScores.RemoveAt(i);
                 }
             }
 
             for (int i = orangeTeamScores.Count - 1; i >= 0; i--)
             {
-                if (orangeTeamScores[i].Time >= timer)
+                if (orangeTeamScores[i].Time <= interpolatedTime)
                 {
                     orangeScoreValue += orangeTeamScores[i].ScoredPoints;
-                    Debug.Log($"Orange Score {orangeTeamScores[i].ScoredPoints} + At Time {orangeTeamScores[i].Time} (Current time: {timer})");
+                    Debug.Log($"Orange Score {orangeTeamScores[i].ScoredPoints} + At Time {orangeTeamScores[i].Time} (Current time: {interpolatedTime})");
                     orangeTeamScores.RemoveAt(i);
                 }
             }
 
-            timer -= Time.deltaTime * 150f;
+            // Update the countdown timer display (remaining time from totalTime)
+            UpdateTimerText(totalTime - interpolatedTime);
 
-            UpdateTimerText(timer);
-
+            // Update UI bars with the current score
             resultBarsUI.SetBars(blueScoreValue, orangeScoreValue);
 
-            if (timer <= 0)
+            // Once the animation duration is over (after 5 seconds)
+            if (timeElapsed >= animationDuration)
             {
                 finished = true;
-                timer = 0;
-                UpdateTimerText(timer);
-                yield return new WaitForSeconds(1f);
+                UpdateTimerText(0f);  // Ensure the timer reaches 0
+                yield return new WaitForSeconds(1f);  // Wait before finishing
                 OnShowScoreEnded();
             }
 

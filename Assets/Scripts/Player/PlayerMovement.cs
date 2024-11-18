@@ -122,16 +122,19 @@ public class PlayerMovement : NetworkBehaviour
     // Doesn't quite cover all cases
     private void CheckIfPlayerIsInAWall()
     {
+        // Get the player's position and the bounds of the CharacterController
         Vector3 playerPosition = characterController.transform.position;
         Vector3 controllerCenter = playerPosition + characterController.center;
         float controllerRadius = characterController.radius;
-        float controllerHeight = characterController.height / 2f;
+        float controllerHeight = characterController.height - 0.5f;
 
+        // Use OverlapCapsule to detect if the player is inside any wall colliders
         Collider[] hitColliders = Physics.OverlapCapsule(controllerCenter + Vector3.up * (controllerHeight / 2),
                                                          controllerCenter - Vector3.up * (controllerHeight / 2),
                                                          controllerRadius,
                                                          wallLayerMask);
 
+        // If there are any colliders hit, push the player out of the wall
         if (hitColliders.Length > 0)
         {
             foreach (var hitCollider in hitColliders)
@@ -141,36 +144,26 @@ public class PlayerMovement : NetworkBehaviour
                     continue;
                 }
 
-                if (hitCollider is MeshCollider meshCollider && !meshCollider.convex)
+                // Compute penetration direction and distance using Physics.ComputePenetration
+                Vector3 pushOutDirection;
+                float pushOutDistance;
+
+                bool isPenetrating = Physics.ComputePenetration(
+                    characterController, playerPosition, characterController.transform.rotation,
+                    hitCollider, hitCollider.transform.position, hitCollider.transform.rotation,
+                    out pushOutDirection, out pushOutDistance
+                );
+
+                if (isPenetrating)
                 {
-                    RaycastHit hit;
-                    Vector3 rayDirection = (controllerCenter - hitCollider.bounds.center).normalized;
+                    // Ensure we don't affect vertical position (gravity) when pushing out horizontally
+                    pushOutDirection.y = 0;
 
-                    if (Physics.Raycast(controllerCenter, rayDirection, out hit, controllerRadius * 2, wallLayerMask))
-                    {
-                        Vector3 pushOutDirection = hit.normal;
+                    // Push the player out of the wall
+                    Vector3 newPlayerPosition = playerPosition + pushOutDirection.normalized * (pushOutDistance + 0.1f);
 
-                        pushOutDirection.y = 0;
-
-                        Vector3 newPlayerPosition = playerPosition + pushOutDirection * (controllerRadius + 0.1f);
-
-                        transform.position = newPlayerPosition;
-                    }
-                }
-                else
-                {
-                    Vector3 closestPoint = hitCollider.ClosestPoint(controllerCenter);
-
-                    if (Vector3.Distance(controllerCenter, closestPoint) < controllerRadius)
-                    {
-                        Vector3 pushOutDirection = (controllerCenter - closestPoint).normalized;
-
-                        pushOutDirection.y = 0;
-
-                        Vector3 newPlayerPosition = playerPosition + pushOutDirection * (controllerRadius + 0.1f);
-
-                        transform.position = newPlayerPosition;
-                    }
+                    // Move the player to the new position
+                    transform.position = newPlayerPosition;
                 }
             }
         }

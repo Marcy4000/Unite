@@ -117,7 +117,7 @@ public class SoldierPokemon : NetworkBehaviour
                 return;
             }
 
-            goalZone.OnScore(CalculateScoreAmount());
+            goalZone.ScorePoints(CalculateScoreAmount(), NetworkObjectId);
             goalZone.WeaknenGoalZoneRPC(CalculateWeakenTime());
             wildPokemon.Pokemon.TakeDamage(new DamageInfo(NetworkObjectId, 999f, 999, 9999, DamageType.True));
         }

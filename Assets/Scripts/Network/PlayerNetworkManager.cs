@@ -158,7 +158,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             {
                 BattleUIManager.instance.HideDeathScreen();
                 playerManager.Respawn();
-                localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
+                localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.MAX_GAME_TIME - GameManager.Instance.GameTime);
                 deathTimer.Value = localDeathTimer;
             }
         }
@@ -284,8 +284,6 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void OnGoalScored(int amount)
     {
-        amount = GameManager.Instance.FinalStretch ? amount * 2 : amount;
-
         pointsSinceLastDeath += amount;
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, playerStats.Value.deaths, playerStats.Value.assists, (ushort)(playerStats.Value.score + amount), playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
     }
@@ -295,7 +293,7 @@ public class PlayerNetworkManager : NetworkBehaviour
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, (ushort)(playerStats.Value.deaths + 1), playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
 
         ShowKillRpc(info, !playerManager.OrangeTeam);
-        localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.GameTime);
+        localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.MAX_GAME_TIME - GameManager.Instance.GameTime);
         deathTimer.Value = localDeathTimer;
         BattleUIManager.instance.ShowDeathScreen();
 

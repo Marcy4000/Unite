@@ -38,11 +38,12 @@ public class BootSceneController : MonoBehaviour
 
         AudioManager.PlayMusic(DefaultAudioMusic.MainTheme, true);
 
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_WEBGL
         StartCoroutine(DownloadAssets());
 #else
         Addressables.InitializeAsync();
-        hintIcon.SetActive(true);
+        hintIcon.SetActive(false);
+        downloadWindow.Hide();
 #endif
     }
 

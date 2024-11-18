@@ -61,6 +61,8 @@ public static class BasicAttacksDatabase
                 return new CresseliaBasicAtk();
             case "emboar":
                 return new EmboarBasicAtk();
+            case "flareon":
+                return new FlareonBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

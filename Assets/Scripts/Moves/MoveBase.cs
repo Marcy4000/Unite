@@ -188,6 +188,17 @@ public static class MoveDatabase
             case AvailableMoves.EmboarUnite:
                 return new EmboarUnite();
 
+            case AvailableMoves.FlareonSwift:
+                return new FlareonSwift();
+            case AvailableMoves.FlareonTackle:
+                return new FlareonTackle();
+            case AvailableMoves.FlareonFlareBlitz:
+                return new FlareonFlareBlitz();
+            case AvailableMoves.FlareonFlameThrower:
+                return new FlareonFlamethrower();
+            case AvailableMoves.FlareonHeatWave:
+                return new FlareonHeatWave();
+
             default:
                 return null;
         }
@@ -276,4 +287,12 @@ public enum AvailableMoves : uint
     EmboarHeatCrash,
     EmboarFlameCharge,
     EmboarUnite,
+
+    FlareonSwift,
+    FlareonTackle,
+    FlareonFlareBlitz,
+    FlareonFireFang,
+    FlareonHeatWave,
+    FlareonFlameThrower,
+    FlareonUnite,
 }

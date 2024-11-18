@@ -97,6 +97,8 @@ public class PlayerManager : NetworkBehaviour
 
     private AsyncOperationHandle<PokemonBase> pokemonLoadHandle;
 
+    private List<Coroutine> tickDamageCoroutines = new List<Coroutine>();
+
     private void Awake()
     {
         pokemon = GetComponent<Pokemon>();
@@ -229,7 +231,9 @@ public class PlayerManager : NetworkBehaviour
             { StatusType.Asleep, ApplyStun },
             { StatusType.Bound, ApplyStun },
             { StatusType.VisionObscuring, () => VisionController.IsBlinded = true },
-            { StatusType.Invisible, () => SetPlayerVisibilityRPC(false) }
+            { StatusType.Invisible, () => SetPlayerVisibilityRPC(false) },
+            { StatusType.Burned, StartTickDamage },
+            { StatusType.Poisoned, StartTickDamage }
             // Add other statuses
         };
 
@@ -241,7 +245,9 @@ public class PlayerManager : NetworkBehaviour
             { StatusType.Asleep, RemoveStun },
             { StatusType.Bound, RemoveStun },
             { StatusType.VisionObscuring, () => VisionController.IsBlinded = false },
-            { StatusType.Invisible, () => SetPlayerVisibilityRPC(true) }
+            { StatusType.Invisible, () => SetPlayerVisibilityRPC(true) },
+            { StatusType.Burned, StopTickDamage },
+            { StatusType.Poisoned, StopTickDamage }
             // Add other statuses
         };
     }
@@ -363,6 +369,11 @@ public class PlayerManager : NetworkBehaviour
 
         pokemon.RemoveAllStatChangesRPC();
         pokemon.RemoveAllStatusEffectsRPC();
+
+        foreach (var coroutine in tickDamageCoroutines)
+        {
+            StopCoroutine(coroutine);
+        }
 
         CameraController.Instance.ForcePan(true);
 
@@ -541,6 +552,13 @@ public class PlayerManager : NetworkBehaviour
             return;
         }
 
+        goalZone.GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
+        maxScoreTime = ScoringSystem.CalculateTrueScoreTime(alliesInGoal, GetScoreBuffs(), currentEnergy.Value);
+        if (goalZone.GoalStatus == GoalStatus.Weakened)
+        {
+            maxScoreTime = 0.01f;
+        }
+
         scoreStatus.Cooldown += Time.deltaTime;
         BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
         scoreGuageValue.Value = scoreStatus.Cooldown / maxScoreTime;
@@ -568,24 +586,43 @@ public class PlayerManager : NetworkBehaviour
 
     private void ScorePoints()
     {
-        ScoreInfo score = new ScoreInfo(currentEnergy.Value, NetworkObjectId);
-        GameManager.Instance.GoalScoredRpc(score);
-        onGoalScored?.Invoke(currentEnergy.Value);
-        GivePokemonExperience();
+        int originalPoints = currentEnergy.Value;
+        int scoredPoints = goalZone.ScorePoints(currentEnergy.Value, NetworkObjectId);
+
+        onGoalScored?.Invoke(scoredPoints);
+        GivePokemonExperience(scoredPoints);
         movesController.IncrementUniteCharge(12000);
         ResetEnergyRPC();
+
+        int remainingPoints = originalPoints - scoredPoints;
+
+        if (remainingPoints < 0)
+        {
+            remainingPoints = 0;
+        }
+
+        if (remainingPoints > originalPoints)
+        {
+            Debug.LogError("Remaining points exceed original points. This is an unexpected case.");
+
+            remainingPoints = originalPoints;
+        }
+
+        GainEnergyRPC((ushort)remainingPoints);
+
         EndScoring();
     }
 
-    private void GivePokemonExperience()
+
+    private void GivePokemonExperience(int scoredPoints)
     {
-        if (currentEnergy.Value == 2)
+        if (scoredPoints == 2)
         {
             pokemon.GainExperience(50);
         }
-        else if (currentEnergy.Value > 2)
+        else if (scoredPoints > 2)
         {
-            pokemon.GainExperience(10 * currentEnergy.Value + 40);
+            pokemon.GainExperience(10 * scoredPoints + 40);
         }
     }
 
@@ -662,6 +699,34 @@ public class PlayerManager : NetworkBehaviour
         movesController.RemoveMoveStatus(2, ActionStatusType.Stunned);
         movesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Stunned);
         scoreStatus.RemoveStatus(ActionStatusType.Stunned);
+    }
+
+    private void StartTickDamage()
+    {
+        Coroutine coroutine = StartCoroutine(TickDamage());
+        tickDamageCoroutines.Add(coroutine);
+    }
+
+    private IEnumerator TickDamage()
+    {
+        while (true)
+        {
+            pokemon.TakeDamage(new DamageInfo(NetworkObjectId, 0f, 0, (short)Mathf.FloorToInt(pokemon.GetMaxHp() * 0.05f), DamageType.Physical));
+            yield return new WaitForSeconds(0.75f);
+        }
+    }
+
+    private void StopTickDamage()
+    {
+        if (tickDamageCoroutines.Count == 0)
+        {
+            return;
+        }
+
+        Coroutine coroutineToStop = tickDamageCoroutines[tickDamageCoroutines.Count - 1];
+        StopCoroutine(coroutineToStop);
+
+        tickDamageCoroutines.RemoveAt(tickDamageCoroutines.Count - 1);
     }
 
     private void OnPokemonStatusChange(StatusEffect effect, bool added)

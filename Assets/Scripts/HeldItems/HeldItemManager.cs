@@ -4,6 +4,7 @@ using Unity.Netcode;
 public class HeldItemManager : NetworkBehaviour
 {
     private HeldItemBase[] heldItemBases;
+    private bool initialized = false;
 
     public void Initialize(PlayerManager playerManager)
     {
@@ -24,11 +25,13 @@ public class HeldItemManager : NetworkBehaviour
                 playerManager.Pokemon.AddStatChange(statChange);
             }
         }
+
+        initialized = true;
     }
 
     public void Update()
     {   
-        if (!IsOwner)
+        if (!IsOwner || !initialized)
         {
             return;
         }

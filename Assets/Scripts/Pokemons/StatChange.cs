@@ -15,7 +15,8 @@ public enum Stat : byte
     DamageReduction,
     MaxHp,
     DefensePenetration,
-    CritModifier
+    CritModifier,
+    SpellVamp
 }
 
 [Serializable]

@@ -13,6 +13,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     [SerializeField] private GameObject pokemonPrefab;
     [SerializeField] private AvailableWildPokemons wildPokemonID;
+    [SerializeField] private bool usesTimeRemaining = true;
     [SerializeField] private float firstSpawnTime = 600f;
     [SerializeField] private float respawnCooldown;
     [SerializeField] private RespawnType respawnType;
@@ -31,6 +32,31 @@ public class WildPokemonSpawner : NetworkBehaviour
     public float RespawnCooldown => respawnCooldown;
     public RespawnType PokemonRespawnType => respawnType;
 
+    private void Start()
+    {
+        if (usesTimeRemaining)
+        {
+            if (firstSpawnTime > 0) 
+            {
+                firstSpawnTime = GameManager.Instance.MAX_GAME_TIME - firstSpawnTime;
+            }
+            else
+            {
+                firstSpawnTime = Mathf.Infinity;
+            }
+
+            if (despawnTime > 0f)
+            {
+                despawnTime = GameManager.Instance.MAX_GAME_TIME - despawnTime;
+            }
+
+            for (int i = 0; i < specificRespawnTimes.Count; i++)
+            {
+                specificRespawnTimes[i] = GameManager.Instance.MAX_GAME_TIME - specificRespawnTimes[i];
+            }
+        }
+    }
+
     private void Update()
     {
         if (!IsServer || GameManager.Instance.GameState != GameState.Playing)
@@ -38,17 +64,17 @@ public class WildPokemonSpawner : NetworkBehaviour
             return;
         }
 
-        if (despawnTime > 0f && GameManager.Instance.GameTime <= despawnTime)
+        if (despawnTime > 0f && GameManager.Instance.GameTime >= despawnTime)
         {
             DespawnPokemon(false);
             return;
         }
 
-        if (GameManager.Instance.GameTime <= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
+        if (GameManager.Instance.GameTime >= firstSpawnTime && firstSpawnTime != Mathf.Infinity)
         {
             SpawnPokemon();
             spawnedFirstTime = true;
-            firstSpawnTime = Mathf.NegativeInfinity;
+            firstSpawnTime = Mathf.Infinity;
         }
 
         if (!spawnedFirstTime || IsPokemonSpawned())

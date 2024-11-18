@@ -18,6 +18,7 @@ public class PokemonBase : ScriptableObject
     [SerializeField] int[] lifeSteal = new int[15];
     [SerializeField] float[] atkSpeed = new float[15];
     [SerializeField] int[] speed = new int[15];
+    [SerializeField] float[] spellVamp = new float[15];
 
     [SerializeField] AvailablePassives passive;
 
@@ -38,6 +39,7 @@ public class PokemonBase : ScriptableObject
     public int[] LifeSteal { get { return lifeSteal; } }
     public float[] AtkSpeed { get { return atkSpeed; } }
     public int[] Speed { get { return speed; } }
+    public float[] SpellVamp { get { return spellVamp; } }
 
     public AvailablePassives Passive { get { return passive; } }
 

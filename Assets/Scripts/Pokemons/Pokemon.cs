@@ -450,6 +450,37 @@ public class Pokemon : NetworkBehaviour
         return Mathf.Clamp(trueLifeSteal, 0, 100);
     }
 
+    public float GetSpellVamp()
+    {
+        // Step 1: Sum together all flat modifiers
+        int flatModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.SpellVamp && !change.Percentage)
+            {
+                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 2: Sum together all percent modifiers
+        float percentModifierSum = 0;
+        foreach (StatChange change in statChanges)
+        {
+            if (change.AffectedStat == Stat.SpellVamp && change.Percentage)
+            {
+                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+            }
+        }
+
+        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        float trueLifeSteal = baseStats.SpellVamp[currentLevel.Value] + flatModifierSum;
+
+        // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
+        trueLifeSteal = trueLifeSteal * (1f + percentModifierSum / 100f);
+
+        return Mathf.Clamp(trueLifeSteal, 0, 100);
+    }
+
     public float GetAtkSpeed()
     {
         // Step 1: Sum together all flat modifiers
@@ -963,8 +994,6 @@ public class Pokemon : NetworkBehaviour
             return;
         }
 
-        // TODO: remove all this debug stuff once ready for release
-        // Update: Only available in debug builds now
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         if (Keyboard.current.tKey.wasPressedThisFrame)
         {
@@ -996,7 +1025,7 @@ public class Pokemon : NetworkBehaviour
 
         if (Keyboard.current.zKey.wasPressedThisFrame)
         {
-            AddStatusEffect(new StatusEffect(StatusType.VisionObscuring, 3f, true, 0));
+            AddStatusEffect(new StatusEffect(StatusType.Burned, 3f, true, 0));
         }
 #endif
     }
@@ -1376,6 +1405,20 @@ public class Pokemon : NetworkBehaviour
         if (IsServer)
         {
             outOfCombatTimer = 5f;
+
+            if (GetLifeSteal() > 0 && damage.proprieties.HasFlag(DamageProprieties.IsBasicAttack) && !IsHPFull())
+            {
+                Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
+
+                HealDamage(Mathf.FloorToInt(attackedPokemon.CalculateDamage(damage, this) * (float)(GetLifeSteal() / 100f)));
+            }
+
+            if (GetSpellVamp() > 0 && damage.type == DamageType.Special && !IsHPFull())
+            {
+                Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
+
+                HealDamage(Mathf.FloorToInt(attackedPokemon.CalculateDamage(damage, this) * (float)(GetSpellVamp() / 100f)));
+            }
         }
         OnDamageDealt?.Invoke(targetID, damage);
     }

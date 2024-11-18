@@ -96,13 +96,13 @@ public class MapBerry : NetworkBehaviour
             return;
         }
 
-        if (despawnTime > 0f && GameManager.Instance.GameTime <= despawnTime)
+        if (despawnTime > 0f && GameManager.Instance.GameTime >= despawnTime)
         {
             respawnCooldown = Mathf.Infinity;
             return;
         }
 
-        if (GameManager.Instance.GameTime <= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
+        if (GameManager.Instance.GameTime >= firstSpawnTime && firstSpawnTime != Mathf.NegativeInfinity)
         {
             isCollected.Value = false;
             spawnedFirstTime = true;

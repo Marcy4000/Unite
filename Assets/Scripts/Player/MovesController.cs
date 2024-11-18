@@ -247,8 +247,10 @@ public class MovesController : NetworkBehaviour
     private LearnableMove RemoveAlreadyLearnedMoves(LearnableMove learnableMoves)
     {
         LearnableMove newLearnableMove = new LearnableMove();
+
         newLearnableMove.level = learnableMoves.level;
         newLearnableMove.isUpgraded = learnableMoves.isUpgraded;
+
         List<MoveAsset> newMoves = new List<MoveAsset>();
         foreach (MoveAsset move in learnableMoves.moves)
         {
@@ -370,8 +372,7 @@ public class MovesController : NetworkBehaviour
                 if (moves[i] == move)
                 {
                     moveStatuses[i].AddStatus(ActionStatusType.Cooldown);
-                    moveStatuses[i].Cooldown = moves[i].Cooldown;
-                    moveStatuses[i].Cooldown -= moveStatuses[i].Cooldown * pokemon.GetCDR() / 100f;
+                    moveStatuses[i].Cooldown = GetMoveCooldown(move);
                     UpdateMoveUI(i);
                 }
             }
@@ -383,6 +384,11 @@ public class MovesController : NetworkBehaviour
         }
 
         onMovePerformed?.Invoke(move);
+    }
+
+    private float GetMoveCooldown(MoveBase move)
+    {
+        return move.Cooldown - (move.Cooldown * (pokemon.GetCDR() / 100f));
     }
 
     private void OnBattleItemOver()
@@ -419,7 +425,7 @@ public class MovesController : NetworkBehaviour
 
         if (moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
         {
-            BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown);
+            BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown, GetMoveCooldown(moves[index]));
         }
     }
 
@@ -487,14 +493,20 @@ public class MovesController : NetworkBehaviour
         switch (move.moveType)
         {
             case MoveType.MoveA:
-                moves[0] = MoveDatabase.GetMove(move.move);
-                moves[0].onMoveOver += OnMoveOver;
+                if (!move.isUpgraded)
+                {
+                    moves[0] = MoveDatabase.GetMove(move.move);
+                    moves[0].onMoveOver += OnMoveOver;
+                }
                 moves[0].IsUpgraded = move.isUpgraded;
                 moves[0].playerManager = playerManager;
                 break;
             case MoveType.MoveB:
-                moves[1] = MoveDatabase.GetMove(move.move);
-                moves[1].onMoveOver += OnMoveOver;
+                if (!move.isUpgraded)
+                {
+                    moves[1] = MoveDatabase.GetMove(move.move);
+                    moves[1].onMoveOver += OnMoveOver;
+                }
                 moves[1].IsUpgraded = move.isUpgraded;
                 moves[1].playerManager = playerManager;
                 break;

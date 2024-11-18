@@ -21,6 +21,7 @@ public class GoalZone : NetworkBehaviour
     [SerializeField] private float shieldAmount;
     [SerializeField] private int goalTier;
     [SerializeField] private int goalLaneId;
+    [SerializeField] private bool allowOvercaps = true;
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private GameObject orangeModel, blueModel;
     [SerializeField] private VisionController visionController;
@@ -100,7 +101,6 @@ public class GoalZone : NetworkBehaviour
                 playerManager.GoalZone = this;
             }
             //playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
-            playerManager.onGoalScored += OnScore;
             if (playerManager.OrangeTeam == orangeTeam && IsServer)
             {
                 playerManager.Pokemon.AddStatChange(statChange);
@@ -125,7 +125,6 @@ public class GoalZone : NetworkBehaviour
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
             playerManager.ScoreStatus.AddStatus(ActionStatusType.Disabled);
-            playerManager.onGoalScored -= OnScore;
             if (playerManager.OrangeTeam == orangeTeam && IsServer)
             {
                 playerManager.Pokemon.RemoveStatChangeWithIDRPC(1);
@@ -182,18 +181,31 @@ public class GoalZone : NetworkBehaviour
         }
     }
 
-    public void OnScore(int amount)
+    public int ScorePoints(int amount, ulong scorerID)
     {
-        if (GameManager.Instance.FinalStretch)
+        // This causes problems if the player tries to score X amounts of points in an overcap protected goal during double scoring
+
+        if (GameManager.Instance.FinalStretch && GameManager.Instance.CurrentMap.gameMode == GameMode.Timed)
         {
             amount *= 2;
         }
+
+        if (!allowOvercaps && currentScore.Value + amount > maxScore)
+        {
+            amount = maxScore - currentScore.Value;
+        }
+
+        ScoreInfo score = new ScoreInfo((ushort)amount, scorerID);
+
+        GameManager.Instance.GoalScoredRpc(score);
 
         if (IsServer) {
             currentScore.Value += amount;
         } else {
             SetCurrentScoreRPC(currentScore.Value + amount);
         }
+
+        return amount;
     }
 
     [Rpc(SendTo.Server)]
@@ -215,7 +227,6 @@ public class GoalZone : NetworkBehaviour
     {
         foreach (var player in playerManagerList)
         {
-            player.onGoalScored -= OnScore;
             player.ScoreStatus.AddStatus(ActionStatusType.Disabled);
         }
         gameObject.SetActive(false);

@@ -133,22 +133,9 @@ public class CharactersList : MonoBehaviour
         return heldItems[id];
     }
 
-    public MapInfo GetCurrentMap()
-    {
-        foreach (var map in maps)
-        {
-            if (map.sceneName == SceneManager.GetActiveScene().name)
-            {
-                return map;
-            }
-        }
-
-        return null;
-    }
-
     public MapInfo GetCurrentLobbyMap()
     {
-        short lobbyMapId = NumberEncoder.FromBase64<short>(LobbyController.Instance.Lobby.Data["SelectedMap"].Value); ;
+        short lobbyMapId = NumberEncoder.FromBase64<short>(LobbyController.Instance.Lobby.Data["SelectedMap"].Value);
 
         if (lobbyMapId < maps.Length)
         {

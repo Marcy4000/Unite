@@ -23,9 +23,9 @@ public class MovesHolderUI : MonoBehaviour
         moveLearnPanel.EnqueueNewMove(moves);
     }
 
-    public void ShowMoveCooldown(int id, float time)
+    public void ShowMoveCooldown(int id, float time, float maxCdDuration)
     {
-        moveUIs[id].StartCooldown(time);
+        moveUIs[id].StartCooldown(time, maxCdDuration);
     }
 
     public void ShowMoveSecondaryCooldown(int id, float time)

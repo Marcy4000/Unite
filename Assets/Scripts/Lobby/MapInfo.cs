@@ -18,8 +18,10 @@ public class MapInfo : ScriptableObject
 
     [Space]
 
+    public GameMode gameMode;
     public float gameTime;
     public float finalStretchTime;
+    public ushort maxScore;
 
     [Space]
 
@@ -32,4 +34,10 @@ public class MapInfo : ScriptableObject
 
     [TextArea(3, 10)]
     public string description;
+}
+
+public enum GameMode
+{
+    Timed,
+    Timeless
 }

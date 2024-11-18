@@ -10,6 +10,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static Cinemachine.CinemachineTriggerAction.ActionSettings;
 
 public enum GameState
 {
@@ -24,8 +25,8 @@ public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
 
-    private float MAX_GAME_TIME = 600f;
-    private float FINAL_STRETCH_TIME = 120f;
+    public float MAX_GAME_TIME { get; private set; } = 600f;
+    public float FINAL_STRETCH_TIME { get; private set; } = 120f;
 
     [SerializeField] private SurrenderManager surrenderManager;
     [SerializeField] private Button surrenderButton; //This shouldn't be here but eh
@@ -46,7 +47,7 @@ public class GameManager : NetworkBehaviour
     private List<ResultScoreInfo> orangeTeamScores;
 
     private MapInfo currentMap;
-    
+
     public float GameTime => gameTime.Value;
     public int BlueTeamScore => blueTeamScore.Value;
     public int OrangeTeamScore => orangeTeamScore.Value;
@@ -58,6 +59,8 @@ public class GameManager : NetworkBehaviour
     public LaneManager[] Lanes => lanes;
 
     public GameState GameState => gameState.Value;
+
+    public MapInfo CurrentMap => currentMap;
 
     public event Action<int> onUpdatePassiveExp;
     public event Action<GameState> onGameStateChanged;
@@ -119,7 +122,7 @@ public class GameManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        currentMap = CharactersList.Instance.GetCurrentMap();
+        currentMap = CharactersList.Instance.GetCurrentLobbyMap();
 
         loadHandle = Addressables.LoadSceneAsync(currentMap.mapSceneKey, LoadSceneMode.Additive);
 
@@ -171,7 +174,7 @@ public class GameManager : NetworkBehaviour
             {
                 surrenderManager.onSurrenderVoteResult += OnTeamSurrendered;
             }
-            gameTime.Value = currentMap.gameTime;
+            gameTime.Value = 0f;
             FINAL_STRETCH_TIME = currentMap.finalStretchTime;
             MAX_GAME_TIME = currentMap.gameTime;
         }
@@ -244,7 +247,7 @@ public class GameManager : NetworkBehaviour
             yield return new WaitForSeconds(1f);
             if (gameState.Value == GameState.Playing)
             {
-                if (gameTime.Value > 480)
+                if (gameTime.Value < 480)
                 {
                     onUpdatePassiveExp?.Invoke(4);
                 }
@@ -262,32 +265,50 @@ public class GameManager : NetworkBehaviour
         {
             if (IsServer)
             {
-                gameTime.Value -= Time.deltaTime;
+                gameTime.Value += Time.deltaTime;
 
-                if (gameTime.Value <= 0f)
+                switch (currentMap.gameMode)
                 {
-                    gameTime.Value = 0f;
+                    case GameMode.Timed:
+                        if (gameTime.Value >= MAX_GAME_TIME)
+                        {
+                            gameTime.Value = MAX_GAME_TIME;
 
-                    EndGameRPC(GenerateGameResults());
-                }
-                else if (gameTime.Value <= FINAL_STRETCH_TIME && !finalStretch.Value)
-                {
-                    finalStretch.Value = true;
+                            EndGameRPC(GenerateGameResults());
+                        }
+                        else if (gameTime.Value >= FINAL_STRETCH_TIME && !finalStretch.Value)
+                        {
+                            finalStretch.Value = true;
+                        }
+                        break;
+                    case GameMode.Timeless:
+                        if (gameTime.Value >= FINAL_STRETCH_TIME && !finalStretch.Value)
+                        {
+                            finalStretch.Value = true;
+                        }
+
+                        if (blueTeamScore.Value >= currentMap.maxScore || orangeTeamScore.Value >= currentMap.maxScore)
+                        {
+                            EndGameRPC(GenerateGameResults());
+                        }
+                        break;
+                    default:
+                        break;
                 }
 
                 // Debug
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 if (Keyboard.current.oKey.wasPressedThisFrame)
                 {
-                    gameTime.Value = 0f;
+                    gameTime.Value = MAX_GAME_TIME;
                 }
                 if (Keyboard.current.iKey.wasPressedThisFrame)
                 {
-                    gameTime.Value = 140f;
+                    gameTime.Value = FINAL_STRETCH_TIME - 20f;
                 }
                 if (Keyboard.current.uKey.wasPressedThisFrame)
                 {
-                    gameTime.Value = 430f;
+                    gameTime.Value = 170f;
                 }
 #endif
             }
@@ -308,9 +329,9 @@ public class GameManager : NetworkBehaviour
         {
             BlueTeamWon = blueTeamScore.Value > orangeTeamScore.Value,
             BlueTeamScore = blueTeamScore.Value,
-            Surrendered = false,
             OrangeTeamScore = orangeTeamScore.Value,
-            TotalGameTime = MAX_GAME_TIME - gameTime.Value,
+            Surrendered = false,
+            TotalGameTime = gameTime.Value,
             BlueTeamScores = blueTeamScores.ToArray(),
             OrangeTeamScores = orangeTeamScores.ToArray(),
             PlayerStats = stats.ToArray()
@@ -325,14 +346,23 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        PlayerManager scorer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].GetComponent<PlayerManager>();
+        bool orangeTeam = false;
 
-        if (FinalStretch)
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out PlayerManager playerManager))
         {
-            info.scoredPoints = (ushort)Mathf.FloorToInt(info.scoredPoints * 2f);
+            orangeTeam = playerManager.OrangeTeam;
+            ShowGoalScoredRpc(info);
+        }
+        else if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out SoldierPokemon soldierPokemon))
+        {
+            orangeTeam = soldierPokemon.OrangeTeam;
+        }
+        else
+        {
+            return;
         }
 
-        if (scorer.OrangeTeam)
+        if (orangeTeam)
         {
             orangeTeamScore.Value += info.scoredPoints;
         }
@@ -340,7 +370,6 @@ public class GameManager : NetworkBehaviour
         {
             blueTeamScore.Value += info.scoredPoints;
         }
-        ShowGoalScoredRpc(info);
     }
 
     public void StartSurrenderVote()
