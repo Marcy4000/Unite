@@ -202,6 +202,29 @@ public class TrainerModel : MonoBehaviour
             }
         }
 
+        // Disable clothing that are disabled by the current clothing
+        for (int i = 0; i < instantiatedClothes.Count; i++)
+        {
+            var item = ClothesList.Instance.GetClothingItem((ClothingType)i, info.GetClothingIndex((ClothingType)i), info.IsMale);
+
+            if (item == null)
+            {
+                continue;
+            }
+
+            foreach (var disableType in item.disablesClothingType)
+            {
+                int index = (int)disableType;
+                if (index >= 0 && index < clothingHolders.Length)
+                {
+                    foreach (Transform child in clothingHolders[index])
+                    {
+                        child.gameObject.SetActive(false);
+                    }
+                }
+            }
+        }
+
         loadingText.SetActive(false);
 
         initialized = true;

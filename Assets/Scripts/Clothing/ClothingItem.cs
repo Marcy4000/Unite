@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -15,4 +16,6 @@ public class ClothingItem : ScriptableObject
 
     public AssetReferenceSprite sprite;
     public AssetReferenceGameObject prefab;
+
+    public List<ClothingType> disablesClothingType = new List<ClothingType>();
 }

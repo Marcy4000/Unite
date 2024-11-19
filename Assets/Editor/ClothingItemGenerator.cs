@@ -8,6 +8,7 @@ using UnityEngine.AddressableAssets;
 using Newtonsoft.Json.Linq;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets;
+using Unity.VisualScripting;
 
 public class ClothingItemGenerator : MonoBehaviour
 {
@@ -78,16 +79,6 @@ public class ClothingItemGenerator : MonoBehaviour
 
                             clothingData.TryGetValue((modelId, isMale, clothingType), out var clothingInfo);
 
-                            /*if (!clothingData.TryGetValue((modelId, isMale, clothingType), out var clothingInfo) ||
-                                (isMale != clothingInfo.isMale))
-                            {
-                                // Log the details for debugging purposes
-                                Debug.LogWarning($"Skipping model with ID: {modelId} and ClothingType: {clothingType}." +
-                                                 $"\nReason: {(clothingData.ContainsKey((modelId, isMale, clothingType)) ? "Gender mismatch" : "Model ID and ClothingType not found")}" +
-                                                 $"\nIsMale: {isMale}, ClothingInfo.isMale: {clothingInfo.isMale}, ClothingInfo.name: {clothingInfo.name}");
-                                continue;
-                            }*/
-
                             Debug.Log($"Match found: {clothingInfo}, isMale: {isMale}, type: {clothingType}, model ID: {modelId}");
 
                             ClothingItem clothingItem = ScriptableObject.CreateInstance<ClothingItem>();
@@ -103,6 +94,8 @@ public class ClothingItemGenerator : MonoBehaviour
                                 Debug.LogWarning($"Prefab not found: {prefabPath}");
                                 continue;
                             }
+
+                            SetDisablesClothingType(prefabPath, clothingItem);
 
                             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
                             AddressableAssetGroup group = settings.FindGroup("ClothingItems");
@@ -159,6 +152,30 @@ public class ClothingItemGenerator : MonoBehaviour
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
+    }
+
+    private static void SetDisablesClothingType(string prefabPath, ClothingItem clothingItem)
+    {
+        // Load FBX as GameObject
+        GameObject fbxObject = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (fbxObject == null)
+        {
+            Debug.LogWarning($"Failed to load FBX: {prefabPath}");
+            return;
+        }
+
+        clothingItem.disablesClothingType = new List<ClothingType>();
+
+        // Iterate through all SkinnedMeshRenderers in FBX
+        foreach (var renderer in fbxObject.GetComponentsInChildren<SkinnedMeshRenderer>())
+        {
+            string rendererName = renderer.name.ToLower().FirstCharacterToUpper();
+            if (folderMappings.TryGetValue(rendererName, out var clothingType) &&
+                clothingType.type != clothingItem.clothingType) // Avoid disabling its own type
+            {
+                clothingItem.disablesClothingType.Add(clothingType.type);
+            }
+        }
     }
 
     public static string SanitizeFileName(string input)
