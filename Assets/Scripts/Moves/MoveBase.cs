@@ -198,6 +198,8 @@ public static class MoveDatabase
                 return new FlareonFlamethrower();
             case AvailableMoves.FlareonHeatWave:
                 return new FlareonHeatWave();
+            case AvailableMoves.FlareonUnite:
+                return new FlareonUnite();
 
             default:
                 return null;

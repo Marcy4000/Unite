@@ -18,6 +18,8 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
     public Color32 EyeColor;
     public byte SkinColor;
 
+    public TrainerCardInfo TrainerCardInfo;
+
     public bool IsMale
     {
         get => (_faceAndHair & 0x80) != 0; // MSB is IsMale
@@ -88,7 +90,7 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
 
     public string Serialize()
     {
-        byte[] data = new byte[16]; // Reduced from 17 to 16 bytes
+        byte[] data = new byte[25];
         data[0] = Hat;
         data[1] = _faceAndHair; // Encodes Face, Hair, and IsMale
         data[2] = Eyes;
@@ -105,6 +107,8 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
         data[13] = EyeColor.g;
         data[14] = EyeColor.b;
         data[15] = SkinColor;
+
+        TrainerCardInfo.Serialize().CopyTo(data, 16);
 
         return Convert.ToBase64String(data);
     }
@@ -148,6 +152,28 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
                 HairColor = new Color32(bytes[9], bytes[10], bytes[11], 255),
                 EyeColor = new Color32(bytes[12], bytes[13], bytes[14], 255),
                 SkinColor = bytes[15]
+            };
+        }
+        else if (bytes.Length == 25)
+        {
+            byte[] trainerCardData = new byte[9];
+            Array.Copy(bytes, 16, trainerCardData, 0, 9);
+
+            return new PlayerClothesInfo
+            {
+                Hat = bytes[0],
+                _faceAndHair = bytes[1], // Encoded IsMale, Face, and Hair
+                Eyes = bytes[2],
+                Shirt = bytes[3],
+                Overwear = bytes[4],
+                Gloves = bytes[5],
+                Pants = bytes[6],
+                Socks = bytes[7],
+                Shoes = bytes[8],
+                HairColor = new Color32(bytes[9], bytes[10], bytes[11], 255),
+                EyeColor = new Color32(bytes[12], bytes[13], bytes[14], 255),
+                SkinColor = bytes[15],
+                TrainerCardInfo = TrainerCardInfo.Deserialize(trainerCardData)
             };
         }
         else
