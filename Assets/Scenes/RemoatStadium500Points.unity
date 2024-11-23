@@ -125,89 +125,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &22404326
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 22404327}
-  - component: {fileID: 22404329}
-  - component: {fileID: 22404328}
-  m_Layer: 0
-  m_Name: combee
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &22404327
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22404326}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.7, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 418235539}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &22404328
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22404326}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 11
-  usesTimeRemaining: 1
-  firstSpawnTime: 530
-  respawnCooldown: 0
-  respawnType: 2
-  specificRespawnTimes:
-  - 440
-  - 350
-  - 260
-  - 170
-  - 80
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &22404329
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22404326}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2987727506
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
 --- !u!1001 &24382703
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -395,22 +312,22 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: maxScore
-      value: 80
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 200
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.1
+      value: 0.15
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -600,7 +517,7 @@ PrefabInstance:
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 195507082
+      value: 43757143
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -1060,7 +977,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3894985905
+  GlobalObjectIdHash: 407098151
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1152,8 +1069,8 @@ MonoBehaviour:
   wildPokemonID: 2
   usesTimeRemaining: 1
   firstSpawnTime: 120
-  respawnCooldown: 0
-  respawnType: 0
+  respawnCooldown: 30
+  respawnType: 1
   specificRespawnTimes: []
   despawnTime: 0
   isObjective: 1
@@ -1171,7 +1088,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1550544549
+  GlobalObjectIdHash: 859068368
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1249,90 +1166,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 99666839
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!1 &140559076
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 140559077}
-  - component: {fileID: 140559079}
-  - component: {fileID: 140559078}
-  m_Layer: 0
-  m_Name: combee2
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &140559077
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 140559076}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.7}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 418235539}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &140559078
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 140559076}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 11
-  usesTimeRemaining: 1
-  firstSpawnTime: 530
-  respawnCooldown: 0
-  respawnType: 2
-  specificRespawnTimes:
-  - 440
-  - 350
-  - 260
-  - 170
-  - 80
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &140559079
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 140559076}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1000669714
+  GlobalObjectIdHash: 406907656
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1352,7 +1186,7 @@ PrefabInstance:
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3102656712
+      value: 3311561922
       objectReference: {fileID: 0}
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
@@ -1453,7 +1287,7 @@ PrefabInstance:
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 2192975636
+      value: 584387143
       objectReference: {fileID: 0}
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
@@ -1549,84 +1383,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1162226453}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &196930367
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 196930370}
-  - component: {fileID: 196930369}
-  - component: {fileID: 196930368}
-  m_Layer: 0
-  m_Name: TaurosSpawnPoint (3)
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &196930368
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 196930367}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 3
-  usesTimeRemaining: 1
-  firstSpawnTime: 590
-  respawnCooldown: 60
-  respawnType: 1
-  specificRespawnTimes: []
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &196930369
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 196930367}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3013730018
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!4 &196930370
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 196930367}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: -9.6, y: 0.077, z: -40.41}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1769486308}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1001 &202102487
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1638,7 +1394,7 @@ PrefabInstance:
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 2808864467
+      value: 4278446577
       objectReference: {fileID: 0}
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
@@ -1797,7 +1553,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2610079427
+  GlobalObjectIdHash: 3315980019
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1875,7 +1631,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3127979045
+  GlobalObjectIdHash: 395293769
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -1953,7 +1709,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1922805583
+  GlobalObjectIdHash: 579759268
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -2012,7 +1768,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1592680797
+  GlobalObjectIdHash: 315442393
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -2091,6 +1847,84 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &231127285
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 231127286}
+  - component: {fileID: 231127288}
+  - component: {fileID: 231127287}
+  m_Layer: 0
+  m_Name: Indeedee
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &231127286
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 231127285}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 9.69, y: 0.077, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1043116970}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &231127287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 231127285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 20
+  usesTimeRemaining: 1
+  firstSpawnTime: 475
+  respawnCooldown: 65
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &231127288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 231127285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1103050685
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &235902772
 GameObject:
   m_ObjectHideFlags: 0
@@ -2160,7 +1994,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3006323268
+  GlobalObjectIdHash: 1655984165
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -2180,7 +2014,7 @@ PrefabInstance:
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 1673928971
+      value: 1109602178
       objectReference: {fileID: 0}
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
@@ -2339,90 +2173,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1394712874
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!1 &271591094
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 271591095}
-  - component: {fileID: 271591097}
-  - component: {fileID: 271591096}
-  m_Layer: 0
-  m_Name: Vespiquen
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &271591095
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 271591094}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1408970596}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &271591096
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 271591094}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 10
-  usesTimeRemaining: 1
-  firstSpawnTime: 530
-  respawnCooldown: 0
-  respawnType: 2
-  specificRespawnTimes:
-  - 440
-  - 350
-  - 260
-  - 170
-  - 80
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &271591097
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 271591094}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1699943050
+  GlobalObjectIdHash: 1602420570
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -2500,168 +2251,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 513692505
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!1 &293916778
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 293916781}
-  - component: {fileID: 293916780}
-  - component: {fileID: 293916779}
-  m_Layer: 0
-  m_Name: TaurosSpawnPoint (4)
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &293916779
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 293916778}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 3
-  usesTimeRemaining: 1
-  firstSpawnTime: 590
-  respawnCooldown: 60
-  respawnType: 1
-  specificRespawnTimes: []
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &293916780
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 293916778}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1048923290
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!4 &293916781
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 293916778}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: -14.85, y: 0.077, z: -44.77}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1769486308}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!1 &306560000
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 306560001}
-  - component: {fileID: 306560003}
-  - component: {fileID: 306560002}
-  m_Layer: 0
-  m_Name: combee
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &306560001
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 306560000}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.7, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1408970596}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &306560002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 306560000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 11
-  usesTimeRemaining: 1
-  firstSpawnTime: 530
-  respawnCooldown: 0
-  respawnType: 2
-  specificRespawnTimes:
-  - 440
-  - 350
-  - 260
-  - 170
-  - 80
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &306560003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 306560000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1395904802
+  GlobalObjectIdHash: 4169870804
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -2739,7 +2329,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3225794708
+  GlobalObjectIdHash: 2686268340
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -2819,7 +2409,7 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: maxScore
-      value: 100
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -2829,22 +2419,22 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 400
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.15
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 74397661
+      value: 3506287733
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -2962,7 +2552,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1010939943
+  GlobalObjectIdHash: 1503611347
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -3025,7 +2615,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2744423489
+  GlobalObjectIdHash: 1359247101
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -3049,89 +2639,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1769486308}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!1 &370426710
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 370426711}
-  - component: {fileID: 370426713}
-  - component: {fileID: 370426712}
-  m_Layer: 0
-  m_Name: Vespiquen
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &370426711
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 370426710}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 418235539}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &370426712
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 370426710}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 10
-  usesTimeRemaining: 1
-  firstSpawnTime: 530
-  respawnCooldown: 0
-  respawnType: 2
-  specificRespawnTimes:
-  - 440
-  - 350
-  - 260
-  - 170
-  - 80
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &370426713
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 370426710}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2495889565
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
 --- !u!1 &372802523
 GameObject:
   m_ObjectHideFlags: 0
@@ -3201,7 +2708,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2150177402
+  GlobalObjectIdHash: 1508999760
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -3281,12 +2788,12 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: maxScore
-      value: 100
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 400
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -3296,17 +2803,17 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.15
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 61893761
+      value: 2612458633
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -3324,41 +2831,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 415551059}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &418235538
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 418235539}
-  m_Layer: 0
-  m_Name: Bees (1)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &418235539
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 418235538}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 0, y: 0.09, z: 32.1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 370426711}
-  - {fileID: 22404327}
-  - {fileID: 1828691963}
-  - {fileID: 140559077}
-  m_Father: {fileID: 1140479091}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1 &433172961
 GameObject:
   m_ObjectHideFlags: 0
@@ -3481,7 +2953,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3115404742
+  GlobalObjectIdHash: 3475975318
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -3571,7 +3043,7 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 200
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -3581,17 +3053,17 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.1
+      value: 0.15
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.size
-      value: 10
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -3645,24 +3117,29 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 196930368}
+      objectReference: {fileID: 752373876}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
-      objectReference: {fileID: 293916779}
+      objectReference: {fileID: 1383263906}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Target
       value: 
-      objectReference: {fileID: 840601182}
+      objectReference: {fileID: 2052320738}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Target
       value: 
-      objectReference: {fileID: 2063227953}
+      objectReference: {fileID: 905201263}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_Target
@@ -3693,6 +3170,11 @@ PrefabInstance:
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[9].m_Target
       value: 
       objectReference: {fileID: 142463664}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_Target
+      value: 
+      objectReference: {fileID: 1323544883}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
@@ -3750,6 +3232,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
       value: DespawnPokemon
       objectReference: {fileID: 0}
@@ -3792,6 +3279,11 @@ PrefabInstance:
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[9].m_MethodName
       value: DespawnBerry
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_MethodName
+      value: DespawnPokemon
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -3845,6 +3337,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
@@ -3893,10 +3390,15 @@ PrefabInstance:
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[9].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 60034381
+      value: 1285922137
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -4020,7 +3522,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 221590256
+  GlobalObjectIdHash: 2188354794
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -4046,7 +3548,7 @@ PrefabInstance:
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 2929808495
+      value: 3103473062
       objectReference: {fileID: 0}
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
@@ -4168,8 +3670,8 @@ Transform:
   - {fileID: 684872321}
   - {fileID: 1104613439}
   - {fileID: 130434156}
+  - {fileID: 1063885201}
   - {fileID: 1402253060}
-  - {fileID: 805640774}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &581706615
@@ -4203,89 +3705,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2012336195}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
---- !u!1 &591988857
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 591988858}
-  - component: {fileID: 591988860}
-  - component: {fileID: 591988859}
-  m_Layer: 0
-  m_Name: combee1
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &591988858
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591988857}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.7, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1408970596}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &591988859
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591988857}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 11
-  usesTimeRemaining: 1
-  firstSpawnTime: 530
-  respawnCooldown: 0
-  respawnType: 2
-  specificRespawnTimes:
-  - 440
-  - 350
-  - 260
-  - 170
-  - 80
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &591988860
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 591988857}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2966499758
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
 --- !u!1 &600937417
 GameObject:
   m_ObjectHideFlags: 0
@@ -4313,7 +3732,7 @@ Transform:
   m_GameObject: {fileID: 600937417}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 42.42, y: 0.077, z: 21.33}
+  m_LocalPosition: {x: 45.9, y: 0.077, z: 15.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4355,7 +3774,85 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 937858770
+  GlobalObjectIdHash: 3167058948
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &643807409
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 643807410}
+  - component: {fileID: 643807412}
+  - component: {fileID: 643807411}
+  m_Layer: 0
+  m_Name: RotomSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 2488908585195742037, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &643807410
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 643807409}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: 0.077, z: -32.82}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &643807411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 643807409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 26
+  usesTimeRemaining: 0
+  firstSpawnTime: 60
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 1
+  isSpawnedOnMap: 0
+  soldierLaneID: 1
+--- !u!114 &643807412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 643807409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2138210811
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -4488,7 +3985,7 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: maxScore
-      value: 100
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -4498,7 +3995,7 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 400
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -4508,17 +4005,17 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.15
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 4256504019
+      value: 3879935849
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -4643,7 +4140,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 798261349
+  GlobalObjectIdHash: 1405197170
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -4721,7 +4218,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1783224524
+  GlobalObjectIdHash: 4071190149
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -4799,7 +4296,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1260467245
+  GlobalObjectIdHash: 987354250
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -4819,7 +4316,7 @@ PrefabInstance:
     - target: {fileID: 4807735903712929457, guid: a60c6f971b239f148a9f5c36dc58ea28,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.98
+      value: -29.7
       objectReference: {fileID: 0}
     - target: {fileID: 4807735903712929457, guid: a60c6f971b239f148a9f5c36dc58ea28,
         type: 3}
@@ -4869,7 +4366,7 @@ PrefabInstance:
     - target: {fileID: 6973344718605820934, guid: a60c6f971b239f148a9f5c36dc58ea28,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 2799526146
+      value: 279313265
       objectReference: {fileID: 0}
     - target: {fileID: 6973344718605820934, guid: a60c6f971b239f148a9f5c36dc58ea28,
         type: 3}
@@ -4945,6 +4442,84 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1467436642}
   m_LocalEulerAnglesHint: {x: 0, y: 120.1, z: 0}
+--- !u!1 &752373874
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 752373875}
+  - component: {fileID: 752373877}
+  - component: {fileID: 752373876}
+  m_Layer: 0
+  m_Name: Vespiquen
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &752373875
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 752373874}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 998816939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &752373876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 752373874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 10
+  usesTimeRemaining: 1
+  firstSpawnTime: 590
+  respawnCooldown: 90
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &752373877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 752373874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2376912599
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &779546788
 GameObject:
   m_ObjectHideFlags: 0
@@ -5014,90 +4589,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2371897753
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!1 &789237699
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 789237700}
-  - component: {fileID: 789237702}
-  - component: {fileID: 789237701}
-  m_Layer: 0
-  m_Name: combee2
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &789237700
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 789237699}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.7}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1408970596}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &789237701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 789237699}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 11
-  usesTimeRemaining: 1
-  firstSpawnTime: 530
-  respawnCooldown: 0
-  respawnType: 2
-  specificRespawnTimes:
-  - 440
-  - 350
-  - 260
-  - 170
-  - 80
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &789237702
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 789237699}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3575532163
+  GlobalObjectIdHash: 4238182151
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5175,7 +4667,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3595101927
+  GlobalObjectIdHash: 1650575736
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5210,12 +4702,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 805640773}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: 0, y: 0.077, z: 42.73}
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: 0.077, z: 31.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 577624592}
+  m_Father: {fileID: 1140479091}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!114 &805640775
 MonoBehaviour:
@@ -5232,12 +4724,12 @@ MonoBehaviour:
   pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
     type: 3}
   wildPokemonID: 26
-  usesTimeRemaining: 1
-  firstSpawnTime: 420
-  respawnCooldown: 120
+  usesTimeRemaining: 0
+  firstSpawnTime: 60
+  respawnCooldown: 60
   respawnType: 1
   specificRespawnTimes: []
-  despawnTime: 120
+  despawnTime: 0
   isObjective: 1
   isSpawnedOnMap: 0
   soldierLaneID: 0
@@ -5253,7 +4745,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3124814623
+  GlobalObjectIdHash: 4192252006
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5354,84 +4846,6 @@ Transform:
   - {fileID: 537720407}
   m_Father: {fileID: 577624592}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &840601180
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 840601181}
-  - component: {fileID: 840601183}
-  - component: {fileID: 840601182}
-  m_Layer: 0
-  m_Name: TaurosSpawnPoint (5)
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &840601181
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 840601180}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 9.6, y: 0.077, z: -40.41}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1769486308}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &840601182
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 840601180}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 3
-  usesTimeRemaining: 1
-  firstSpawnTime: 590
-  respawnCooldown: 60
-  respawnType: 1
-  specificRespawnTimes: []
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &840601183
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 840601180}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4088095385
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
 --- !u!1 &842219817
 GameObject:
   m_ObjectHideFlags: 0
@@ -5501,7 +4915,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1343974347
+  GlobalObjectIdHash: 1521248158
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5738,7 +5152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4172841037
+  GlobalObjectIdHash: 3537079626
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5811,6 +5225,84 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2012336195}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
+--- !u!1 &905201261
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 905201262}
+  - component: {fileID: 905201264}
+  - component: {fileID: 905201263}
+  m_Layer: 0
+  m_Name: combee2
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &905201262
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905201261}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 1.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 998816939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &905201263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905201261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 11
+  usesTimeRemaining: 1
+  firstSpawnTime: 590
+  respawnCooldown: 90
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &905201264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 905201261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 4001001890
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &923477800
 GameObject:
   m_ObjectHideFlags: 0
@@ -5838,7 +5330,7 @@ Transform:
   m_GameObject: {fileID: 923477800}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.7, y: 0, z: 0}
+  m_LocalPosition: {x: -1.2, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5860,11 +5352,11 @@ MonoBehaviour:
     type: 3}
   wildPokemonID: 11
   usesTimeRemaining: 1
-  firstSpawnTime: 480
+  firstSpawnTime: 590
   respawnCooldown: 90
   respawnType: 1
   specificRespawnTimes: []
-  despawnTime: 150
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
   soldierLaneID: 0
@@ -5880,7 +5372,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3687919523
+  GlobalObjectIdHash: 704171305
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5970,22 +5462,22 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 200
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.1
+      value: 0.15
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.size
-      value: 10
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -6039,24 +5531,29 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_Mode
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 196930368}
+      objectReference: {fileID: 1532169709}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
-      objectReference: {fileID: 293916779}
+      objectReference: {fileID: 1276204354}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[2].m_Target
       value: 
-      objectReference: {fileID: 840601182}
+      objectReference: {fileID: 923477802}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[3].m_Target
       value: 
-      objectReference: {fileID: 2063227953}
+      objectReference: {fileID: 1988771092}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[4].m_Target
@@ -6087,6 +5584,11 @@ PrefabInstance:
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[9].m_Target
       value: 
       objectReference: {fileID: 1300930807}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_Target
+      value: 
+      objectReference: {fileID: 980859463}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
@@ -6144,6 +5646,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
       value: DespawnPokemon
       objectReference: {fileID: 0}
@@ -6186,6 +5693,11 @@ PrefabInstance:
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[9].m_MethodName
       value: DespawnBerry
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_MethodName
+      value: DespawnPokemon
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -6236,6 +5748,11 @@ PrefabInstance:
         type: 3}
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[9].m_TargetAssemblyTypeName
       value: MapBerry, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_TargetAssemblyTypeName
+      value: WildPokemonSpawner, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -6292,10 +5809,15 @@ PrefabInstance:
       propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[9].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: onGoalZoneDestroyedUnityEvent.m_PersistentCalls.m_Calls.Array.data[10].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 2198561918
+      value: 2984960903
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -6457,7 +5979,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1520162885
+  GlobalObjectIdHash: 2932065502
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -6568,7 +6090,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2450497950
+  GlobalObjectIdHash: 1851363332
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -6646,7 +6168,85 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1895762689
+  GlobalObjectIdHash: 2305099368
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &980859461
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 980859462}
+  - component: {fileID: 980859464}
+  - component: {fileID: 980859463}
+  m_Layer: 0
+  m_Name: Registeel
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &980859462
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 980859461}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.2588191, z: 0, w: 0.9659258}
+  m_LocalPosition: {x: -22.63, y: 0.09, z: -39.27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 30, z: 0}
+--- !u!114 &980859463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 980859461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 25
+  usesTimeRemaining: 1
+  firstSpawnTime: 590
+  respawnCooldown: 90
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 1
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &980859464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 980859461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2048456893
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -6724,7 +6324,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 259065085
+  GlobalObjectIdHash: 1357761750
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -6786,6 +6386,41 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1467436642}
   m_LocalEulerAnglesHint: {x: 0, y: 32.12, z: 0}
+--- !u!1 &998816938
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 998816939}
+  m_Layer: 0
+  m_Name: Bees (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &998816939
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 998816938}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.14970785, z: 0, w: -0.98873025}
+  m_LocalPosition: {x: 13, y: 0.09, z: -46.14}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 752373875}
+  - {fileID: 1383263905}
+  - {fileID: 2052320737}
+  - {fileID: 905201262}
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 377.22, z: 0}
 --- !u!1 &1006869856
 GameObject:
   m_ObjectHideFlags: 0
@@ -6833,7 +6468,7 @@ PrefabInstance:
     - target: {fileID: 4807735903712929457, guid: a60c6f971b239f148a9f5c36dc58ea28,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 8.98
+      value: 29.7
       objectReference: {fileID: 0}
     - target: {fileID: 4807735903712929457, guid: a60c6f971b239f148a9f5c36dc58ea28,
         type: 3}
@@ -6883,7 +6518,7 @@ PrefabInstance:
     - target: {fileID: 6973344718605820934, guid: a60c6f971b239f148a9f5c36dc58ea28,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 531882889
+      value: 935376467
       objectReference: {fileID: 0}
     - target: {fileID: 6973344718605820934, guid: a60c6f971b239f148a9f5c36dc58ea28,
         type: 3}
@@ -7006,7 +6641,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3834031156
+  GlobalObjectIdHash: 2223059192
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -7048,9 +6683,88 @@ Transform:
   - {fileID: 461488952}
   - {fileID: 791589067}
   - {fileID: 1977492661}
-  - {fileID: 2090260799}
+  - {fileID: 231127286}
+  - {fileID: 1699051332}
   m_Father: {fileID: 577624592}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1063885200
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1063885201}
+  - component: {fileID: 1063885203}
+  - component: {fileID: 1063885202}
+  m_Layer: 0
+  m_Name: RegielekiSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 2488908585195742037, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1063885201
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1063885200}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: 0.077, z: -12.92}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 577624592}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &1063885202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1063885200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 28
+  usesTimeRemaining: 1
+  firstSpawnTime: 420
+  respawnCooldown: 120
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 120
+  isObjective: 1
+  isSpawnedOnMap: 0
+  soldierLaneID: 1
+--- !u!114 &1063885203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1063885200}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 1401160362
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!4 &1069829200 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8391781081128896534, guid: 5a3f29dca60ea4b4badd9bab36e2eac5,
@@ -7126,7 +6840,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3867127786
+  GlobalObjectIdHash: 2875032433
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -7162,7 +6876,7 @@ Transform:
   m_GameObject: {fileID: 1080102614}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: -42.42, y: 0.077, z: -21.33}
+  m_LocalPosition: {x: -45.9, y: 0.077, z: -15.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7204,7 +6918,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 311603058
+  GlobalObjectIdHash: 2057467225
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -7281,7 +6995,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2514272206
+  GlobalObjectIdHash: 474371553
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -7378,13 +7092,13 @@ Transform:
   - {fileID: 1036044029}
   - {fileID: 340118045}
   - {fileID: 970911151}
-  - {fileID: 418235539}
   - {fileID: 1680269743}
   - {fileID: 307001324}
   - {fileID: 1213569657}
   - {fileID: 1892033835}
   - {fileID: 275815969}
   - {fileID: 1713548879}
+  - {fileID: 805640774}
   m_Father: {fileID: 577624592}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1150773256
@@ -7456,7 +7170,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4062890510
+  GlobalObjectIdHash: 1357754794
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -7614,7 +7328,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2455500250
+  GlobalObjectIdHash: 4231309324
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -7683,7 +7397,7 @@ Transform:
   m_GameObject: {fileID: 1189646367}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: -43.22, y: 0.077, z: 20.29}
+  m_LocalPosition: {x: -45.9, y: 0.077, z: 15.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7725,7 +7439,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2516321760
+  GlobalObjectIdHash: 1420411559
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -7837,7 +7551,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 208964411
+  GlobalObjectIdHash: 283718751
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -7929,7 +7643,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1348169547
+  GlobalObjectIdHash: 3303495309
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -8135,7 +7849,7 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 800
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -8145,17 +7859,17 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.25
+      value: 0.35
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 4022252795
+      value: 3100912289
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -8317,7 +8031,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2142300008
+  GlobalObjectIdHash: 3326899872
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -8386,7 +8100,7 @@ Transform:
   m_GameObject: {fileID: 1276204352}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.7, y: 0, z: 0}
+  m_LocalPosition: {x: 1.2, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8408,11 +8122,11 @@ MonoBehaviour:
     type: 3}
   wildPokemonID: 11
   usesTimeRemaining: 1
-  firstSpawnTime: 480
+  firstSpawnTime: 590
   respawnCooldown: 90
   respawnType: 1
   specificRespawnTimes: []
-  despawnTime: 150
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
   soldierLaneID: 0
@@ -8428,7 +8142,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3976403134
+  GlobalObjectIdHash: 232409447
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -8506,7 +8220,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3181736604
+  GlobalObjectIdHash: 1200128746
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -8569,7 +8283,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3678529494
+  GlobalObjectIdHash: 2471680017
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -8587,7 +8301,7 @@ Transform:
   m_GameObject: {fileID: 1286241335}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: -54.77, y: 0.077, z: -4.78}
+  m_LocalPosition: {x: -48.84, y: 0.077, z: -18.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8604,7 +8318,7 @@ PrefabInstance:
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 1172471650
+      value: 3217294406
       objectReference: {fileID: 0}
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
@@ -8758,7 +8472,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 745570948
+  GlobalObjectIdHash: 3581709084
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -8778,7 +8492,7 @@ PrefabInstance:
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 1004107317
+      value: 288053294
       objectReference: {fileID: 0}
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
@@ -8943,7 +8657,7 @@ Transform:
   m_GameObject: {fileID: 1318274103}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 43.22, y: 0.077, z: -20.29}
+  m_LocalPosition: {x: 45.9, y: 0.077, z: -15.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8985,7 +8699,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3444664183
+  GlobalObjectIdHash: 268892487
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -9021,7 +8735,7 @@ Transform:
   m_GameObject: {fileID: 1319574836}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 54.77, y: 0.077, z: -8.64}
+  m_LocalPosition: {x: 48.84, y: 0.077, z: -18.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9063,7 +8777,163 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2128663258
+  GlobalObjectIdHash: 196321217
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &1323544881
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1323544882}
+  - component: {fileID: 1323544884}
+  - component: {fileID: 1323544883}
+  m_Layer: 0
+  m_Name: Registeel (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1323544882
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1323544881}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.258819, z: 0, w: 0.9659259}
+  m_LocalPosition: {x: 22.63, y: 0.09, z: -39.27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: -30, z: 0}
+--- !u!114 &1323544883
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1323544881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 25
+  usesTimeRemaining: 1
+  firstSpawnTime: 590
+  respawnCooldown: 90
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 1
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &1323544884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1323544881}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2421016936
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &1383263904
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1383263905}
+  - component: {fileID: 1383263907}
+  - component: {fileID: 1383263906}
+  m_Layer: 0
+  m_Name: combee
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1383263905
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1383263904}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.2, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 998816939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1383263906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1383263904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 11
+  usesTimeRemaining: 1
+  firstSpawnTime: 590
+  respawnCooldown: 90
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &1383263907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1383263904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2499296130
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -9216,7 +9086,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2971074286
+  GlobalObjectIdHash: 3865068508
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -9285,7 +9155,7 @@ Transform:
   m_GameObject: {fileID: 1402253059}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.077, z: -51.103}
+  m_LocalPosition: {x: 0, y: 0.077, z: 12.08}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9327,7 +9197,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4283339446
+  GlobalObjectIdHash: 254642475
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -9336,41 +9206,6 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!1 &1408970595
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1408970596}
-  m_Layer: 0
-  m_Name: Bees
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1408970596
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408970595}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 0, y: 0.09, z: -32.1}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 271591095}
-  - {fileID: 306560001}
-  - {fileID: 591988858}
-  - {fileID: 789237700}
-  m_Father: {fileID: 1769486308}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!1001 &1421368206
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9519,7 +9354,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2601342195
+  GlobalObjectIdHash: 3185230734
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -9536,6 +9371,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 844971095323143376, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 844971095323143376, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2052691080799001447, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -9694,7 +9539,7 @@ PrefabInstance:
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: notificationTimes.Array.size
-      value: 4
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
@@ -9789,7 +9634,22 @@ PrefabInstance:
     - target: {fileID: 8348073312560232253, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 1005832488
+      value: 1853817071
+      objectReference: {fileID: 0}
+    - target: {fileID: 8551833365590501441, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8551833365590501441, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8551833365590501441, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9989,7 +9849,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4094242658
+  GlobalObjectIdHash: 783365033
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -10100,7 +9960,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3935045213
+  GlobalObjectIdHash: 1658102040
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -10211,11 +10071,11 @@ MonoBehaviour:
     type: 3}
   wildPokemonID: 10
   usesTimeRemaining: 1
-  firstSpawnTime: 480
+  firstSpawnTime: 590
   respawnCooldown: 90
   respawnType: 1
   specificRespawnTimes: []
-  despawnTime: 150
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
   soldierLaneID: 0
@@ -10231,7 +10091,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 73941867
+  GlobalObjectIdHash: 816624497
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -10405,22 +10265,22 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 800
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.25
+      value: 0.35
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3560211204
+      value: 1748981460
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -10492,7 +10352,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2914892004
+  GlobalObjectIdHash: 270382529
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -10510,7 +10370,7 @@ Transform:
   m_GameObject: {fileID: 1627575460}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: -54.77, y: 0.077, z: 8.64}
+  m_LocalPosition: {x: -48.84, y: 0.077, z: 18.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10585,7 +10445,85 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 734874135
+  GlobalObjectIdHash: 829012658
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &1668392357
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1668392358}
+  - component: {fileID: 1668392360}
+  - component: {fileID: 1668392359}
+  m_Layer: 0
+  m_Name: TaurosSpawnPoint (7)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1668392358
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1668392357}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: 0.077, z: -49.15}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &1668392359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1668392357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 3
+  usesTimeRemaining: 1
+  firstSpawnTime: 585
+  respawnCooldown: 60
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &1668392360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1668392357}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2913506921
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -10663,7 +10601,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2136973056
+  GlobalObjectIdHash: 290045433
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -10741,7 +10679,85 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 31261145
+  GlobalObjectIdHash: 2294094778
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &1699051331
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1699051332}
+  - component: {fileID: 1699051334}
+  - component: {fileID: 1699051333}
+  m_Layer: 0
+  m_Name: Indeedee (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1699051332
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699051331}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: -9.69, y: 0.077, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1043116970}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1699051333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699051331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 20
+  usesTimeRemaining: 1
+  firstSpawnTime: 475
+  respawnCooldown: 65
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &1699051334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699051331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 499297142
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -10819,7 +10835,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2053727761
+  GlobalObjectIdHash: 2404001930
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -10925,7 +10941,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1349151785
+  GlobalObjectIdHash: 75166898
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -11024,7 +11040,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1890676710
+  GlobalObjectIdHash: 1697427276
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -11102,7 +11118,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1199368562
+  GlobalObjectIdHash: 3657356545
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -11180,7 +11196,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 915815150
+  GlobalObjectIdHash: 819993091
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -11277,18 +11293,19 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 196930370}
-  - {fileID: 293916781}
-  - {fileID: 840601181}
-  - {fileID: 2063227952}
   - {fileID: 354184052}
+  - {fileID: 1668392358}
   - {fileID: 2143322475}
   - {fileID: 1284298012}
   - {fileID: 372802524}
   - {fileID: 2056775305}
   - {fileID: 1735167808}
   - {fileID: 2060164763}
-  - {fileID: 1408970596}
+  - {fileID: 643807410}
+  - {fileID: 2090260799}
+  - {fileID: 998816939}
+  - {fileID: 980859462}
+  - {fileID: 1323544882}
   m_Father: {fileID: 577624592}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1771213115
@@ -11318,7 +11335,7 @@ Transform:
   m_GameObject: {fileID: 1771213115}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 54.77, y: 0.077, z: 4.78}
+  m_LocalPosition: {x: 48.84, y: 0.077, z: 18.52}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11360,90 +11377,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1540531216
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!1 &1828691962
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1828691963}
-  - component: {fileID: 1828691965}
-  - component: {fileID: 1828691964}
-  m_Layer: 0
-  m_Name: combee1
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1828691963
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1828691962}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.7, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 418235539}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1828691964
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1828691962}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 11
-  usesTimeRemaining: 1
-  firstSpawnTime: 530
-  respawnCooldown: 0
-  respawnType: 2
-  specificRespawnTimes:
-  - 440
-  - 350
-  - 260
-  - 170
-  - 80
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &1828691965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1828691962}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1601944165
+  GlobalObjectIdHash: 3619721389
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -11574,7 +11508,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1826115954
+  GlobalObjectIdHash: 2473938159
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -11683,7 +11617,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3105815728
+  GlobalObjectIdHash: 241831011
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -11763,27 +11697,27 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: maxScore
-      value: 100
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 400
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.15
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 221756313
+      value: 2639004819
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -11945,7 +11879,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1150232287
+  GlobalObjectIdHash: 1488169695
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -12099,12 +12033,12 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: maxScore
-      value: 80
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: healAmount
-      value: 200
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -12114,12 +12048,12 @@ PrefabInstance:
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: shieldAmount
-      value: 0.1
+      value: 0.15
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: allowOvercaps
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -12309,7 +12243,7 @@ PrefabInstance:
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3958345525
+      value: 388415909
       objectReference: {fileID: 0}
     - target: {fileID: 7146186341011684014, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -12396,7 +12330,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4138806577
+  GlobalObjectIdHash: 1663433095
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -12527,7 +12461,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1356552520
+  GlobalObjectIdHash: 970852173
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -12605,7 +12539,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 470208535
+  GlobalObjectIdHash: 2524199193
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -12641,7 +12575,7 @@ Transform:
   m_GameObject: {fileID: 1988771090}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.7}
+  m_LocalPosition: {x: 0, y: 0, z: 1.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -12663,11 +12597,11 @@ MonoBehaviour:
     type: 3}
   wildPokemonID: 11
   usesTimeRemaining: 1
-  firstSpawnTime: 480
+  firstSpawnTime: 590
   respawnCooldown: 90
   respawnType: 1
   specificRespawnTimes: []
-  despawnTime: 150
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
   soldierLaneID: 0
@@ -12683,7 +12617,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 83935667
+  GlobalObjectIdHash: 1163151237
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -12751,7 +12685,7 @@ PrefabInstance:
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 3968668203
+      value: 2512865836
       objectReference: {fileID: 0}
     - target: {fileID: 638532035935603402, guid: 83d02b58ee5da6b4faf9e2bd7956371a,
         type: 3}
@@ -13009,7 +12943,85 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1669861668
+  GlobalObjectIdHash: 2036196866
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!1 &2052320736
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2052320737}
+  - component: {fileID: 2052320739}
+  - component: {fileID: 2052320738}
+  m_Layer: 0
+  m_Name: combee1
+  m_TagString: Untagged
+  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2052320737
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052320736}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.2, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 998816939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2052320738
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052320736}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
+    type: 3}
+  wildPokemonID: 11
+  usesTimeRemaining: 1
+  firstSpawnTime: 590
+  respawnCooldown: 90
+  respawnType: 1
+  specificRespawnTimes: []
+  despawnTime: 0
+  isObjective: 0
+  isSpawnedOnMap: 0
+  soldierLaneID: 0
+--- !u!114 &2052320739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2052320736}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 505162807
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -13087,7 +13099,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2481344659
+  GlobalObjectIdHash: 1508609482
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -13218,85 +13230,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 94264514
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
---- !u!1 &2063227951
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2063227952}
-  - component: {fileID: 2063227954}
-  - component: {fileID: 2063227953}
-  m_Layer: 0
-  m_Name: TaurosSpawnPoint (6)
-  m_TagString: Untagged
-  m_Icon: {fileID: 7174288486110832750, guid: 0000000000000000d000000000000000, type: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2063227952
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2063227951}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 14.85, y: 0.077, z: -44.77}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1769486308}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
---- !u!114 &2063227953
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2063227951}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pokemonPrefab: {fileID: 8963844837946224362, guid: 58f87770668c90f4fad37100c0b1f4fd,
-    type: 3}
-  wildPokemonID: 3
-  usesTimeRemaining: 1
-  firstSpawnTime: 590
-  respawnCooldown: 60
-  respawnType: 1
-  specificRespawnTimes: []
-  despawnTime: 0
-  isObjective: 0
-  isSpawnedOnMap: 0
-  soldierLaneID: 0
---- !u!114 &2063227954
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2063227951}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1388956558
+  GlobalObjectIdHash: 3973151482
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -13360,8 +13294,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2090260798}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
-  m_LocalPosition: {x: 0, y: 0.09, z: 0}
+  m_LocalRotation: {x: 0, y: 0.11129563, z: -0, w: -0.9937874}
+  m_LocalPosition: {x: -13, y: 0.09, z: -46.14}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -13369,8 +13303,8 @@ Transform:
   - {fileID: 1276204353}
   - {fileID: 923477801}
   - {fileID: 1988771091}
-  m_Father: {fileID: 1043116970}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_Father: {fileID: 1769486308}
+  m_LocalEulerAnglesHint: {x: 0, y: 347.22, z: 0}
 --- !u!1 &2090877153
 GameObject:
   m_ObjectHideFlags: 0
@@ -13524,7 +13458,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2938026452
+  GlobalObjectIdHash: 4117890213
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
