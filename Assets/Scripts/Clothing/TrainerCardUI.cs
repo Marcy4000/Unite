@@ -1,8 +1,8 @@
 using System.Collections;
+using System.Threading.Tasks;
 using UI.ThreeDimensional;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
-using UnityEngine.InputSystem;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 
@@ -14,8 +14,8 @@ public class TrainerCardUI : MonoBehaviour
 
     [SerializeField] private GameObject trainerPrefab;
 
-    [SerializeField] private AssetReferenceSprite[] backgrounds;
-    [SerializeField] private AssetReferenceSprite[] frames;
+    [SerializeField] private TrainerCardItem[] backgrounds;
+    [SerializeField] private TrainerCardItem[] frames;
 
     [SerializeField] private string[] maleAnimations;
     [SerializeField] private string[] femaleAnimations;
@@ -76,9 +76,9 @@ public class TrainerCardUI : MonoBehaviour
         trainerModel = Instantiate(trainerPrefab, new Vector3(0f, -100f, 0f), Quaternion.identity).GetComponent<TrainerModel>();
         trainerModel.InitializeClothes(clothes);
 
-        StartCoroutine(LoadSprites(clothes.TrainerCardInfo.BackgroundIndex, clothes.TrainerCardInfo.FrameIndex));
+        _ = LoadSpritesAsync(clothes.TrainerCardInfo.BackgroundIndex, clothes.TrainerCardInfo.FrameIndex);
 
-        trainerObject.TargetRotation = new Vector3(0f, 180+clothes.TrainerCardInfo.RotationOffset, 0f);
+        trainerObject.TargetRotation = new Vector3(0f, 180 + clothes.TrainerCardInfo.RotationOffset, 0f);
         float xPos = (clothes.TrainerCardInfo.TrainerOffestX / (float)short.MaxValue) * 2f;
         float yPos = (clothes.TrainerCardInfo.TrainerOffestY / (float)short.MaxValue) * 2f;
         trainerObject.TargetOffset = new Vector2(xPos, yPos);
@@ -101,7 +101,7 @@ public class TrainerCardUI : MonoBehaviour
         };
     }
 
-    public void UpdateCard(TrainerCardInfo cardInfo)
+    public void UpdateCardPlayer(TrainerCardInfo cardInfo)
     {
         trainerObject.TargetRotation = new Vector3(0f, 180 + cardInfo.RotationOffset, 0f);
         float xPos = (cardInfo.TrainerOffestX / (float)short.MaxValue) * 2f;
@@ -122,7 +122,12 @@ public class TrainerCardUI : MonoBehaviour
         }
     }
 
-    private IEnumerator LoadSprites(byte backgroundIndex, byte frameIndex)
+    public async void UpdateCardFrame(TrainerCardInfo cardInfo)
+    {
+        await LoadSpritesAsync(cardInfo.BackgroundIndex, cardInfo.FrameIndex);
+    }
+
+    private async Task LoadSpritesAsync(byte backgroundIndex, byte frameIndex)
     {
         if (backgroundHandle.IsValid())
         {
@@ -136,10 +141,10 @@ public class TrainerCardUI : MonoBehaviour
             Addressables.Release(frameHandle);
         }
 
-        backgroundHandle = Addressables.LoadAssetAsync<Sprite>(backgrounds[backgroundIndex]);
-        frameHandle = Addressables.LoadAssetAsync<Sprite>(frames[frameIndex]);
+        backgroundHandle = Addressables.LoadAssetAsync<Sprite>(backgrounds[backgroundIndex].itemSprite);
+        frameHandle = Addressables.LoadAssetAsync<Sprite>(frames[frameIndex].itemSprite);
 
-        yield return new WaitUntil(() => backgroundHandle.IsDone && frameHandle.IsDone);
+        await Task.WhenAll(backgroundHandle.Task, frameHandle.Task);
 
         backgroundImage.sprite = backgroundHandle.Result;
         frameImage.sprite = frameHandle.Result;

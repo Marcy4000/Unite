@@ -10,9 +10,23 @@ public class TrainerCardEditor : MonoBehaviour
     [SerializeField] private Slider xPosSlider, yPosSlider, rotationSlider, scaleSlider;
 
     [SerializeField] private TrainerCardUI trainerCardUI;
+    [SerializeField] private ClothesMenuSelector clothesMenuSelector;
+
+    [SerializeField] private GameObject normalMenu;
+    [SerializeField] private TrainerCardEditorMenu backgroundMenu, frameMenu;
+
+    private void Start()
+    {
+        clothesMenuSelector.OnSelectedMenuChanged += OnSelectedMenuChanged;
+
+        backgroundMenu.OnItemSelected += UpdateBackground;
+        frameMenu.OnItemSelected += UpdateFrame;
+    }
 
     private void OnEnable()
     {
+        SetActiveMenu(0);
+
         PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
 
         float xPos = (playerClothesInfo.TrainerCardInfo.TrainerOffestX / (float)short.MaxValue);
@@ -32,6 +46,11 @@ public class TrainerCardEditor : MonoBehaviour
         trainerCardUI.Initialize(playerClothesInfo);
     }
 
+    private void OnSelectedMenuChanged(ClothingType clothingType)
+    {
+        SetActiveMenu((int)clothingType);
+    }
+
     private void UpdateXPos(float value)
     {
         PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
@@ -39,7 +58,7 @@ public class TrainerCardEditor : MonoBehaviour
         playerClothesInfo.TrainerCardInfo.TrainerOffestX = (short)(value * short.MaxValue);
 
         LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
-        trainerCardUI.UpdateCard(playerClothesInfo.TrainerCardInfo);
+        trainerCardUI.UpdateCardPlayer(playerClothesInfo.TrainerCardInfo);
     }
 
     private void UpdateYPos(float value)
@@ -49,7 +68,7 @@ public class TrainerCardEditor : MonoBehaviour
         playerClothesInfo.TrainerCardInfo.TrainerOffestY = (short)(value * short.MaxValue);
 
         LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
-        trainerCardUI.UpdateCard(playerClothesInfo.TrainerCardInfo);
+        trainerCardUI.UpdateCardPlayer(playerClothesInfo.TrainerCardInfo);
     }
 
     private void UpdateRotation(float value)
@@ -59,7 +78,7 @@ public class TrainerCardEditor : MonoBehaviour
         playerClothesInfo.TrainerCardInfo.RotationOffset = (sbyte)value;
 
         LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
-        trainerCardUI.UpdateCard(playerClothesInfo.TrainerCardInfo);
+        trainerCardUI.UpdateCardPlayer(playerClothesInfo.TrainerCardInfo);
     }
 
     private void UpdateScale(float value)
@@ -69,7 +88,7 @@ public class TrainerCardEditor : MonoBehaviour
         playerClothesInfo.TrainerCardInfo.TrainerScale = (byte)value;
 
         LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
-        trainerCardUI.UpdateCard(playerClothesInfo.TrainerCardInfo);
+        trainerCardUI.UpdateCardPlayer(playerClothesInfo.TrainerCardInfo);
     }
 
     private void UpdateAnimation(int value)
@@ -79,7 +98,23 @@ public class TrainerCardEditor : MonoBehaviour
         playerClothesInfo.TrainerCardInfo.TrainerAnimation = (byte)value;
 
         LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
-        trainerCardUI.UpdateCard(playerClothesInfo.TrainerCardInfo);
+        trainerCardUI.UpdateCardPlayer(playerClothesInfo.TrainerCardInfo);
+    }
+
+    private void UpdateBackground(int index)
+    {
+        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
+        playerClothesInfo.TrainerCardInfo.BackgroundIndex = (byte)index;
+        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+        trainerCardUI.UpdateCardFrame(playerClothesInfo.TrainerCardInfo);
+    }
+
+    private void UpdateFrame(int index)
+    {
+        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
+        playerClothesInfo.TrainerCardInfo.FrameIndex = (byte)index;
+        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+        trainerCardUI.UpdateCardFrame(playerClothesInfo.TrainerCardInfo);
     }
 
     public void SaveClothingChanges()
@@ -91,5 +126,12 @@ public class TrainerCardEditor : MonoBehaviour
     private PlayerClothesInfo GetPlayerClothesInfo()
     {
         return PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value);
+    }
+
+    private void SetActiveMenu(int index)
+    {
+        normalMenu.SetActive(index == 0);
+        backgroundMenu.gameObject.SetActive(index == 1);
+        frameMenu.gameObject.SetActive(index == 2);
     }
 }
