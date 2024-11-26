@@ -1,5 +1,6 @@
 using DG.Tweening;
 using System.Collections;
+using System.Collections.Generic;
 using UI.ThreeDimensional;
 using UnityEngine;
 
@@ -21,6 +22,42 @@ public class GameBeginScreenUI : MonoBehaviour
 
     private Coroutine fadeInRoutine;
 
+    private Dictionary<int, string> playerAnimationsBlueMale = new Dictionary<int, string>()
+    {
+        {0, "ani_body02_40040_lob_male" },
+        {1, "ani_obpos5idle_40040_lob_male" },
+        {2, "ani_body01_40350_lob_male" },
+        {3, "ani_win05idle_40350_lob_male" },
+        {4, "ani_win03idle_40350_lob_male" },
+    };
+
+    private Dictionary<int, string> playerAnimationsOrangeMale = new Dictionary<int, string>()
+    {
+        {0, "ani_body03_40040_lob_male" },
+        {1, "ani_win03idle_40350_lob_male" },
+        {2, "ani_body15_40350_lob_male" },
+        {3, "ani_pose9_40350_lob_male" },
+        {4, "ani_body02_40040_lob_male" },
+    };
+
+    private Dictionary<int, string> playerAnimationsBlueFemale = new Dictionary<int, string>()
+    {
+        {0, "ani_body02_50350_lob_female" },
+        {1, "ani_body03_50424_lob_female" },
+        {2, "ani_win03idle_50040_lob_female" },
+        {3, "ani_win07idle_lob_female" },
+        {4, "ani_win05idle_50350_lob_female" },
+    };
+
+    private Dictionary<int, string> playerAnimationsOrangeFemale = new Dictionary<int, string>()
+    {
+        {0, "ani_ready01_lob_female" },
+        {1, "ani_win05idle_50350_lob_female" },
+        {2, "ani_ready03_lob_female" },
+        {3, "ani_pose9_05350_lob_female" },
+        {4, "ani_body02_50350_lob_female" },
+    };
+
     private void Start()
     {
         blueTeamObjects = new UIObject3D[blueTeamPlayers.Length];
@@ -28,15 +65,24 @@ public class GameBeginScreenUI : MonoBehaviour
 
         for (int i = 0; i < blueTeamPlayers.Length; i++)
         {
-            blueTeamObjects[i] = blueTeamPlayers[i].GetComponent<UIObject3D>();
+            blueTeamObjects[i] = blueTeamPlayers[i].GetComponentInChildren<UIObject3D>();
         }
 
         for (int i = 0; i < orangeTeamPlayers.Length; i++)
         {
-            orangeTeamObjects[i] = orangeTeamPlayers[i].GetComponent<UIObject3D>();
+            orangeTeamObjects[i] = orangeTeamPlayers[i].GetComponentInChildren<UIObject3D>();
         }
 
         gameObject.SetActive(false);
+    }
+
+    private void Update()
+    {
+        if (UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            InitializeUI(5, 5);
+            FadeIn();
+        }
     }
 
     public void InitializeUI(int bluePlayers, int orangePlayers)
@@ -60,6 +106,8 @@ public class GameBeginScreenUI : MonoBehaviour
         {
             orangeTeamPlayers[i].gameObject.SetActive(false);
         }
+
+        StartCoroutine(InitializePlayerModels());
     }
 
     public void FadeIn()
@@ -172,5 +220,41 @@ public class GameBeginScreenUI : MonoBehaviour
         yield return new WaitForSeconds(0.3f);
 
         gameObject.SetActive(false);
+    }
+
+    private IEnumerator InitializePlayerModels()
+    {
+        Unity.Services.Lobbies.Models.Player[] blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(false);
+        Unity.Services.Lobbies.Models.Player[] orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(true);
+
+        for (int i = 0; i < blueTeamPlayers.Length; i++)
+        {
+            TrainerModel trainerModel = PlayerClothesPreloader.Instance.GetPlayerModel(blueTeamPlayers[i].Id).GetComponent<TrainerModel>();
+
+            trainerModel.ActiveAnimator.Play(trainerModel.IsMale ? playerAnimationsBlueMale[i] : playerAnimationsBlueFemale[i]);
+
+            blueTeamObjects[i].ObjectPrefab = trainerModel.transform;
+        }
+
+        for (int i = 0; i < orangeTeamPlayers.Length; i++)
+        {
+            TrainerModel trainerModel = PlayerClothesPreloader.Instance.GetPlayerModel(orangeTeamPlayers[i].Id).GetComponent<TrainerModel>();
+
+            trainerModel.ActiveAnimator.Play(trainerModel.IsMale ? playerAnimationsOrangeMale[i] : playerAnimationsOrangeFemale[i]);
+
+            orangeTeamObjects[i].ObjectPrefab = trainerModel.transform;
+        }
+
+        yield return null;
+
+        for (int i = 0; i < blueTeamPlayers.Length; i++)
+        {
+            blueTeamObjects[i].Render();
+        }
+
+        for (int i = 0; i < orangeTeamPlayers.Length; i++)
+        {
+            orangeTeamObjects[i].Render();
+        }
     }
 }

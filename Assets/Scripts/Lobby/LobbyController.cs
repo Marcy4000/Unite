@@ -197,6 +197,7 @@ public class LobbyController : MonoBehaviour
         lobbyEventCallbacks.KickedFromLobby += () =>
         {
             partyLobby = null;
+            PlayerClothesPreloader.Instance.ClearAllModels();
             NetworkManager.Singleton.Shutdown();
             if (lobbyUI != null)
             {
@@ -667,6 +668,7 @@ public class LobbyController : MonoBehaviour
         LoadingScreen.Instance.ShowGenericLoadingScreen();
         await RemoveFromParty(localPlayer.Id);
         partyLobby = null;
+        PlayerClothesPreloader.Instance.ClearAllModels();
         NetworkManager.Singleton.Shutdown();
 
         playerNetworkManagers.Clear();
@@ -679,6 +681,7 @@ public class LobbyController : MonoBehaviour
     {
         await RemoveFromParty(localPlayer.Id);
         partyLobby = null;
+        PlayerClothesPreloader.Instance.ClearAllModels();
         NetworkManager.Singleton.Shutdown();
         playerNetworkManagers.Clear();
     }

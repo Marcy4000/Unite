@@ -8,6 +8,7 @@ public class TrainerCardEditorMenu : MonoBehaviour
     [SerializeField] private GameObject itemPrefab;
     [SerializeField] private Transform content;
     [SerializeField] private ToggleGroup toggleGroup;
+    [SerializeField] private bool isBackground;
 
     [SerializeField] private TrainerCardItem[] items;
 
@@ -17,6 +18,9 @@ public class TrainerCardEditorMenu : MonoBehaviour
 
     private void Start()
     {
+        TrainerCardInfo info = PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value).TrainerCardInfo;
+
+        int i = 0;
         foreach (TrainerCardItem item in items)
         {
             GameObject itemObject = Instantiate(itemPrefab, content);
@@ -32,6 +36,12 @@ public class TrainerCardEditorMenu : MonoBehaviour
                     OnItemSelected?.Invoke(System.Array.IndexOf(items, item));
                 }
             });
+
+            if (i == (isBackground ? info.BackgroundIndex : info.FrameIndex))
+            {
+                itemUI.Toggle.isOn = true;
+            }
+            i++;
         }
     }
 }
