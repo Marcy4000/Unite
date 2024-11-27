@@ -29,7 +29,7 @@ public class TrainerCardUI : MonoBehaviour
 
     private void OnEnable()
     {
-        if (trainerModel != null)
+        if (trainerModel != null && trainerObject.TargetGameObject != null)
         {
             if (trainerModel.IsMale)
             {

@@ -982,6 +982,7 @@ public class PlayerManager : NetworkBehaviour
         {
             Addressables.Release(pokemonLoadHandle);
         }
+        playerControls.asset.Disable();
         base.OnDestroy();
     }
 }

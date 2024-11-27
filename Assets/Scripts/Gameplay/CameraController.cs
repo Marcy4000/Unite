@@ -96,4 +96,9 @@ public class CameraController : MonoBehaviour
             cameraTransform.Translate(moveDirection * panSpeed * Time.deltaTime, Space.World);
         }
     }
+
+    private void OnDestroy()
+    {
+        playerControls.asset.Disable();
+    }
 }

@@ -75,6 +75,11 @@ public class BattleUIManager : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        playerControls.asset.Disable();
+    }
+
     public void ShowScore(int amount, bool orangeTeam, Sprite portrait)
     {
         ScoreUIInfo scoreInfo = new ScoreUIInfo(amount, portrait);

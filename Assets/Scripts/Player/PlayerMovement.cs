@@ -270,4 +270,13 @@ public class PlayerMovement : NetworkBehaviour
             yield return null;
         }
     }
+
+    public override void OnDestroy()
+    {
+        if (IsOwner)
+        {
+            controls.asset.Disable();
+        }
+        base.OnDestroy();
+    }
 }

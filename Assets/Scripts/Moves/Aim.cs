@@ -475,4 +475,10 @@ public class Aim : NetworkBehaviour
 
         return true;
     }
+
+    public override void OnDestroy()
+    {
+        controls.asset.Disable();
+        base.OnDestroy();
+    }
 }

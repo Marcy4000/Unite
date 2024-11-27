@@ -147,4 +147,10 @@ public class QuickChatSelectorUI : MonoBehaviour
 
         isOnCooldown = false;
     }
+
+    private void OnDestroy()
+    {
+        button.onClick.RemoveListener(OnButtonClicked);
+        playerControls.asset.Disable();
+    }
 }

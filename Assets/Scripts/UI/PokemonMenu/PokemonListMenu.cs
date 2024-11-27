@@ -31,7 +31,7 @@ public class PokemonListMenu : MonoBehaviour
         if (modelHandle.IsValid())
         {
             pokemonModel.ObjectPrefab = null;
-            pokemonModel.imageComponent.enabled = false;
+            pokemonModel.gameObject.SetActive(false);
             Addressables.Release(modelHandle);
         }
 
@@ -104,7 +104,7 @@ public class PokemonListMenu : MonoBehaviour
         if (modelHandle.IsValid())
         {
             pokemonModel.ObjectPrefab = null;
-            pokemonModel.imageComponent.enabled = false;
+            pokemonModel.gameObject.SetActive(false);
             Addressables.Release(modelHandle);
         }
 
@@ -118,8 +118,8 @@ public class PokemonListMenu : MonoBehaviour
             yield break;
         }
 
+        pokemonModel.gameObject.SetActive(true);
         pokemonModel.ObjectPrefab = modelHandle.Result.transform;
-        pokemonModel.imageComponent.enabled = true;
     }
 
     public void ShowProgressionMenu()

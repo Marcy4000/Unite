@@ -762,6 +762,12 @@ public class MovesController : NetworkBehaviour
         // Default cooldown value if no threshold is matched
         return 1f;
     }
+
+    public override void OnDestroy()
+    {
+        controls.asset.Disable();
+        base.OnDestroy();
+    }
 }
 
 public struct AttackSpeedCooldown

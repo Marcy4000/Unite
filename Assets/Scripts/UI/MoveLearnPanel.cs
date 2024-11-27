@@ -112,4 +112,10 @@ public class MoveLearnPanel : MonoBehaviour
         onSelectedMove?.Invoke(moves[id]);
         CloseLearnMovePanel();
     }
+
+    private void OnDestroy()
+    {
+        if (controls != null)
+            controls.asset.Disable();
+    }
 }
