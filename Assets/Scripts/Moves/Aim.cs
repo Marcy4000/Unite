@@ -30,9 +30,9 @@ public class Aim : NetworkBehaviour
     private Vector3 circleAimPosition;
     private float maxCircleAimRadius;
 
-    private bool teamToIgnore;
+    private Team teamToIgnore;
 
-    public bool TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; } 
+    public Team TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; } 
 
     private void Start()
     {
@@ -232,7 +232,12 @@ public class Aim : NetworkBehaviour
         return AimInCircleAtPosition(position, radius, target, teamToIgnore);
     }
 
-    public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, bool teamToIgnore, bool canHitInvisTargets = true)
+    public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, TeamMember teamToIgnore, bool canHitInvisTargets = true)
+    {
+        return AimInCircleAtPosition(position, radius, target, teamToIgnore, canHitInvisTargets);
+    }
+
+    public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, Team teamToIgnore, bool canHitInvisTargets = true)
     {
         List<GameObject> foundTargets = new List<GameObject>();
 
@@ -374,7 +379,12 @@ public class Aim : NetworkBehaviour
         return aimDirection;
     }
 
-    public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType, bool teamToIgnore, bool canHitInvisTargets=true)
+    public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType, Team teamToIgnore, bool canHitInvisTargets = true)
+    {
+        return CanPokemonBeTargeted(pokemonObject, targetType, new TeamMember(teamToIgnore), canHitInvisTargets);
+    }
+
+    public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType, TeamMember teamToIgnore, bool canHitInvisTargets=true)
     {
         if (pokemonObject.TryGetComponent(out Pokemon pokemon))
         {
@@ -391,76 +401,37 @@ public class Aim : NetworkBehaviour
         switch (targetType)
         {
             case AimTarget.Enemy:
-                if (pokemonObject.GetComponent<WildPokemon>())
+                if (pokemon.TeamMember.Team == Team.Neutral)
                 {
                     return false;
                 }
 
-                if (pokemonObject.CompareTag("Player"))
+                if (pokemon.TeamMember.IsOnSameTeam(teamToIgnore))
                 {
-                    var playerManager = pokemonObject.GetComponent<PlayerManager>();
-                    if (playerManager.OrangeTeam == teamToIgnore)
-                    {
-                        return false;
-                    }
-                }
-
-                if (pokemonObject.CompareTag("SoldierPokemon"))
-                {
-                    var soldierPokemon = pokemonObject.GetComponent<SoldierPokemon>();
-                    if (soldierPokemon.OrangeTeam == teamToIgnore)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
                 break;
             case AimTarget.Ally:
-                if (pokemonObject.GetComponent<WildPokemon>())
+                if (pokemon.TeamMember.Team == Team.Neutral)
                 {
                     return false;
                 }
 
-                if (pokemonObject.CompareTag("Player"))
+                if (!pokemon.TeamMember.IsOnSameTeam(teamToIgnore))
                 {
-                    var playerManager = pokemonObject.GetComponent<PlayerManager>();
-                    if (playerManager.OrangeTeam != teamToIgnore)
-                    {
-                        return false;
-                    }
-                }
-
-                if (pokemonObject.CompareTag("SoldierPokemon"))
-                {
-                    var soldierPokemon = pokemonObject.GetComponent<SoldierPokemon>();
-                    if (soldierPokemon.OrangeTeam != teamToIgnore)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
                 break;
             case AimTarget.Wild:
-                if (!pokemonObject.GetComponent<WildPokemon>())
+                if (pokemon.TeamMember.Team != Team.Neutral)
                 {
                     return false;
                 }
                 break;
             case AimTarget.NonAlly:
-                if (pokemonObject.CompareTag("Player"))
+                if (pokemon.TeamMember.IsOnSameTeam(teamToIgnore))
                 {
-                    var playerManager = pokemonObject.GetComponent<PlayerManager>();
-                    if (playerManager.OrangeTeam == teamToIgnore)
-                    {
-                        return false;
-                    }
-                }
-
-                if (pokemonObject.CompareTag("SoldierPokemon"))
-                {
-                    var soldierPokemon = pokemonObject.GetComponent<SoldierPokemon>();
-                    if (soldierPokemon.OrangeTeam == teamToIgnore)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
                 break;
         }

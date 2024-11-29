@@ -14,7 +14,7 @@ public class EmboarHeatCrashArea : NetworkBehaviour
     private StatChange normalSlow = new StatChange(20, Stat.Speed, 0.5f, true, false, true, 0);
     private StatChange finalSlow = new StatChange(25, Stat.Speed, 3.2f, true, false, true, 0);
 
-    private bool orangeTeam;
+    private Team orangeTeam;
     private bool knockup;
     private bool upgraded;
 
@@ -33,7 +33,7 @@ public class EmboarHeatCrashArea : NetworkBehaviour
         transform.position = position;
         transform.rotation = Quaternion.LookRotation(rotation);
         transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
-        orangeTeam = emboar.OrangeTeam;
+        orangeTeam = emboar.CurrentTeam.Team;
         firstWave = first;
         secondWave = second;
         thirdWave = third;

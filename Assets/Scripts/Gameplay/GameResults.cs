@@ -2,7 +2,7 @@ using Unity.Netcode;
 
 public struct GameResults : INetworkSerializable
 {
-    public bool BlueTeamWon;
+    public Team WinningTeam;
     public bool Surrendered;
     public ushort BlueTeamScore;
     public ushort OrangeTeamScore;
@@ -14,9 +14,9 @@ public struct GameResults : INetworkSerializable
 
     public PlayerStats[] PlayerStats;
 
-    public GameResults(bool blueTeamWon, bool surrendered, ushort blueTeamScore, ushort orangeTeamScore, float totalGameTime, ResultScoreInfo[] blueTeamScores, ResultScoreInfo[] orangeTeamScores, PlayerStats[] playerStats)
+    public GameResults(Team winningTeam, bool surrendered, ushort blueTeamScore, ushort orangeTeamScore, float totalGameTime, ResultScoreInfo[] blueTeamScores, ResultScoreInfo[] orangeTeamScores, PlayerStats[] playerStats)
     {
-        BlueTeamWon = blueTeamWon;
+        WinningTeam = winningTeam;
         Surrendered = surrendered;
         BlueTeamScore = blueTeamScore;
         OrangeTeamScore = orangeTeamScore;
@@ -28,7 +28,7 @@ public struct GameResults : INetworkSerializable
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
-        serializer.SerializeValue(ref BlueTeamWon);
+        serializer.SerializeValue(ref WinningTeam);
         serializer.SerializeValue(ref Surrendered);
         serializer.SerializeValue(ref BlueTeamScore);
         serializer.SerializeValue(ref OrangeTeamScore);

@@ -39,7 +39,7 @@ public class FlygonSupersonic : MoveBase
                 if (obj.TryGetComponent(out SupersonicHitbox hitbox))
                 {
                     this.hitbox = hitbox;
-                    hitbox.InitializeRPC(playerManager.transform.position, direction, playerManager.OrangeTeam);
+                    hitbox.InitializeRPC(playerManager.transform.position, direction, playerManager.CurrentTeam.Team);
                 }
             };
 

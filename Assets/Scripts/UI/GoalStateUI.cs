@@ -8,9 +8,9 @@ public class GoalStateUI : MonoBehaviour
     private int blueActiveGoals = 4;
     private int orangeActiveGoals = 4;
 
-    public void UpdateGoalState(bool orangeTeam)
+    public void UpdateGoalState(Team orangeTeam)
     {
-        if (orangeTeam)
+        if (orangeTeam == Team.Orange)
         {
             orangeActiveGoals--;
         }

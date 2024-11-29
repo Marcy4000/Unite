@@ -9,7 +9,7 @@ public class HypervoiceHitbox : NetworkBehaviour
     private DamageInfo closeDamage;
     private DamageInfo farDamage;
 
-    private bool teamToIgnore;
+    private Team teamToIgnore;
     //public bool TeamToIgnore { get => teamToIgnore; set => SetTeamToIgnoreRPC(value); }
 
     private List<Pokemon> pokemonInTrigger = new List<Pokemon>();
@@ -17,7 +17,7 @@ public class HypervoiceHitbox : NetworkBehaviour
     private float cooldown = 0.1f;
 
     [Rpc(SendTo.Everyone)]
-    public void InitializeRPC(DamageInfo close, DamageInfo far, bool team, int waves)
+    public void InitializeRPC(DamageInfo close, DamageInfo far, Team team, int waves)
     {
         closeDamage = close;
         farDamage = far;

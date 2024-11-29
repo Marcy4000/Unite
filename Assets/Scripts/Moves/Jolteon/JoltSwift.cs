@@ -43,7 +43,7 @@ public class JoltSwift : MoveBase
             {
                 JoltSwiftProjectile projectile = obj.GetComponent<JoltSwiftProjectile>();
                 Vector3 startPos = playerManager.transform.position + new Vector3(0, 1f, 0);
-                projectile.InitializeRPC(startPos, direction, true, bigStar, smallStar, playerManager.OrangeTeam);
+                projectile.InitializeRPC(startPos, direction, true, bigStar, smallStar, playerManager.CurrentTeam.Team);
             };
 
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);

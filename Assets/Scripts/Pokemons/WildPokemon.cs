@@ -1,6 +1,5 @@
 using DG.Tweening;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
@@ -84,7 +83,12 @@ public class WildPokemon : NetworkBehaviour
         }
         else
         {
-            GiveExpRpc(info.attackerId);
+            pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);
+            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].TryGetComponent(out PlayerManager player))
+            {
+                GiveAttackerEnergy(player);
+            }
+            StartCoroutine(DumbDespawn());
         }
     }
 
@@ -95,40 +99,40 @@ public class WildPokemon : NetworkBehaviour
         switch (objectiveType)
         {
             case ObjectiveType.Zapdos:
-                bool teamToBuff = false;
+                Team teamToBuff = attacker.TeamMember.Team;
                 if (attacker.TryGetComponent(out PlayerManager player))
                 {
-                    teamToBuff = player.OrangeTeam;
+                    GiveAttackerEnergy(player);
                 }
 
                 foreach (var playerManager in GameManager.Instance.Players)
                 {
-                    if (playerManager != null && playerManager.OrangeTeam == teamToBuff && playerManager.PlayerState != PlayerState.Dead)
+                    if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamToBuff) && playerManager.PlayerState != PlayerState.Dead)
                     {
                         playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.Rayquaza, 25f, true));
                     }
                 }
 
-                LaneManager opposingLane = GameManager.Instance.Lanes.ToList().Find(lane => lane.OrangeTeam != teamToBuff);
+                LaneManager opposingLane = GameManager.Instance.Lanes.ToList().Find(lane => lane.Team != teamToBuff);
 
                 foreach (var goalZone in opposingLane.GoalZones)
                 {
                     goalZone.WeaknenGoalZoneRPC(20f);
                 }
 
-                GiveExpRpc(info.attackerId);
+                pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);
+                StartCoroutine(DumbDespawn());
                 break;
             case ObjectiveType.Drednaw:
-                bool teamtToGiveExp = false;
+                Team teamtToGiveExp = pokemon.TeamMember.Team;
                 if (attacker.TryGetComponent(out PlayerManager player2))
                 {
-                    teamtToGiveExp = player2.OrangeTeam;
                     GiveAttackerEnergy(player2);
                 }
 
                 foreach (var playerManager in GameManager.Instance.Players)
                 {
-                    if (playerManager != null && playerManager.OrangeTeam == teamtToGiveExp)
+                    if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamtToGiveExp))
                     {
                         playerManager.Pokemon.GainExperience(Mathf.RoundToInt(ExpYield * 0.50f));
                         if (playerManager.PlayerState != PlayerState.Dead)
@@ -141,22 +145,23 @@ public class WildPokemon : NetworkBehaviour
                 StartCoroutine(DumbDespawn());
                 break;
             case ObjectiveType.Rotom:
-                SpawnSoldierRPC(attacker.GetComponent<PlayerManager>().OrangeTeam);
+                SpawnSoldierRPC(attacker.GetComponent<PlayerManager>().CurrentTeam.Team);
 
                 // Spawn soldier rotom
-                GiveExpRpc(info.attackerId);
+                pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);
+                GiveAttackerEnergy(attacker.GetComponent<PlayerManager>());
+                StartCoroutine(DumbDespawn());
                 break;
             case ObjectiveType.Registeel:
-                bool teamtToGiveExp2 = false;
+                Team teamtToGiveExp2 = pokemon.TeamMember.Team;
                 if (attacker.TryGetComponent(out PlayerManager player3))
                 {
-                    teamtToGiveExp2 = player3.OrangeTeam;
                     GiveAttackerEnergy(player3);
                 }
 
                 foreach (var playerManager in GameManager.Instance.Players)
                 {
-                    if (playerManager != null && playerManager.OrangeTeam == teamtToGiveExp2)
+                    if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamtToGiveExp2))
                     {
                         playerManager.Pokemon.GainExperience(Mathf.RoundToInt(ExpYield * 0.60f));
                         if (playerManager.PlayerState != PlayerState.Dead)
@@ -176,7 +181,7 @@ public class WildPokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void SpawnSoldierRPC(bool orangeTeam)
+    private void SpawnSoldierRPC(Team orangeTeam)
     {
         SoldierPokemon soldier = Instantiate(soldierPrefab, transform.position, transform.rotation).GetComponent<SoldierPokemon>();
         soldier.GetComponent<NetworkObject>().Spawn(true);
@@ -186,90 +191,7 @@ public class WildPokemon : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowKillRpc(DamageInfo info)
     {
-        bool orangeTeam = false;
-
-        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<Pokemon>();
-        if (attacker.TryGetComponent(out PlayerManager player))
-        {
-            orangeTeam = player.OrangeTeam;
-        }
-
         BattleUIManager.instance.ShowKill(info, pokemon);
-    }
-
-    [Rpc(SendTo.ClientsAndHost)]
-    private void GiveExpRpc(ulong attackerID)
-    {
-        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
-
-        float baseExp = wildPokemonInfo.ExpYield;
-
-        Dictionary<int, (float koerExp, float proximityExp)> expDistribution = new Dictionary<int, (float, float)>
-        {
-            {1, (1.0f, 0.0f)},
-            {2, (0.7f, 0.3f)},
-            {3, (0.7f, 0.15f)},
-            {4, (0.7f, 0.1f)},
-            {5, (0.7f, 0.075f)}
-        };
-
-        List<Pokemon> playersInProximity;
-
-        if (attacker.TryGetComponent(out PlayerManager player))
-        {
-            player.MovesController.IncrementUniteCharge(5000);
-
-            playersInProximity = FindPlayersInProximity(transform.position, 6f, player.OrangeTeam);
-        }
-        else
-        {
-            playersInProximity = FindPlayersInProximity(transform.position, 6f, false);
-        }
-
-        DistributeExperience(attacker, playersInProximity, baseExp, expDistribution);
-
-        if (IsServer)
-        {
-            GiveAttackerEnergy(attacker.GetComponent<PlayerManager>());
-            StartCoroutine(DumbDespawn());
-        }
-    }
-
-    private List<Pokemon> FindPlayersInProximity(Vector3 koPosition, float range, bool orangeTeam)
-    {
-        List<Pokemon> playersInProximity = new List<Pokemon>();
-
-        foreach (var playerObject in NetworkManager.Singleton.SpawnManager.SpawnedObjects.Values)
-        {
-            PlayerManager player = playerObject.GetComponent<PlayerManager>();
-            if (player != null && player.OrangeTeam == orangeTeam && Vector3.Distance(player.transform.position, koPosition) <= range)
-            {
-                playersInProximity.Add(player.Pokemon);
-            }
-        }
-
-        return playersInProximity;
-    }
-
-    private void DistributeExperience(Pokemon attacker, List<Pokemon> playersInProximity, float baseExp, Dictionary<int, (float koerExp, float proximityExp)> expDistribution)
-    {
-        int playersCount = playersInProximity.Count;
-        if (!expDistribution.TryGetValue(playersCount, out var expValues))
-        {
-            expValues = expDistribution[1];
-        }
-
-        float attackerExp = baseExp * expValues.koerExp;
-        attacker.GainExperience(Mathf.FloorToInt(attackerExp));
-
-        float proximityExp = baseExp * expValues.proximityExp;
-        foreach (var player in playersInProximity)
-        {
-            if (player != attacker)
-            {
-                player.GainExperience(Mathf.FloorToInt(proximityExp));
-            }
-        }
     }
 
     private IEnumerator DumbDespawn()

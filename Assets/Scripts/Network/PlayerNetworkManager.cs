@@ -19,7 +19,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private bool matchStarted = false;
 
-    private bool orangeTeam = false;
+    private Team team;
 
     private NetworkVariable<PlayerStats> playerStats = new NetworkVariable<PlayerStats>(writePerm: NetworkVariableWritePermission.Owner);
     private int killsSinceLastDeath = 0;
@@ -115,7 +115,7 @@ public class PlayerNetworkManager : NetworkBehaviour
         {
             if (LocalPlayer.Data.ContainsKey("PlayerTeam"))
             {
-                orangeTeam = LocalPlayer.Data["PlayerTeam"].Value == "Orange";
+                team = TeamMember.GetTeamFromString(LocalPlayer.Data["PlayerTeam"].Value);
             }
         }
         catch (System.Exception e)
@@ -191,23 +191,23 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         if (IsOwner)
         {
-            bool currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
+            Team currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
             SpawnPlayerRpc(OwnerClientId, currentTeam);
         }
     }
 
     [Rpc(SendTo.Server)]
-    private void SpawnPlayerRpc(ulong clientID, bool orangeTeam)
+    private void SpawnPlayerRpc(ulong clientID, Team team)
     {
-        Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+        Transform spawnpoint = team == Team.Orange ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
         GameObject spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);
         var spawnedPlayerNetworkObject = spawnedPlayer.GetComponent<NetworkObject>();
         spawnedPlayerNetworkObject.SpawnAsPlayerObject(clientID, true);
-        OnPlayerSpawnedRpc(spawnedPlayerNetworkObject.NetworkObjectId, orangeTeam);
+        OnPlayerSpawnedRpc(spawnedPlayerNetworkObject.NetworkObjectId, team);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void OnPlayerSpawnedRpc(ulong networkID, bool orangeTeam)
+    private void OnPlayerSpawnedRpc(ulong networkID, Team team)
     {
         PlayerManager[] players = FindObjectsOfType<PlayerManager>();
         foreach (PlayerManager player in players)
@@ -220,7 +220,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                 if (playerNetworkObject.OwnerClientId == OwnerClientId)
                 {
                     playerManager = player;
-                    player.ChangeCurrentTeam(orangeTeam);
+                    player.ChangeCurrentTeam(team);
                     player.Initialize();
 
                     MinimapManager.Instance.CreatePlayerIcon(player);
@@ -234,7 +234,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                         player.Pokemon.OnOtherPokemonKilled += OnOtherPokemonKilled;
 
                         short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
-                        Transform spawnpoint = orangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
+                        Transform spawnpoint = team == Team.Orange ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
                         playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
                         playerManager.PlayerMovement.CanMove = false;
                     }
@@ -292,7 +292,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     {
         playerStats.Value = new PlayerStats(lobbyPlayerId.Value.ToString(), playerStats.Value.kills, (ushort)(playerStats.Value.deaths + 1), playerStats.Value.assists, playerStats.Value.score, playerStats.Value.damageDealt, playerStats.Value.damageTaken, playerStats.Value.healingDone);
 
-        ShowKillRpc(info, !playerManager.OrangeTeam);
+        ShowKillRpc(info);
         localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.MAX_GAME_TIME - GameManager.Instance.GameTime);
         deathTimer.Value = localDeathTimer;
         BattleUIManager.instance.ShowDeathScreen();
@@ -304,7 +304,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void ShowKillRpc(DamageInfo info, bool orangeTeam)
+    private void ShowKillRpc(DamageInfo info)
     {
         BattleUIManager.instance.ShowKill(info, playerManager.Pokemon);
     }

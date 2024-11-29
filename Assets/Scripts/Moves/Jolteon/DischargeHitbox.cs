@@ -61,7 +61,7 @@ public class DischargeHitbox : NetworkBehaviour
             return;
         }
 
-        if (Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, jolteon.OrangeTeam))
+        if (Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, jolteon.CurrentTeam))
         {
             if (other.TryGetComponent(out Pokemon pokemon))
             {

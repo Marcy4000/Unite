@@ -8,7 +8,7 @@ public class SpawnArea : NetworkBehaviour
     private const float HEAL_PERCENTAGE = 0.15f;
 
     [SerializeField] private Collider wallCollider;
-    [SerializeField] private bool orangeTeam;
+    [SerializeField] private Team team;
 
     private float healTimer = 0f;
 
@@ -16,9 +16,9 @@ public class SpawnArea : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
-        wallCollider.enabled = orangeTeam != localPlayerTeam;
+        wallCollider.enabled = team != localPlayerTeam;
         healTimer = HEAL_INTERVAL;
     }
 
@@ -53,7 +53,7 @@ public class SpawnArea : NetworkBehaviour
 
         if (other.TryGetComponent(out PlayerManager player))
         {
-            if (!playersInSpawn.Contains(player) && player.OrangeTeam == orangeTeam)
+            if (!playersInSpawn.Contains(player) && player.CurrentTeam.IsOnSameTeam(team))
             {
                 playersInSpawn.Add(player);
             }

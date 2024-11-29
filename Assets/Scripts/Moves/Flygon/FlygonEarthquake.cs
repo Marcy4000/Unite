@@ -57,7 +57,7 @@ public class FlygonEarthquake : MoveBase
         {
             if (obj.TryGetComponent(out EarthquakeArea area))
             {
-                area.InitializeRPC(spawnPosition, first, second, third, playerManager.OrangeTeam);
+                area.InitializeRPC(spawnPosition, first, second, third, playerManager.CurrentTeam.Team);
             }
         };
 

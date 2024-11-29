@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -7,10 +6,10 @@ public class SylveonUniteArea : NetworkBehaviour
 {
     [SerializeField] private LayerMask pokemonLayer;
     private DamageInfo damageInfo;
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     [Rpc(SendTo.Everyone)]
-    public void InitializeRPC(DamageInfo damageInfo, bool orangeTeam)
+    public void InitializeRPC(DamageInfo damageInfo, Team orangeTeam)
     {
         this.damageInfo = damageInfo;
         this.orangeTeam = orangeTeam;

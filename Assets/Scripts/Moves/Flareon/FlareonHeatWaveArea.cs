@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -10,7 +9,7 @@ public class FlareonHeatWaveArea : NetworkBehaviour
     private DamageInfo damage;
     private DamageInfo burnedDamage;
 
-    private bool orangeTeam;
+    private Team orangeTeam;
     private bool initialized;
     private bool isUpgraded;
 
@@ -20,7 +19,7 @@ public class FlareonHeatWaveArea : NetworkBehaviour
     private float duration = 6f;
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(ulong flareonID, bool orangeTeam, DamageInfo damage, DamageInfo burnedDamage, bool isUpgraded)
+    public void InitializeRPC(ulong flareonID, Team orangeTeam, DamageInfo damage, DamageInfo burnedDamage, bool isUpgraded)
     {
         if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(flareonID, out NetworkObject playerNetworkObj))
         {

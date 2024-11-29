@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -7,12 +6,12 @@ public class CresseliaUniteArea : NetworkBehaviour
 {
     [SerializeField] private LayerMask pokemonLayer;
     private DamageInfo damageInfo;
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private StatusEffect sleep = new StatusEffect(StatusType.Asleep, 1.2f, true, 0);
 
     [Rpc(SendTo.Everyone)]
-    public void InitializeRPC(DamageInfo damageInfo, bool orangeTeam)
+    public void InitializeRPC(DamageInfo damageInfo, Team orangeTeam)
     {
         this.damageInfo = damageInfo;
         this.orangeTeam = orangeTeam;

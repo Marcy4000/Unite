@@ -26,7 +26,7 @@ public class RockyHelmet : HeldItemBase
 
             foreach (Collider hitCollider in hitColliders)
             {
-                if (Aim.Instance.CanPokemonBeTargeted(hitCollider.gameObject, AimTarget.NonAlly, playerManager.OrangeTeam))
+                if (Aim.Instance.CanPokemonBeTargeted(hitCollider.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam))
                 {
                     Pokemon hitPlayer = hitCollider.GetComponent<Pokemon>();
                     hitPlayer.TakeDamage(recoilDamage);

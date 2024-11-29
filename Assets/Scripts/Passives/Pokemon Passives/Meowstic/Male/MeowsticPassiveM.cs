@@ -84,7 +84,7 @@ public class MeowsticPassiveM : PassiveBase
             for (int i = 0; i < numPlayers; i++)
             {
                 PlayerManager player = playersInArea[i].GetComponent<PlayerManager>();
-                if (player.OrangeTeam == playerManager.OrangeTeam)
+                if (player.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam))
                 {
                     continue;
                 }

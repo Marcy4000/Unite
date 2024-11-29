@@ -34,7 +34,7 @@ public class PlayerManager : NetworkBehaviour
 
     [SerializeField] private PokemonBase selectedPokemon;
 
-    private bool orangeTeam = false;
+    //private bool orangeTeam = false;
     private NetworkVariable<PlayerState> playerState = new NetworkVariable<PlayerState>(PlayerState.Alive);
     private ushort maxEnergyCarry;
     private NetworkVariable<ushort> currentEnergy = new NetworkVariable<ushort>();
@@ -75,7 +75,7 @@ public class PlayerManager : NetworkBehaviour
 
     public PlayerState PlayerState { get => playerState.Value; }
 
-    public bool OrangeTeam { get => orangeTeam; }
+    public TeamMember CurrentTeam { get => pokemon.TeamMember; }
     public ushort MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
     public ushort CurrentEnergy { get => currentEnergy.Value; }
     public BattleActionStatus ScoreStatus { get => scoreStatus; }
@@ -139,16 +139,16 @@ public class PlayerManager : NetworkBehaviour
 
     public void Initialize()
     {
-        bool currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team currentPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
-        aim.TeamToIgnore = orangeTeam;
-        visionController.TeamToIgnore = orangeTeam;
-        vision.CurrentTeam = orangeTeam;
+        aim.TeamToIgnore = CurrentTeam.Team;
+        visionController.TeamToIgnore = CurrentTeam.Team;
+        vision.CurrentTeam = CurrentTeam.Team;
         vision.HasATeam = true;
         vision.IsVisible = true;
 
-        hpBar.InitializeEnergyUI(PokemonType.Player, OrangeTeam, IsOwner);
-        hpBar.UpdateHpBarColor(currentTeam != orangeTeam, IsOwner);
+        hpBar.InitializeEnergyUI(PokemonType.Player, CurrentTeam.Team == Team.Orange, IsOwner);
+        hpBar.UpdateHpBarColor(!CurrentTeam.IsOnSameTeam(currentPlayerTeam), IsOwner);
 
         if (IsOwner)
         {
@@ -185,7 +185,7 @@ public class PlayerManager : NetworkBehaviour
         }
         else
         {
-            visionController.IsEnabled = currentTeam == OrangeTeam;
+            visionController.IsEnabled = CurrentTeam.IsOnSameTeam(currentPlayerTeam);
         }
 
         vision.OnBushChanged += (bush) =>
@@ -260,9 +260,9 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonInitialized()
     {
-        bool currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
         AssignVisionObjects();
-        vision.SetVisibility(currentTeam == OrangeTeam);
+        vision.SetVisibility(CurrentTeam.IsOnSameTeam(currentTeam));
 
         if (IsOwner)
         {
@@ -342,11 +342,31 @@ public class PlayerManager : NetworkBehaviour
     {
         if (curr != PlayerState.Dead && transform.position.y == deathPosition.y)
         {
-            short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
-            Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
+            Transform spawnpoint = GetSpawnPoint();
             UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
             playerMovement.CanMove = true;
         }
+    }
+
+    private Transform GetSpawnPoint()
+    {
+        short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+        Transform spawnpoint;
+        //CurrentTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
+        switch (CurrentTeam.Team)
+        {
+            case Team.Blue:
+                spawnpoint = SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
+                break;
+            case Team.Orange:
+                spawnpoint = SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos);
+                break;
+            default:
+                spawnpoint = SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
+                break;
+        }
+
+        return spawnpoint;
     }
 
     private void OnPokemonDamage(DamageInfo info)
@@ -361,7 +381,7 @@ public class PlayerManager : NetworkBehaviour
     {
         SpawnEnergy(currentEnergy.Value);
         ResetEnergyRPC();
-        GiveExpRpc(info.attackerId, transform.position);
+        pokemon.GiveExpRpc(info.attackerId, transform.position, GetBaseExp());
 
         movesController.CancelAllMoves();
         movesController.ResetAllMoves();
@@ -381,9 +401,9 @@ public class PlayerManager : NetworkBehaviour
         ChangeCurrentState(PlayerState.Dead);
     }
 
-    public void ChangeCurrentTeam(bool isOrange)
+    public void ChangeCurrentTeam(Team team)
     {
-        orangeTeam = isOrange;
+        pokemon.UpdateTeamRPC(team);
     }
 
     public void Respawn()
@@ -479,8 +499,7 @@ public class PlayerManager : NetworkBehaviour
 
             if (recallTime <= 0)
             {
-                short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
-                Transform spawnpoint = OrangeTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
+                Transform spawnpoint = GetSpawnPoint();
                 UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
                 isRecalling = false;
                 BattleUIManager.instance.SetRecallBarActive(false);
@@ -529,7 +548,7 @@ public class PlayerManager : NetworkBehaviour
             return;
         }
 
-        goalZone.GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
+        goalZone.GetAlliesInGoal(CurrentTeam.Team, out int alliesInGoal, out int enemiesInGoal);
 
         isScoring = true;
         
@@ -552,7 +571,7 @@ public class PlayerManager : NetworkBehaviour
             return;
         }
 
-        goalZone.GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
+        goalZone.GetAlliesInGoal(CurrentTeam.Team, out int alliesInGoal, out int enemiesInGoal);
         maxScoreTime = ScoringSystem.CalculateTrueScoreTime(alliesInGoal, GetScoreBuffs(), currentEnergy.Value);
         if (goalZone.GoalStatus == GoalStatus.Weakened)
         {
@@ -870,72 +889,6 @@ public class PlayerManager : NetworkBehaviour
         vision.IsVisible = isVisible;
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
-    private void GiveExpRpc(ulong attackerID, Vector3 deathPos)
-    {
-        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
-
-        float baseExp = GetBaseExp();
-
-        Dictionary<int, (float koerExp, float proximityExp)> expDistribution = new Dictionary<int, (float, float)>
-        {
-            {1, (1.0f, 0.0f)},
-            {2, (1.0f, 0.5f)},
-            {3, (1.0f, 0.25f)},
-            {4, (1.0f, 0.1667f)},
-            {5, (1.0f, 0.125f)}
-        };
-
-        List<Pokemon> playersInProximity;
-
-        if (attacker.TryGetComponent(out PlayerManager player))
-        {
-            playersInProximity = FindPlayersInProximity(deathPos, 6f, player.OrangeTeam);
-        }
-        else
-        {
-            return;
-        }
-
-        DistributeExperience(attacker, playersInProximity, baseExp, expDistribution);
-    }
-
-    private List<Pokemon> FindPlayersInProximity(Vector3 koPosition, float range, bool orangeTeam)
-    {
-        List<Pokemon> playersInProximity = new List<Pokemon>();
-
-        foreach (var playerObject in NetworkManager.Singleton.SpawnManager.SpawnedObjects.Values)
-        {
-            PlayerManager player = playerObject.GetComponent<PlayerManager>();
-            if (player != null && player.OrangeTeam == orangeTeam && Vector3.Distance(player.transform.position, koPosition) <= range)
-            {
-                playersInProximity.Add(player.Pokemon);
-            }
-        }
-
-        return playersInProximity;
-    }
-
-    private void DistributeExperience(Pokemon attacker, List<Pokemon> playersInProximity, float baseExp, Dictionary<int, (float koerExp, float proximityExp)> expDistribution)
-    {
-        int playersCount = playersInProximity.Count;
-        if (!expDistribution.TryGetValue(playersCount, out var expValues))
-        {
-            expValues = expDistribution[1];
-        }
-
-        float attackerExp = baseExp * expValues.koerExp;
-        attacker.GainExperience(Mathf.FloorToInt(attackerExp));
-
-        float proximityExp = baseExp * expValues.proximityExp;
-        foreach (var player in playersInProximity)
-        {
-            if (player != attacker)
-            {
-                player.GainExperience(Mathf.FloorToInt(proximityExp));
-            }
-        }
-    }
 
     private float GetBaseExp()
     {

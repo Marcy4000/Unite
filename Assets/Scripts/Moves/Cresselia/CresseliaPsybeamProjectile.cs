@@ -1,6 +1,5 @@
 using DG.Tweening;
 using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -9,7 +8,7 @@ public class CresseliaPsybeamProjectile : NetworkBehaviour
     private StatusEffect stun = new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0);
 
     private DamageInfo damageInfo;
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     public event System.Action OnHit;
 
@@ -27,7 +26,7 @@ public class CresseliaPsybeamProjectile : NetworkBehaviour
 
         damageInfo = info;
 
-        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().OrangeTeam;
+        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().CurrentTeam.Team;
 
         transform.DOScaleZ(1f, 0.25f).onComplete += () => {
             StartCoroutine(DestroyDelayed());

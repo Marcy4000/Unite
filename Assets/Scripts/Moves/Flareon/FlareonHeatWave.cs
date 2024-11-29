@@ -37,7 +37,7 @@ public class FlareonHeatWave : MoveBase
             {
                 if (obj.TryGetComponent(out FlareonHeatWaveArea hitbox))
                 {
-                    hitbox.InitializeRPC(playerManager.NetworkObjectId, playerManager.OrangeTeam, damage, burnedDamage, IsUpgraded);
+                    hitbox.InitializeRPC(playerManager.NetworkObjectId, playerManager.CurrentTeam.Team, damage, burnedDamage, IsUpgraded);
                 }
             };
 

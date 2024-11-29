@@ -5,13 +5,13 @@ public class VaporeonDiveWarning : NetworkBehaviour
 {
     [SerializeField] private GameObject warningImage;
 
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private DamageInfo damageInfo;
     private StatusEffect stunEffect = new StatusEffect(StatusType.Incapacitated, 0.35f, true, 0);
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 startPos, bool orangeTeam, DamageInfo damage)
+    public void InitializeRPC(Vector3 startPos, Team orangeTeam, DamageInfo damage)
     {
         warningImage.SetActive(true);
         transform.position = startPos;

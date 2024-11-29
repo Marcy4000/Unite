@@ -13,13 +13,13 @@ public class ElectroWebProjectile : NetworkBehaviour
     private Vector3 direction;
     private Vector3 startPosition;
 
-    private bool orangeTeam;
+    private Team orangeTeam;
     private bool initialized = false;
 
     private List<Pokemon> markedPokemons = new List<Pokemon>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 direction, Vector3 startPosition, bool orangeTeam, DamageInfo damageInfo)
+    public void InitializeRPC(Vector3 direction, Vector3 startPosition, Team orangeTeam, DamageInfo damageInfo)
     {
         this.orangeTeam = orangeTeam;
         this.direction = direction;

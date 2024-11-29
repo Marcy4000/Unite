@@ -1,6 +1,5 @@
 ﻿#region Namespace Imports
 using UnityEngine;
-using UnityEditor;
 #endregion
 
 namespace UI.ThreeDimensional

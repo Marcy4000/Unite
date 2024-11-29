@@ -6,7 +6,7 @@ using UnityEngine;
 public class GlaceUniteArea : NetworkBehaviour
 {
     private DamageInfo damageInfo;
-    private bool orangeTeam;
+    private Team orangeTeam;
     private NetworkVariable<ulong> glaceonID = new NetworkVariable<ulong>();
 
     private NetworkVariable<bool> zoneActive = new NetworkVariable<bool>(false);
@@ -22,7 +22,7 @@ public class GlaceUniteArea : NetworkBehaviour
     public event System.Action onGiveGlaceonSpears;
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, Quaternion rotation, DamageInfo info, bool orangeTeam, ulong glaceonID)
+    public void InitializeRPC(Vector3 position, Quaternion rotation, DamageInfo info, Team orangeTeam, ulong glaceonID)
     {
         transform.position = position;
         transform.rotation = rotation;

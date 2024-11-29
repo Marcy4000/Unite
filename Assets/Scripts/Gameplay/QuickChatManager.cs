@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -17,7 +15,7 @@ public class QuickChatManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     public void SendQuickChatMessageRPC(QuickChatMessage message)
     {
-        if (message.orangeTeam != LobbyController.Instance.GetLocalPlayerTeam())
+        if (message.sendingTeam != LobbyController.Instance.GetLocalPlayerTeam())
             return;
 
         quickChatUI.EnqueueMessage(message);

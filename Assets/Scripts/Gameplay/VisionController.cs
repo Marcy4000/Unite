@@ -6,13 +6,13 @@ public class VisionController : MonoBehaviour
 {
     [SerializeField] private float visionRange = 10f;
     private SphereCollider visionCollider;
-    private bool teamToIgnore;
+    private Team teamToIgnore;
     private bool isEnabled = false;
     private bool isBlinded = false;
 
     private GameObject currentBush = null;
 
-    public bool TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; }
+    public Team TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; }
     public bool IsEnabled { get => isEnabled; set => UpdateIsEnabled(value); }
     public bool IsBlinded { get => isBlinded; set => UpdateBlindState(value); }
     public GameObject CurrentBush { get => currentBush; set => UpdateBush(value);}

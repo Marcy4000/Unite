@@ -10,7 +10,6 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using static Cinemachine.CinemachineTriggerAction.ActionSettings;
 
 public enum GameState
 {
@@ -327,7 +326,7 @@ public class GameManager : NetworkBehaviour
 
         return new GameResults
         {
-            BlueTeamWon = blueTeamScore.Value > orangeTeamScore.Value,
+            WinningTeam = GetWinningTeam(),
             BlueTeamScore = blueTeamScore.Value,
             OrangeTeamScore = orangeTeamScore.Value,
             Surrendered = false,
@@ -338,6 +337,11 @@ public class GameManager : NetworkBehaviour
         };
     }
 
+    private Team GetWinningTeam()
+    {
+        return blueTeamScore.Value > orangeTeamScore.Value ? Team.Blue : Team.Orange;
+    }
+
     [Rpc(SendTo.Server)]
     public void GoalScoredRpc(ScoreInfo info)
     {
@@ -346,23 +350,23 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        bool orangeTeam = false;
+        Team orangeTeam;
 
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out PlayerManager playerManager))
         {
-            orangeTeam = playerManager.OrangeTeam;
+            orangeTeam = playerManager.CurrentTeam.Team;
             ShowGoalScoredRpc(info);
         }
         else if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out SoldierPokemon soldierPokemon))
         {
-            orangeTeam = soldierPokemon.OrangeTeam;
+            orangeTeam = soldierPokemon.CurrentTeam.Team;
         }
         else
         {
             return;
         }
 
-        if (orangeTeam)
+        if (orangeTeam == Team.Orange)
         {
             orangeTeamScore.Value += info.scoredPoints;
         }
@@ -391,7 +395,7 @@ public class GameManager : NetworkBehaviour
         surrenderButton.interactable = true;
     }
 
-    private void OnTeamSurrendered(bool orangeTeam, bool surrenderResults)
+    private void OnTeamSurrendered(Team orangeTeam, bool surrenderResults)
     {
         if (!surrenderResults)
         {
@@ -400,7 +404,7 @@ public class GameManager : NetworkBehaviour
 
         GameResults results = GenerateGameResults();
         results.Surrendered = true;
-        results.BlueTeamWon = orangeTeam;
+        results.WinningTeam = orangeTeam == Team.Orange ? Team.Blue : Team.Orange;
 
         EndGameRPC(results);
     }
@@ -409,7 +413,7 @@ public class GameManager : NetworkBehaviour
     private void ShowGoalScoredRpc(ScoreInfo info)
     {
         PlayerManager scorer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].GetComponent<PlayerManager>();
-        BattleUIManager.instance.ShowScore(info.scoredPoints, scorer.OrangeTeam, scorer.Pokemon.Portrait);
+        BattleUIManager.instance.ShowScore(info.scoredPoints, scorer.CurrentTeam.Team, scorer.Pokemon.Portrait);
 
         AudioManager.PlaySound(DefaultAudioSounds.Game_Ui_Score_Allies);
 
@@ -418,7 +422,7 @@ public class GameManager : NetworkBehaviour
             AudioManager.PlaySound(DefaultAudioSounds.AnnouncerWhatAGoal);
         }
 
-        if (scorer.OrangeTeam)
+        if (scorer.CurrentTeam.IsOnSameTeam(Team.Orange))
         {
             orangeTeamScores.Add(new ResultScoreInfo(info.scoredPoints, scorer.LobbyPlayer.Id, gameTime.Value));
         }
@@ -436,8 +440,8 @@ public class GameManager : NetworkBehaviour
 
         if (gameResults.Surrendered)
         {
-            bool localTeam = LobbyController.Instance.GetLocalPlayerTeam();
-            bool yourTeamSurrendered = localTeam == gameResults.BlueTeamWon;
+            Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+            bool yourTeamSurrendered = localTeam != gameResults.WinningTeam;
 
             BattleUIManager.instance.ShowSurrenderTextbox(yourTeamSurrendered);
         }
@@ -493,11 +497,11 @@ public class GameManager : NetworkBehaviour
         base.OnDestroy();
     }
 
-    public Vector3[] GetRotomPath(bool orangeTeam, int laneID)
+    public Vector3[] GetRotomPath(Team orangeTeam, int laneID)
     {
         foreach (var lane in lanes)
         {
-            if (lane.OrangeTeam == orangeTeam)
+            if (lane.Team == orangeTeam)
             {
                 return lane.GetRotomPositions(laneID);
             }

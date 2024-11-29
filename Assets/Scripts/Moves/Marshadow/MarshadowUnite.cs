@@ -60,7 +60,7 @@ public class MarshadowUnite : MoveBase
 
         GameManager.Instance.Players.ForEach(player =>
         {
-            if (player.OrangeTeam != playerManager.OrangeTeam)
+            if (!player.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam))
             {
                 enemies.Add(player);
             }

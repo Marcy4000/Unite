@@ -52,7 +52,7 @@ public class PlayerInfoUI : MonoBehaviour
         
         float dmgPercentage, dmgTakenPercentage, healingPercentage;
 
-        CalculateDamagePercentage(playerStats, player.Data["PlayerTeam"].Value == "Orange", out dmgPercentage, out dmgTakenPercentage, out healingPercentage);
+        CalculateDamagePercentage(playerStats, TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value), out dmgPercentage, out dmgTakenPercentage, out healingPercentage);
 
         playerDamageHolder.SetStatInfo(playerStats.damageDealt, dmgPercentage);
         playerDamageTakenHolder.SetStatInfo(playerStats.damageTaken, dmgTakenPercentage);
@@ -75,9 +75,9 @@ public class PlayerInfoUI : MonoBehaviour
         }
     }
 
-    private void CalculateDamagePercentage(PlayerStats playerStats, bool orangeTeam, out float dmgPercentage, out float dmgTakenPercentage, out float healingPercentage)
+    private void CalculateDamagePercentage(PlayerStats playerStats, Team team, out float dmgPercentage, out float dmgTakenPercentage, out float healingPercentage)
     {
-        Player[] teamPlayers = LobbyController.Instance.GetTeamPlayers(orangeTeam);
+        Player[] teamPlayers = LobbyController.Instance.GetTeamPlayers(team);
         PlayerStats[] teamStats = LobbyController.Instance.GameResults.PlayerStats.Where(stats => teamPlayers.Any(player => player.Id == stats.playerId)).ToArray();
 
         float totalDamage = teamStats.Sum(stats => stats.damageDealt);

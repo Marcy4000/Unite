@@ -101,7 +101,7 @@ public class FlygonDig : MoveBase
             if (obj.TryGetComponent(out FlygonDigWarning warning))
             {
                 diveWarning = warning;
-                diveWarning.InitializeRPC(playerManager.transform.position, playerManager.OrangeTeam, damageInfo);
+                diveWarning.InitializeRPC(playerManager.transform.position, playerManager.CurrentTeam.Team, damageInfo);
             }
         };
 

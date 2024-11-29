@@ -51,7 +51,7 @@ public class MeowsticMWonderRoom : MoveBase
         {
             if (obj.TryGetComponent(out MeowsticMWonderRoomArea area))
             {
-                area.InitializeRPC(spawnPosition, playerManager.transform.position, playerManager.OrangeTeam);
+                area.InitializeRPC(spawnPosition, playerManager.transform.position, playerManager.CurrentTeam.Team);
             }
         };
 

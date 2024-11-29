@@ -8,7 +8,7 @@ public class SupersonicHitbox : NetworkBehaviour
     private StatusEffect confusionEffect = new StatusEffect(StatusType.Incapacitated, 1.2f, true, 0);
     private StatChange speedReduction = new StatChange(20, Stat.Speed, 4.2f, true, false, true, 0);
 
-    private bool orangeTeam;
+    private Team orangeTeam;
     private bool initialized;
 
     private float cooldown = 0.4f;
@@ -17,7 +17,7 @@ public class SupersonicHitbox : NetworkBehaviour
     private List<Pokemon> stunnedPokemons = new List<Pokemon>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 startPos, Vector3 startRot, bool orangeTeam)
+    public void InitializeRPC(Vector3 startPos, Vector3 startRot, Team orangeTeam)
     {
         transform.position = startPos;
         transform.rotation = Quaternion.LookRotation(startRot);

@@ -5,14 +5,14 @@ public class VaporSwiftProjectile : NetworkBehaviour
 {
     private DamageInfo damageInfo;
 
-    private bool orangeTeam;
+    private Team orangeTeam;
     private bool isReady;
 
     private float starCooldown = 0.7f;
     private float duration = 3.5f;
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(DamageInfo damageInfo, bool orangeTeam, Vector3 position)
+    public void InitializeRPC(DamageInfo damageInfo, Team orangeTeam, Vector3 position)
     {
         this.damageInfo = damageInfo;
         this.orangeTeam = orangeTeam;

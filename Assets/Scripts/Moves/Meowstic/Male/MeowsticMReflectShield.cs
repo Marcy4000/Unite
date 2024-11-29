@@ -65,7 +65,7 @@ public class MeowsticMReflectShield : NetworkBehaviour
 
         foreach (var col in colliders)
         {
-            if (Aim.Instance.CanPokemonBeTargeted(col.gameObject, AimTarget.NonAlly, target.OrangeTeam))
+            if (Aim.Instance.CanPokemonBeTargeted(col.gameObject, AimTarget.NonAlly, target.CurrentTeam))
             {
                 col.GetComponent<Pokemon>().TakeDamage(new DamageInfo(meowsticID, 0f, 0, (short)storedDamage, DamageType.True));
             }

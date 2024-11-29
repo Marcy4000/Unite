@@ -10,7 +10,7 @@ public class TornadoHitbox : NetworkBehaviour
 
     private DamageInfo damageInfo;
 
-    private bool orangeTeam;
+    private Team orangeTeam;
     private bool initialized;
 
     private Collider[] colliders = new Collider[15];
@@ -18,7 +18,7 @@ public class TornadoHitbox : NetworkBehaviour
     private List<Pokemon> stunnedPokemons = new List<Pokemon>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(DamageInfo damageInfo, bool isOrangeTeam)
+    public void InitializeRPC(DamageInfo damageInfo, Team isOrangeTeam)
     {
         this.damageInfo = damageInfo;
         orangeTeam = isOrangeTeam;

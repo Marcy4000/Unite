@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Services.Lobbies.Models;
@@ -12,10 +11,10 @@ public class PreviewScreenUI : MonoBehaviour
 
     public void InitializeUI()
     {
-        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
         List<Player> blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(localPlayerTeam).ToList();
-        List<Player> orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(!localPlayerTeam).ToList();
+        List<Player> orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(localPlayerTeam == Team.Orange ? Team.Blue : Team.Orange).ToList();
 
         draftPlayerHolderBlue.Initialize(blueTeamPlayers);
         draftPlayerHolderOrange.Initialize(orangeTeamPlayers);

@@ -90,8 +90,8 @@ public class LoadingScreen : MonoBehaviour
 
     public void ShowGameBeginScreen()
     {
-        int bluePlayers = LobbyController.Instance.GetTeamPlayers(false).Length;
-        int orangePlayers = LobbyController.Instance.GetTeamPlayers(true).Length;
+        int bluePlayers = LobbyController.Instance.GetTeamPlayers(Team.Blue).Length;
+        int orangePlayers = LobbyController.Instance.GetTeamPlayers(Team.Orange).Length;
         gameBeginScreenUI.gameObject.SetActive(true);
         gameBeginScreenUI.InitializeUI(bluePlayers, orangePlayers);
         gameBeginScreenUI.FadeIn();
@@ -116,8 +116,8 @@ public class LoadingScreen : MonoBehaviour
 
         playerList.Clear();
 
-        Player[] orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(true);
-        Player[] blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(false);
+        Player[] orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Orange);
+        Player[] blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Blue);
 
         foreach (var player in orangeTeamPlayers)
         {

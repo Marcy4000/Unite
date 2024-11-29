@@ -21,7 +21,7 @@ public class MapGoalzoneIcon : MonoBehaviour
         minimapIcon = GetComponent<MinimapIcon>();
         this.goalZone = goalZone;
         UpdateGoalZoneIcon();
-        chargeSprite.sprite = goalZone.OrangeTeam ? orangeCharge : blueCharge;
+        chargeSprite.sprite = goalZone.Team == Team.Orange ? orangeCharge : blueCharge;
         chargeSprite.gameObject.SetActive(false);
         minimapIcon.SetTarget(goalZone.transform);
 
@@ -51,11 +51,11 @@ public class MapGoalzoneIcon : MonoBehaviour
     {
         if (goalZone.IsActive)
         {
-            goalzoneIcon.sprite = goalZone.OrangeTeam ? backgrounds[1] : backgrounds[0];
+            goalzoneIcon.sprite = goalZone.Team == Team.Orange ? backgrounds[1] : backgrounds[0];
         }
         else
         {
-            goalzoneIcon.sprite = goalZone.OrangeTeam ? backgrounds[3] : backgrounds[2];
+            goalzoneIcon.sprite = goalZone.Team == Team.Orange ? backgrounds[3] : backgrounds[2];
         }
     }
 

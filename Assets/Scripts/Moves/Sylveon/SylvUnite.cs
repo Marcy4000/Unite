@@ -73,7 +73,7 @@ public class SylvUnite : MoveBase
         playerManager.MovesController.onObjectSpawned += (obj) =>
         {
             uniteArea = obj.GetComponent<SylveonUniteArea>();
-            uniteArea.InitializeRPC(damageInfo, playerManager.OrangeTeam);
+            uniteArea.InitializeRPC(damageInfo, playerManager.CurrentTeam.Team);
         };
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
 

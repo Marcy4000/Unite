@@ -11,7 +11,7 @@ public class AuroraBeamProjectile : NetworkBehaviour
     private DamageInfo damageInfo;
     private Vector3 direction;
     private float distanceTraveled = 0f;
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     [Rpc(SendTo.Server)]
     public void SetDirectionRPC(Vector2 direction, DamageInfo info, float maxDistance)
@@ -21,7 +21,7 @@ public class AuroraBeamProjectile : NetworkBehaviour
         transform.rotation = Quaternion.LookRotation(this.direction);
         damageInfo = info;
         this.maxDistance = maxDistance;
-        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().OrangeTeam;
+        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().CurrentTeam.Team;
     }
 
     void Update()

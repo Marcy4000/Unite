@@ -65,7 +65,7 @@ public class CresseliaUnite : MoveBase
                 playerManager.MovesController.onObjectSpawned += (obj) =>
                 {
                     uniteArea = obj.GetComponent<CresseliaUniteArea>();
-                    uniteArea.InitializeRPC(damage, playerManager.OrangeTeam);
+                    uniteArea.InitializeRPC(damage, playerManager.CurrentTeam.Team);
                 };
                 playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
 

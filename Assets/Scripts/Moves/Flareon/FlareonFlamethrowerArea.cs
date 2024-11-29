@@ -15,12 +15,12 @@ public class FlareonFlamethrowerArea : NetworkBehaviour
     private StatusEffect burn = new StatusEffect(StatusType.Burned, 3f, true, 0);
     private DamageInfo damageInfo;
 
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private List<Pokemon> hitPokemon = new List<Pokemon>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 pos, Vector3 rot, bool orangeTeam, DamageInfo damage)
+    public void InitializeRPC(Vector3 pos, Vector3 rot, Team orangeTeam, DamageInfo damage)
     {
         transform.position = pos;
         transform.eulerAngles = rot;

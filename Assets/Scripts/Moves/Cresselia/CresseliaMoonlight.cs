@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class CresseliaMoonlight : MoveBase
@@ -42,7 +39,7 @@ public class CresseliaMoonlight : MoveBase
             {
                 if (obj.TryGetComponent(out MoonlightArea moonlightArea))
                 {
-                    moonlightArea.InitializeRPC(spawnLocation, playerManager.OrangeTeam, healPercentage);
+                    moonlightArea.InitializeRPC(spawnLocation, playerManager.CurrentTeam.Team, healPercentage);
                 }
             };
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);

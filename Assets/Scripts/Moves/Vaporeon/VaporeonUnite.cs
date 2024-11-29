@@ -61,7 +61,7 @@ public class VaporeonUnite : MoveBase
         playerManager.MovesController.onObjectSpawned += (obj) =>
         {
             area = obj.GetComponent<VaporUniteArea>();
-            area.InitializeRPC(damageInfo, healInfo, playerManager.OrangeTeam, new Vector3(playerManager.transform.position.x, 1.5f, playerManager.transform.position.z));
+            area.InitializeRPC(damageInfo, healInfo, playerManager.CurrentTeam.Team, new Vector3(playerManager.transform.position.x, 1.5f, playerManager.transform.position.z));
         };
 
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);

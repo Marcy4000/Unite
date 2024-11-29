@@ -53,7 +53,7 @@ public class FlygonSandstorm : MoveBase
         {
             if (obj.TryGetComponent(out SandstormArea area))
             {
-                area.InitializeRPC(spawnPosition, damageInfo, playerManager.OrangeTeam);
+                area.InitializeRPC(spawnPosition, damageInfo, playerManager.CurrentTeam.Team);
             }
         };
 

@@ -80,11 +80,11 @@ public class BattleUIManager : MonoBehaviour
         playerControls.asset.Disable();
     }
 
-    public void ShowScore(int amount, bool orangeTeam, Sprite portrait)
+    public void ShowScore(int amount, Team orangeTeam, Sprite portrait)
     {
         ScoreUIInfo scoreInfo = new ScoreUIInfo(amount, portrait);
 
-        if (orangeTeam)
+        if (orangeTeam == Team.Orange)
         {
             orangeScoreUI.EnqueueScore(scoreInfo);
         }
@@ -180,7 +180,7 @@ public class BattleUIManager : MonoBehaviour
         currentUI.UpdateScoreGauge(currTime, maxTime);
     }
 
-    public void UpdateGoalState(bool orangeTeam)
+    public void UpdateGoalState(Team orangeTeam)
     {
         goalStateUI.UpdateGoalState(orangeTeam);
     }

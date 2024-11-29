@@ -66,19 +66,19 @@ public struct QuickChatMessage : INetworkSerializable
 {
     public string message;
     public ulong senderId;
-    public bool orangeTeam;
+    public Team sendingTeam;
 
-    public QuickChatMessage(string message, ulong senderId, bool orangeTeam)
+    public QuickChatMessage(string message, ulong senderId, Team sendingTeam)
     {
         this.message = message;
         this.senderId = senderId;
-        this.orangeTeam = orangeTeam;
+        this.sendingTeam = sendingTeam;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref message);
         serializer.SerializeValue(ref senderId);
-        serializer.SerializeValue(ref orangeTeam);
+        serializer.SerializeValue(ref sendingTeam);
     }
 }

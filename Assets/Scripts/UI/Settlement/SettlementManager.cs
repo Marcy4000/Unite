@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
-using Unity.Netcode;
 
 public class SettlementManager : MonoBehaviour
 {
@@ -227,8 +226,8 @@ public class SettlementManager : MonoBehaviour
         blueScoreText.text = blueScoreValue.ToString();
         orangeScoreText.text = orangeScoreValue.ToString();
 
-        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
-        gameWon = LobbyController.Instance.GameResults.BlueTeamWon == !localPlayerTeam;
+        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        gameWon = LobbyController.Instance.GameResults.WinningTeam == localPlayerTeam;
         StartCoroutine(PlayResultSound(gameWon));
     }
 
@@ -236,7 +235,7 @@ public class SettlementManager : MonoBehaviour
     {
         GameResults gameResults = LobbyController.Instance.GameResults;
 
-        if (gameResults.BlueTeamWon)
+        if (gameResults.WinningTeam == Team.Blue)
         {
             blueResultText.sprite = blueTeamResults[0];
             if (gameResults.Surrendered)
@@ -261,7 +260,7 @@ public class SettlementManager : MonoBehaviour
             }
         }
 
-        if (!LobbyController.Instance.GetLocalPlayerTeam())
+        if (LobbyController.Instance.GetLocalPlayerTeam() == Team.Blue)
         {
             teamPlayersMenu.SetGameResultImage(blueResultText.sprite);
         }

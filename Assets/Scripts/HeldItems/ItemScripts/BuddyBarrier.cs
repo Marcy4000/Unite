@@ -21,7 +21,7 @@ public class BuddyBarrier : HeldItemBase
         {
             ShieldInfo shield = new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.25f), 6, 0, 5f, true);
 
-            GameObject[] teammates = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position, 10f, AimTarget.Ally, playerManager.OrangeTeam);
+            GameObject[] teammates = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position, 10f, AimTarget.Ally, playerManager.CurrentTeam);
 
             if (teammates.Length > 0)
             {

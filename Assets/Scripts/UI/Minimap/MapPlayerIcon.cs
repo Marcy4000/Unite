@@ -20,7 +20,7 @@ public class MapPlayerIcon : MonoBehaviour
         minimapIcon = GetComponent<MinimapIcon>();
         this.player = player;
         pokemonIcon.sprite = player.Pokemon.Portrait;
-        background.sprite = player.OrangeTeam ? orangeBG : blueBG;
+        background.sprite = player.CurrentTeam.IsOnSameTeam(Team.Orange) ? orangeBG : blueBG;
         minimapIcon.SetTarget(player.transform);
 
         player.Pokemon.OnDeath += (info) => { HideIcon(); };
@@ -30,8 +30,8 @@ public class MapPlayerIcon : MonoBehaviour
                 ShowIcon();
             }
         };
-        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
-        isTeammate = player.OrangeTeam == localPlayerTeam;
+        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        isTeammate = player.CurrentTeam.IsOnSameTeam(localPlayerTeam);
         if (!isTeammate)
         {
             player.Vision.OnVisibilityChanged += SetVisibility;

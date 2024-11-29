@@ -27,8 +27,8 @@ public class ResonantGuard : HeldItemBase
 
         int shieldAmount = 100 + Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.06f);
         ShieldInfo shield = new ShieldInfo(shieldAmount, 0, 0, 3f, true);
-
-        GameObject[] teammates = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position, 10f, AimTarget.Ally, playerManager.OrangeTeam);
+        
+        GameObject[] teammates = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position, 10f, AimTarget.Ally, playerManager.CurrentTeam);
 
         if (teammates.Length > 0)
         {

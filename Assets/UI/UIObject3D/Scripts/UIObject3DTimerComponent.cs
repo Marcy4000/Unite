@@ -1,9 +1,6 @@
 using System;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace UI.ThreeDimensional
 {

@@ -41,8 +41,8 @@ public class BattleNotificationUI : MonoBehaviour
 
     private void ShowNotification()
     {
-        bool localPlayerOrangeTeam = LobbyController.Instance.GetLocalPlayerTeam();
-        int pointDifference = localPlayerOrangeTeam ? GameManager.Instance.OrangeTeamScore - GameManager.Instance.BlueTeamScore : GameManager.Instance.BlueTeamScore - GameManager.Instance.OrangeTeamScore;
+        Team localPlayerOrangeTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        int pointDifference = localPlayerOrangeTeam == Team.Orange ? GameManager.Instance.OrangeTeamScore - GameManager.Instance.BlueTeamScore : GameManager.Instance.BlueTeamScore - GameManager.Instance.OrangeTeamScore;
 
         HideAllNotification();
 

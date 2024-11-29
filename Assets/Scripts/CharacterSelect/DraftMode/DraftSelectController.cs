@@ -43,8 +43,8 @@ public class DraftSelectController : NetworkBehaviour
     private List<Player> blueTeamPlayers;
     private List<Player> orangeTeamPlayers;
 
-    private List<Player> AllyTeamPlayers => LobbyController.Instance.GetLocalPlayerTeam() ? orangeTeamPlayers : blueTeamPlayers;
-    private List<Player> EnemyTeamPlayers => LobbyController.Instance.GetLocalPlayerTeam() ? blueTeamPlayers : orangeTeamPlayers;
+    private List<Player> AllyTeamPlayers => LobbyController.Instance.GetLocalPlayerTeam() == Team.Orange ? orangeTeamPlayers : blueTeamPlayers;
+    private List<Player> EnemyTeamPlayers => LobbyController.Instance.GetLocalPlayerTeam() == Team.Orange ? blueTeamPlayers : orangeTeamPlayers;
 
     // Network-synced variables
     private NetworkVariable<DraftPhase> currentDraftPhase = new NetworkVariable<DraftPhase>(DraftPhase.Waiting);
@@ -72,8 +72,8 @@ public class DraftSelectController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(false).ToList();
-        orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(true).ToList();
+        blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Blue).ToList();
+        orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Orange).ToList();
 
         InitializeUI();
 
@@ -292,7 +292,7 @@ public class DraftSelectController : NetworkBehaviour
         {
             case DraftPhase.Banning:
 
-                if ((current % 2 == 0) == !LobbyController.Instance.GetLocalPlayerTeam())
+                if ((current % 2 == 0) == (LobbyController.Instance.GetLocalPlayerTeam() == Team.Blue))
                 {
                     draftTimerUI.DoFadeIn(0);
                     draftTimerUI.UpdateMessage("Your team is banning");
@@ -304,7 +304,7 @@ public class DraftSelectController : NetworkBehaviour
                 }
                 break;
             case DraftPhase.Picking:
-                if ((current % 2 == 0) == !LobbyController.Instance.GetLocalPlayerTeam())
+                if ((current % 2 == 0) == (LobbyController.Instance.GetLocalPlayerTeam() == Team.Blue))
                 {
                     draftTimerUI.DoFadeIn(0);
                     draftTimerUI.UpdateMessage("Your team is picking pokemon");
@@ -859,7 +859,7 @@ public class DraftSelectController : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowTeamPicksRPC(bool orangeTeam, int expectedPicks)
     {
-        bool isLocalTeamTurn = LobbyController.Instance.GetLocalPlayerTeam() == orangeTeam;
+        bool isLocalTeamTurn = (LobbyController.Instance.GetLocalPlayerTeam() == Team.Orange) == orangeTeam;
 
         if (isLocalTeamTurn)
         {
@@ -909,12 +909,12 @@ public class DraftSelectController : NetworkBehaviour
 
     private bool IsLocalTeamTurn()
     {
-        return currentTurnIndex.Value % 2 == 0 == !LobbyController.Instance.GetLocalPlayerTeam();
+        return currentTurnIndex.Value % 2 == 0 == (LobbyController.Instance.GetLocalPlayerTeam() == Team.Blue);
     }
 
     private bool IsLocalTeamTurn(int currentTurn)
     {
-        return currentTurn % 2 == 0 == !LobbyController.Instance.GetLocalPlayerTeam();
+        return currentTurn % 2 == 0 == (LobbyController.Instance.GetLocalPlayerTeam() == Team.Blue);
     }
 
     private void SpawnPokemon(CharacterInfo character)

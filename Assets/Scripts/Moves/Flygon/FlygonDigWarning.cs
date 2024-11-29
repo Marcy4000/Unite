@@ -3,13 +3,13 @@ using UnityEngine;
 
 public class FlygonDigWarning : NetworkBehaviour
 {
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private DamageInfo damageInfo;
     private StatChange slow = new StatChange(15, Stat.Speed, 2f, true, false, true, 0);
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 startPos, bool orangeTeam, DamageInfo damage)
+    public void InitializeRPC(Vector3 startPos, Team orangeTeam, DamageInfo damage)
     {
         transform.position = startPos;
         this.orangeTeam = orangeTeam;

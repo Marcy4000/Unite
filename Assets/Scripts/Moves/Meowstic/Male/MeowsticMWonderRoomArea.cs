@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class MeowsticMWonderRoomArea : NetworkBehaviour
 {
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private bool initialized = false;
 
@@ -13,7 +13,7 @@ public class MeowsticMWonderRoomArea : NetworkBehaviour
     private List<PlayerManager> playersInArea = new List<PlayerManager>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, Vector3 playerPos, bool orangeTeam)
+    public void InitializeRPC(Vector3 position, Vector3 playerPos, Team orangeTeam)
     {
         transform.position = position;
         transform.rotation = Quaternion.LookRotation(playerPos - position, Vector3.up);
@@ -38,7 +38,7 @@ public class MeowsticMWonderRoomArea : NetworkBehaviour
             {
                 if (player != null)
                 {
-                    if (player.OrangeTeam != orangeTeam)
+                    if (!player.CurrentTeam.IsOnSameTeam(orangeTeam))
                     {
                         player.Pokemon.FlipAtkStatsRPC(false);
                     }
@@ -65,7 +65,7 @@ public class MeowsticMWonderRoomArea : NetworkBehaviour
         if (player != null && !playersInArea.Contains(player))
         {
             playersInArea.Add(player);
-            if (player.OrangeTeam != orangeTeam)
+            if (!player.CurrentTeam.IsOnSameTeam(orangeTeam))
             {
                 // This is stupid
                 player.Pokemon.FlipAtkStatsRPC(true);
@@ -89,7 +89,7 @@ public class MeowsticMWonderRoomArea : NetworkBehaviour
 
         if (player != null && playersInArea.Contains(player))
         {
-            if (player.OrangeTeam != orangeTeam)
+            if (!player.CurrentTeam.IsOnSameTeam(orangeTeam))
             {
                 player.Pokemon.FlipAtkStatsRPC(false);
             }

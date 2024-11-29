@@ -40,7 +40,7 @@ public class JoltElectroweb : MoveBase
             {
                 if (obj.TryGetComponent(out ElectroWebProjectile projectile))
                 {
-                    projectile.InitializeRPC(direction, playerManager.transform.position, playerManager.OrangeTeam, tickDamage);
+                    projectile.InitializeRPC(direction, playerManager.transform.position, playerManager.CurrentTeam.Team, tickDamage);
                 }
             };
 

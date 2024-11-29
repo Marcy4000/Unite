@@ -594,7 +594,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orangeTeam: 0
+  team: 1
   laneID: 1
   tier: 1
   graphic: {fileID: 169042474}
@@ -646,7 +646,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wallCollider: {fileID: 1465518799}
-  orangeTeam: 0
+  team: 1
 --- !u!114 &173403167
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -756,6 +756,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: GoalZone (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: team
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -934,7 +939,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wallCollider: {fileID: 519579688}
-  orangeTeam: 1
+  team: 2
 --- !u!114 &232688388
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2026,7 +2031,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orangeTeam: 0
+  team: 1
   laneID: 0
   tier: 1
   graphic: {fileID: 579734017}
@@ -2541,7 +2546,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orangeTeam: 1
+  team: 2
   laneID: 1
   tier: 1
   graphic: {fileID: 645793109}
@@ -3654,6 +3659,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
+      propertyPath: team
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
       propertyPath: goalTier
       value: 1
       objectReference: {fileID: 0}
@@ -3770,6 +3780,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: GoalZone (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: team
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -4279,7 +4294,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 564e9b1c74238ea4e99eec2ef15664b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orangeTeam: 1
+  team: 2
   maxTier: 1
 --- !u!114 &1131048696
 MonoBehaviour:
@@ -5382,6 +5397,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 844971095323143376, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 844971095323143376, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2052691080799001447, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -5633,6 +5658,21 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 1566226726
       objectReference: {fileID: 0}
+    - target: {fileID: 8551833365590501441, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8551833365590501441, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8551833365590501441, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 9026586592785297242, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: worldSizeX
@@ -5788,6 +5828,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: GoalZone (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
+      propertyPath: team
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
@@ -6200,7 +6245,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 564e9b1c74238ea4e99eec2ef15664b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orangeTeam: 0
+  team: 1
   maxTier: 1
 --- !u!114 &1731038990
 MonoBehaviour:
@@ -6543,6 +6588,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
+      propertyPath: team
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
       propertyPath: goalTier
       value: 1
       objectReference: {fileID: 0}
@@ -6880,6 +6930,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
         type: 3}
+      propertyPath: team
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6436593962695818056, guid: 85eb64fcee8ee3c49af051a7b86c8c0c,
+        type: 3}
       propertyPath: goalTier
       value: 0
       objectReference: {fileID: 0}
@@ -7112,7 +7167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orangeTeam: 1
+  team: 2
   laneID: 0
   tier: 1
   graphic: {fileID: 1987982312}

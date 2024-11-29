@@ -91,7 +91,7 @@ public class VaporDive : MoveBase
             if (obj.TryGetComponent(out VaporeonDiveWarning warning))
             {
                 diveWarning = warning;
-                diveWarning.InitializeRPC(playerManager.transform.position, playerManager.OrangeTeam, damageInfo);
+                diveWarning.InitializeRPC(playerManager.transform.position, playerManager.CurrentTeam.Team, damageInfo);
             }
         };
 

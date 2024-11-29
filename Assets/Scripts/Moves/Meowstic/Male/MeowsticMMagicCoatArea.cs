@@ -72,7 +72,7 @@ public class MeowsticMMagicCoatArea : NetworkBehaviour
             return;
         }
 
-        if (player.OrangeTeam != meowstic.OrangeTeam)
+        if (!player.CurrentTeam.IsOnSameTeam(meowstic.CurrentTeam))
         {
             return;
         }
@@ -94,7 +94,7 @@ public class MeowsticMMagicCoatArea : NetworkBehaviour
         foreach (var col in nearbyPokemons)
         {
             PlayerManager playerManager = col.GetComponent<PlayerManager>();
-            if (playerManager != null && Aim.Instance.CanPokemonBeTargeted(playerManager.gameObject, AimTarget.Enemy, meowstic.OrangeTeam))
+            if (playerManager != null && Aim.Instance.CanPokemonBeTargeted(playerManager.gameObject, AimTarget.Enemy, meowstic.CurrentTeam))
             {
                 enemies.Add(playerManager);
             }

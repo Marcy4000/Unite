@@ -16,12 +16,12 @@ public class EarthquakeArea : NetworkBehaviour
     private StatChange normalSlow = new StatChange(20, Stat.Speed, 0.5f, true, false, true, 0);
     private StatChange finalSlow = new StatChange(25, Stat.Speed, 3.2f, true, false, true, 0);
 
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private Dictionary<Pokemon, int> stackAmounts = new Dictionary<Pokemon, int>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, DamageInfo first, DamageInfo second, DamageInfo third, bool orangeTeam)
+    public void InitializeRPC(Vector3 position, DamageInfo first, DamageInfo second, DamageInfo third, Team orangeTeam)
     {
         transform.position = position;
         this.orangeTeam = orangeTeam;

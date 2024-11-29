@@ -116,7 +116,7 @@ public class MarshadowAuraSphere : MoveBase
         yield return sequence.WaitForCompletion();
 
         playerManager.PlayerMovement.CanMove = true;
-        if (Aim.Instance.CanPokemonBeTargeted(target.gameObject, AimTarget.NonAlly, playerManager.OrangeTeam))
+        if (Aim.Instance.CanPokemonBeTargeted(target.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam))
         {
             target.TakeDamage(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.RoundToInt(150 + (target.GetMissingHp()*0.15f)), DamageType.Physical));
         }

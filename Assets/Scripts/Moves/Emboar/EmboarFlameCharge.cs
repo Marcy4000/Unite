@@ -188,7 +188,7 @@ public class EmboarFlameCharge : MoveBase
 
             if (hit.collider.TryGetComponent(out Pokemon pokemon))
             {
-                if (!Aim.Instance.CanPokemonBeTargeted(hit.collider.gameObject, AimTarget.NonAlly, playerManager.OrangeTeam) || recentlyHitPokemon.Contains(pokemon))
+                if (!Aim.Instance.CanPokemonBeTargeted(hit.collider.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam) || recentlyHitPokemon.Contains(pokemon))
                 {
                     continue;
                 }

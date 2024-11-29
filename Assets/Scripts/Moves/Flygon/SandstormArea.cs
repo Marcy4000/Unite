@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class SandstormArea : NetworkBehaviour
 {
-    private bool orangeTeam;
+    private Team orangeTeam;
     private StatusEffect blind = new StatusEffect(StatusType.VisionObscuring, 3f, true, 0);
 
     private DamageInfo damageInfo;
@@ -17,7 +17,7 @@ public class SandstormArea : NetworkBehaviour
     private List<Pokemon> pokemonBlinded = new List<Pokemon>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, DamageInfo info, bool orangeTeam)
+    public void InitializeRPC(Vector3 position, DamageInfo info, Team orangeTeam)
     {
         transform.position = position;
         damageInfo = info;

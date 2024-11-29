@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FluxZone : NetworkBehaviour
 {
-    [SerializeField] private bool orangeTeam;
+    [SerializeField] private Team team;
     [SerializeField] private int laneID;
     [SerializeField] private int tier;
     [SerializeField] private GameObject graphic;
@@ -12,7 +12,7 @@ public class FluxZone : NetworkBehaviour
     private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
     private List<Pokemon> pokemonInZone = new List<Pokemon>();
 
-    public bool OrangeTeam => orangeTeam;
+    public Team Team => team;
     public int LaneID => laneID;
     public int Tier => tier;
     public bool IsActive => isActive.Value;
@@ -46,21 +46,12 @@ public class FluxZone : NetworkBehaviour
             return;
         }
 
-        if (other.CompareTag("Player"))
+        if (other.TryGetComponent(out Pokemon pokemon))
         {
-            PlayerManager playerManager = other.GetComponent<PlayerManager>();
-            pokemonInZone.Add(playerManager.Pokemon);
-            int value = (playerManager.OrangeTeam == orangeTeam) ? 60 : 50;
-            StatChange statChange = new StatChange((short)value, Stat.Speed, 0, false, playerManager.OrangeTeam == orangeTeam, true, 1);
-            playerManager.Pokemon.AddStatChange(statChange);
-        }
-        else if (other.CompareTag("SoldierPokemon"))
-        {
-            SoldierPokemon soldierPokemon = other.GetComponent<SoldierPokemon>();
-            pokemonInZone.Add(soldierPokemon.WildPokemon.Pokemon);
-            int value = (soldierPokemon.OrangeTeam == orangeTeam) ? 60 : 50;
-            StatChange statChange = new StatChange((short)value, Stat.Speed, 0, false, soldierPokemon.OrangeTeam == orangeTeam, true, 1);
-            soldierPokemon.WildPokemon.Pokemon.AddStatChange(statChange);
+            pokemonInZone.Add(pokemon);
+            int value = pokemon.TeamMember.IsOnSameTeam(team) ? 60 : 50;
+            StatChange statChange = new StatChange((short)value, Stat.Speed, 0, false, pokemon.TeamMember.IsOnSameTeam(team), true, 1);
+            pokemon.AddStatChange(statChange);
         }
     }
 

@@ -36,7 +36,7 @@ public class FlygonBoomburst : MoveBase
             {
                 if (obj.TryGetComponent(out BoomburstHitbox hitbox))
                 {
-                    hitbox.InitializeRPC(playerManager.transform.position, playerManager.OrangeTeam, closeDamage, farDamage);
+                    hitbox.InitializeRPC(playerManager.transform.position, playerManager.CurrentTeam.Team, closeDamage, farDamage);
                 }
             };
 

@@ -35,7 +35,7 @@ public class GlaceIcicleSpear : MoveBase
         playerManager.MovesController.onObjectSpawned += (icicleSpearHitbox) =>
         {
             this.icicleSpearHitbox = icicleSpearHitbox.GetComponent<IcicleSpearHitbox>();
-            this.icicleSpearHitbox.InitializeRPC(damageInfo, playerManager.OrangeTeam, IsUpgraded);
+            this.icicleSpearHitbox.InitializeRPC(damageInfo, playerManager.CurrentTeam.Team, IsUpgraded);
             Debug.Log("Icicle Spear Hitbox spawned!");
         };
 

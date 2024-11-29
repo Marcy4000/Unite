@@ -21,7 +21,7 @@ public class JoltSwiftProjectile : NetworkBehaviour
     private float speed = 10f;
     private Vector3 direction;
 
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private bool initialized = false;
     private ulong lastHit = 0;
@@ -32,7 +32,7 @@ public class JoltSwiftProjectile : NetworkBehaviour
     private Rigidbody rb;
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 startPos,Vector3 direction, bool isBigStar, DamageInfo bigDamage, DamageInfo smallDamage, bool orangeTeam, ulong lastHit=0)
+    public void InitializeRPC(Vector3 startPos,Vector3 direction, bool isBigStar, DamageInfo bigDamage, DamageInfo smallDamage, Team orangeTeam, ulong lastHit=0)
     {
         transform.position = startPos;
         this.direction = new Vector3(direction.x, 0, direction.z).normalized; // Ensure the direction is on the xz plane

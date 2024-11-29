@@ -61,7 +61,7 @@ public class KillNotificationUI : MonoBehaviour
 
         int index = Mathf.Clamp(attacker.KillStreak - 2, 0, 3);
 
-        streakImage.sprite = playerManager.OrangeTeam ? orangeKoSprites[index] : blueKoSprites[index];
+        streakImage.sprite = playerManager.CurrentTeam.Team == Team.Orange ? orangeKoSprites[index] : blueKoSprites[index];
     }
 
     private Sprite ChooseBackground(Pokemon attacker, Pokemon killed)
@@ -71,15 +71,15 @@ public class KillNotificationUI : MonoBehaviour
 
         if (attackerPlayer != null && killedPlayer != null)
         {
-            return attackerPlayer.OrangeTeam ? backgrounds[0] : backgrounds[1];
+            return attackerPlayer.CurrentTeam.Team == Team.Orange ? backgrounds[0] : backgrounds[1];
         }
         else if (attackerPlayer != null && killedPlayer == null)
         {
-            return attackerPlayer.OrangeTeam ? backgrounds[2] : backgrounds[3];
+            return attackerPlayer.CurrentTeam.Team == Team.Orange ? backgrounds[2] : backgrounds[3];
         }
         else if (attackerPlayer == null && killedPlayer != null)
         {
-            return killedPlayer.OrangeTeam ? backgrounds[4] : backgrounds[5];
+            return killedPlayer.CurrentTeam.Team == Team.Orange ? backgrounds[4] : backgrounds[5];
         }
         else
         {
@@ -92,11 +92,11 @@ public class KillNotificationUI : MonoBehaviour
         attacker.TryGetComponent(out PlayerManager attackerPlayer);
         killed.TryGetComponent(out PlayerManager killedPlayer);
 
-        bool localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
         if (attackerPlayer != null && killedPlayer != null)
         {
-            if (attackerPlayer.OrangeTeam == localPlayerTeam)
+            if (attackerPlayer.CurrentTeam.IsOnSameTeam(localPlayerTeam))
             {
                 switch (attacker.KillStreak)
                 {

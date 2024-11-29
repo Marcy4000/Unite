@@ -40,7 +40,7 @@ public class VaporSwift : MoveBase
             {
                 if (spawnedObject.TryGetComponent(out VaporSwiftProjectile projectile))
                 {
-                    projectile.InitializeRPC(damageInfo, playerManager.OrangeTeam, position);
+                    projectile.InitializeRPC(damageInfo, playerManager.CurrentTeam.Team, position);
                 }
             };
 

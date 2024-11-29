@@ -48,7 +48,7 @@ public class GlaceUnite : MoveBase
             playerManager.MovesController.onObjectSpawned += (uniteArea) =>
             {
                 this.uniteArea = uniteArea.GetComponent<GlaceUniteArea>();
-                this.uniteArea.InitializeRPC(playerManager.transform.position, Quaternion.LookRotation(direction), damageInfo, playerManager.OrangeTeam, playerManager.NetworkObjectId);
+                this.uniteArea.InitializeRPC(playerManager.transform.position, Quaternion.LookRotation(direction), damageInfo, playerManager.CurrentTeam.Team, playerManager.NetworkObjectId);
                 this.uniteArea.onGiveGlaceonSpears += () =>
                 {
                     if (glaceonPassive != null)

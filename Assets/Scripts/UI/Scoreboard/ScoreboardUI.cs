@@ -12,7 +12,7 @@ public class ScoreboardUI : MonoBehaviour
 
         foreach (PlayerManager player in players)
         {
-            GameObject playerItem = Instantiate(playerItemPrefab, player.OrangeTeam ? orangeList : blueList);
+            GameObject playerItem = Instantiate(playerItemPrefab, player.CurrentTeam.IsOnSameTeam(Team.Orange) ? orangeList : blueList);
             playerItem.GetComponent<ScoreboardPlayerItem>().SetPlayerInfo(player);
         }
     }

@@ -79,7 +79,7 @@ public class VaporRainDance : MoveBase
         {
             if (obj.TryGetComponent(out VaporeonRain rain))
             {
-                rain.InitializeRPC(destination, playerManager.OrangeTeam, heal);
+                rain.InitializeRPC(destination, playerManager.CurrentTeam.Team, heal);
             }
         };
 

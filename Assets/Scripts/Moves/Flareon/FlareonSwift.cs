@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class FlareonSwift : MoveBase
 {
-    private Vector3 direction;
     private DamageInfo damageInfo = new DamageInfo(0, 1f, 4, 150, DamageType.Physical, DamageProprieties.CanCrit);
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Flareon/FlareonSwiftArea.prefab";
@@ -48,7 +47,7 @@ public class FlareonSwift : MoveBase
             playerManager.MovesController.onObjectSpawned += (obj) =>
             {
                 swiftArea = obj.GetComponent<FlareonSwiftArea>();
-                swiftArea.InitializeRPC(damageInfo, playerManager.OrangeTeam);
+                swiftArea.InitializeRPC(damageInfo, playerManager.CurrentTeam.Team);
             };
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
 
@@ -68,7 +67,6 @@ public class FlareonSwift : MoveBase
 
     public override void ResetMove()
     {
-        direction = Vector3.zero;
         if (swiftArea != null)
         {
             swiftArea.DespawnRPC();

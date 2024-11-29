@@ -2,11 +2,10 @@
 #region Namespace Imports
 using UnityEngine;
 using UnityEditor;
-using System.Collections;
 #endregion
 
 namespace UI.ThreeDimensional
-{    
+{
     public static class UIObject3DLayerManager
     {        
         [InitializeOnLoadMethod]

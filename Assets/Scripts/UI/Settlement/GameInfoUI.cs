@@ -12,8 +12,8 @@ public class GameInfoUI : MonoBehaviour
     {
         currentLobby = LobbyController.Instance.Lobby;
 
-        Player[] blueTeam = LobbyController.Instance.GetTeamPlayers(false);
-        Player[] orangeTeam = LobbyController.Instance.GetTeamPlayers(true);
+        Player[] blueTeam = LobbyController.Instance.GetTeamPlayers(Team.Blue);
+        Player[] orangeTeam = LobbyController.Instance.GetTeamPlayers(Team.Orange);
 
         foreach (var player in blueTeam)
         {

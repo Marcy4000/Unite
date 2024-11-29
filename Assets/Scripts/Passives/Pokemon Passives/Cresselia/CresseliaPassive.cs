@@ -28,7 +28,7 @@ public class CresseliaPassive : PassiveBase
             for (int i = 0; i < numPlayers; i++)
             {
                 PlayerManager player = playersInArea[i].GetComponent<PlayerManager>();
-                if (player.OrangeTeam != playerManager.OrangeTeam || player == playerManager)
+                if (!player.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam) || player == playerManager)
                 {
                     continue;
                 }

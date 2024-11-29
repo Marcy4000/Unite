@@ -1,7 +1,6 @@
 ﻿#region Namespace Imports
 using UnityEngine;
 using System.Collections;
-using UnityEngine.Events;
 using UnityEngine.EventSystems;
 #endregion
 

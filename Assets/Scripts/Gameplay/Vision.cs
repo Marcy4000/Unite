@@ -7,7 +7,7 @@ public class Vision : MonoBehaviour
     private bool isRendered = false;
 
     [SerializeField] private bool hasATeam = false;
-    private bool currentTeam = false;
+    private Team currentTeam;
 
     private GameObject currentBush = null;
 
@@ -20,7 +20,7 @@ public class Vision : MonoBehaviour
 
     public bool IsVisible { get => isVisible; set => isVisible = value; }
     public bool HasATeam { get => hasATeam; set => hasATeam = value; }
-    public bool CurrentTeam { get => currentTeam; set => currentTeam = value; }
+    public Team CurrentTeam { get => currentTeam; set => currentTeam = value; }
 
     public GameObject CurrentBush => currentBush;
     public bool IsInBush => currentBush != null;

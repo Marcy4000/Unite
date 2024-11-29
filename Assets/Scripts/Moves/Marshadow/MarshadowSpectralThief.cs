@@ -74,7 +74,7 @@ public class MarshadowSpectralThief : MoveBase
 
     private IEnumerator AttackRoutine()
     {
-        GameObject[] enemiesHit = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position, 1.5f, AimTarget.NonAlly, playerManager.OrangeTeam);
+        GameObject[] enemiesHit = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position, 1.5f, AimTarget.NonAlly, playerManager.CurrentTeam);
 
         foreach (GameObject enemy in enemiesHit)
         {

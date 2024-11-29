@@ -175,7 +175,7 @@ public class JolteonUnite : MoveBase
                 continue;
             }
 
-            if (Aim.Instance.CanPokemonBeTargeted(hit.collider.gameObject, AimTarget.NonAlly, playerManager.OrangeTeam))
+            if (Aim.Instance.CanPokemonBeTargeted(hit.collider.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam))
             {
                 if (hit.collider.TryGetComponent(out Pokemon pokemon))
                 {

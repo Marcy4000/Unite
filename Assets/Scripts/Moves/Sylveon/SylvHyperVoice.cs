@@ -75,7 +75,7 @@ public class SylvHyperVoice : MoveBase
             {
                 hypervoiceHitbox = hyperVoiceHitbox.GetComponent<HypervoiceHitbox>();
                 int wavesAmount = IsUpgraded ? wavesAmountUpgraded : wavesAmountNormal;
-                hypervoiceHitbox.InitializeRPC(closeDamage, farDamage, playerManager.OrangeTeam, wavesAmount);
+                hypervoiceHitbox.InitializeRPC(closeDamage, farDamage, playerManager.CurrentTeam.Team, wavesAmount);
                 hypervoiceHitbox.transform.rotation = Quaternion.LookRotation(this.direction);
             };
 

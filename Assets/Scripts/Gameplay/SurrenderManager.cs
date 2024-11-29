@@ -11,20 +11,20 @@ public class SurrenderManager : NetworkBehaviour
     [SerializeField] private GameObject surrenderPanel;
     [SerializeField] private SurrenderPanelUI surrenderPanelUI;
 
-    private bool localTeam;
+    private Team localTeam;
     private Player[] surrenderTeam;
     private Dictionary<string, byte> playerVotes = new Dictionary<string, byte>();
 
     private bool isSurrendering;
     private bool hasVoted;
 
-    private bool currentTeamVoting;
+    private Team currentTeamVoting;
 
     private NetworkVariable<float> voteTimer = new NetworkVariable<float>(10f);
 
     public bool IsSurrendering => isSurrendering;
 
-    public event Action<bool, bool> onSurrenderVoteResult; // (team, result)
+    public event Action<Team, bool> onSurrenderVoteResult; // (team, result)
 
     public override void OnNetworkSpawn()
     {
@@ -37,7 +37,7 @@ public class SurrenderManager : NetworkBehaviour
         surrenderPanel.SetActive(false);
     }
 
-    private void UpdateSurrenderingTeam(bool orangeTeam)
+    private void UpdateSurrenderingTeam(Team orangeTeam)
     {
         surrenderTeam = LobbyController.Instance.GetTeamPlayers(orangeTeam);
         playerVotes.Clear();
@@ -69,7 +69,7 @@ public class SurrenderManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void StartSurrenderVoteRPC(bool orangeTeam)
+    public void StartSurrenderVoteRPC(Team orangeTeam)
     {
         if (isSurrendering)
         {
@@ -92,7 +92,7 @@ public class SurrenderManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void ShowSurrenderPanelRPC(bool orangeTeam)
+    private void ShowSurrenderPanelRPC(Team orangeTeam)
     {
         if (orangeTeam != localTeam)
         {

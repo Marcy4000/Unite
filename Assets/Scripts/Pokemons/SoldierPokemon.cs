@@ -11,12 +11,9 @@ public class SoldierPokemon : NetworkBehaviour
     private NavMeshAgent agent;
     private WildPokemon wildPokemon;
     private AnimationManager animationManager;
-
-    private bool orangeTeam;
-
     private int currentTargetIndex = 0;
 
-    public bool OrangeTeam => orangeTeam;
+    public TeamMember CurrentTeam => wildPokemon.Pokemon.TeamMember;
     public WildPokemon WildPokemon => wildPokemon;
 
     public void Awake()
@@ -37,15 +34,15 @@ public class SoldierPokemon : NetworkBehaviour
         yield return null;
         Vision vision = GetComponentInChildren<Vision>();
         vision.HasATeam = true;
-        vision.CurrentTeam = orangeTeam;
+        vision.CurrentTeam = CurrentTeam.Team;
         vision.IsVisible = true;
-        vision.SetVisibility(LobbyController.Instance.GetLocalPlayerTeam() == orangeTeam);
+        vision.SetVisibility(LobbyController.Instance.GetLocalPlayerTeam() == CurrentTeam.Team);
     }
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(bool orangeTeam, AvailableWildPokemons pokemon, int laneID)
+    public void InitializeRPC(Team orangeTeam, AvailableWildPokemons pokemon, int laneID)
     {
-        this.orangeTeam = orangeTeam;
+        wildPokemon.Pokemon.UpdateTeamRPC(orangeTeam);
 
         if (IsServer)
         {
@@ -56,7 +53,9 @@ public class SoldierPokemon : NetworkBehaviour
 
             targets.Add(transform.position);
 
-            Vector3[] positions = GameManager.Instance.GetRotomPath(!orangeTeam, laneID);
+            Team rotomPathTeam = orangeTeam == Team.Orange ? Team.Blue : Team.Orange;
+
+            Vector3[] positions = GameManager.Instance.GetRotomPath(rotomPathTeam, laneID);
             foreach (var pos in positions)
             {
                 targets.Add(pos);
@@ -112,7 +111,7 @@ public class SoldierPokemon : NetworkBehaviour
         if (other.CompareTag("GoalZone"))
         {
             GoalZone goalZone = other.GetComponent<GoalZone>();
-            if (goalZone.OrangeTeam == orangeTeam)
+            if (CurrentTeam.IsOnSameTeam(goalZone.Team))
             {
                 return;
             }

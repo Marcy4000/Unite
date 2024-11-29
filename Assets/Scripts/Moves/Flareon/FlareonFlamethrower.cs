@@ -70,7 +70,7 @@ public class FlareonFlamethrower : MoveBase
         {
             if (obj.TryGetComponent(out FlareonFlamethrowerArea projectile))
             {
-                projectile.InitializeRPC(playerManager.transform.position, playerManager.transform.eulerAngles, playerManager.OrangeTeam, damageInfo);
+                projectile.InitializeRPC(playerManager.transform.position, playerManager.transform.eulerAngles, playerManager.CurrentTeam.Team, damageInfo);
             }
         };
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(projectilePath);

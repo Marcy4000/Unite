@@ -25,12 +25,12 @@ public class InfoHolderManager : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
 
-        bool orangeTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team orangeTeam = LobbyController.Instance.GetLocalPlayerTeam();
         foreach (var player in GameManager.Instance.Players)
         {
             if (!enemyTeam)
             {
-                if (player.IsLocalPlayer || player.OrangeTeam != orangeTeam)
+                if (player.IsLocalPlayer || !player.CurrentTeam.IsOnSameTeam(orangeTeam))
                 {
                     continue;
                 }
@@ -38,7 +38,7 @@ public class InfoHolderManager : MonoBehaviour
             }
             else
             {
-                if (player.OrangeTeam == orangeTeam)
+                if (player.CurrentTeam.IsOnSameTeam(orangeTeam))
                 {
                     continue;
                 }

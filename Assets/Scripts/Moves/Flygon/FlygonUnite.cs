@@ -204,7 +204,7 @@ public class FlygonUnite : MoveBase
         {
             if (obj.TryGetComponent(out TornadoHitbox tornado))
             {
-                tornado.InitializeRPC(tornadoDamage, playerManager.OrangeTeam);
+                tornado.InitializeRPC(tornadoDamage, playerManager.CurrentTeam.Team);
                 tornadoHitbox = tornado;
                 tornadoHitbox.transform.position = centerPoint;
                 tornadoTimer = 6f;

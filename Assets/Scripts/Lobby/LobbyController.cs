@@ -799,12 +799,12 @@ public class LobbyController : MonoBehaviour
         return null;
     }
 
-    public Player[] GetTeamPlayers(bool orangeTeam)
+    public Player[] GetTeamPlayers(Team team)
     {
         List<Player> teamPlayers = new List<Player>();
         foreach (var player in partyLobby.Players)
         {
-            if (player.Data["PlayerTeam"].Value == (orangeTeam ? "Orange" : "Blue"))
+            if (TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value) == team)
             {
                 teamPlayers.Add(player);
             }
@@ -821,9 +821,21 @@ public class LobbyController : MonoBehaviour
         return teamPlayers.ToArray();
     }
 
-    public bool GetLocalPlayerTeam()
+    public Team GetLocalPlayerTeam()
     {
-        return localPlayer.Data["PlayerTeam"].Value == "Orange";
+        //return localPlayer.Data["PlayerTeam"].Value == "Orange";
+
+        string team = localPlayer.Data["PlayerTeam"].Value.ToLower();
+
+        switch (team)
+        {
+            case "blue":
+                return Team.Blue;
+            case "orange":
+                return Team.Orange;
+            default:
+                return Team.Neutral;
+        }
     }
 
     public bool IsPlayerInResultScreen(Player player)

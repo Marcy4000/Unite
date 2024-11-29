@@ -9,7 +9,7 @@ public class BoomburstHitbox : NetworkBehaviour
     private DamageInfo closeDamage, farDamage;
     private float basePushForce = 20f;
 
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private StatChange defReductionClose = new StatChange(15, Stat.Defense, 3f, true, false, true, 0);
     private StatChange spDefReductionClose = new StatChange(15, Stat.Defense, 3f, true, false, true, 0);
@@ -17,7 +17,7 @@ public class BoomburstHitbox : NetworkBehaviour
     private StatChange spDefReductionFar = new StatChange(10, Stat.Defense, 3f, true, false, true, 0);
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 startPos, bool orangeTeam, DamageInfo close, DamageInfo far)
+    public void InitializeRPC(Vector3 startPos, Team orangeTeam, DamageInfo close, DamageInfo far)
     {
         transform.position = startPos;
         this.orangeTeam = orangeTeam;

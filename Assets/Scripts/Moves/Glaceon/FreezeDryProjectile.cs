@@ -10,7 +10,7 @@ public class FreezeDryProjectile : NetworkBehaviour
     private DamageInfo damageInfo;
     private Vector3 direction;
     private float distanceTraveled = 0f;
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private bool canMove = false;
     private bool gaveDamage = false;
@@ -23,7 +23,7 @@ public class FreezeDryProjectile : NetworkBehaviour
         this.direction = new Vector3(direction.x, 0, direction.y);
         damageInfo = info;
         this.maxDistance = maxDistance;
-        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().OrangeTeam;
+        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().CurrentTeam.Team;
         canMove = true;
     }
 
@@ -64,7 +64,7 @@ public class FreezeDryProjectile : NetworkBehaviour
         {
             if (hit.TryGetComponent(out PlayerManager playerManager))
             {
-                if (playerManager.OrangeTeam == orangeTeam)
+                if (playerManager.CurrentTeam.IsOnSameTeam(orangeTeam))
                 {
                     return;
                 }

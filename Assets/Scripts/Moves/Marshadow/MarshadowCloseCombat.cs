@@ -132,7 +132,7 @@ public class MarshadowCloseCombat : MoveBase
 
             if (hit.gameObject.TryGetComponent(out Pokemon pokemon))
             {
-                if (recentlyHitPokemon.Contains(pokemon) || !Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, playerManager.OrangeTeam))
+                if (recentlyHitPokemon.Contains(pokemon) || !Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam))
                 {
                     continue;
                 }

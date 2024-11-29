@@ -10,10 +10,10 @@ public class VaporUniteArea : NetworkBehaviour
     private StatChange defDebuff = new StatChange(50, Stat.Defense, 5f, true, false, true, 0);
     private StatChange spDefDebuff = new StatChange(50, Stat.SpDefense, 5f, true, false, true, 0);
 
-    private bool vaporeonTeam;
+    private Team vaporeonTeam;
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(DamageInfo damageInfo, DamageInfo healAmount, bool vaporeonTeam, Vector3 position)
+    public void InitializeRPC(DamageInfo damageInfo, DamageInfo healAmount, Team vaporeonTeam, Vector3 position)
     {
         transform.position = position;
         transform.localScale = new Vector3(0.01f, 1f, 0.01f);

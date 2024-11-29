@@ -1,8 +1,6 @@
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Linq;
-using System.Globalization;
 using System.Collections.Generic;
 
 namespace UI.ThreeDimensional

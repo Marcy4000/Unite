@@ -27,7 +27,7 @@ public class ScoreboardPlayerItem : MonoBehaviour
         kills.text = player.PlayerStats.kills.ToString();
         assists.text = player.PlayerStats.assists.ToString();
         pokemonIcon.sprite = player.Pokemon.Portrait;
-        background.sprite = player.OrangeTeam ? orangeBG : blueBG;
+        background.sprite = player.CurrentTeam.IsOnSameTeam(Team.Orange) ? orangeBG : blueBG;
 
         deathTimerBG.SetActive(false);
 

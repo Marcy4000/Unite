@@ -2,9 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Netcode;
 using System.Linq;
-using UnityEngine.InputSystem;
 
 public class QuickChatSelectorUI : MonoBehaviour
 {
@@ -127,7 +125,7 @@ public class QuickChatSelectorUI : MonoBehaviour
         {
             message = message,
             senderId = senderID,
-            orangeTeam = LobbyController.Instance.GetLocalPlayerTeam()
+            sendingTeam = LobbyController.Instance.GetLocalPlayerTeam()
         };
         QuickChatManager.Instance.SendQuickChatMessageRPC(quickChatMessage);
 

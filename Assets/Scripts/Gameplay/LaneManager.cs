@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class LaneManager : NetworkBehaviour
 {
-    [SerializeField] private bool orangeTeam;
+    [SerializeField] private Team team;
     [SerializeField] private int maxTier = 2;
 
     private List<GoalZone> goalZones = new List<GoalZone>();
@@ -15,7 +15,7 @@ public class LaneManager : NetworkBehaviour
     public List<GoalZone> GoalZones => goalZones;
     public List<FluxZone> FluxZones => fluxZones;
 
-    public bool OrangeTeam => orangeTeam;
+    public Team Team => team;
     public int MaxTier => maxTier;
 
     public IEnumerator Start()
@@ -33,7 +33,7 @@ public class LaneManager : NetworkBehaviour
 
         for (int i = fluxZones.Count - 1; i >= 0; i--)
         {
-            if (fluxZones[i].OrangeTeam != orangeTeam)
+            if (fluxZones[i].Team != team)
             {
                 fluxZones.RemoveAt(i);
             }
@@ -46,7 +46,7 @@ public class LaneManager : NetworkBehaviour
 
         for (int i = goalZones.Count - 1; i >= 0; i--)
         {
-            if (goalZones[i].OrangeTeam != orangeTeam)
+            if (goalZones[i].Team != team)
             {
                 goalZones.RemoveAt(i);
             }
@@ -79,7 +79,7 @@ public class LaneManager : NetworkBehaviour
 
     private void OnGoalZoneDestroyed(int laneID, int tier)
     {
-        BattleUIManager.instance.UpdateGoalState(orangeTeam);
+        BattleUIManager.instance.UpdateGoalState(team);
 
         if (!IsServer)
         {

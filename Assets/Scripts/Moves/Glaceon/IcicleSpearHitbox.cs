@@ -6,13 +6,13 @@ public class IcicleSpearHitbox : NetworkBehaviour
 {
     private DamageInfo damageInfo;
     private StatChange enemySlow = new StatChange(20, Stat.Speed, 0.75f, true, false, true, 0);
-    private bool teamToIgnore;
+    private Team teamToIgnore;
     private bool isUpgraded;
 
     private bool initialized = false;
 
     public DamageInfo DamageInfo => damageInfo;
-    public bool TeamToIgnore => teamToIgnore;
+    public Team TeamToIgnore => teamToIgnore;
     public bool IsUpgraded => isUpgraded;
 
     private List<Pokemon> pokemonInTrigger = new List<Pokemon>();
@@ -20,7 +20,7 @@ public class IcicleSpearHitbox : NetworkBehaviour
     private float cooldown = 0.75f;
 
     [Rpc(SendTo.Everyone)]
-    public void InitializeRPC(DamageInfo damage, bool team, bool upgraded)
+    public void InitializeRPC(DamageInfo damage, Team team, bool upgraded)
     {
         damageInfo = damage;
         teamToIgnore = team;

@@ -9,7 +9,7 @@ public class SylvSwiftProjectile : NetworkBehaviour
     private DamageInfo damageInfo;
     private Vector3 direction;
     private float distanceTraveled = 0f;
-    private bool orangeTeam;
+    private Team orangeTeam;
 
     private bool canMove;
 
@@ -19,7 +19,7 @@ public class SylvSwiftProjectile : NetworkBehaviour
         this.direction = new Vector3(direction.x, 0, direction.y);
         damageInfo = info;
         this.maxDistance = maxDistance;
-        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().OrangeTeam;
+        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().CurrentTeam.Team;
         canMove = true;
     }
 

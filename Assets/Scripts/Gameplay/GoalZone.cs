@@ -16,14 +16,14 @@ public enum GoalStatus : byte
 public class GoalZone : NetworkBehaviour
 {
     [SerializeField] private int maxScore;
-    [SerializeField] private bool orangeTeam;
+    [SerializeField] private Team team;
     [SerializeField] private int healAmount;
     [SerializeField] private float shieldAmount;
     [SerializeField] private int goalTier;
     [SerializeField] private int goalLaneId;
     [SerializeField] private bool allowOvercaps = true;
     [SerializeField] private TMP_Text scoreText;
-    [SerializeField] private GameObject orangeModel, blueModel;
+    [SerializeField] private GameObject[] areaModels;
     [SerializeField] private VisionController visionController;
     [SerializeField] private GoalZoneShield goalZoneShield;
 
@@ -50,7 +50,7 @@ public class GoalZone : NetworkBehaviour
     public int MaxScore { get => maxScore; }
     public int GoalTier { get => goalTier; }
     public int GoalLaneId { get => goalLaneId; }
-    public bool OrangeTeam { get => orangeTeam; }
+    public Team Team { get => team; }
     public GoalStatus GoalStatus { get => goalStatus.Value; }
 
     public float WeakenTime { get => weakenTime.Value; }
@@ -66,23 +66,65 @@ public class GoalZone : NetworkBehaviour
         {
             StartCoroutine(GoalZoneHealing());
         }
-        scoreText.color = orangeTeam ? Color.yellow : Color.blue;
-        Destroy(orangeTeam ? blueModel : orangeModel);
+        scoreText.color = GetTeamColor();
+        DestroyUneededModels();
         scoreText.text = $"{maxScore - currentScore.Value}/{maxScore}";
         currentScore.OnValueChanged += UpdateGraphics;
         goalStatus.OnValueChanged += (previous, current) => { onGoalStatusChanged?.Invoke(current); };
 
-        visionController.TeamToIgnore = orangeTeam;
-        visionController.IsEnabled = orangeTeam == LobbyController.Instance.GetLocalPlayerTeam();
+        visionController.TeamToIgnore = team;
+        visionController.IsEnabled = team == LobbyController.Instance.GetLocalPlayerTeam();
         visionController.transform.parent = null;
 
         MinimapManager.Instance.CreateGoalzoneIcon(this);
 
-        goalZoneShield.SetShieldColor(orangeTeam ? orangeColor : blueColor);
+        goalZoneShield.SetShieldColor(Team == Team.Orange ? orangeColor : blueColor);
 
         if (goalTier == 0)
         {
             scoreText.gameObject.SetActive(false);
+        }
+    }
+
+    private Color GetTeamColor()
+    {
+        switch (team)
+        {
+            case Team.Blue:
+                return Color.blue;
+            case Team.Orange:
+                return Color.yellow;
+            default:
+                return Color.white;
+        }
+    }
+
+    private void DestroyUneededModels()
+    {
+        int modelToKeep = 0;
+
+        switch (team)
+        {
+            case Team.Neutral:
+                modelToKeep = 0;
+                break;
+            case Team.Blue:
+                modelToKeep = 1;
+                break;
+            case Team.Orange:
+                modelToKeep = 2;
+                break;
+            default:
+                modelToKeep = 0;
+                break;
+        }
+
+        for (int i = 0; i < areaModels.Length; i++)
+        {
+            if (i != modelToKeep)
+            {
+                Destroy(areaModels[i]);
+            }
         }
     }
 
@@ -94,19 +136,19 @@ public class GoalZone : NetworkBehaviour
             playerManagerList.Add(playerManager);
             if (IsActive)
             {
-                if (playerManager.OrangeTeam != orangeTeam)
+                if (!playerManager.CurrentTeam.IsOnSameTeam(team))
                 {
                     playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Disabled);
                 }
                 playerManager.GoalZone = this;
             }
             //playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
-            if (playerManager.OrangeTeam == orangeTeam && IsServer)
+            if (playerManager.CurrentTeam.IsOnSameTeam(team) && IsServer)
             {
                 playerManager.Pokemon.AddStatChange(statChange);
             }
 
-            GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
+            GetAlliesInGoal(Team, out int alliesInGoal, out int enemiesInGoal);
 
             if (alliesInGoal >= 0)
             {
@@ -125,14 +167,14 @@ public class GoalZone : NetworkBehaviour
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
             playerManager.ScoreStatus.AddStatus(ActionStatusType.Disabled);
-            if (playerManager.OrangeTeam == orangeTeam && IsServer)
+            if (playerManager.CurrentTeam.IsOnSameTeam(team) && IsServer)
             {
                 playerManager.Pokemon.RemoveStatChangeWithIDRPC(1);
             }
             playerManager.GoalZone = null;
             playerManagerList.Remove(playerManager);
 
-            GetAlliesInGoal(OrangeTeam, out int alliesInGoal, out int enemiesInGoal);
+            GetAlliesInGoal(Team, out int alliesInGoal, out int enemiesInGoal);
 
             if (alliesInGoal >= 0)
             {
@@ -145,13 +187,13 @@ public class GoalZone : NetworkBehaviour
         }
     }
 
-    public void GetAlliesInGoal(bool orangeTeam, out int alliesInGoal, out int enemiesInGoal)
+    public void GetAlliesInGoal(Team team, out int alliesInGoal, out int enemiesInGoal)
     {
         alliesInGoal = -1;
         enemiesInGoal = 0;
         foreach (var player in playerManagerList)
         {
-            if (player.OrangeTeam == orangeTeam)
+            if (player.CurrentTeam.IsOnSameTeam(team))
             {
                 alliesInGoal++;
             }
@@ -168,7 +210,7 @@ public class GoalZone : NetworkBehaviour
         {
             foreach (var player in playerManagerList)
             {
-                if (player.OrangeTeam == orangeTeam)
+                if (player.CurrentTeam.IsOnSameTeam(team))
                 {
                     if (!player.Pokemon.IsHPFull())
                     {

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -14,12 +13,12 @@ public class MoonlightArea : NetworkBehaviour
     private float moveCooldown = 6f;
     private float healCooldown = 1f;
 
-    private bool vaporeonTeam;
+    private Team vaporeonTeam;
 
     private List<PlayerManager> playerList = new List<PlayerManager>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, bool orangeTeam, float healPercentage)
+    public void InitializeRPC(Vector3 position, Team orangeTeam, float healPercentage)
     {
         vaporeonTeam = orangeTeam;
         transform.position = position;
@@ -44,7 +43,7 @@ public class MoonlightArea : NetworkBehaviour
             {
                 if (player != null)
                 {
-                    if (player.OrangeTeam == vaporeonTeam)
+                    if (player.CurrentTeam.IsOnSameTeam(vaporeonTeam))
                     {
                         player.Pokemon.HealDamage(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * healPercentage));
                     }

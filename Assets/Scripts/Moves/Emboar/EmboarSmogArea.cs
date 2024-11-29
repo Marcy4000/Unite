@@ -9,11 +9,11 @@ public class EmboarSmogArea : NetworkBehaviour
     private List<Pokemon> hitPokemons = new List<Pokemon>();
 
     private float cooldown;
-    private bool orangeTeam;
+    private Team orangeTeam;
     private bool initialized;
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, float duration, bool orangeTeam)
+    public void InitializeRPC(Vector3 position, float duration, Team orangeTeam)
     {
         transform.position = position;
         cooldown = duration;

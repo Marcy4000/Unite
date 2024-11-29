@@ -18,12 +18,12 @@ public class VaporeonRain : NetworkBehaviour
     private float rainCooldown = 10f;
     private float healCooldown = 1.2f;
 
-    private bool vaporeonTeam;
+    private Team vaporeonTeam;
 
     private List<PlayerManager> playerList = new List<PlayerManager>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, bool orangeTeam, DamageInfo heal)
+    public void InitializeRPC(Vector3 position, Team orangeTeam, DamageInfo heal)
     {
         vaporeonTeam = orangeTeam;
         transform.position = position;
@@ -48,7 +48,7 @@ public class VaporeonRain : NetworkBehaviour
             {
                 if (player != null)
                 {
-                    if (player.OrangeTeam == vaporeonTeam)
+                    if (player.CurrentTeam.IsOnSameTeam(vaporeonTeam))
                     {
                         player.Pokemon.HealDamage(allyHeal);
                     }
@@ -70,7 +70,7 @@ public class VaporeonRain : NetworkBehaviour
         {
             if (player != null)
             {
-                if (player.OrangeTeam == vaporeonTeam)
+                if (player.CurrentTeam.IsOnSameTeam(vaporeonTeam))
                 {
                     player.Pokemon.RemoveStatChangeWithIDRPC(defBuff.ID);
                     player.Pokemon.RemoveStatChangeWithIDRPC(spDefBuff.ID);
@@ -94,7 +94,7 @@ public class VaporeonRain : NetworkBehaviour
 
         if (other.TryGetComponent(out PlayerManager player))
         {
-            if (player.OrangeTeam == vaporeonTeam)
+            if (player.CurrentTeam.IsOnSameTeam(vaporeonTeam))
             {
                 player.Pokemon.AddStatChange(defBuff);
                 player.Pokemon.AddStatChange(spDefBuff);
@@ -120,7 +120,7 @@ public class VaporeonRain : NetworkBehaviour
 
         if (other.TryGetComponent(out PlayerManager player))
         {
-            if (player.OrangeTeam == vaporeonTeam)
+            if (player.CurrentTeam.IsOnSameTeam(vaporeonTeam))
             {
                 player.Pokemon.RemoveStatChangeWithIDRPC(defBuff.ID);
                 player.Pokemon.RemoveStatChangeWithIDRPC(spDefBuff.ID);

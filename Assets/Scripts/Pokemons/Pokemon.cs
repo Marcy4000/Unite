@@ -45,6 +45,8 @@ public class Pokemon : NetworkBehaviour
     private NetworkVariable<int> killStreak = new NetworkVariable<int>();
     private float killStreakTimer;
 
+    private NetworkVariable<TeamMember> team = new NetworkVariable<TeamMember>();
+
     public int CurrentHp { get { return currentHp.Value; } }
     public int ShieldHp { get { return GetShieldsAsInt(); } }
     public int CurrentLevel { get { return currentLevel.Value; } }
@@ -75,6 +77,8 @@ public class Pokemon : NetworkBehaviour
     public PokemonEvolution CurrentEvolution { get { return currentEvolution; } }
 
     public int KillStreak { get { return killStreak.Value; } }
+
+    public TeamMember TeamMember { get { return team.Value; } }
 
     public event Action OnHpOrShieldChange;
     public event Action OnLevelChange;
@@ -1531,6 +1535,12 @@ public class Pokemon : NetworkBehaviour
         flipAtkStat.Value = value;
     }
 
+    [Rpc(SendTo.Server)]
+    public void UpdateTeamRPC(Team team)
+    {
+        this.team.Value = new TeamMember(team);
+    }
+
     public void StoreExperience(int amount)
     {
         if (IsServer) {
@@ -1559,6 +1569,71 @@ public class Pokemon : NetworkBehaviour
         activeModel = Instantiate(evolution.newModel, transform.position, transform.rotation, transform);
         portrait = evolution.newSprite;
         OnEvolution?.Invoke();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    public void GiveExpRpc(ulong attackerID, Vector3 deathPos, float baseExp)
+    {
+        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
+
+        Dictionary<int, (float koerExp, float proximityExp)> expDistribution = new Dictionary<int, (float, float)>
+        {
+            {1, (1.0f, 0.0f)},
+            {2, (1.0f, 0.5f)},
+            {3, (1.0f, 0.25f)},
+            {4, (1.0f, 0.1667f)},
+            {5, (1.0f, 0.125f)}
+        };
+
+        List<Pokemon> playersInProximity;
+
+        if (attacker.TryGetComponent(out PlayerManager player))
+        {
+            playersInProximity = FindPlayersInProximity(deathPos, 6f, player.CurrentTeam.Team);
+        }
+        else
+        {
+            return;
+        }
+
+        DistributeExperience(attacker, playersInProximity, baseExp, expDistribution);
+    }
+
+    private List<Pokemon> FindPlayersInProximity(Vector3 koPosition, float range, Team team)
+    {
+        List<Pokemon> playersInProximity = new List<Pokemon>();
+
+        foreach (var playerObject in NetworkManager.Singleton.SpawnManager.SpawnedObjects.Values)
+        {
+            PlayerManager player = playerObject.GetComponent<PlayerManager>();
+            if (player != null && player.CurrentTeam.IsOnSameTeam(team) && Vector3.Distance(player.transform.position, koPosition) <= range)
+            {
+                playersInProximity.Add(player.Pokemon);
+            }
+        }
+
+        return playersInProximity;
+    }
+
+    private void DistributeExperience(Pokemon attacker, List<Pokemon> playersInProximity, float baseExp, Dictionary<int, (float koerExp, float proximityExp)> expDistribution)
+    {
+        int playersCount = playersInProximity.Count;
+        if (!expDistribution.TryGetValue(playersCount, out var expValues))
+        {
+            expValues = expDistribution[1];
+        }
+
+        float attackerExp = baseExp * expValues.koerExp;
+        attacker.GainExperience(Mathf.FloorToInt(attackerExp));
+
+        float proximityExp = baseExp * expValues.proximityExp;
+        foreach (var player in playersInProximity)
+        {
+            if (player != attacker)
+            {
+                player.GainExperience(Mathf.FloorToInt(proximityExp));
+            }
+        }
     }
 
     [Rpc(SendTo.Owner)]

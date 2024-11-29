@@ -103,7 +103,7 @@ public class MeowsticMUniteArea : NetworkBehaviour
         {
             foreach (Pokemon enemy in enemiesInArea)
             {
-                if (enemy != null && Aim.Instance.CanPokemonBeTargeted(enemy.gameObject, AimTarget.NonAlly, meowstic.OrangeTeam))
+                if (enemy != null && Aim.Instance.CanPokemonBeTargeted(enemy.gameObject, AimTarget.NonAlly, meowstic.CurrentTeam))
                 {
                     enemy.TakeDamage(damage);
                 }
@@ -123,7 +123,7 @@ public class MeowsticMUniteArea : NetworkBehaviour
         {
 
 
-            if (player.OrangeTeam == meowstic.OrangeTeam)
+            if (player.CurrentTeam.IsOnSameTeam(meowstic.CurrentTeam))
             {
                 if (!alliesInArea.Contains(player.Pokemon))
                 {

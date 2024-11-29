@@ -1,6 +1,3 @@
-using UnityEngine;
-using Unity.Netcode;
-
 public class FloatStone : HeldItemBase
 {
     private bool gaveBoost;

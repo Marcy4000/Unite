@@ -63,7 +63,7 @@ public class EmboarSmog : MoveBase
         {
             if (obj.TryGetComponent(out EmboarSmogArea smogArea))
             {
-                smogArea.InitializeRPC(spawnPos, 3f, playerManager.OrangeTeam);
+                smogArea.InitializeRPC(spawnPos, 3f, playerManager.CurrentTeam.Team);
             }
         };
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);

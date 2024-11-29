@@ -1,5 +1,4 @@
 using DG.Tweening;
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -10,7 +9,7 @@ public class FlareonSwiftArea : NetworkBehaviour
     [SerializeField] private Transform starsHolder;
 
     private DamageInfo tickDamage;
-    private bool orangeTeam;
+    private Team orangeTeam;
     private bool initialized;
 
     private float tickCooldown = 0.4f;
@@ -18,7 +17,7 @@ public class FlareonSwiftArea : NetworkBehaviour
     private List<GameObject> stars = new List<GameObject>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(DamageInfo tickDamage, bool orangeTeam)
+    public void InitializeRPC(DamageInfo tickDamage, Team orangeTeam)
     {
         this.tickDamage = tickDamage;
         this.orangeTeam = orangeTeam;
