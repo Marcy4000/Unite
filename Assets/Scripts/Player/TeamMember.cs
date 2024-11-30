@@ -1,7 +1,9 @@
+using System;
 using Unity.Netcode;
 
 public enum Team : byte { Neutral, Blue, Orange }
 
+[Serializable]
 public struct TeamMember : INetworkSerializable
 {
     private Team team;

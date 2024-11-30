@@ -59,6 +59,7 @@ public class PlayerManager : NetworkBehaviour
     private List<float> goalBuffsTimers = new List<float>();
 
     private GoalZone goalZone;
+    private Team tempTeam;
 
     public Pokemon Pokemon { get => pokemon; }
     public MovesController MovesController { get => movesController; }
@@ -141,14 +142,14 @@ public class PlayerManager : NetworkBehaviour
     {
         Team currentPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
-        aim.TeamToIgnore = CurrentTeam.Team;
-        visionController.TeamToIgnore = CurrentTeam.Team;
-        vision.CurrentTeam = CurrentTeam.Team;
+        aim.TeamToIgnore = tempTeam;
+        visionController.TeamToIgnore = tempTeam;
+        vision.CurrentTeam = tempTeam;
         vision.HasATeam = true;
         vision.IsVisible = true;
 
-        hpBar.InitializeEnergyUI(PokemonType.Player, CurrentTeam.Team == Team.Orange, IsOwner);
-        hpBar.UpdateHpBarColor(!CurrentTeam.IsOnSameTeam(currentPlayerTeam), IsOwner);
+        hpBar.InitializeEnergyUI(PokemonType.Player, tempTeam == Team.Orange, IsOwner);
+        hpBar.UpdateHpBarColor(tempTeam != currentPlayerTeam, IsOwner);
 
         if (IsOwner)
         {
@@ -185,7 +186,7 @@ public class PlayerManager : NetworkBehaviour
         }
         else
         {
-            visionController.IsEnabled = CurrentTeam.IsOnSameTeam(currentPlayerTeam);
+            visionController.IsEnabled = tempTeam == currentPlayerTeam;
         }
 
         vision.OnBushChanged += (bush) =>
@@ -262,7 +263,8 @@ public class PlayerManager : NetworkBehaviour
     {
         Team currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
         AssignVisionObjects();
-        vision.SetVisibility(CurrentTeam.IsOnSameTeam(currentTeam));
+        vision.SetVisibility(tempTeam == currentTeam);
+
 
         if (IsOwner)
         {
@@ -403,7 +405,11 @@ public class PlayerManager : NetworkBehaviour
 
     public void ChangeCurrentTeam(Team team)
     {
-        pokemon.UpdateTeamRPC(team);
+        if (IsOwner || IsServer)
+        {
+            pokemon.UpdateTeamRPC(team);
+        }
+        tempTeam = team;
     }
 
     public void Respawn()
@@ -935,7 +941,8 @@ public class PlayerManager : NetworkBehaviour
         {
             Addressables.Release(pokemonLoadHandle);
         }
-        playerControls.asset.Disable();
+        if (playerControls != null)
+            playerControls.asset.Disable();
         base.OnDestroy();
     }
 }

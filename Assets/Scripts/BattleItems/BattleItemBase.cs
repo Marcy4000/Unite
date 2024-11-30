@@ -32,7 +32,7 @@ public abstract class BattleItemBase
     }
 }
 
-public enum AvailableBattleItems { None, Eject, XSpeed, XAttack, FullHeal, GoalGetter, Potion, SlowSmoke, ShedinjaDoll }
+public enum AvailableBattleItems { None, Eject, XSpeed, XAttack, FullHeal, GoalGetter, Potion, SlowSmoke, ShedinjaDoll, Brick }
 
 public static class BattleItemDatabase
 {
@@ -57,7 +57,9 @@ public static class BattleItemDatabase
             case AvailableBattleItems.SlowSmoke:
                 //return new SlowSmoke();
             case AvailableBattleItems.ShedinjaDoll:
-                //return new ShedinjaDoll();
+            //return new ShedinjaDoll();
+            case AvailableBattleItems.Brick:
+                return new BrickLol();
             default:
                 return new EmptyBattleItem();
         }

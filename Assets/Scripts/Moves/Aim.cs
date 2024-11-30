@@ -234,7 +234,7 @@ public class Aim : NetworkBehaviour
 
     public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, TeamMember teamToIgnore, bool canHitInvisTargets = true)
     {
-        return AimInCircleAtPosition(position, radius, target, teamToIgnore, canHitInvisTargets);
+        return AimInCircleAtPosition(position, radius, target, teamToIgnore.Team, canHitInvisTargets);
     }
 
     public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, Team teamToIgnore, bool canHitInvisTargets = true)
@@ -245,11 +245,6 @@ public class Aim : NetworkBehaviour
 
         foreach (var hitCollider in hitColliders)
         {
-            if (hitCollider.gameObject == gameObject)
-            {
-                continue;
-            }
-
             if (!CanPokemonBeTargeted(hitCollider.gameObject, target, teamToIgnore, canHitInvisTargets))
             {
                 continue;
@@ -449,7 +444,8 @@ public class Aim : NetworkBehaviour
 
     public override void OnDestroy()
     {
-        controls.asset.Disable();
+        if (controls != null)
+            controls.asset.Disable();
         base.OnDestroy();
     }
 }
