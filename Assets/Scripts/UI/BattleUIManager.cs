@@ -17,8 +17,6 @@ public class BattleUIManager : MonoBehaviour
 
     private MovesHolderUI currentUI;
 
-    private PlayerControls playerControls;
-
     private void Awake()
     {
         if (instance != null)
@@ -41,8 +39,6 @@ public class BattleUIManager : MonoBehaviour
     private void Start()
     {
         GameManager.Instance.onGameStateChanged += HandleGameStateChanged;
-        playerControls = new PlayerControls();
-        playerControls.asset.Enable();
     }
 
     private void HandleGameStateChanged(GameState currentState)
@@ -65,19 +61,14 @@ public class BattleUIManager : MonoBehaviour
 
     private void Update()
     {
-        if (playerControls.UI.OpenScoreboard.WasPressedThisFrame())
+        if (InputManager.Instance.Controls.UI.OpenScoreboard.WasPressedThisFrame())
         {
             scoreboardUI.OpenScoreboard();
         }
-        else if (playerControls.UI.CloseScoreboard.WasPressedThisFrame())
+        else if (InputManager.Instance.Controls.UI.CloseScoreboard.WasPressedThisFrame())
         {
             scoreboardUI.CloseScoreboard();
         }
-    }
-
-    private void OnDestroy()
-    {
-        playerControls.asset.Disable();
     }
 
     public void ShowScore(int amount, Team orangeTeam, Sprite portrait)

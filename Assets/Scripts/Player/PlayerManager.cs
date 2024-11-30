@@ -156,8 +156,7 @@ public class PlayerManager : NetworkBehaviour
             CameraController cameraController = FindObjectOfType<CameraController>();
             cameraController.Initialize(transform);
 
-            playerControls = new PlayerControls();
-            playerControls.asset.Enable();
+            playerControls = InputManager.Instance.Controls;
 
             pokemon.OnLevelChange += OnPokemonLevelUp;
             pokemon.OnDeath += OnPokemonDeath;
@@ -941,8 +940,6 @@ public class PlayerManager : NetworkBehaviour
         {
             Addressables.Release(pokemonLoadHandle);
         }
-        if (playerControls != null)
-            playerControls.asset.Disable();
         base.OnDestroy();
     }
 }

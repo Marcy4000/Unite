@@ -7,7 +7,6 @@ public class MoveLearnPanel : MonoBehaviour
 {
     [SerializeField] private GameObject panelBg, moveLearnPrefab, arrowIcon;
     private bool isLearningMove;
-    private PlayerControls controls;
     private float timer;
     private MoveAsset[] moves;
     private Queue<MoveAsset[]> moveQueue = new Queue<MoveAsset[]>();
@@ -26,8 +25,6 @@ public class MoveLearnPanel : MonoBehaviour
     private void Start()
     {
         CloseLearnMovePanel();
-        controls = new PlayerControls();
-        controls.asset.Enable();
     }
 
     public void EnqueueNewMove(MoveAsset[] moves)
@@ -72,17 +69,17 @@ public class MoveLearnPanel : MonoBehaviour
     {
         if (isLearningMove)
         {
-            if (controls.LearnMove.Move1.WasPerformedThisFrame())
+            if (InputManager.Instance.Controls.LearnMove.Move1.WasPerformedThisFrame())
             {
                 TrySelectingMove(0);
             }
 
-            if (controls.LearnMove.Move2.WasPerformedThisFrame())
+            if (InputManager.Instance.Controls.LearnMove.Move2.WasPerformedThisFrame())
             {
                 TrySelectingMove(1);
             }
 
-            if (controls.LearnMove.Move3.WasPerformedThisFrame())
+            if (InputManager.Instance.Controls.LearnMove.Move3.WasPerformedThisFrame())
             {
                 TrySelectingMove(2);
             }
@@ -111,11 +108,5 @@ public class MoveLearnPanel : MonoBehaviour
         }
         onSelectedMove?.Invoke(moves[id]);
         CloseLearnMovePanel();
-    }
-
-    private void OnDestroy()
-    {
-        if (controls != null)
-            controls.asset.Disable();
     }
 }

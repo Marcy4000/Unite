@@ -13,7 +13,6 @@ public class PlayerMovement : NetworkBehaviour
     private Vector3 inputMovement;
     private Vector3 currentMovement; // Accumulated movement vector
     private CharacterController characterController;
-    private PlayerControls controls;
     private Pokemon pokemon;
     private bool canMove = true;
     private bool isMoving = false;
@@ -41,11 +40,6 @@ public class PlayerMovement : NetworkBehaviour
         pokemon.OnLevelChange += UpdateSpeed;
         pokemon.OnPokemonInitialized += UpdateSpeed;
         pokemon.OnStatChange += UpdateSpeed;
-        if (IsOwner)
-        {
-            controls = new PlayerControls();
-            controls.asset.Enable();
-        }
         canMove = IsOwner;
     }
 
@@ -68,7 +62,7 @@ public class PlayerMovement : NetworkBehaviour
 
         if (!isDashing)
         {
-            Move(controls.Movement.Move.ReadValue<Vector2>());
+            Move(InputManager.Instance.Controls.Movement.Move.ReadValue<Vector2>());
         }
         else
         {
@@ -269,14 +263,5 @@ public class PlayerMovement : NetworkBehaviour
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-    }
-
-    public override void OnDestroy()
-    {
-        if (IsOwner)
-        {
-            controls.asset.Disable();
-        }
-        base.OnDestroy();
     }
 }

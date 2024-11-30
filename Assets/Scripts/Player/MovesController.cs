@@ -30,9 +30,9 @@ public class MovesController : NetworkBehaviour
     private BattleActionStatus battleItemStatus = new BattleActionStatus(0);
 
     private Pokemon pokemon;
-    private PlayerControls controls;
     private PlayerManager playerManager;
 
+    private PlayerControls controls { get { return InputManager.Instance.Controls; } }
     public PlayerControls Controls => controls;
     public Pokemon Pokemon => pokemon;
     public PlayerMovement PlayerMovement => playerManager.PlayerMovement;
@@ -68,9 +68,6 @@ public class MovesController : NetworkBehaviour
 
     void Start()
     {
-        controls = new PlayerControls();
-        controls.asset.Enable();
-
         pokemon = GetComponent<Pokemon>();
         playerManager = GetComponent<PlayerManager>();
 
@@ -761,12 +758,6 @@ public class MovesController : NetworkBehaviour
 
         // Default cooldown value if no threshold is matched
         return 1f;
-    }
-
-    public override void OnDestroy()
-    {
-        controls.asset.Disable();
-        base.OnDestroy();
     }
 }
 

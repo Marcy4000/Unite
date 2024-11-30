@@ -21,8 +21,6 @@ public class QuickChatSelectorUI : MonoBehaviour
     private List<QuickChatSelectorButton> buttons = new List<QuickChatSelectorButton>();
     private int selectedButtonIndex = 0;
 
-    private PlayerControls playerControls;
-
     private bool isPanelOpen = false;
     private bool isOnCooldown = false;
 
@@ -35,10 +33,7 @@ public class QuickChatSelectorUI : MonoBehaviour
         quickChatSelectorPanel.SetActive(false);
         cooldownImage.fillAmount = 0f;
 
-        playerControls = new PlayerControls();
-        playerControls.asset.Enable();
-
-        playerControls.UI.OpenQuickChat.performed += ctx => OnButtonClicked();
+        InputManager.Instance.Controls.UI.OpenQuickChat.performed += ctx => OnButtonClicked();
 
         CreateQuickChatButtons();
     }
@@ -75,7 +70,7 @@ public class QuickChatSelectorUI : MonoBehaviour
         if (!isPanelOpen)
             return;
 
-        Vector2 stickValue = playerControls.Movement.AimMove.ReadValue<Vector2>();
+        Vector2 stickValue = InputManager.Instance.Controls.Movement.AimMove.ReadValue<Vector2>();
 
         // Only process input if enough time has passed since the last input
         if (Time.time - lastInputTime < inputDelay)
@@ -149,6 +144,6 @@ public class QuickChatSelectorUI : MonoBehaviour
     private void OnDestroy()
     {
         button.onClick.RemoveListener(OnButtonClicked);
-        playerControls.asset.Disable();
+        InputManager.Instance.Controls.UI.OpenQuickChat.performed -= ctx => OnButtonClicked();
     }
 }

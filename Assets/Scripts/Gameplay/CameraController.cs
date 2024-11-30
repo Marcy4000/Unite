@@ -14,8 +14,6 @@ public class CameraController : MonoBehaviour
     private Transform cameraTransform;
     private Transform playerTransform;
 
-    private PlayerControls playerControls;
-
     public CinemachineVirtualCamera VirtualCamera => virtualCamera;
     public bool IsPanning => isPanning;
 
@@ -26,9 +24,6 @@ public class CameraController : MonoBehaviour
 
     void Start()
     {
-        playerControls = new PlayerControls();
-        playerControls.asset.Enable();
-
         if (virtualCamera != null)
         {
             cameraTransform = virtualCamera.transform;
@@ -67,13 +62,13 @@ public class CameraController : MonoBehaviour
     {
         if (!forcePanning)
         {
-            if (playerControls.PanCamera.ShouldPan.WasPressedThisFrame())
+            if (InputManager.Instance.Controls.PanCamera.ShouldPan.WasPressedThisFrame())
             {
                 isPanning = true;
                 virtualCamera.Follow = null;
                 virtualCamera.LookAt = null;
             }
-            else if (playerControls.PanCamera.ShouldPan.WasReleasedThisFrame())
+            else if (InputManager.Instance.Controls.PanCamera.ShouldPan.WasReleasedThisFrame())
             {
                 isPanning = false;
                 virtualCamera.Follow = playerTransform;
@@ -83,7 +78,7 @@ public class CameraController : MonoBehaviour
 
         if (isPanning)
         {
-            moveInput = playerControls.PanCamera.CameraMove.ReadValue<Vector2>();
+            moveInput = InputManager.Instance.Controls.PanCamera.CameraMove.ReadValue<Vector2>();
             PanCamera();
         }
     }
@@ -95,10 +90,5 @@ public class CameraController : MonoBehaviour
             Vector3 moveDirection = new Vector3(moveInput.x, 0, moveInput.y);
             cameraTransform.Translate(moveDirection * panSpeed * Time.deltaTime, Space.World);
         }
-    }
-
-    private void OnDestroy()
-    {
-        playerControls.asset.Disable();
     }
 }

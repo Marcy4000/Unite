@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public enum AimTarget { Enemy, Ally, Wild, NonAlly, All }
 
@@ -32,6 +33,10 @@ public class Aim : NetworkBehaviour
 
     private Team teamToIgnore;
 
+    private string activeControlScheme;
+    private float deviceSwitchCooldown = 0.5f; // Time to prevent rapid switching
+    private float lastInputTime;
+
     public Team TeamToIgnore { get => teamToIgnore; set => teamToIgnore = value; } 
 
     private void Start()
@@ -51,8 +56,7 @@ public class Aim : NetworkBehaviour
         playerCollider = GetComponent<Collider>();
 
         playerTransform = transform;
-        controls = new PlayerControls();
-        controls.asset.Enable();
+        controls = InputManager.Instance.Controls;
 
         autoAimIndicator.SetActive(false);
         circleIndicator.SetActive(false);
@@ -69,6 +73,32 @@ public class Aim : NetworkBehaviour
     private void Update()
     {
         indicatorHolders.transform.position = playerTransform.position;
+        DetectActiveDevice();
+    }
+
+    private void DetectActiveDevice()
+    {
+        if (Time.time - lastInputTime < deviceSwitchCooldown) return;
+
+        if (Keyboard.current.wasUpdatedThisFrame)
+        {
+            SetActiveControlScheme("Keyboard");
+        }
+        else if (Gamepad.current?.wasUpdatedThisFrame == true)
+        {
+            SetActiveControlScheme("Controller");
+        }
+    }
+
+    private void SetActiveControlScheme(string scheme)
+    {
+        if (activeControlScheme != scheme)
+        {
+            activeControlScheme = scheme;
+            Debug.Log($"Switched to {scheme} control scheme");
+        }
+
+        lastInputTime = Time.time;
     }
 
     public void HideAutoAim()
@@ -258,16 +288,28 @@ public class Aim : NetworkBehaviour
 
     public GameObject SureHitAim()
     {
-        // Rotate aiming direction based on right stick input
-        float horizontalInput = controls.Movement.AimMove.ReadValue<Vector2>().x;
-        float verticalInput = controls.Movement.AimMove.ReadValue<Vector2>().y;
+        Vector3 aimDirection;
 
-        Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
-
-        if (aimDirection.magnitude == 0)
+        if (activeControlScheme == "Keyboard")
         {
-            aimDirection = playerTransform.forward;
+            // Mouse aiming
+            Vector2 mousePosition = Mouse.current.position.ReadValue();
+            Vector3 playerScreenPosition = Camera.main.WorldToScreenPoint(playerTransform.position);
+            Vector2 screenDirection = mousePosition - (Vector2)playerScreenPosition;
+            aimDirection = new Vector3(screenDirection.x, 0f, screenDirection.y).normalized;
         }
+        else
+        {
+            // Controller stick aiming
+            Vector2 stickInput = controls.Movement.AimMove.ReadValue<Vector2>();
+            aimDirection = new Vector3(stickInput.x, 0f, stickInput.y).normalized;
+
+            if (aimDirection.magnitude == 0)
+            {
+                aimDirection = playerTransform.forward; // Default to forward if no input
+            }
+        }
+
 
         autoAimIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
         autoAimIndicator.transform.localScale = new Vector3(coneAngle / 25f, 1, coneDistance / 5f);
@@ -306,31 +348,42 @@ public class Aim : NetworkBehaviour
 
     public Vector3 CircleAreaAim()
     {
+        Vector3 aimDirection;
+
 #if UNITY_ANDROID
-        // Read input
+        // Controller input (Android-specific behavior)
         Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>();
-
-        circleAimPosition = new Vector3(input.x, 0, input.y) * maxCircleAimRadius;
+        aimDirection = new Vector3(input.x, 0, input.y) * maxCircleAimRadius;
 #else
-        // Read input and normalize it
-        Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>().normalized;
-
-        // Calculate the new position based on input and speed
-        float xPos = circleAimPosition.x + (input.x * Time.deltaTime * circleAimSpeed);
-        float zPos = circleAimPosition.z + (input.y * Time.deltaTime * circleAimSpeed);
-
-        // Update the aim position
-        circleAimPosition = new Vector3(xPos, 0, zPos);
-
-        // Clamp the position within the allowed radius
-        if (circleAimPosition.magnitude > maxCircleAimRadius)
+        if (activeControlScheme == "Keyboard")
         {
-            circleAimPosition = circleAimPosition.normalized * maxCircleAimRadius;
+            // Mouse aiming
+            Vector2 mousePosition = Mouse.current.position.ReadValue();
+            Vector3 playerScreenPosition = Camera.main.WorldToScreenPoint(playerTransform.position);
+            Vector2 screenDirection = mousePosition - (Vector2)playerScreenPosition;
+            aimDirection = new Vector3(screenDirection.x, 0f, screenDirection.y).normalized * maxCircleAimRadius;
+        }
+        else
+        {
+            // Controller stick input
+            Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>().normalized;
+
+            // Calculate the new position based on input and speed
+            float xPos = circleAimPosition.x + (input.x * Time.deltaTime * circleAimSpeed);
+            float zPos = circleAimPosition.z + (input.y * Time.deltaTime * circleAimSpeed);
+
+            aimDirection = new Vector3(xPos, 0, zPos);
+
+            // Clamp the position within the allowed radius
+            if (aimDirection.magnitude > maxCircleAimRadius)
+            {
+                aimDirection = aimDirection.normalized * maxCircleAimRadius;
+            }
         }
 #endif
 
         // Update the indicator position
-        circleAreaIndicator.transform.localPosition = new Vector3(circleAimPosition.x, circleAreaIndicator.transform.localPosition.y, circleAimPosition.z);
+        circleAreaIndicator.transform.localPosition = new Vector3(aimDirection.x, circleAreaIndicator.transform.localPosition.y, aimDirection.z);
 
         return circleAreaIndicator.transform.position;
     }
@@ -338,15 +391,26 @@ public class Aim : NetworkBehaviour
 
     public Vector3 DashAim()
     {
-        // Rotate aiming direction based on right stick input
-        float horizontalInput = controls.Movement.AimMove.ReadValue<Vector2>().x;
-        float verticalInput = controls.Movement.AimMove.ReadValue<Vector2>().y;
+        Vector3 aimDirection;
 
-        Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
-
-        if (aimDirection.magnitude == 0)
+        if (activeControlScheme == "Keyboard")
         {
-            aimDirection = playerTransform.forward;
+            // Mouse aiming
+            Vector2 mousePosition = Mouse.current.position.ReadValue();
+            Vector3 playerScreenPosition = Camera.main.WorldToScreenPoint(playerTransform.position);
+            Vector2 screenDirection = mousePosition - (Vector2)playerScreenPosition;
+            aimDirection = new Vector3(screenDirection.x, 0f, screenDirection.y).normalized;
+        }
+        else
+        {
+            // Controller stick aiming
+            Vector2 stickInput = controls.Movement.AimMove.ReadValue<Vector2>();
+            aimDirection = new Vector3(stickInput.x, 0f, stickInput.y).normalized;
+
+            if (aimDirection.magnitude == 0)
+            {
+                aimDirection = playerTransform.forward; // Default to forward if no input
+            }
         }
 
         dashIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
@@ -356,15 +420,26 @@ public class Aim : NetworkBehaviour
 
     public Vector3 SkillshotAim()
     {
-        // Rotate aiming direction based on right stick input
-        float horizontalInput = controls.Movement.AimMove.ReadValue<Vector2>().x;
-        float verticalInput = controls.Movement.AimMove.ReadValue<Vector2>().y;
+        Vector3 aimDirection;
 
-        Vector3 aimDirection = new Vector3(horizontalInput, 0f, verticalInput).normalized;
-
-        if (aimDirection.magnitude == 0)
+        if (activeControlScheme == "Keyboard")
         {
-            aimDirection = playerTransform.forward;
+            // Mouse aiming
+            Vector2 mousePosition = Mouse.current.position.ReadValue();
+            Vector3 playerScreenPosition = Camera.main.WorldToScreenPoint(playerTransform.position);
+            Vector2 screenDirection = mousePosition - (Vector2)playerScreenPosition;
+            aimDirection = new Vector3(screenDirection.x, 0f, screenDirection.y).normalized;
+        }
+        else
+        {
+            // Controller stick aiming
+            Vector2 stickInput = controls.Movement.AimMove.ReadValue<Vector2>();
+            aimDirection = new Vector3(stickInput.x, 0f, stickInput.y).normalized;
+
+            if (aimDirection.magnitude == 0)
+            {
+                aimDirection = playerTransform.forward; // Default to forward if no input
+            }
         }
 
         skillShotLine.transform.rotation = Quaternion.LookRotation(aimDirection);
@@ -440,12 +515,5 @@ public class Aim : NetworkBehaviour
         }
 
         return true;
-    }
-
-    public override void OnDestroy()
-    {
-        if (controls != null)
-            controls.asset.Disable();
-        base.OnDestroy();
     }
 }

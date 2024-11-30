@@ -40,7 +40,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""MoveA"",
                     ""type"": ""Button"",
                     ""id"": ""dcdd2881-f2f3-4815-a382-35e684011b52"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -49,7 +49,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""MoveB"",
                     ""type"": ""Button"",
                     ""id"": ""cb75d3cb-8457-4a19-8e49-b369f1d5dedb"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -94,7 +94,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""CancelMove"",
                     ""type"": ""Button"",
                     ""id"": ""0a30481e-347e-4607-8cea-5ce405af84aa"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -413,7 +413,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""Move1"",
                     ""type"": ""Button"",
                     ""id"": ""62cf7c61-c07d-4f35-a18d-4b340347ef3d"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -481,7 +481,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""ShouldPan"",
                     ""type"": ""Button"",
                     ""id"": ""11e9b821-25c4-4a49-a03e-46e687923812"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -529,7 +529,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""OpenScoreboard"",
                     ""type"": ""Button"",
                     ""id"": ""f0692e0b-6ed1-401f-b223-d05b42f2c92c"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false

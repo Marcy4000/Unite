@@ -62,17 +62,14 @@ public class FluxZone : NetworkBehaviour
             return;
         }
 
-        if (other.CompareTag("Player"))
+        if (other.TryGetComponent(out Pokemon pokemon))
         {
-            PlayerManager playerManager = other.GetComponent<PlayerManager>();
-            pokemonInZone.Remove(playerManager.Pokemon);
-            playerManager.Pokemon.RemoveStatChangeWithIDRPC(1);
-        }
-        else if (other.CompareTag("SoldierPokemon"))
-        {
-            SoldierPokemon soldierPokemon = other.GetComponent<SoldierPokemon>();
-            pokemonInZone.Remove(soldierPokemon.WildPokemon.Pokemon);
-            soldierPokemon.WildPokemon.Pokemon.RemoveStatChangeWithIDRPC(1);
+            if (!pokemonInZone.Contains(pokemon))
+            {
+                return;
+            }
+            pokemonInZone.Remove(pokemon);
+            pokemon.RemoveStatChangeWithIDRPC(1);
         }
     }
 
@@ -92,5 +89,18 @@ public class FluxZone : NetworkBehaviour
     private void SetIsActiveRPC(bool value)
     {
         isActive.Value = value;
+    }
+
+    private void LateUpdate()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        if (isActive.Value)
+        {
+            pokemonInZone.RemoveAll(pokemon => pokemon == null);
+        }
     }
 }
