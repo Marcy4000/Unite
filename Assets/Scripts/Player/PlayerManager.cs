@@ -705,6 +705,7 @@ public class PlayerManager : NetworkBehaviour
         playerMovement.CanMove = false;
         animationManager.SetTrigger("Stun");
         movesController.CancelAllMoves();
+        movesController.ResetAllMoves();
         EndScoring();
         CancelRecall();
         movesController.AddMoveStatus(0, ActionStatusType.Stunned);

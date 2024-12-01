@@ -42,12 +42,7 @@ public class MoveLearnPanel : MonoBehaviour
             var moveUIObject = Instantiate(moveLearnPrefab, panelBg.transform);
             moveUIObject.GetComponent<MoveUI>().Initialize(move);
             var screenControl = moveUIObject.GetComponent<OnScreenButton>();
-#if UNITY_ANDROID
             screenControl.controlPath = controlPaths[moveUIObject.transform.GetSiblingIndex()];
-#else
-            screenControl.enabled = false;
-#endif
-
         }
         isLearningMove = true;
         timer = 10f;

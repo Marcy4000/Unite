@@ -1,8 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Linq;
 
 public class QuickChatSelectorUI : MonoBehaviour
 {
@@ -33,7 +33,7 @@ public class QuickChatSelectorUI : MonoBehaviour
         quickChatSelectorPanel.SetActive(false);
         cooldownImage.fillAmount = 0f;
 
-        InputManager.Instance.Controls.UI.OpenQuickChat.performed += ctx => OnButtonClicked();
+        InputManager.Instance.Controls.UI.OpenQuickChat.performed += OnButtonClicked;
 
         CreateQuickChatButtons();
     }
@@ -51,6 +51,11 @@ public class QuickChatSelectorUI : MonoBehaviour
 
             buttons.Add(button);
         }
+    }
+
+    private void OnButtonClicked(UnityEngine.InputSystem.InputAction.CallbackContext ctx)
+    {
+        OnButtonClicked();
     }
 
     private void OnButtonClicked()
@@ -144,6 +149,6 @@ public class QuickChatSelectorUI : MonoBehaviour
     private void OnDestroy()
     {
         button.onClick.RemoveListener(OnButtonClicked);
-        InputManager.Instance.Controls.UI.OpenQuickChat.performed -= ctx => OnButtonClicked();
+        InputManager.Instance.Controls.UI.OpenQuickChat.performed -= OnButtonClicked;
     }
 }

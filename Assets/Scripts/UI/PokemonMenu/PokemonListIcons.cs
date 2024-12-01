@@ -28,7 +28,7 @@ public class PokemonListIcons : MonoBehaviour
             icons.Add(icon);
         }
 
-        onClickAction(CharactersList.Instance.Characters[0]);
+        onClickAction?.Invoke(CharactersList.Instance.Characters[0]);
     }
 
 }

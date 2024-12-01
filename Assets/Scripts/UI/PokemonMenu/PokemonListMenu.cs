@@ -14,10 +14,12 @@ public class PokemonListMenu : MonoBehaviour
     [SerializeField] private UIObject3D pokemonModel;
 
     private List<PokemonBase> pokemons = new List<PokemonBase>();
+    private List<AsyncOperationHandle<PokemonBase>> pokemonBaseHandles = new List<AsyncOperationHandle<PokemonBase>>();
 
     private CharacterInfo currentPokemon;
 
     private AsyncOperationHandle<GameObject> modelHandle;
+    private GameObject modelInstance;
 
     private void OnEnable()
     {
@@ -28,34 +30,40 @@ public class PokemonListMenu : MonoBehaviour
 
     private void OnDisable()
     {
+        // Release the model asset
         if (modelHandle.IsValid())
         {
+            Destroy(modelInstance);
             pokemonModel.ObjectPrefab = null;
             pokemonModel.gameObject.SetActive(false);
             Addressables.Release(modelHandle);
         }
 
-        foreach (var pokemon in pokemons)
+        // Release all loaded PokemonBase assets
+        foreach (var handle in pokemonBaseHandles)
         {
-            if (pokemon == null)
+            if (handle.IsValid())
             {
-                continue;
+                Addressables.Release(handle);
             }
-            Addressables.Release(pokemon);
         }
 
         pokemons.Clear();
+        pokemonBaseHandles.Clear();
     }
 
     private IEnumerator LoadPokemonBases()
     {
         pokemons.Clear();
+        pokemonBaseHandles.Clear();
 
         LoadingScreen.Instance.ShowGenericLoadingScreen();
 
+        // Load all Pokémon base assets asynchronously
         foreach (var pokemonInfo in CharactersList.Instance.Characters)
         {
             AsyncOperationHandle<PokemonBase> handle = Addressables.LoadAssetAsync<PokemonBase>(pokemonInfo.pokemon);
+            pokemonBaseHandles.Add(handle);
 
             yield return handle;
 
@@ -65,6 +73,7 @@ public class PokemonListMenu : MonoBehaviour
             }
             else
             {
+                Debug.LogError($"Failed to load Pokémon {pokemonInfo.pokemon}");
                 pokemons.Add(null);
             }
         }
@@ -101,14 +110,17 @@ public class PokemonListMenu : MonoBehaviour
 
     private IEnumerator LoadPokemonModel(CharacterInfo characterInfo)
     {
+        // Release previous model if valid
         if (modelHandle.IsValid())
         {
+            Destroy(modelInstance);
             pokemonModel.ObjectPrefab = null;
             pokemonModel.gameObject.SetActive(false);
             Addressables.Release(modelHandle);
         }
 
-        modelHandle = characterInfo.model.InstantiateAsync();
+        // Load the model asset asynchronously
+        modelHandle = Addressables.LoadAssetAsync<GameObject>(characterInfo.model);
 
         yield return modelHandle;
 
@@ -118,8 +130,12 @@ public class PokemonListMenu : MonoBehaviour
             yield break;
         }
 
+        // Instantiate the loaded GameObject
+        modelInstance = Instantiate(modelHandle.Result);
+
+        // Set the instantiated model as the prefab for the UI object
         pokemonModel.gameObject.SetActive(true);
-        pokemonModel.ObjectPrefab = modelHandle.Result.transform;
+        pokemonModel.ObjectPrefab = modelInstance.transform;
     }
 
     public void ShowProgressionMenu()

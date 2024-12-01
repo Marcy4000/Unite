@@ -198,6 +198,8 @@ public static class MoveDatabase
                 return new FlareonFlamethrower();
             case AvailableMoves.FlareonHeatWave:
                 return new FlareonHeatWave();
+            case AvailableMoves.FlareonTakedown:
+                return new FlareonTakedown();
             case AvailableMoves.FlareonUnite:
                 return new FlareonUnite();
 
@@ -293,7 +295,7 @@ public enum AvailableMoves : uint
     FlareonSwift,
     FlareonTackle,
     FlareonFlareBlitz,
-    FlareonFireFang,
+    FlareonTakedown,
     FlareonHeatWave,
     FlareonFlameThrower,
     FlareonUnite,

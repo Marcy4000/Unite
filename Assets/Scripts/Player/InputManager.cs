@@ -21,76 +21,111 @@ public class InputManager : MonoBehaviour
             Destroy(this);
         }
 
-        // Initialize the player controls
+        // Initialize and enable PlayerControls
         playerControls = new PlayerControls();
-        playerControls.Enable();  // Enable all action maps
-    }
+        playerControls.Enable();
 
-    private void Start()
-    {
         LoadAllBindings();
     }
 
     private void OnDestroy()
     {
-        playerControls.Disable();  // Disable all action maps
+        playerControls.Disable();
     }
 
-    // Start the rebinding process for a specific InputAction
-    public void StartRebinding(InputAction action)
+    public void StartRebinding(
+        InputAction action,
+        string controlScheme = null,
+        int bindingIndex = -1,
+        System.Action<InputAction> onComplete = null,
+        System.Action<InputAction> onCancel = null)
     {
-        if (action != null)
-        {
-            // Disable the action while rebinding
-            action.Disable();
-
-            // Start the interactive rebinding process
-            action.PerformInteractiveRebinding()
-                .OnComplete(callback => OnRebindComplete(action))
-                .OnCancel(callback => OnRebindCancelled(action))
-                .Start();
-        }
-        else
+        if (action == null)
         {
             Debug.LogError("InputAction cannot be null.");
+            return;
         }
+
+        // Find the binding index for the control scheme if not provided
+        if (bindingIndex == -1 && !string.IsNullOrEmpty(controlScheme))
+        {
+            for (int i = 0; i < action.bindings.Count; i++)
+            {
+                if (action.bindings[i].groups.Contains(controlScheme))
+                {
+                    bindingIndex = i;
+                    break;
+                }
+            }
+
+            if (bindingIndex == -1)
+            {
+                Debug.LogError($"No binding found for control scheme '{controlScheme}' in action '{action.name}'.");
+                return;
+            }
+        }
+
+        // Disable the action while rebinding
+        action.Disable();
+
+        // Start the interactive rebinding process
+        var rebindingOperation = action.PerformInteractiveRebinding(bindingIndex)
+            .WithCancelingThrough("<Keyboard>/escape") // Allow canceling
+            .OnComplete(operation =>
+            {
+                OnRebindComplete(action, bindingIndex);
+                onComplete?.Invoke(action);
+                action.Enable();
+                operation.Dispose();
+            })
+            .OnCancel(operation =>
+            {
+                OnRebindCancelled(action);
+                onCancel?.Invoke(action);
+                action.Enable();
+                operation.Dispose();
+            });
+
+        rebindingOperation.Start();
     }
 
-    // Called when the rebind completes
-    private void OnRebindComplete(InputAction action)
+    private void OnRebindComplete(InputAction action, int bindingIndex)
     {
-        // Get the new binding (e.g., the key pressed)
-        string newBinding = action.bindings[0].effectivePath;
-        Debug.Log($"Rebind Complete! New binding for {action.name}: {newBinding}");
+        // Save the new binding
+        SaveBinding(action, bindingIndex, action.bindings[bindingIndex].effectivePath);
 
-        // Optionally, you can save the new binding here
-        SaveBinding(action, newBinding);
+        Debug.Log($"Rebind Complete! New binding for {action.name}: {action.bindings[bindingIndex].effectivePath}");
     }
 
-    // Called when the rebind is cancelled
     private void OnRebindCancelled(InputAction action)
     {
         Debug.Log($"Rebind cancelled for {action.name}");
     }
 
-    // Save the new binding to PlayerPrefs (optional)
-    private void SaveBinding(InputAction action, string binding)
+    private void SaveBinding(InputAction action, int bindingIndex, string bindingPath)
     {
-        PlayerPrefs.SetString(action.name, binding);
+        string controlScheme = action.bindings[bindingIndex].groups; // e.g., "MouseAndKeyboard"
+        string key = $"{action.actionMap.name}.{action.name}.binding.{bindingIndex}.{controlScheme}";
+        PlayerPrefs.SetString(key, bindingPath);
         PlayerPrefs.Save();
     }
 
-    // Load the saved binding for an action (optional)
-    public void LoadBinding(InputAction action)
+    private void LoadBinding(InputAction action)
     {
-        string savedBinding = PlayerPrefs.GetString(action.name);
-        if (!string.IsNullOrEmpty(savedBinding))
+        for (int i = 0; i < action.bindings.Count; i++)
         {
-            action.ApplyBindingOverride(savedBinding);
+            string controlScheme = action.bindings[i].groups; // e.g., "MouseAndKeyboard"
+            string key = $"{action.actionMap.name}.{action.name}.binding.{i}.{controlScheme}";
+            string savedBinding = PlayerPrefs.GetString(key);
+
+            if (!string.IsNullOrEmpty(savedBinding))
+            {
+                action.ApplyBindingOverride(i, savedBinding);
+                Debug.Log($"Loaded binding for {action.name} ({controlScheme}): {savedBinding}");
+            }
         }
     }
 
-    // To load bindings when the game starts
     public void LoadAllBindings()
     {
         foreach (var actionMap in playerControls.asset.actionMaps)
@@ -100,5 +135,15 @@ public class InputManager : MonoBehaviour
                 LoadBinding(action);
             }
         }
+
+        // Force the controls to refresh their bindings
+        RefreshControls();
+    }
+
+    private void RefreshControls()
+    {
+        // This ensures the controls system is updated with any overrides
+        playerControls.Disable();
+        playerControls.Enable();
     }
 }

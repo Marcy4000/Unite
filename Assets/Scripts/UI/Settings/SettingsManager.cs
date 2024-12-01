@@ -10,7 +10,10 @@ public class SettingsManager : MonoBehaviour
 
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private GameObject creditsPanel;
+    [SerializeField] private GameObject keybindsPanel;
     [SerializeField] private ScrollRect settingsScrollRect;
+
+    [SerializeField] private GameObject keybindsOption;
 
     [SerializeField] private TMP_Dropdown resolutionDropdown;
     [SerializeField] private Toggle fullscreenToggle;
@@ -89,10 +92,12 @@ public class SettingsManager : MonoBehaviour
             vsyncToggle.interactable = false;
             resolutionDropdown.interactable = false;
             Application.targetFrameRate = Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value);
+            keybindsOption.SetActive(false);
         }
 
         CloseSettings();
         CloseCredits();
+        CloseKeybinds();
     }
 
     private void UpdateOptions()
@@ -142,6 +147,16 @@ public class SettingsManager : MonoBehaviour
     public void CloseCredits()
     {
         creditsPanel.SetActive(false);
+    }
+
+    public void OpenKeybinds()
+    {
+        keybindsPanel.SetActive(true);
+    }
+
+    public void CloseKeybinds()
+    {
+        keybindsPanel.SetActive(false);
     }
 
     public void SetResolution(int resolutionIndex)

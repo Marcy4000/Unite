@@ -348,27 +348,36 @@ public class Aim : NetworkBehaviour
 
     public Vector3 CircleAreaAim()
     {
-        Vector3 aimDirection;
+        Vector3 aimDirection = Vector3.zero;
 
 #if UNITY_ANDROID
-        // Controller input (Android-specific behavior)
-        Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>();
-        aimDirection = new Vector3(input.x, 0, input.y) * maxCircleAimRadius;
+    // Controller input (Android-specific behavior)
+    Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>();
+    aimDirection = new Vector3(input.x, 0, input.y) * maxCircleAimRadius;
 #else
         if (activeControlScheme == "Keyboard")
         {
             // Mouse aiming
             Vector2 mousePosition = Mouse.current.position.ReadValue();
             Vector3 playerScreenPosition = Camera.main.WorldToScreenPoint(playerTransform.position);
+
+            // Calculate direction from player to mouse on screen
             Vector2 screenDirection = mousePosition - (Vector2)playerScreenPosition;
+
+            // Convert to world space direction
             aimDirection = new Vector3(screenDirection.x, 0f, screenDirection.y).normalized * maxCircleAimRadius;
+
+            // Clamp the distance of the aim based on how far the mouse is from the player
+            float screenDistance = screenDirection.magnitude;
+            float clampedDistance = Mathf.Clamp(screenDistance, 0, maxCircleAimRadius * 100f); // Adjust scaling if needed
+            aimDirection = aimDirection.normalized * (clampedDistance / 100f); // Convert back to world scale
         }
         else
         {
             // Controller stick input
-            Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>().normalized;
+            Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>();
 
-            // Calculate the new position based on input and speed
+            // Smoothly move the aim position
             float xPos = circleAimPosition.x + (input.x * Time.deltaTime * circleAimSpeed);
             float zPos = circleAimPosition.z + (input.y * Time.deltaTime * circleAimSpeed);
 
@@ -385,9 +394,11 @@ public class Aim : NetworkBehaviour
         // Update the indicator position
         circleAreaIndicator.transform.localPosition = new Vector3(aimDirection.x, circleAreaIndicator.transform.localPosition.y, aimDirection.z);
 
+        // Save the new aim position for reference
+        circleAimPosition = aimDirection;
+
         return circleAreaIndicator.transform.position;
     }
-
 
     public Vector3 DashAim()
     {
