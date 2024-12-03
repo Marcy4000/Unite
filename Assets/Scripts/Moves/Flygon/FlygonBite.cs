@@ -64,7 +64,7 @@ public class FlygonBite : MoveBase
                 continue;
             }
 
-            targetPokemon.TakeDamage(damage);
+            targetPokemon.TakeDamageRPC(damage);
         }
     }
 

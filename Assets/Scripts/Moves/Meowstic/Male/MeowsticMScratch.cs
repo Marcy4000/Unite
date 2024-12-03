@@ -78,7 +78,7 @@ public class MeowsticMScratch : MoveBase
             yield break;
         }
 
-        pokemon.TakeDamage(damage);
+        pokemon.TakeDamageRPC(damage);
 
         yield return new WaitForSeconds(0.16f);
 
@@ -87,7 +87,7 @@ public class MeowsticMScratch : MoveBase
             yield break;
         }
 
-        pokemon.TakeDamage(damage);
+        pokemon.TakeDamageRPC(damage);
     }
 
     public override void Cancel()

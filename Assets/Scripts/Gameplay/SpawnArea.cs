@@ -36,7 +36,7 @@ public class SpawnArea : NetworkBehaviour
             {
                 if (player.Pokemon.CurrentHp < player.Pokemon.GetMaxHp())
                 {
-                    player.Pokemon.HealDamage(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * HEAL_PERCENTAGE));
+                    player.Pokemon.HealDamageRPC(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * HEAL_PERCENTAGE));
                 }
             }
 

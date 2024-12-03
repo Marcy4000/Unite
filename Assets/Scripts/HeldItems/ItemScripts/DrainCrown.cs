@@ -26,7 +26,7 @@ public class DrainCrown : HeldItemBase
                 return;
             }
 
-            playerManager.Pokemon.HealDamage(lifesteal);
+            playerManager.Pokemon.HealDamageRPC(lifesteal);
         }
     }
 

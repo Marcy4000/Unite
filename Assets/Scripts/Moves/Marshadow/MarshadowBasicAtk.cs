@@ -47,7 +47,7 @@ public class MarshadowBasicAtk : BasicAttackBase
 
             DamageInfo damageInfo = charge == 2 ? boostedDamage : normalDamage;
 
-            targetPokemon.TakeDamage(damageInfo);
+            targetPokemon.TakeDamageRPC(damageInfo);
         }
 
         playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown(), false);

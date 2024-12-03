@@ -47,7 +47,7 @@ public class HomingProjectile : NetworkBehaviour
         if (other.gameObject == target.gameObject)
         {
             // Deal damage to the target
-            target.GetComponent<Pokemon>().TakeDamage(damageInfo);
+            target.GetComponent<Pokemon>().TakeDamageRPC(damageInfo);
 
             // Destroy the projectile
             Destroy(gameObject);

@@ -8,7 +8,8 @@ public class FlareonFlamethrower : MoveBase
 
     private string projectilePath = "Assets/Prefabs/Objects/Moves/Flareon/FlareonFlamethrower.prefab";
 
-    private DamageInfo damageInfo = new DamageInfo(0, 1.86f, 9, 480, DamageType.Physical, DamageProprieties.CanCrit);
+    private DamageInfo normalDamage = new DamageInfo(0, 1.86f, 9, 480, DamageType.Physical, DamageProprieties.CanCrit);
+    private DamageInfo upgradedDamage = new DamageInfo(0, 2f, 9, 500, DamageType.Physical, DamageProprieties.CanCrit);
     private StatusEffect unstoppable = new StatusEffect(StatusType.Unstoppable, 1.2f, true, 0);
 
     private Coroutine moveCoroutine;
@@ -23,7 +24,8 @@ public class FlareonFlamethrower : MoveBase
     {
         base.Start(controller);
         Aim.Instance.InitializeSkillshotAim(distance);
-        damageInfo.attackerId = playerManager.NetworkObjectId;
+        normalDamage.attackerId = playerManager.NetworkObjectId;
+        upgradedDamage.attackerId = playerManager.NetworkObjectId;
     }
 
     public override void Update()
@@ -70,7 +72,7 @@ public class FlareonFlamethrower : MoveBase
         {
             if (obj.TryGetComponent(out FlareonFlamethrowerArea projectile))
             {
-                projectile.InitializeRPC(playerManager.transform.position, playerManager.transform.eulerAngles, playerManager.CurrentTeam.Team, damageInfo);
+                projectile.InitializeRPC(playerManager.transform.position, playerManager.transform.eulerAngles, playerManager.CurrentTeam.Team, IsUpgraded ? upgradedDamage : normalDamage);
             }
         };
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(projectilePath);

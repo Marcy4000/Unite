@@ -52,7 +52,7 @@ public class SandstormArea : NetworkBehaviour
                     continue;
                 }
 
-                pokemon.TakeDamage(damageInfo);
+                pokemon.TakeDamageRPC(damageInfo);
 
                 if (pokemonBlinded.Contains(pokemon))
                 {

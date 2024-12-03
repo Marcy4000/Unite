@@ -46,7 +46,7 @@ public class DischargeHitbox : NetworkBehaviour
             {
                 if (pokemon != null)
                 {
-                    pokemon.TakeDamage(damageInfo);
+                    pokemon.TakeDamageRPC(damageInfo);
                 }
             }
 

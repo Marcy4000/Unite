@@ -47,7 +47,7 @@ public class JoltBasicAtk : BasicAttackBase
 
             DamageInfo damageInfo = charge == 2 ? boostedDamage : normalDamage;
 
-            targetPokemon.TakeDamage(damageInfo);
+            targetPokemon.TakeDamageRPC(damageInfo);
         }
 
         string animation = playerManager.Pokemon.CurrentLevel >= 3 ? $"ani_atk{charge + 1}_bat_0471" : $"ani_atk{charge + 4}_bat_0133";

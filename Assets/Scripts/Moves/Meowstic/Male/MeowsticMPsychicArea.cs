@@ -73,7 +73,7 @@ public class MeowsticMPsychicArea : NetworkBehaviour
                 {
                     if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, meowstic.CurrentTeam))
                     {
-                        pokemon.TakeDamage(damage);
+                        pokemon.TakeDamageRPC(damage);
                         if (pokemon.GetStatChange(Stat.Attack) > -60)
                         {
                             pokemon.AddStatChange(atkDebuff);
@@ -82,7 +82,7 @@ public class MeowsticMPsychicArea : NetworkBehaviour
                     }
                 }
             }
-            target.Pokemon.HealDamage(heal);
+            target.Pokemon.HealDamageRPC(heal);
             yield return new WaitForSeconds(0.8f);
         }
     }

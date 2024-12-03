@@ -184,7 +184,7 @@ public class JolteonUnite : MoveBase
                         continue;
                     }
 
-                    pokemon.TakeDamage(dashDamage);
+                    pokemon.TakeDamageRPC(dashDamage);
                     pokemon.AddStatChange(speedDebuff);
                     recentlyHitPokemon.Add(pokemon);
                     playerManager.StartCoroutine(RemoveFromRecentlyHit(pokemon));

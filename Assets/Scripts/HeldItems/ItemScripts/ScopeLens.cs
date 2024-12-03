@@ -23,7 +23,7 @@ public class ScopeLens : HeldItemBase
             Pokemon target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
             int additionalDamage = Mathf.FloorToInt(playerManager.Pokemon.GetAttack() * 0.75f);
 
-            target.TakeDamage(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)additionalDamage, DamageType.Physical, DamageProprieties.IsMuscleBand));
+            target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)additionalDamage, DamageType.Physical, DamageProprieties.IsMuscleBand));
             cooldown = 1f;
         }
     }

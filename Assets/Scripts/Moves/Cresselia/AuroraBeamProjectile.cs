@@ -59,7 +59,7 @@ public class AuroraBeamProjectile : NetworkBehaviour
 
         if (other.TryGetComponent(out Pokemon pokemon))
         {
-            pokemon.TakeDamage(damageInfo);
+            pokemon.TakeDamageRPC(damageInfo);
             pokemon.AddStatChange(atkSpdDebuff);
             NetworkObject.Despawn(true);
         }

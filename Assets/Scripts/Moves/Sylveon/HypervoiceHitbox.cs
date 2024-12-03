@@ -51,7 +51,7 @@ public class HypervoiceHitbox : NetworkBehaviour
                 }
 
                 DamageInfo damageToUse = Vector3.Distance(pokemonInTrigger[i - 1].transform.position, transform.position) > 3.5f ? farDamage : closeDamage;
-                pokemonInTrigger[i - 1].TakeDamage(damageToUse);
+                pokemonInTrigger[i - 1].TakeDamageRPC(damageToUse);
             }
 
             cooldown = 2.5f / wavesAmount;

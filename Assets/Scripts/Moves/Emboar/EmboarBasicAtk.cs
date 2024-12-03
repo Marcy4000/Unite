@@ -70,7 +70,7 @@ public class EmboarBasicAtk : BasicAttackBase
 
             DamageInfo damageInfo = charge == 2 ? boostedDamage : normalDamage;
 
-            targetPokemon.TakeDamage(damageInfo);
+            targetPokemon.TakeDamageRPC(damageInfo);
 
             if (charge == 2 && nextBoostedAttackKnocksUp)
             {

@@ -214,7 +214,7 @@ public class GoalZone : NetworkBehaviour
                 {
                     if (!player.Pokemon.IsHPFull())
                     {
-                        player.Pokemon.HealDamage(healAmount);
+                        player.Pokemon.HealDamageRPC(healAmount);
                     }
                     player.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * shieldAmount), 1, 0, 1.5f, true));
                 }

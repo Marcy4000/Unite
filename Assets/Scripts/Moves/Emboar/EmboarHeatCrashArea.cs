@@ -119,7 +119,7 @@ public class EmboarHeatCrashArea : NetworkBehaviour
                             break;
                     }
 
-                    pokemon.TakeDamage(damageInfo);
+                    pokemon.TakeDamageRPC(damageInfo);
 
                     if (pokemon.GetMaxHp() < emboar.Pokemon.GetMaxHp())
                     {

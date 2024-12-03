@@ -53,7 +53,7 @@ public class FlareonFlareBlitz : MoveBase
                 Pokemon pokemon = target.GetComponent<Pokemon>();
                 if (pokemon != null)
                 {
-                    pokemon.TakeDamage(hitDamage);
+                    pokemon.TakeDamageRPC(hitDamage);
                     pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.35f, true, 0));
                     pokemon.AddStatusEffect(new StatusEffect(StatusType.Burned, 2f, true, 0));
                     pokemon.ApplyKnockupRPC(1.2f, 0.35f);

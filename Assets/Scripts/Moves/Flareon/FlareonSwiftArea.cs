@@ -13,6 +13,7 @@ public class FlareonSwiftArea : NetworkBehaviour
     private bool initialized;
 
     private float tickCooldown = 0.4f;
+    private float swiftDuration = 4f;
 
     private List<GameObject> stars = new List<GameObject>();
 
@@ -64,6 +65,8 @@ public class FlareonSwiftArea : NetworkBehaviour
             return;
         }
 
+        swiftDuration -= Time.deltaTime;
+
         if (tickCooldown > 0f)
         {
             tickCooldown -= Time.deltaTime;
@@ -78,9 +81,14 @@ public class FlareonSwiftArea : NetworkBehaviour
             {
                 if (enemy.TryGetComponent(out Pokemon pokemon))
                 {
-                    pokemon.TakeDamage(tickDamage);
+                    pokemon.TakeDamageRPC(tickDamage);
                 }
             }
+        }
+
+        if (swiftDuration <= 0)
+        {
+            DespawnRPC();
         }
     }
 }

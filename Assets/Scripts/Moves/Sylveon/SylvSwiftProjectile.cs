@@ -65,7 +65,7 @@ public class SylvSwiftProjectile : NetworkBehaviour
         if (other.TryGetComponent(out Pokemon pokemon))
         {
             // Deal damage to the target
-            pokemon.TakeDamage(damageInfo);
+            pokemon.TakeDamageRPC(damageInfo);
             DespawnObjectRPC();
         }
     }

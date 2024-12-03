@@ -42,14 +42,14 @@ public class VaporUniteArea : NetworkBehaviour
                 {
                     if (hit.TryGetComponent(out Pokemon pokemon))
                     {
-                        pokemon.TakeDamage(damageInfo);
+                        pokemon.TakeDamageRPC(damageInfo);
                         pokemon.AddStatChange(defDebuff);
                         pokemon.AddStatChange(spDefDebuff);
                     }
                 }
                 else if (hit.TryGetComponent(out Pokemon ally))
                 {
-                    ally.HealDamage(healAmount);
+                    ally.HealDamageRPC(healAmount);
                 }
             }
 

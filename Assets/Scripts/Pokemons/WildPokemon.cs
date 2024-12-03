@@ -331,7 +331,7 @@ public class WildPokemon : NetworkBehaviour
                 healingTick -= Time.deltaTime;
                 if (healingTick <= 0)
                 {
-                    pokemon.HealDamage(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.05f));
+                    pokemon.HealDamageRPC(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.05f));
                     healingTick = 0.5f;
                 }
             }

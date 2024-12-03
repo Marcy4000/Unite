@@ -50,7 +50,7 @@ public class VaporSwiftProjectile : NetworkBehaviour
         {
             if (Aim.Instance.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, orangeTeam) && hit.TryGetComponent(out Pokemon pokemon))
             {
-                pokemon.TakeDamage(damageInfo);
+                pokemon.TakeDamageRPC(damageInfo);
             }
         }
     }

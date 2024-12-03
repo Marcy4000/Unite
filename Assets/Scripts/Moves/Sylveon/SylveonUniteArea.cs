@@ -26,7 +26,7 @@ public class SylveonUniteArea : NetworkBehaviour
                 continue;
             }
 
-            collider.GetComponent<Pokemon>().TakeDamage(damageInfo);
+            collider.GetComponent<Pokemon>().TakeDamageRPC(damageInfo);
         }
 
         StartCoroutine(Despawn());

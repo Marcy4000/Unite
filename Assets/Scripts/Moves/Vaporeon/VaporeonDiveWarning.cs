@@ -41,7 +41,7 @@ public class VaporeonDiveWarning : NetworkBehaviour
                     continue;
                 }
 
-                pokemon.TakeDamage(damageInfo);
+                pokemon.TakeDamageRPC(damageInfo);
                 pokemon.AddStatusEffect(stunEffect);
                 Vector3 direction = (pokemon.transform.position - transform.position).normalized;
                 pokemon.ApplyKnockbackRPC(direction, 25f);

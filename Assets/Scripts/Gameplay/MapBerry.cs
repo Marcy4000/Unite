@@ -60,7 +60,7 @@ public class MapBerry : NetworkBehaviour
                 case BerryType.HealBerry:
                     if (player.Pokemon.IsHPFull()) return;
 
-                    player.Pokemon.HealDamage(healAmount);
+                    player.Pokemon.HealDamageRPC(healAmount);
                     break;
                 case BerryType.SpeedBerry:
                     player.Pokemon.AddStatChange(speedBoost);

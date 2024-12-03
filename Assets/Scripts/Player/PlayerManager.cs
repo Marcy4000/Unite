@@ -415,7 +415,7 @@ public class PlayerManager : NetworkBehaviour
     {
         CameraController.Instance.ForcePan(false);
         ChangeCurrentState(PlayerState.Alive);
-        pokemon.HealDamage(pokemon.GetMaxHp());
+        pokemon.HealDamageRPC(pokemon.GetMaxHp());
         movesController.UnlockEveryAction();
         scoreStatus.RemoveStatus(ActionStatusType.Busy);
         NotifyRespawnRPC();
@@ -705,7 +705,6 @@ public class PlayerManager : NetworkBehaviour
         playerMovement.CanMove = false;
         animationManager.SetTrigger("Stun");
         movesController.CancelAllMoves();
-        movesController.ResetAllMoves();
         EndScoring();
         CancelRecall();
         movesController.AddMoveStatus(0, ActionStatusType.Stunned);
@@ -736,7 +735,7 @@ public class PlayerManager : NetworkBehaviour
     {
         while (true)
         {
-            pokemon.TakeDamage(new DamageInfo(NetworkObjectId, 0f, 0, (short)Mathf.FloorToInt(pokemon.GetMaxHp() * 0.05f), DamageType.Physical));
+            pokemon.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0f, 0, (short)Mathf.FloorToInt(pokemon.GetMaxHp() * 0.05f), DamageType.Physical));
             yield return new WaitForSeconds(0.75f);
         }
     }

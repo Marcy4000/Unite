@@ -105,7 +105,7 @@ public class MeowsticMUniteArea : NetworkBehaviour
             {
                 if (enemy != null && Aim.Instance.CanPokemonBeTargeted(enemy.gameObject, AimTarget.NonAlly, meowstic.CurrentTeam))
                 {
-                    enemy.TakeDamage(damage);
+                    enemy.TakeDamageRPC(damage);
                 }
             }
             yield return new WaitForSeconds(1f);

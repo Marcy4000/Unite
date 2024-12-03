@@ -66,14 +66,14 @@ public class MarshadowDrainPunch : MoveBase
                 continue;
             }
 
-            targetPokemon.TakeDamage(damage);
+            targetPokemon.TakeDamageRPC(damage);
             healAmount += Mathf.FloorToInt(targetPokemon.CalculateDamage(damage) * 0.1f);
         }
 
         if (healAmount > 0)
         {
             DamageInfo heal = new DamageInfo(playerManager.NetworkObjectId, 0, 0, (short)healAmount, DamageType.Special);
-            playerManager.Pokemon.HealDamage(heal);
+            playerManager.Pokemon.HealDamageRPC(heal);
         }
     }
 

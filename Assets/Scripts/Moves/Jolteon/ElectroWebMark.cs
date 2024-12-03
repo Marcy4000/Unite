@@ -42,7 +42,7 @@ public class ElectroWebMark : NetworkBehaviour
 
         if (tickTimer >= tickRate)
         {
-            target.TakeDamage(tickDamage);
+            target.TakeDamageRPC(tickDamage);
             tickTimer = 0f;
         }
 

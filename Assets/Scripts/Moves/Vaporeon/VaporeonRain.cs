@@ -50,7 +50,7 @@ public class VaporeonRain : NetworkBehaviour
                 {
                     if (player.CurrentTeam.IsOnSameTeam(vaporeonTeam))
                     {
-                        player.Pokemon.HealDamage(allyHeal);
+                        player.Pokemon.HealDamageRPC(allyHeal);
                     }
                 }
             }

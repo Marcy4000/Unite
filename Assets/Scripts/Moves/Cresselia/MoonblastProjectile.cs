@@ -84,7 +84,7 @@ public class MoonblastProjectile : NetworkBehaviour
                     continue;
                 }
 
-                pokemon.TakeDamage(damageInfo);
+                pokemon.TakeDamageRPC(damageInfo);
                 pokemon.AddStatChange(atkSpdDebuff);
                 pokemon.AddStatChange(atkDebuff);
                 pokemon.AddStatChange(spAtkDebuff);

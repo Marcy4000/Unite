@@ -77,7 +77,7 @@ public class CresseliaPsybeam : MoveBase
 
     private void OnMoveHit()
     {
-        playerManager.Pokemon.HealDamage(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.05f));
+        playerManager.Pokemon.HealDamageRPC(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.05f));
     }
 
     public override void Cancel()

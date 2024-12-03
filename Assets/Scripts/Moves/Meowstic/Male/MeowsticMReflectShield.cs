@@ -67,7 +67,7 @@ public class MeowsticMReflectShield : NetworkBehaviour
         {
             if (Aim.Instance.CanPokemonBeTargeted(col.gameObject, AimTarget.NonAlly, target.CurrentTeam))
             {
-                col.GetComponent<Pokemon>().TakeDamage(new DamageInfo(meowsticID, 0f, 0, (short)storedDamage, DamageType.True));
+                col.GetComponent<Pokemon>().TakeDamageRPC(new DamageInfo(meowsticID, 0f, 0, (short)storedDamage, DamageType.True));
             }
         }
 

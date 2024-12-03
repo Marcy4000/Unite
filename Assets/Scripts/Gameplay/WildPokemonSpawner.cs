@@ -156,7 +156,7 @@ public class WildPokemonSpawner : NetworkBehaviour
         {
             respawnType = RespawnType.NoRespawn;
         }
-        wildPokemon.Pokemon.TakeDamage(new DamageInfo(wildPokemon.NetworkObjectId, 999f, 999, 9999, DamageType.True));
+        wildPokemon.Pokemon.TakeDamageRPC(new DamageInfo(wildPokemon.NetworkObjectId, 999f, 999, 9999, DamageType.True));
     }
 
     private void HandlePokemonDeath(DamageInfo info)

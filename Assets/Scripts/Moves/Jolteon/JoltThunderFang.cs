@@ -59,7 +59,7 @@ public class JoltThunderFang : MoveBase
 
                 DamageInfo damageInfo = passiveBoost ? biteDamageBoosted : biteDamage;
 
-                targetPokemon.TakeDamage(damageInfo);
+                targetPokemon.TakeDamageRPC(damageInfo);
                 targetPokemon.AddStatusEffect(stun);
                 hitTargets.Add(target);
                 hitAnything = true;

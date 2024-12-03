@@ -29,7 +29,7 @@ public class FocusBand : HeldItemBase
     {
         for (int i = 0; i < 3; i++)
         {
-            playerManager.Pokemon.HealDamage(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.12f));
+            playerManager.Pokemon.HealDamageRPC(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.12f));
             yield return new WaitForSeconds(1f);
         }
     }

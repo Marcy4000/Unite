@@ -39,7 +39,7 @@ public class FlygonPassive : PassiveBase
     {
         yield return new WaitForSeconds(0.5f);
 
-        attackedPokemon.TakeDamage(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.FloorToInt(damage * 0.05f), DamageType.True));
+        attackedPokemon.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.FloorToInt(damage * 0.05f), DamageType.True));
     }
 
     private void OnStatusChange(StatusEffect statusEffect, bool added)

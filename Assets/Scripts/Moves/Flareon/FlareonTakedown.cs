@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class FlareonTakedown : MoveBase
 {
-    private static readonly float STUN_DURATION = 1.6f;
+    private static float STUN_DURATION = 1.6f;
 
     private GameObject target;
     private DamageInfo normalDamage = new DamageInfo(0, 1.7f, 6, 400, DamageType.Physical, DamageProprieties.CanCrit);
@@ -33,6 +33,12 @@ public class FlareonTakedown : MoveBase
         base.Start(controller);
         normalDamage.attackerId = controller.Pokemon.NetworkObjectId;
         boostedDamage.attackerId = controller.Pokemon.NetworkObjectId;
+
+        if (IsUpgraded)
+        {
+            STUN_DURATION = 1.8f;
+            stun.Duration = STUN_DURATION;
+        }
 
         if (hasHitTarget)
         {
@@ -107,11 +113,11 @@ public class FlareonTakedown : MoveBase
             {
                 if (pokemon.HasStatusEffect(StatusType.Burned))
                 {
-                    pokemon.TakeDamage(boostedDamage);
+                    pokemon.TakeDamageRPC(boostedDamage);
                 }
                 else
                 {
-                    pokemon.TakeDamage(normalDamage);
+                    pokemon.TakeDamageRPC(normalDamage);
                 }
 
                 if (enemy == target)
@@ -154,7 +160,7 @@ public class FlareonTakedown : MoveBase
 
         if (target.TryGetComponent(out Pokemon pokemon))
         {
-            pokemon.TakeDamage(normalDamage);
+            pokemon.TakeDamageRPC(normalDamage);
             pokemon.AddStatusEffect(secondStun);
         }
 

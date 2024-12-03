@@ -53,7 +53,7 @@ public class CresseliaPsybeamProjectile : NetworkBehaviour
                 return;
             }
 
-            pokemon.TakeDamage(damageInfo);
+            pokemon.TakeDamageRPC(damageInfo);
             pokemon.AddStatusEffect(stun);
 
             NotifyAboutHitRPC();

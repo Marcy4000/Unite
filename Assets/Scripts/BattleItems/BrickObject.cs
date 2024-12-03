@@ -73,7 +73,7 @@ public class BrickObject : NetworkBehaviour
         {
             if (enemy.TryGetComponent(out Pokemon pokemon))
             {
-                pokemon.TakeDamage(damage);
+                pokemon.TakeDamageRPC(damage);
                 pokemon.AddStatusEffect(stun);
             }
         }

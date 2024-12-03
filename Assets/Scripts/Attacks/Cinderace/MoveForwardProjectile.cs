@@ -55,7 +55,7 @@ public class MoveForwardProjectile : NetworkBehaviour
         if (other.gameObject.GetComponent<Pokemon>())
         {
             // Deal damage to the target
-            other.GetComponent<Pokemon>().TakeDamage(damageInfo);
+            other.GetComponent<Pokemon>().TakeDamageRPC(damageInfo);
         }
     }
 }

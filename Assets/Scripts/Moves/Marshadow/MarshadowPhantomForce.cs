@@ -103,7 +103,7 @@ public class MarshadowPhantomForce : MoveBase
             targetPokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, 0));
             targetPokemon.ApplyKnockbackRPC(playerManager.transform.forward, 15f);
 
-            targetPokemon.TakeDamage(damage);
+            targetPokemon.TakeDamageRPC(damage);
         }
 
         yield return new WaitForSeconds(0.97f);

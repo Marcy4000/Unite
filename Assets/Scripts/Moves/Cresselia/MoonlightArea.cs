@@ -45,7 +45,7 @@ public class MoonlightArea : NetworkBehaviour
                 {
                     if (player.CurrentTeam.IsOnSameTeam(vaporeonTeam))
                     {
-                        player.Pokemon.HealDamage(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * healPercentage));
+                        player.Pokemon.HealDamageRPC(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * healPercentage));
                     }
                 }
             }

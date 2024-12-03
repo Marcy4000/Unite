@@ -45,7 +45,7 @@ public class SylvUnite : MoveBase
         Pokemon target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
         int amount = target.CalculateDamage(damage, playerManager.Pokemon);
 
-        playerManager.Pokemon.HealDamage(amount / 2);
+        playerManager.Pokemon.HealDamageRPC(amount / 2);
     }
 
     public override void Update()

@@ -29,7 +29,7 @@ public class CresseliaUniteArea : NetworkBehaviour
             }
             Pokemon pokemon = collider.GetComponent<Pokemon>();
 
-            pokemon.TakeDamage(damageInfo);
+            pokemon.TakeDamageRPC(damageInfo);
             pokemon.AddStatusEffect(sleep);
         }
 

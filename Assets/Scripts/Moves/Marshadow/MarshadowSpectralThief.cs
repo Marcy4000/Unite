@@ -80,7 +80,7 @@ public class MarshadowSpectralThief : MoveBase
         {
             if (enemy.TryGetComponent(out Pokemon pokemon))
             {
-                pokemon.TakeDamage(damage);
+                pokemon.TakeDamageRPC(damage);
                 pokemon.AddStatusEffect(stun);
                 pokemon.ApplyKnockupRPC(2f, 0.6f);
 

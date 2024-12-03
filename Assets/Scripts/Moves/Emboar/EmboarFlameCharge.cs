@@ -193,7 +193,7 @@ public class EmboarFlameCharge : MoveBase
                     continue;
                 }
 
-                pokemon.TakeDamage(dashDamage);
+                pokemon.TakeDamageRPC(dashDamage);
                 pokemon.AddStatChange(speedDebuff);
                 pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.7f, true, 0));
                 pokemon.ApplyKnockupRPC(1.5f, 0.7f);

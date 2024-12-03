@@ -141,11 +141,11 @@ public class MarshadowCloseCombat : MoveBase
 
                 if (dashCount < 2)
                 {
-                    pokemon.TakeDamage(normalDamage);
+                    pokemon.TakeDamageRPC(normalDamage);
                 }
                 else
                 {
-                    pokemon.TakeDamage(finalDamage);
+                    pokemon.TakeDamageRPC(finalDamage);
                     pokemon.ApplyKnockupRPC(2f, 0.5f);
                     pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0));
                 }

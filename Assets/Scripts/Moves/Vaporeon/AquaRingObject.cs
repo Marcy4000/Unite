@@ -57,7 +57,7 @@ public class AquaRingObject : NetworkBehaviour
 
         if (healCooldown <= 0)
         {
-            target.Pokemon.HealDamage(healAmount);
+            target.Pokemon.HealDamageRPC(healAmount);
 
             healCooldown = 0.7f;
         }

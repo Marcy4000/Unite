@@ -23,7 +23,7 @@ public class ChoiceSpecs : HeldItemBase
             Pokemon target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
             int additionalDamage = 60 + Mathf.FloorToInt(playerManager.Pokemon.GetSpAttack() * 0.4f);
 
-            target.TakeDamage(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)additionalDamage, DamageType.Special, DamageProprieties.IsMuscleBand));
+            target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)additionalDamage, DamageType.Special, DamageProprieties.IsMuscleBand));
 
             cooldown = 8f;
         }

@@ -79,7 +79,7 @@ public class FlareonFlamethrowerArea : NetworkBehaviour
                 }
 
                 pokemon.AddStatusEffect(burn);
-                pokemon.TakeDamage(damageInfo);
+                pokemon.TakeDamageRPC(damageInfo);
 
                 hitPokemon.Add(pokemon);
             }

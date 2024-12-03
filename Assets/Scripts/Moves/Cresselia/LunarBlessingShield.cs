@@ -52,7 +52,7 @@ public class LunarBlessingShield : NetworkBehaviour
             target.OnHpOrShieldChange -= CheckForShield;
             if (target.HasShieldWithID(8))
             {
-                target.HealDamage(target.GetShieldWithID(8).Value.Amount);
+                target.HealDamageRPC(target.GetShieldWithID(8).Value.Amount);
             }
             NetworkObject.Despawn(true);
         }

@@ -67,7 +67,7 @@ public class JoltDischarge : MoveBase
                 Pokemon pokemon = target.GetComponent<Pokemon>();
                 if (pokemon != null)
                 {
-                    pokemon.TakeDamage(hitDamage);
+                    pokemon.TakeDamageRPC(hitDamage);
                     pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.35f, true, 0));
 
                     if (secondUse)

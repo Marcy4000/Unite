@@ -54,11 +54,11 @@ public class BoomburstHitbox : NetworkBehaviour
 
                 if (distance > 3f)
                 {
-                    pokemon.TakeDamage(farDamage);
+                    pokemon.TakeDamageRPC(farDamage);
                 }
                 else
                 {
-                    pokemon.TakeDamage(closeDamage);
+                    pokemon.TakeDamageRPC(closeDamage);
                 }
 
                 if (distance <= 2f)

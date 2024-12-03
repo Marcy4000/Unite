@@ -74,7 +74,7 @@ public class FreezeDryProjectile : NetworkBehaviour
             if (hit.TryGetComponent(out pokemon))
             {
                 pokemonCount++;
-                pokemon.TakeDamage(damageInfo);
+                pokemon.TakeDamageRPC(damageInfo);
             }
         }
 

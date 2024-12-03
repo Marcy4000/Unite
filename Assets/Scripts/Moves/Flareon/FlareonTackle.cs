@@ -40,7 +40,7 @@ public class FlareonTackle : MoveBase
                 Pokemon pokemon = target.GetComponent<Pokemon>();
                 if (pokemon != null)
                 {
-                    pokemon.TakeDamage(damageInfo);
+                    pokemon.TakeDamageRPC(damageInfo);
 
                     hitTargets.Add(target);
                 }

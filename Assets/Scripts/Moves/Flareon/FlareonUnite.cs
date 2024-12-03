@@ -72,8 +72,8 @@ public class FlareonUnite : MoveBase
         {
             if (enemy.TryGetComponent(out Pokemon pokemon))
             {
-                pokemon.TakeDamage(damageInfo);
-                pokemon.TakeDamage(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.RoundToInt(pokemon.GetMissingHp() * 0.05f), DamageType.Physical));
+                pokemon.TakeDamageRPC(damageInfo);
+                pokemon.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.RoundToInt(pokemon.GetMissingHp() * 0.05f), DamageType.Physical));
                 pokemon.AddStatusEffect(burnEffect);
             }
         }

@@ -17,7 +17,7 @@ public class MuscleBand : HeldItemBase
             int additionalDamage = Mathf.FloorToInt(target.GetMaxHp() * 0.03f);
             additionalDamage = Mathf.Clamp(additionalDamage, 0, 360);
 
-            target.TakeDamage(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)additionalDamage, DamageType.Physical, DamageProprieties.IsMuscleBand));
+            target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)additionalDamage, DamageType.Physical, DamageProprieties.IsMuscleBand));
         }
     }
 

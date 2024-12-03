@@ -25,7 +25,7 @@ public class Potion : BattleItemBase
         if (IsActive)
         {
             wasUseSuccessful = true;
-            playerManager.Pokemon.HealDamage(Mathf.RoundToInt((playerManager.Pokemon.GetMaxHp() * healAmount) + 160f));
+            playerManager.Pokemon.HealDamageRPC(Mathf.RoundToInt((playerManager.Pokemon.GetMaxHp() * healAmount) + 160f));
         }
         base.Finish();
     }

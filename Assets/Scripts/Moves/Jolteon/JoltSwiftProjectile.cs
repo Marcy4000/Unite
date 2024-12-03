@@ -128,7 +128,7 @@ public class JoltSwiftProjectile : NetworkBehaviour
     {
         DamageInfo damageInfo = isBigStar ? bigDamage : smallDamage;
 
-        pokemon.TakeDamage(damageInfo);
+        pokemon.TakeDamageRPC(damageInfo);
 
         if (isBigStar)
         {

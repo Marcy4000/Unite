@@ -47,7 +47,7 @@ public class IcicleSpearHitbox : NetworkBehaviour
                     continue;
                 }
 
-                pokemonInTrigger[i-1].TakeDamage(damageInfo);
+                pokemonInTrigger[i-1].TakeDamageRPC(damageInfo);
                 pokemonInTrigger[i-1].AddStatChange(enemySlow);
 
                 if (isUpgraded)
@@ -59,7 +59,7 @@ public class IcicleSpearHitbox : NetworkBehaviour
                         damage = (short)Mathf.Clamp(damage, 0, 300);
                     }
 
-                    pokemonInTrigger[i-1].TakeDamage(new DamageInfo(damageInfo.attackerId, 0f, 0, damage, DamageType.Special));
+                    pokemonInTrigger[i-1].TakeDamageRPC(new DamageInfo(damageInfo.attackerId, 0f, 0, damage, DamageType.Special));
                 }
             }
 

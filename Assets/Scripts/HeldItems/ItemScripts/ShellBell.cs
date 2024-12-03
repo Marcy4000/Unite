@@ -21,7 +21,7 @@ public class ShellBell : HeldItemBase
         {
             int healAmount = 75 + Mathf.FloorToInt(playerManager.Pokemon.GetSpAttack() * 0.45f);
 
-            playerManager.Pokemon.HealDamage(healAmount);
+            playerManager.Pokemon.HealDamageRPC(healAmount);
 
             cooldown = 10f;
         }

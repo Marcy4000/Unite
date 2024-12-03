@@ -82,7 +82,7 @@ public class EarthquakeArea : NetworkBehaviour
                             break;
                     }
 
-                    pokemon.TakeDamage(damageInfo);
+                    pokemon.TakeDamageRPC(damageInfo);
                     pokemon.AddStatChange(normalSlow);
 
                     if (stackAmounts.TryGetValue(pokemon, out int stack))

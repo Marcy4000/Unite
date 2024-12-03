@@ -72,11 +72,11 @@ public class FlareonHeatWaveArea : NetworkBehaviour
             {
                 if (pokemon.HasStatusEffect(StatusType.Burned))
                 {
-                    pokemon.TakeDamage(burnedDamage);
+                    pokemon.TakeDamageRPC(burnedDamage);
                 }
                 else
                 {
-                    pokemon.TakeDamage(damage);
+                    pokemon.TakeDamageRPC(damage);
                 }
             }
         }

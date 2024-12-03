@@ -1001,11 +1001,11 @@ public class Pokemon : NetworkBehaviour
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         if (Keyboard.current.tKey.wasPressedThisFrame)
         {
-            TakeDamage(new DamageInfo(NetworkObjectId, 3.45f, 32, 820, DamageType.Physical));
+            TakeDamageRPC(new DamageInfo(NetworkObjectId, 3.45f, 32, 820, DamageType.Physical));
         }
         if (Keyboard.current.yKey.wasPressedThisFrame)
         {
-            HealDamage(300);
+            HealDamageRPC(300);
         }
 
         if (Keyboard.current.hKey.wasPressedThisFrame)
@@ -1034,7 +1034,8 @@ public class Pokemon : NetworkBehaviour
 #endif
     }
 
-    public void TakeDamage(DamageInfo damage)
+    [Rpc(SendTo.Server)]
+    public void TakeDamageRPC(DamageInfo damage)
     {
         if (HasStatusEffect(StatusType.Invincible) || currentHp.Value <= 0)
         {
@@ -1081,16 +1082,9 @@ public class Pokemon : NetworkBehaviour
             attacker.OnKilledPokemonRPC(NetworkObjectId);
         }
 
-        if (IsServer)
-        {
-            currentHp.Value = localHp;
-        }
-        else
-        {
-            SetCurrentHPServerRPC(localHp);
-        }
+        currentHp.Value = localHp;
 
-        ClientDamageRpc(actualDamage, damage);
+        ClientDamageRPC(actualDamage, damage);
         attacker.OnDamageDealtRPC(NetworkObjectId, damage);
     }
 
@@ -1210,7 +1204,7 @@ public class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Everyone)]
-    private void ClientDamageRpc(int actualDamage, DamageInfo damage)
+    private void ClientDamageRPC(int actualDamage, DamageInfo damage)
     {
         lastHit = damage;
         DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
@@ -1231,26 +1225,21 @@ public class Pokemon : NetworkBehaviour
         indicator.ShowHeal(actualHeal);
     }
 
-    public void HealDamage(int amount)
+    [Rpc(SendTo.Server)]
+    public void HealDamageRPC(int amount)
     {
         int oldHp = currentHp.Value;
         int newHp = Mathf.Min(oldHp + amount, GetMaxHp());
 
-        if (IsServer)
-        {
-            currentHp.Value = newHp;
-        }
-        else
-        {
-            SetCurrentHPServerRPC(newHp);
-        }
+        currentHp.Value = newHp;
 
         int healAmount = newHp - oldHp;
 
         ClientHealRpc(healAmount);
     }
 
-    public void HealDamage(DamageInfo healInfo)
+    [Rpc(SendTo.Server)]
+    public void HealDamageRPC(DamageInfo healInfo)
     {
         int atkStat;
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[healInfo.attackerId].GetComponent<Pokemon>();
@@ -1274,14 +1263,7 @@ public class Pokemon : NetworkBehaviour
 
         localHp = Mathf.Min(localHp + healAmount, GetMaxHp());
 
-        if (IsServer)
-        {
-            currentHp.Value = localHp;
-        }
-        else
-        {
-            SetCurrentHPServerRPC(localHp);
-        }
+        currentHp.Value = localHp;
 
         ClientHealRpc(healAmount);
     }
@@ -1414,14 +1396,14 @@ public class Pokemon : NetworkBehaviour
             {
                 Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
 
-                HealDamage(Mathf.FloorToInt(attackedPokemon.CalculateDamage(damage, this) * (float)(GetLifeSteal() / 100f)));
+                HealDamageRPC(Mathf.FloorToInt(attackedPokemon.CalculateDamage(damage, this) * (float)(GetLifeSteal() / 100f)));
             }
 
             if (GetSpellVamp() > 0 && damage.type == DamageType.Special && !IsHPFull())
             {
                 Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
 
-                HealDamage(Mathf.FloorToInt(attackedPokemon.CalculateDamage(damage, this) * (float)(GetSpellVamp() / 100f)));
+                HealDamageRPC(Mathf.FloorToInt(attackedPokemon.CalculateDamage(damage, this) * (float)(GetSpellVamp() / 100f)));
             }
         }
         OnDamageDealt?.Invoke(targetID, damage);

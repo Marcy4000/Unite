@@ -7,8 +7,6 @@ public class FlareonSwift : MoveBase
     private string assetPath = "Assets/Prefabs/Objects/Moves/Flareon/FlareonSwiftArea.prefab";
     private FlareonSwiftArea swiftArea;
 
-    private float swiftDuration = 4f;
-
     public FlareonSwift()
     {
         Name = "Swift";
@@ -27,16 +25,6 @@ public class FlareonSwift : MoveBase
         if (swiftArea != null)
         {
             swiftArea.transform.position = playerManager.transform.position + new Vector3(0, 0.75f, 0);
-
-            if (swiftDuration > 0)
-            {
-                swiftDuration -= Time.deltaTime;
-            }
-            else
-            {
-                swiftArea.DespawnRPC();
-                swiftArea = null;
-            }
         }
     }
 
@@ -50,8 +38,6 @@ public class FlareonSwift : MoveBase
                 swiftArea.InitializeRPC(damageInfo, playerManager.CurrentTeam.Team);
             };
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
-
-            swiftDuration = 4f;
 
             wasMoveSuccessful = true;
         }

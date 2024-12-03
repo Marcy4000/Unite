@@ -21,7 +21,7 @@ public class Leftovers : HeldItemBase
         }
         else
         {
-            playerManager.Pokemon.HealDamage(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.04f));
+            playerManager.Pokemon.HealDamageRPC(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.04f));
             tickCooldown = 1f;
         }
     }

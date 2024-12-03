@@ -65,7 +65,7 @@ public class AuraSphereProjectile : NetworkBehaviour
         {
             if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
             {
-                pokemon.TakeDamage(damageInfo);
+                pokemon.TakeDamageRPC(damageInfo);
                 OnMoveHit?.Invoke(pokemon.NetworkObjectId);
                 DespawnObjectRPC();
             }

@@ -36,7 +36,7 @@ public class FlygonDigWarning : NetworkBehaviour
 
             if (hit.TryGetComponent(out Pokemon pokemon))
             {
-                pokemon.TakeDamage(damageInfo);
+                pokemon.TakeDamageRPC(damageInfo);
                 pokemon.AddStatChange(slow);
             }
         }

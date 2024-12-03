@@ -88,7 +88,7 @@ public class TornadoHitbox : NetworkBehaviour
     {
         yield return new WaitForSeconds(0.6f);
 
-        pokemon.TakeDamage(damageInfo);
+        pokemon.TakeDamageRPC(damageInfo);
 
         yield return new WaitForSeconds(0.4f);
 

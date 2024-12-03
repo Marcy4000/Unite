@@ -29,7 +29,7 @@ public class RockyHelmet : HeldItemBase
                 if (Aim.Instance.CanPokemonBeTargeted(hitCollider.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam))
                 {
                     Pokemon hitPlayer = hitCollider.GetComponent<Pokemon>();
-                    hitPlayer.TakeDamage(recoilDamage);
+                    hitPlayer.TakeDamageRPC(recoilDamage);
                 }
             }
 
