@@ -1506,8 +1506,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 90, y: 90}
+  m_AnchoredPosition: {x: 20.7, y: 2}
+  m_SizeDelta: {x: 70, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1816240054288560966
 CanvasRenderer:
@@ -2429,10 +2429,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 2586550647214322751}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0.00001717}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0.0000076293945}
+  m_SizeDelta: {x: 10, y: 10.000019}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3898535627538346747
 CanvasRenderer:
@@ -12861,7 +12861,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7464784245269583611}
-  - component: {fileID: 8584494062890471007}
   - component: {fileID: 8628249522714218577}
   m_Layer: 5
   m_Name: StartScreen
@@ -12892,27 +12891,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!95 &8584494062890471007
-Animator:
-  serializedVersion: 5
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6034659381355815068}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 68a38e8d33a2ac24da3c9ccd8bb851e7, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &8628249522714218577
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12925,7 +12903,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c547c676d451c6b47a2fa1c8d9d7168c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 8584494062890471007}
+  animator: {fileID: 0}
+  readyBar: {fileID: 1892940574231397511}
+  background: {fileID: 7491651960637718443}
+  readyText: {fileID: 7598532043469226041}
+  goBar: {fileID: 7771995802435081579}
 --- !u!1 &6037537564682364335
 GameObject:
   m_ObjectHideFlags: 0
@@ -15356,7 +15338,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7095902209758968253}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
+  m_LocalRotation: {x: 0.38268343, y: -0, z: -0, w: 0.92387956}
   m_LocalPosition: {x: -73.94, y: 9, z: -6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

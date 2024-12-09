@@ -174,9 +174,9 @@ public class GameManager : NetworkBehaviour
                 surrenderManager.onSurrenderVoteResult += OnTeamSurrendered;
             }
             gameTime.Value = 0f;
-            FINAL_STRETCH_TIME = currentMap.finalStretchTime;
-            MAX_GAME_TIME = currentMap.gameTime;
         }
+        FINAL_STRETCH_TIME = currentMap.finalStretchTime;
+        MAX_GAME_TIME = currentMap.gameTime;
 
         StartCoroutine(HandlePassiveExp());
     }

@@ -519,6 +519,7 @@ public class LobbyController : MonoBehaviour
         await RemoveFromParty(playerID);
     }
 
+    // This function goes unused in favor of the UpdatePlayerTeamAndPos function
     public void PlayerSwitchTeam()
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();
