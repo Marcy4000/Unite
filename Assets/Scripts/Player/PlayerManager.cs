@@ -642,11 +642,11 @@ public class PlayerManager : NetworkBehaviour
     {
         if (scoredPoints == 2)
         {
-            pokemon.GainExperience(50);
+            pokemon.GainExperienceRPC(50);
         }
         else if (scoredPoints > 2)
         {
-            pokemon.GainExperience(10 * scoredPoints + 40);
+            pokemon.GainExperienceRPC(10 * scoredPoints + 40);
         }
     }
 

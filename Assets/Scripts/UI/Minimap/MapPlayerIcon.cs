@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,7 +21,7 @@ public class MapPlayerIcon : MonoBehaviour
         minimapIcon = GetComponent<MinimapIcon>();
         this.player = player;
         pokemonIcon.sprite = player.Pokemon.Portrait;
-        background.sprite = player.CurrentTeam.IsOnSameTeam(Team.Orange) ? orangeBG : blueBG;
+        StartCoroutine(UpdateBackgroundSprite());
         minimapIcon.SetTarget(player.transform);
 
         player.Pokemon.OnDeath += (info) => { HideIcon(); };
@@ -38,6 +39,12 @@ public class MapPlayerIcon : MonoBehaviour
             SetVisibility(false);
         }
         player.Pokemon.OnEvolution += () => { pokemonIcon.sprite = player.Pokemon.Portrait; };
+    }
+
+    private IEnumerator UpdateBackgroundSprite()
+    {
+        yield return new WaitForSeconds(0.2f);
+        background.sprite = player.CurrentTeam.IsOnSameTeam(Team.Orange) ? orangeBG : blueBG;
     }
 
     private void Update()

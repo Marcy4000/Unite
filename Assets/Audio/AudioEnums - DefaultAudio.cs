@@ -223,5 +223,6 @@
         MerStadium,
         MerStadiumFinalStretch,
         TheiaSkyRuins,
-        TheiaSkyRuinsFinalStretch
+        TheiaSkyRuinsFinalStretch,
+        PsyduckRacingBGM
     }

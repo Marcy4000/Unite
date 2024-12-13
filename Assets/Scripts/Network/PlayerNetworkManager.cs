@@ -83,7 +83,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             return;
         }
 
-        if (scene.name.Equals("GameResults"))
+        if (scene.name.Equals("GameResults") || scene.name.Equals("RacingGameResults"))
         {
             isInResultScreen.Value = true;
         }
@@ -96,7 +96,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             return;
         }
 
-        if (scene.name.Equals("GameResults"))
+        if (scene.name.Equals("GameResults") || scene.name.Equals("RacingGameResults"))
         {
             matchStarted = false;
             isInResultScreen.Value = false;

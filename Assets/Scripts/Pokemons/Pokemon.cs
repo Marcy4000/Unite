@@ -119,7 +119,7 @@ public class Pokemon : NetworkBehaviour
         }
         else
         {
-            GainExperience(amount);
+            GainExperienceRPC(amount);
         }
     }
 
@@ -1019,12 +1019,12 @@ public class Pokemon : NetworkBehaviour
 
         if (Keyboard.current.kKey.wasPressedThisFrame)
         {
-            GainExperience(100);
+            GainExperienceRPC(100);
         }
 
         if (Keyboard.current.lKey.wasPressedThisFrame)
         {
-            AddStatChange(new StatChange(1000, Stat.Speed, 5, true, false, false, 0));
+            AddStatChange(new StatChange(1000, Stat.Speed, 5, true, true, false, 0));
         }
 
         if (Keyboard.current.zKey.wasPressedThisFrame)
@@ -1425,13 +1425,9 @@ public class Pokemon : NetworkBehaviour
         OnOtherPokemonKilled?.Invoke(targetID);
     }
 
-    public void GainExperience(int amount)
+    [Rpc(SendTo.Server)]
+    public void GainExperienceRPC(int amount)
     {
-        if (!IsOwner)
-        {
-            return;
-        }
-
         if (localStoredExp > 0)
         {
             int convertedExp = Mathf.Min(amount, localStoredExp);
@@ -1443,41 +1439,24 @@ public class Pokemon : NetworkBehaviour
 
         while (localExp >= baseStats.GetExpForNextLevel(localLevel) && localLevel < 14)
         {
-            LevelUp();
+            LevelUpRPC();
         }
 
-        if (IsServer) {
-            currentExp.Value = localExp;
-            storedExp.Value = localStoredExp;
-            currentLevel.Value = localLevel;
-        } else {
-            SetCurrentEXPServerRPC(localExp);
-            SetStoredExpServerRPC(localStoredExp);
-            SetCurrentLevelServerRPC(localLevel);
-        }
+        currentExp.Value = localExp;
+        storedExp.Value = localStoredExp;
+        currentLevel.Value = localLevel;
     }
 
-    private void LevelUp()
+    [Rpc(SendTo.Server)]
+    private void LevelUpRPC()
     {
-        if (!IsOwner)
-        {
-            return;
-        }
-
         float hpPercentage = (float)currentHp.Value / GetMaxHp();
 
         localExp -= baseStats.GetExpForNextLevel(localLevel);
         localLevel++;
         Debug.Log("Level Up! Current Level: " + localLevel);
 
-        if (IsServer)
-        {
-            currentHp.Value = Mathf.RoundToInt(GetMaxHp(localLevel) * hpPercentage);
-        }
-        else
-        {
-            SetCurrentHPServerRPC(Mathf.RoundToInt(GetMaxHp(localLevel) * hpPercentage));
-        }
+        currentHp.Value = Mathf.RoundToInt(GetMaxHp(localLevel) * hpPercentage);
     }
 
     [Rpc(SendTo.Server)]
@@ -1606,14 +1585,14 @@ public class Pokemon : NetworkBehaviour
         }
 
         float attackerExp = baseExp * expValues.koerExp;
-        attacker.GainExperience(Mathf.FloorToInt(attackerExp));
+        attacker.GainExperienceRPC(Mathf.FloorToInt(attackerExp));
 
         float proximityExp = baseExp * expValues.proximityExp;
         foreach (var player in playersInProximity)
         {
             if (player != attacker)
             {
-                player.GainExperience(Mathf.FloorToInt(proximityExp));
+                player.GainExperienceRPC(Mathf.FloorToInt(proximityExp));
             }
         }
     }

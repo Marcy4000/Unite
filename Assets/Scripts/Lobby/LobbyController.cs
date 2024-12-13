@@ -34,6 +34,7 @@ public class LobbyController : MonoBehaviour
     private ILobbyEvents lobbyEvents;
 
     private GameResults gameResults;
+    private RaceGameResults raceGameResults;
 
     private List<PlayerNetworkManager> playerNetworkManagers = new List<PlayerNetworkManager>();
     private bool loadResultsScreen = false;
@@ -51,6 +52,7 @@ public class LobbyController : MonoBehaviour
     public bool ShouldLoadResultsScreen { get => loadResultsScreen; set => loadResultsScreen = value; }
 
     public GameResults GameResults { get => gameResults; set => gameResults = value;}
+    public RaceGameResults RaceGameResults { get => raceGameResults; set => raceGameResults = value; }
 
     public ILobbyEvents LobbyEvents => lobbyEvents;
 
@@ -706,9 +708,25 @@ public class LobbyController : MonoBehaviour
             return;
         }
         ChangeLobbyVisibility(true);
-        
 
-        string mapMode = CharactersList.Instance.GetCurrentLobbyMap().useDraftMode ? "DraftSelect" : "CharacterSelect";
+
+        string mapMode;
+
+        switch (CharactersList.Instance.GetCurrentLobbyMap().characterSelectType)
+        {
+            case CharacterSelectType.BlindPick:
+                mapMode = "CharacterSelect";
+                break;
+            case CharacterSelectType.Draft:
+                mapMode = "DraftSelect";
+                break;
+            case CharacterSelectType.PsyduckRacing:
+                mapMode = "RacingReadyScreen";
+                break;
+            default:
+                mapMode = "CharacterSelect";
+                break;
+        }
 
         NetworkManager.Singleton.SceneManager.LoadScene(mapMode, LoadSceneMode.Single);
     }
@@ -737,7 +755,9 @@ public class LobbyController : MonoBehaviour
 
     private IEnumerator LoadResultsScreenAsync()
     {
-        var task = SceneManager.LoadSceneAsync("GameResults", LoadSceneMode.Additive);
+        string resultScreen = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType == CharacterSelectType.PsyduckRacing ? "RacingGameResults" : "GameResults";
+
+        var task = SceneManager.LoadSceneAsync(resultScreen, LoadSceneMode.Additive);
         while (!task.isDone)
         {
             yield return null;
@@ -760,7 +780,9 @@ public class LobbyController : MonoBehaviour
     private IEnumerator ReturnToHomeWithoutLeavingLobbyAsync()
     {
         LoadingScreen.Instance.ShowGenericLoadingScreen();
-        var loadTask = SceneManager.UnloadSceneAsync("GameResults");
+        string resultScreen = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType == CharacterSelectType.PsyduckRacing ? "RacingGameResults" : "GameResults";
+
+        var loadTask = SceneManager.UnloadSceneAsync(resultScreen);
 
         yield return loadTask;
 

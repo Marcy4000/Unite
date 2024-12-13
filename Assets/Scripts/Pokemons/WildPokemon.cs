@@ -134,7 +134,7 @@ public class WildPokemon : NetworkBehaviour
                 {
                     if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamtToGiveExp))
                     {
-                        playerManager.Pokemon.GainExperience(Mathf.RoundToInt(ExpYield * 0.50f));
+                        playerManager.Pokemon.GainExperienceRPC(Mathf.RoundToInt(ExpYield * 0.50f));
                         if (playerManager.PlayerState != PlayerState.Dead)
                         {
                             playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 60f, true));
@@ -163,7 +163,7 @@ public class WildPokemon : NetworkBehaviour
                 {
                     if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamtToGiveExp2))
                     {
-                        playerManager.Pokemon.GainExperience(Mathf.RoundToInt(ExpYield * 0.60f));
+                        playerManager.Pokemon.GainExperienceRPC(Mathf.RoundToInt(ExpYield * 0.60f));
                         if (playerManager.PlayerState != PlayerState.Dead)
                         {
                             playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 30f, true));

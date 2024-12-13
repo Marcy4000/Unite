@@ -170,7 +170,7 @@ public class LoadingScreen : MonoBehaviour
                     }
                 }
 
-                if (sceneEvent.SceneName.Equals("CharacterSelect") || sceneEvent.SceneName.Equals("DraftSelect"))
+                if (sceneEvent.SceneName.Equals("CharacterSelect") || sceneEvent.SceneName.Equals("DraftSelect") || sceneEvent.SceneName.Equals("RacingReadyScreen"))
                 {
                     ShowGameBeginScreen();
                     AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Matching);

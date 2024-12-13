@@ -449,7 +449,7 @@ public class GameManager : NetworkBehaviour
         StartCoroutine(EndGameRoutine());
     }
 
-    private IEnumerator EndGameRoutine()
+    public IEnumerator EndGameRoutine()
     {
         if (IsServer)
         {

@@ -30,14 +30,21 @@ public class MapInfo : ScriptableObject
 
     [Space]
 
-    public bool useDraftMode;
+    public CharacterSelectType characterSelectType;
 
     [TextArea(3, 10)]
     public string description;
 }
 
-public enum GameMode
+public enum GameMode : byte
 {
     Timed,
     Timeless
+}
+
+public enum CharacterSelectType 
+{
+    BlindPick,
+    Draft,
+    PsyduckRacing
 }
