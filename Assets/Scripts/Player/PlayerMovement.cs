@@ -23,13 +23,21 @@ public class PlayerMovement : NetworkBehaviour
     private bool isDashing = false;
     private Vector3 dashDirection;
 
-    public bool CanMove { get => canMove; set => canMove = value; }
+    public bool CanMove { get => canMove; set => SetCanMove(value); }
     public bool CanBeKnockedBack { get => canBeKnockedBack; set => canBeKnockedBack = value; }
     public bool SnapToGround { get => snapToGround; set => snapToGround = value; }
     public bool IsKnockedUp => isKnockedUp;
     public bool IsDashing => isDashing;
     public bool IsMoving => isMoving;
     public CharacterController CharacterController => characterController;
+
+    public event System.Action<bool> OnCanMoveChanged;
+
+    private void SetCanMove(bool value)
+    {
+        canMove = value;
+        OnCanMoveChanged?.Invoke(canMove);
+    }
 
     public override void OnNetworkSpawn()
     {

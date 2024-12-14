@@ -88,10 +88,10 @@ public class RacingResultsManager : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         racingResultsPlayers[0].PlayVictoryAnimation();
 
-        yield return new WaitForSeconds(1.32f);
+        yield return new WaitForSeconds(1.22f);
         racingResultsPlayers[1].PlayVictoryAnimation();
 
-        yield return new WaitForSeconds(1.47f);
+        yield return new WaitForSeconds(1.5f);
         racingResultsPlayers[2].PlayVictoryAnimation();
 
         yield return new WaitForSeconds(0.4f);

@@ -12,9 +12,13 @@ public class RaceLapCounter : NetworkBehaviour
 
     private NetworkVariable<short> currentPlace = new NetworkVariable<short>(0);
 
+    private NetworkVariable<bool> raceFinished = new NetworkVariable<bool>(false);
+
     public short LapCount => lapCount.Value;
     public int CheckpointCount => checkpointCount.Value;
     public short CurrentPlace => currentPlace.Value;
+
+    public bool RaceFinished => raceFinished.Value;
 
     public ulong AssignedPlayerID => assignedPlayerID.Value;
 
@@ -75,5 +79,11 @@ public class RaceLapCounter : NetworkBehaviour
     public void SetCurrentPlaceRPC(short place)
     {
         currentPlace.Value = place;
+    }
+
+    [Rpc(SendTo.Server)]
+    public void SetRaceFinishedRPC(bool finished)
+    {
+        raceFinished.Value = finished;
     }
 }

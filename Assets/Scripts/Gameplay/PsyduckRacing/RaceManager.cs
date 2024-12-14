@@ -1,7 +1,6 @@
 using JSAM;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -121,22 +120,30 @@ public class RaceManager : NetworkBehaviour
             PlayerManager player = NetworkManager.Singleton.SpawnManager.SpawnedObjects[lapCounter.AssignedPlayerID].GetComponent<PlayerManager>();
 
             racePlayerResults.Add(new RacePlayerResult(player.LobbyPlayer.Id, lapCounter.CurrentPlace, GameManager.Instance.GameTime));
+            lapCounter.SetRaceFinishedRPC(true);
 
-            CheckIfRaceEnded();
+            if (racePlayerResults.Count == playerLapCounters.Count)
+            {
+                EndGameRPC(GenerateRaceResults());
+            }
+            else
+            {
+                PlayerRaceCompletedRPC(lapCounter.AssignedPlayerID, RpcTarget.Single(player.OwnerClientId, RpcTargetUse.Temp));
+            }
         }
     }
 
-    private void CheckIfRaceEnded()
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void PlayerRaceCompletedRPC(ulong playerID, RpcParams rpcParams = default)
     {
-        if (!IsServer)
-        {
-            return;
-        }
+        PlayerManager player = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerID].GetComponent<PlayerManager>();
 
-        if (racePlayerResults.Count == playerLapCounters.Count)
-        {
-            EndGameRPC(GenerateRaceResults());
-        }
+        player.MovesController.LockEveryAction();
+        player.PlayerMovement.CanMove = false;
+
+        CameraController.Instance.ForcePan(true);
+
+        player.UpdatePosAndRotRPC(new Vector3(-100f, -50f, 0f), Quaternion.identity);
     }
 
     [Rpc(SendTo.Everyone)]
@@ -158,10 +165,19 @@ public class RaceManager : NetworkBehaviour
     {
         PlayerManager player = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerID].GetComponent<PlayerManager>();
 
+        StartCoroutine(UpdateLocalPlayerDelayed(player));
+    }
+
+    private IEnumerator UpdateLocalPlayerDelayed(PlayerManager player)
+    {
+        yield return null;
+
         player.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
         player.MovesController.BattleItemStatus.AddStatus(ActionStatusType.Disabled);
         player.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
         player.ScoreStatus.AddStatus(ActionStatusType.Busy);
+
+        player.PlayerMovement.CanMove = false;
     }
 
     private void UpdatePlayerPositions()
@@ -184,6 +200,16 @@ public class RaceManager : NetworkBehaviour
 
         sortedLapCounters.Sort((a, b) =>
         {
+            // If both players have finished, compare their confirmed positions
+            if (a.RaceFinished && b.RaceFinished)
+            {
+                return a.CurrentPlace.CompareTo(b.CurrentPlace);
+            }
+
+            // If one has finished, it should be ranked higher
+            if (a.RaceFinished) return -1;
+            if (b.RaceFinished) return 1;
+
             // Compare Lap Count
             int lapComparison = b.LapCount.CompareTo(a.LapCount);
             if (lapComparison != 0) return lapComparison;
