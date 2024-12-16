@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 public class RacingReadyScreenManager : NetworkBehaviour
 {
     [SerializeField] private CharacterInfo initialCharacter;
+    [SerializeField] private TrainerModel trainerModel;
 
     private void OnEnable()
     {
@@ -28,6 +29,19 @@ public class RacingReadyScreenManager : NetworkBehaviour
         }
     }
 
+    private IEnumerator Start()
+    {
+        AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
+        AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon, true);
+
+        PlayerClothesInfo playerClothesInfo = PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value);
+        trainerModel.InitializeClothes(playerClothesInfo);
+
+        yield return new WaitForSeconds(1.5f);
+
+        trainerModel.ActiveAnimator.Play(trainerModel.IsMale ? "ani_obpos5_40040_lob_male" : "ani_createend_50040_lob_female");
+    }
+
     private IEnumerator PlaceholderStart()
     {
         LobbyController.Instance.ChangePlayerCharacter(CharactersList.Instance.GetCharacterID(initialCharacter));
@@ -41,6 +55,8 @@ public class RacingReadyScreenManager : NetworkBehaviour
         {
             yield break;
         }
+
+        yield return new WaitForSeconds(2f);
 
         ShowLoadingScreenRpc();
         LobbyController.Instance.LoadGameMap();

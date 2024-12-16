@@ -79,6 +79,7 @@ public class SylvUnite : MoveBase
 
         playerManager.AnimationManager.PlayAnimation("ani_spellu_bat_0700");
         playerManager.Pokemon.AddStatusEffect(invulnerable);
+        playerManager.MovesController.LockEveryAction();
         foreach (var status in playerManager.Pokemon.StatusEffects)
         {
             if (status.IsNegativeStatus() && status.IsTimed)
@@ -92,6 +93,8 @@ public class SylvUnite : MoveBase
         playerManager.Pokemon.AddStatusEffect(fairyFrolic);
 
         yield return new WaitForSeconds(0.3f);
+
+        playerManager.MovesController.UnlockEveryAction();
 
         uniteArea.DoDamageRPC();
         uniteArea = null;
@@ -111,5 +114,6 @@ public class SylvUnite : MoveBase
         {
             playerManager.StopCoroutine(moveCoroutine);
         }
+        playerManager.MovesController.UnlockEveryAction();
     }
 }

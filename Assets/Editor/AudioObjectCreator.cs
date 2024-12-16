@@ -9,8 +9,8 @@ public class AudioObjectCreator : MonoBehaviour
     public static void AutomateSoundEffects()
     {
         // Define paths
-        string audioClipFolderPath = "Assets/Audio/SFX/UI Audios"; // Path to your audio clips
-        string scriptableObjectFolderPath = "Assets/Audio/SFX/UI Audios"; // Path to save ScriptableObjects
+        string audioClipFolderPath = "Assets/Audio/SFX/PsyduckRacing"; // Path to your audio clips
+        string scriptableObjectFolderPath = "Assets/Audio/SFX/PsyduckRacing"; // Path to save ScriptableObjects
 
         // Ensure the ScriptableObject folder exists
         if (!Directory.Exists(scriptableObjectFolderPath))

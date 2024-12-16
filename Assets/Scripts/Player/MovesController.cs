@@ -44,6 +44,8 @@ public class MovesController : NetworkBehaviour
     public BattleItemBase BattleItem => battleItem;
     public BattleActionStatus BattleItemStatus => battleItemStatus;
 
+    public MoveAsset LockedMove => lockedMove;
+
     public event Action onBasicAttackPerformed;
     public event Action<MoveBase> onMovePerformed;
 
@@ -621,7 +623,7 @@ public class MovesController : NetworkBehaviour
         HomingProjectile homingScript = homingProjectile.GetComponent<HomingProjectile>();
         if (homingScript != null)
         {
-            homingScript.SetTarget(targetId, info);
+            homingScript.SetTargetRPC(targetId, info);
         }
     }
 
@@ -644,7 +646,7 @@ public class MovesController : NetworkBehaviour
                 HomingProjectile homingScript = homingProjectile.GetComponent<HomingProjectile>();
                 if (homingScript != null)
                 {
-                    homingScript.SetTarget(targetId, info);
+                    homingScript.SetTargetRPC(targetId, info);
                 }
             }
             else

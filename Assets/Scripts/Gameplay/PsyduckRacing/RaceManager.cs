@@ -8,9 +8,11 @@ public class RaceManager : NetworkBehaviour
 {
     public static RaceManager Instance { get; private set; }
 
-    public static readonly int TOTAL_LAPS = 1;
+    public static readonly int TOTAL_LAPS = 3;
 
     [SerializeField] private GameObject raceLapCounterPrefab;
+    [SerializeField] private MoveAsset dashMove;
+    [SerializeField] private MoveAsset emptyMove;
 
     private Dictionary<ulong, RaceLapCounter> playerLapCounters = new Dictionary<ulong, RaceLapCounter>();
     private List<RaceCheckpoint> checkpointList = new List<RaceCheckpoint>();
@@ -19,6 +21,8 @@ public class RaceManager : NetworkBehaviour
 
     public Dictionary<ulong, RaceLapCounter> PlayerLapCounters => playerLapCounters;
     public event System.Action onInitializedPlayers;
+
+    public MoveAsset EmptyMove => emptyMove;
 
     private void Awake()
     {
@@ -60,7 +64,7 @@ public class RaceManager : NetworkBehaviour
                     playerLapCounters.Add(player.NetworkObjectId, lapCounter);
                 }
 
-                StartCoroutine(WaitBeforeNotify());
+                NotifyPlayersInitializedRPC();
                 break;
             case GameState.Playing:
                 foreach (var player in GameManager.Instance.Players)
@@ -77,26 +81,55 @@ public class RaceManager : NetworkBehaviour
         }
     }
 
-    private IEnumerator WaitBeforeNotify()
-    {
-        yield return null;
-        NotifyPlayersInitializedRPC();
-    }
-
     [Rpc(SendTo.Everyone)]
     private void NotifyPlayersInitializedRPC()
     {
         if (!IsServer)
         {
-            RaceLapCounter[] raceLapCounters = FindObjectsOfType<RaceLapCounter>();
+            StartCoroutine(WaitForLapCounters());
+        }
+        else
+        {
+            onInitializedPlayers?.Invoke();
+        }
+    }
 
-            foreach (var lapCounter in raceLapCounters)
+    private IEnumerator WaitForLapCounters()
+    {
+        while (!AreAllLapCountersInitialized())
+        {
+            yield return null; // Wait for the next frame
+        }
+
+        onInitializedPlayers?.Invoke();
+    }
+
+    private bool AreAllLapCountersInitialized()
+    {
+        RaceLapCounter[] raceLapCounters = FindObjectsOfType<RaceLapCounter>();
+
+        if (raceLapCounters.Length != GameManager.Instance.Players.Count)
+        {
+            return false;
+        }
+
+        foreach (var lapCounter in raceLapCounters)
+        {
+            if (lapCounter.AssignedPlayerID == 0)
+            {
+                return false;
+            }
+        }
+
+        foreach (var lapCounter in raceLapCounters)
+        {
+            if (!playerLapCounters.ContainsKey(lapCounter.AssignedPlayerID))
             {
                 playerLapCounters.Add(lapCounter.AssignedPlayerID, lapCounter);
             }
         }
 
-        onInitializedPlayers?.Invoke();
+        return true;
     }
 
     private IEnumerator UpdatePlayerPositionsCoroutine()
@@ -177,6 +210,8 @@ public class RaceManager : NetworkBehaviour
         player.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
         player.ScoreStatus.AddStatus(ActionStatusType.Busy);
 
+        player.MovesController.LearnMove(dashMove);
+
         player.PlayerMovement.CanMove = false;
     }
 
@@ -241,4 +276,45 @@ public class RaceManager : NetworkBehaviour
         }
         return checkpointList[nextCheckpointIndex].transform;
     }
+
+    public RaceLapCounter GetNextPlayer(ulong playerID)
+    {
+        if (!playerLapCounters.ContainsKey(playerID))
+        {
+            return null; // Return null if the player doesn't exist
+        }
+
+        short currentPlayerPlace = playerLapCounters[playerID].CurrentPlace;
+
+        // Filter players who haven't finished the race
+        var eligiblePlayers = new List<RaceLapCounter>();
+        foreach (var lapCounter in playerLapCounters.Values)
+        {
+            if (!lapCounter.RaceFinished && lapCounter.AssignedPlayerID != playerID)
+            {
+                eligiblePlayers.Add(lapCounter);
+            }
+        }
+
+        if (eligiblePlayers.Count == 0)
+        {
+            return null; // No eligible players left
+        }
+
+        // Sort eligible players by their place in ascending order
+        eligiblePlayers.Sort((a, b) => a.CurrentPlace.CompareTo(b.CurrentPlace));
+
+        // Find the next player in the standings
+        foreach (var lapCounter in eligiblePlayers)
+        {
+            if (lapCounter.CurrentPlace > currentPlayerPlace)
+            {
+                return lapCounter; // Return the first player ahead in the standings
+            }
+        }
+
+        // Loop back to the first eligible player if no one is ahead
+        return eligiblePlayers[0];
+    }
+
 }

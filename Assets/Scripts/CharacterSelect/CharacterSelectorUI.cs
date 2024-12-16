@@ -12,6 +12,11 @@ public class CharacterSelectorUI : MonoBehaviour
 
         foreach (var character in CharactersList.Instance.Characters)
         {
+            if (character.Hidden)
+            {
+                continue;
+            }
+
             GameObject characterIcon = Instantiate(characterPrefab, characterSpawnPoint);
             characterIcon.GetComponent<CharacterSelectIcon>().Initialize(character);
             characterSelectIcons.Add(characterIcon.GetComponent<CharacterSelectIcon>());

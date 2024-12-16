@@ -23,4 +23,6 @@ public class CharacterInfo : ScriptableObject
 
     public Sprite icon;
     public Sprite portrait;
+
+    public bool Hidden;
 }

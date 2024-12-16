@@ -9,7 +9,8 @@ public class HomingProjectile : NetworkBehaviour
     private Transform target;
     private DamageInfo damageInfo;
 
-    public void SetTarget(ulong newTarget, DamageInfo info)
+    [Rpc(SendTo.Server)]
+    public void SetTargetRPC(ulong newTarget, DamageInfo info)
     {
         target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[newTarget].transform;
         damageInfo = info;
@@ -17,14 +18,14 @@ public class HomingProjectile : NetworkBehaviour
 
     void Update()
     {
-        if (!IsOwner)
+        if (!IsServer)
         {
             return;
         }
 
         if (target == null)
         {
-            GetComponent<NetworkObject>().Despawn(true);
+            NetworkObject.Despawn(true);
             return;
         }
 
@@ -39,7 +40,7 @@ public class HomingProjectile : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsOwner)
+        if (!IsServer)
         {
             return;
         }
@@ -50,7 +51,7 @@ public class HomingProjectile : NetworkBehaviour
             target.GetComponent<Pokemon>().TakeDamageRPC(damageInfo);
 
             // Destroy the projectile
-            Destroy(gameObject);
+            NetworkObject.Despawn(true);
         }
     }
 }

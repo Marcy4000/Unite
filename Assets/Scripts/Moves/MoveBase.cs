@@ -203,6 +203,19 @@ public static class MoveDatabase
             case AvailableMoves.FlareonUnite:
                 return new FlareonUnite();
 
+            case AvailableMoves.PsyduckRaceDash:
+                return new PsyduckRaceDash();
+            case AvailableMoves.PsyduckRaceBarrier:
+                return new PsyduckRaceBarrier();
+            case AvailableMoves.PsyduckRaceConfuseRay:
+                return new PsyduckRaceConfuseRay();
+            case AvailableMoves.PsyduckRaceFreezeRay:
+                return new PsyduckRaceFreezeRay();
+            case AvailableMoves.PsyduckRaceBubble:
+                return new PsyduckRaceBubble();
+            case AvailableMoves.PsyduckRaceShield:
+                return new PsyduckRaceShield();
+
             default:
                 return null;
         }
@@ -299,4 +312,11 @@ public enum AvailableMoves : uint
     FlareonHeatWave,
     FlareonFlameThrower,
     FlareonUnite,
+
+    PsyduckRaceDash,
+    PsyduckRaceBarrier,
+    PsyduckRaceConfuseRay,
+    PsyduckRaceFreezeRay,
+    PsyduckRaceBubble,
+    PsyduckRaceShield
 }

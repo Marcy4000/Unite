@@ -10,12 +10,12 @@ public class PsyduckRacePassive : PassiveBase
     private bool canMove = true;
 
     // Movement properties
-    protected float acceleration = 6f;
+    protected float acceleration = 7f;
     protected float deceleration = 4f;
-    protected float maxSpeed = 8f;
-    protected float turnSpeed = 3f;
-    protected float driftFactor = 0.6f;
-    protected float rotationSpeed = 180f;
+    protected float maxSpeed = 10f;
+    protected float turnSpeed = 3.5f; // Slightly increased for snappier turning
+    protected float driftFactor = 0.7f; // Increased for more drifting
+    protected float rotationSpeed = 200f; // Increased rotation speed for snappier turns
 
     protected Vector3 currentVelocity;
     protected Vector3 currentFacingDirection;
@@ -24,6 +24,11 @@ public class PsyduckRacePassive : PassiveBase
 
     private float animationUpdateRate = 0.1f; // Update rate for turnDirection
     private float lastAnimationUpdate;
+
+    protected bool isDashing = false;
+    protected float dashSpeed = 20f;
+    protected float dashDuration = 0.3f;
+    protected float dashCooldown = 1f;
 
     protected float speedModifier = 1f; // Multiplier for maxSpeed
 
@@ -34,9 +39,6 @@ public class PsyduckRacePassive : PassiveBase
     {
         base.Start(controller);
         characterController = playerManager.PlayerMovement.CharacterController;
-        playerManager.Pokemon.OnLevelChange += UpdateSpeed;
-        playerManager.Pokemon.OnPokemonInitialized += UpdateSpeed;
-        playerManager.Pokemon.OnStatChange += UpdateSpeed;
         playerManager.PlayerMovement.OnCanMoveChanged += OnPlayerMovementCanMoveChange;
         currentFacingDirection = playerManager.transform.forward;
 
@@ -48,9 +50,15 @@ public class PsyduckRacePassive : PassiveBase
 
         playerManager.Pokemon.AddStatChange(new StatChange(4000, Stat.Speed, 0f, false, true, false, 0, false));
 
-        playerManager.AnimationManager.PlayAnimation("ani_spell1bidle_bat_0054");
+        playerManager.StartCoroutine(PlayAnimationDelayed());
 
         SnapPlayerToGround();
+    }
+
+    private IEnumerator PlayAnimationDelayed()
+    {
+        yield return new WaitForSeconds(0.1f);
+        playerManager.AnimationManager.PlayAnimation("ani_spell1bidle_bat_0054");
     }
 
     private void OnPlayerMovementCanMoveChange(bool value)
@@ -79,26 +87,22 @@ public class PsyduckRacePassive : PassiveBase
 
     public override void Update()
     {
-        HandleMovement(playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>());
+        if (isDashing)
+        {
+            HandleDash();
+        }
+        else
+        {
+            HandleMovement(playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>());
+        }
         UpdateAnimations();
-    }
-
-    private void UpdateSpeed(NetworkListEvent<StatChange> changeEvent)
-    {
-        UpdateSpeed();
-    }
-
-    private void UpdateSpeed()
-    {
-        maxSpeed = playerManager.Pokemon.GetSpeed() / 1000f;
     }
 
     private void HandleMovement(Vector2 input)
     {
         if (isFrozen)
         {
-            // Apply sliding effect when frozen
-            currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, deceleration * Time.deltaTime);
+            currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, deceleration * 0.5f * Time.deltaTime);
             characterController.Move(currentVelocity * Time.deltaTime);
             return;
         }
@@ -121,10 +125,14 @@ public class PsyduckRacePassive : PassiveBase
             currentFacingDirection = playerManager.transform.forward;
         }
 
+        // Adjust acceleration based on alignment and speed
+        float alignmentFactor = Vector3.Dot(currentFacingDirection, inputDirection);
+        alignmentFactor = Mathf.Clamp01((alignmentFactor + 1f) / 2f); // Scale from 0 (opposite) to 1 (aligned)
+
         // Accelerate in the current facing direction
         if (inputDirection.magnitude > 0)
         {
-            currentVelocity += currentFacingDirection * acceleration * Time.deltaTime;
+            currentVelocity += currentFacingDirection * acceleration * alignmentFactor * Time.deltaTime;
             SetWalking(true);
         }
         else
@@ -141,11 +149,50 @@ public class PsyduckRacePassive : PassiveBase
             currentVelocity = currentVelocity.normalized * modifiedMaxSpeed;
         }
 
-        // Apply drift factor for smooth transitions
-        Vector3 driftAdjustedVelocity = Vector3.Lerp(currentVelocity, currentFacingDirection * currentVelocity.magnitude, driftFactor);
+        // Apply drift effect
+        float speedFactor = currentVelocity.magnitude / modifiedMaxSpeed; // Higher effect at higher speeds
+        Vector3 lateralVelocity = Vector3.Cross(Vector3.up, currentFacingDirection) * Vector3.Dot(currentVelocity, Vector3.Cross(Vector3.up, currentFacingDirection));
+        Vector3 driftVelocity = currentVelocity - lateralVelocity * (1f - driftFactor * speedFactor);
+
+        // Combine drift and forward motion
+        Vector3 finalVelocity = Vector3.Lerp(driftVelocity, currentFacingDirection * currentVelocity.magnitude, driftFactor * speedFactor);
 
         // Move the character
-        characterController.Move(driftAdjustedVelocity * Time.deltaTime);
+        characterController.Move(finalVelocity * Time.deltaTime);
+    }
+
+    private void HandleDash()
+    {
+        // Dash movement
+        characterController.Move(currentFacingDirection * dashSpeed * Time.deltaTime);
+
+        // Maintain momentum after dash
+        currentVelocity = currentFacingDirection * dashSpeed * 0.8f; // Retain a portion of dash speed
+
+        // Decrease dash duration
+        dashDuration -= Time.deltaTime;
+        if (dashDuration <= 0)
+        {
+            isDashing = false;
+            dashDuration = 0.3f; // Reset for next dash
+        }
+    }
+
+    public void Dash()
+    {
+        if (!isDashing)
+        {
+            isDashing = true;
+        }
+    }
+
+    public void Dash(float dashDuration)
+    {
+        if (!isDashing)
+        {
+            this.dashDuration = dashDuration;
+            isDashing = true;
+        }
     }
 
     private void UpdateAnimations()

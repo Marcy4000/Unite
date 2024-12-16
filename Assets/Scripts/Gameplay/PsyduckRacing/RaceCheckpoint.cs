@@ -1,3 +1,4 @@
+using JSAM;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -33,6 +34,11 @@ public class RaceCheckpoint : NetworkBehaviour
                 if (isFinishLine && raceLapCounter.CheckpointCount == totalCheckpoints)
                 {
                     raceLapCounter.IncrementLapCountRPC();
+                    if (raceLapCounter.LapCount < RaceManager.TOTAL_LAPS)
+                    {
+                        DefaultAudioSounds sfx = raceLapCounter.LapCount == RaceManager.TOTAL_LAPS ? DefaultAudioSounds.snd_wanfa_KeDaYa19 : DefaultAudioSounds.snd_wanfa_KeDaYa18;
+                        PlaySoundEffectRPC(sfx, RpcTarget.Single(raceLapCounter.OwnerClientId, RpcTargetUse.Temp));
+                    }
                 }
 
                 raceLapCounter.SetCheckpointCountRPC(checkpointIndex);
@@ -46,5 +52,11 @@ public class RaceCheckpoint : NetworkBehaviour
                 Debug.Log($"Player {raceLapCounter.AssignedPlayerID} is going backwards at checkpoint {checkpointIndex}");
             }
         }
+    }
+
+    [Rpc(SendTo.SpecifiedInParams)]
+    private void PlaySoundEffectRPC(DefaultAudioSounds sfx, RpcParams rpcParams = default)
+    {
+        AudioManager.PlaySound(sfx);
     }
 }

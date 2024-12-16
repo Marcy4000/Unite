@@ -23,6 +23,11 @@ public class DraftCharacterSelector : MonoBehaviour
 
         foreach (var character in CharactersList.Instance.Characters)
         {
+            if (character.Hidden)
+            {
+                continue;
+            }
+
             GameObject characterIcon = Instantiate(iconPrefab, holder);
             DraftCharacterSelectIcon draftCharacterIcon = characterIcon.GetComponent<DraftCharacterSelectIcon>();
             draftCharacterIcon.Initialize(character);

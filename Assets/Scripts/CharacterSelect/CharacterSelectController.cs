@@ -77,6 +77,11 @@ public class CharacterSelectController : NetworkBehaviour
         AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon, true);
 
+        if (IsClient)
+        {
+            LobbyController.Instance.ChangePlayerCharacter(-1);
+        }
+
         Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam());
         foreach (var player in localTeamPlayers)
         {
