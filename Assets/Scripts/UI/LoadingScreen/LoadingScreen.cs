@@ -57,6 +57,10 @@ public class LoadingScreen : MonoBehaviour
     public void ShowMatchLoadingScreen()
     {
         InitializeLoadingScreen();
+        if (gameBeginScreenUI.gameObject.activeSelf)
+        {
+            HideGameBeginScreen();
+        }
         holder.SetActive(true);
     }
 

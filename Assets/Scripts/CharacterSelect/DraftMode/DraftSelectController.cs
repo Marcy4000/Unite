@@ -108,6 +108,8 @@ public class DraftSelectController : NetworkBehaviour
 
         AudioManager.StopAllMusic();
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon);
+
+        LoadingScreen.Instance.HideGameBeginScreen();
     }
 
     private void OnEnable()

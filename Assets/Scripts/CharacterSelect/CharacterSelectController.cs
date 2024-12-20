@@ -118,6 +118,7 @@ public class CharacterSelectController : NetworkBehaviour
         pokemonInfo.gameObject.SetActive(false);
 
         trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
+        LoadingScreen.Instance.HideGameBeginScreen();
     }
 
     private void UpdateTimerText(float previous, float current)

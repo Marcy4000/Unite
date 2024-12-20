@@ -21,6 +21,7 @@ public class GameBeginScreenUI : MonoBehaviour
     private UIObject3D[] orangeTeamObjects;
 
     private Coroutine fadeInRoutine;
+    private Coroutine fadeOutRoutine;
 
     private Dictionary<int, string> playerAnimationsBlueMale = new Dictionary<int, string>()
     {
@@ -112,12 +113,20 @@ public class GameBeginScreenUI : MonoBehaviour
 
     public void FadeIn()
     {
+        if (fadeInRoutine != null)
+        {
+            return;
+        }
         fadeInRoutine = StartCoroutine(FadeInRoutine());
     }
 
     public void FadeOut()
     {
-        StartCoroutine(FadeOutRoutine());
+        if (fadeOutRoutine != null)
+        {
+            return;
+        }
+        fadeOutRoutine = StartCoroutine(FadeOutRoutine());
     }
 
     public IEnumerator FadeInRoutine()
@@ -219,6 +228,7 @@ public class GameBeginScreenUI : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
 
+        fadeOutRoutine = null;
         gameObject.SetActive(false);
     }
 
