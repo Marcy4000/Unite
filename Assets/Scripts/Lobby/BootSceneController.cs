@@ -15,6 +15,7 @@ public class BootSceneController : MonoBehaviour
     [SerializeField] private TMP_Text versionText;
     [SerializeField] private MessageBox downloadWindow;
     [SerializeField] private GameObject hintIcon;
+    [SerializeField] private AudioLibrary audioLibrary;
 
     private Announcement downloadAnnouncement = new Announcement
     {
@@ -36,7 +37,7 @@ public class BootSceneController : MonoBehaviour
         startButton.onClick.AddListener(OnStartButtonClicked);
         versionText.text = $"v.{Application.version}";
 
-        AudioManager.PlayMusic(DefaultAudioMusic.MainTheme, true);
+        StartCoroutine(PlayAudioAfterLoading());
 
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_WEBGL
         StartCoroutine(DownloadAssets());
@@ -45,6 +46,13 @@ public class BootSceneController : MonoBehaviour
         hintIcon.SetActive(false);
         downloadWindow.Hide();
 #endif
+    }
+
+    private IEnumerator PlayAudioAfterLoading()
+    {
+        yield return new WaitUntil(() => audioLibrary.IsLoaded());
+
+        AudioManager.PlayMusic(DefaultAudioMusic.MainTheme, true);
     }
 
     private IEnumerator DownloadAssets()

@@ -11,10 +11,12 @@ using Unity.Services.Core;
 using Unity.Services.Core.Environments;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Matchmaker;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using JSAM;
 
 public class LobbyController : MonoBehaviour
 {
@@ -38,6 +40,9 @@ public class LobbyController : MonoBehaviour
 
     private List<PlayerNetworkManager> playerNetworkManagers = new List<PlayerNetworkManager>();
     private bool loadResultsScreen = false;
+
+    private bool isSearching = false;
+    private Unity.Services.Matchmaker.Models.CreateTicketResponse createTicketResponse;
 
 #if UNITY_WEBGL
     private string connectionType = "wss";
@@ -415,6 +420,166 @@ public class LobbyController : MonoBehaviour
             Debug.LogWarning(e);
             return false;
         }
+    }
+
+    private async Task PollMatchmakerTicket()
+    {
+        Unity.Services.Matchmaker.Models.TicketStatusResponse ticketStatusResponse = await MatchmakerService.Instance.GetTicketAsync(createTicketResponse.Id);
+
+        if (ticketStatusResponse == null)
+        {
+            return;
+        }
+
+        var matchIdAssignment = ticketStatusResponse.Value as Unity.Services.Matchmaker.Models.MatchIdAssignment;
+
+        Debug.Log($"{matchIdAssignment.Status}; {matchIdAssignment.AssignmentType}; {matchIdAssignment.Message}; {matchIdAssignment.MatchId}");
+
+        switch (matchIdAssignment.Status)
+        {
+            case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.Timeout:
+                Debug.Log("Timeout");
+                isSearching = false;
+                break;
+            case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.Failed:
+                createTicketResponse = null;
+                Debug.LogError("Failed");
+                isSearching = false;
+                break;
+            case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.InProgress:
+                break;
+            case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.Found:
+                isSearching = false;
+                Debug.Log("Found");
+
+                NetworkManager.Singleton.Shutdown();
+
+                TryCreateOrLobbyJoin(matchIdAssignment.MatchId, 10);
+                break;
+            default:
+                break;
+        }
+
+        Debug.Log(ticketStatusResponse.Type);
+    }
+
+    public async void TryCreateOrLobbyJoin(string lobbyID, int maxPlayers)
+    {
+        try
+        {
+            LoadingScreen.Instance.ShowGenericLoadingScreen();
+
+            var partyLobbyOptions = new CreateLobbyOptions()
+            {
+                IsPrivate = true,
+                Player = localPlayer,
+                Data = new Dictionary<string, DataObject>
+                {
+                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))}
+                },
+            };
+
+            var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
+            partyLobby = await LobbyService.Instance.CreateOrJoinLobbyAsync(lobbyID, $"MATCH_{lobbyID}", maxPlayers, partyLobbyOptions);
+            Debug.Log($"Joined lobby: {partyLobby.Name}, code: {partyLobby.LobbyCode}");
+
+            await SubscribeToLobbyEvents(partyLobby.Id);
+
+            if (partyLobby.HostId == Player.Id)
+            {
+                Allocation allocation = await AllocateRelay();
+                string relayJoinCode = await GetRelayJoinCode(allocation);
+
+                await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, new UpdateLobbyOptions()
+                {
+                    Data = new Dictionary<string, DataObject>
+                    {
+                    {"RelayJoinCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)}
+                    }
+                });
+
+                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, connectionType));
+
+                if (NetworkManager.Singleton.StartHost())
+                {
+                    NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+                    NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
+                }
+            }
+            else
+            {
+                while (!partyLobby.Data.ContainsKey("RelayJoinCode"))
+                {
+                    await Task.Delay(100);
+                }
+
+                JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
+                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, connectionType));
+
+                CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
+                if (NetworkManager.Singleton.StartClient())
+                {
+                    NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+                    NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
+                }
+            }
+
+
+            lobbyUI.ShowLobbyUI();
+
+            onLobbyUpdate?.Invoke(partyLobby);
+
+            await Task.Delay(2500);
+
+            if (partyLobby.HostId == Player.Id)
+            {
+                StartGame();
+            }
+
+            LoadingScreen.Instance.HideGenericLoadingScreen();
+        }
+        catch (LobbyServiceException e)
+        {
+            LoadingScreen.Instance.HideGenericLoadingScreen();
+            Debug.LogError($"Failed to create party lobby: {e.Message}");
+        }
+    }
+
+    private IEnumerator PollMatchmakerTicketRoutine()
+    {
+        while (isSearching)
+        {
+            Task searchTask = PollMatchmakerTicket();
+
+            yield return new WaitUntil(() => searchTask.IsCompleted);
+
+            yield return new WaitForSeconds(1.1f);
+        }
+    }
+
+    public async void FindMatch()
+    {
+        if (isSearching)
+        {
+            return;
+        }
+
+        createTicketResponse = await MatchmakerService.Instance.CreateTicketAsync(GetMatchmakerPlayers(), new CreateTicketOptions("StandardsQueue"));
+
+        isSearching = true;
+
+        StartCoroutine(PollMatchmakerTicketRoutine());
+    }
+
+    public void CancelMatchmaking()
+    {
+        if (createTicketResponse == null)
+        {
+            return;
+        }
+
+        isSearching = false;
+        createTicketResponse = null;
     }
 
     public void CheckIfShouldChangePos(int maxTeamSize)
@@ -885,5 +1050,15 @@ public class LobbyController : MonoBehaviour
         }
 
         return false;
+    }
+
+    public List<Unity.Services.Matchmaker.Models.Player> GetMatchmakerPlayers()
+    {
+        List<Unity.Services.Matchmaker.Models.Player> players = new List<Unity.Services.Matchmaker.Models.Player>();
+        foreach (var player in partyLobby.Players)
+        {
+            players.Add(new Unity.Services.Matchmaker.Models.Player(player.Id, new Dictionary<string, string>()));
+        }
+        return players;
     }
 }
