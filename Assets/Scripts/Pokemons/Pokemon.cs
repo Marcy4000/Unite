@@ -38,7 +38,7 @@ public class Pokemon : NetworkBehaviour
     private NetworkVariable<bool> flipAtkStat = new NetworkVariable<bool>();
 
     private float outOfCombatTimer = 0;
-    private NetworkVariable<bool> isOutOfCombat = new NetworkVariable<bool>();
+    private NetworkVariable<bool> isOutOfCombat = new NetworkVariable<bool>(true);
 
     private PokemonEvolution currentEvolution;
 
@@ -164,14 +164,20 @@ public class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Everyone)]
-    private void OnShieldListChangedRPC()
+    private void OnShieldListChangedRPC(int expectedSize)
     {
-        StartCoroutine(ShieldListChanged());
+        StartCoroutine(ShieldListChanged(expectedSize));
     }
 
-    private IEnumerator ShieldListChanged()
+    private IEnumerator ShieldListChanged(int expectedSize)
     {
         yield return null;
+
+        while (shields.Count != expectedSize)
+        {
+            yield return null;
+        }
+
         OnHpOrShieldChange?.Invoke();
     }
 
@@ -971,7 +977,7 @@ public class Pokemon : NetworkBehaviour
                     {
                         shields.RemoveAt(index);
                         shieldTimers.RemoveAt(index);
-                        OnShieldListChangedRPC();
+                        OnShieldListChangedRPC(shieldTimers.Count);
                     }
                 }
             }
@@ -1279,7 +1285,7 @@ public class Pokemon : NetworkBehaviour
                 {
                     shields[i] = new ShieldInfo(shields[i].Amount+info.Amount, info.ID, shields[i].Priority, shields[i].Duration, shields[i].IsTimed);
                     shieldTimers[i] += info.Duration;
-                    OnShieldListChangedRPC();
+                    OnShieldListChangedRPC(shields.Count);
                     return;
                 }
             }
@@ -1294,7 +1300,7 @@ public class Pokemon : NetworkBehaviour
         {
             shieldTimers.Add(-1);
         }
-        OnShieldListChangedRPC();
+        OnShieldListChangedRPC(shieldTimers.Count);
     }
 
     [Rpc(SendTo.Server)]
@@ -1306,7 +1312,7 @@ public class Pokemon : NetworkBehaviour
             {
                 shields.RemoveAt(i);
                 shieldTimers.RemoveAt(i);
-                OnShieldListChangedRPC();
+                OnShieldListChangedRPC(shieldTimers.Count);
                 return;
             }
         }
@@ -1381,7 +1387,7 @@ public class Pokemon : NetworkBehaviour
 
         if (oldShields.Count != filteredShields.Count)
         {
-            OnShieldListChangedRPC();
+            OnShieldListChangedRPC(shieldTimers.Count);
         }
     }
 

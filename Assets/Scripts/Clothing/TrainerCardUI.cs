@@ -152,6 +152,11 @@ public class TrainerCardUI : MonoBehaviour
 
     private void PlayModelAnimation(string animationName)
     {
+        if (trainerObject.TargetGameObject == null)
+        {
+            return;
+        }
+
         if (trainerObject.TargetGameObject.TryGetComponent(out TrainerModel model))
         {
             model.ActiveAnimator.Play(animationName);

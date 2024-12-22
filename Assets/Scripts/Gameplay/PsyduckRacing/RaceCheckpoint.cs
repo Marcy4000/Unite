@@ -34,7 +34,7 @@ public class RaceCheckpoint : NetworkBehaviour
                 if (isFinishLine && raceLapCounter.CheckpointCount == totalCheckpoints)
                 {
                     raceLapCounter.IncrementLapCountRPC();
-                    if (raceLapCounter.LapCount < RaceManager.TOTAL_LAPS)
+                    if (raceLapCounter.LapCount <= RaceManager.TOTAL_LAPS)
                     {
                         DefaultAudioSounds sfx = raceLapCounter.LapCount == RaceManager.TOTAL_LAPS ? DefaultAudioSounds.snd_wanfa_KeDaYa19 : DefaultAudioSounds.snd_wanfa_KeDaYa18;
                         PlaySoundEffectRPC(sfx, RpcTarget.Single(raceLapCounter.OwnerClientId, RpcTargetUse.Temp));

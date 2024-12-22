@@ -17,6 +17,7 @@ public class SmallJumpPad : NetworkBehaviour
     [Header("Settings")]
     [SerializeField] private float jumpTime = 1f;
     [SerializeField] private float jumpHeight = 5f;
+    [SerializeField] private float jumpChargeTime = 2.5f; // Time to fully charge the jump
     [SerializeField] private float spawnTime;
     [SerializeField] private float despawnTime;
 
@@ -24,7 +25,6 @@ public class SmallJumpPad : NetworkBehaviour
 
     private List<PlayerManager> playersInPad = new List<PlayerManager>();
     private PlayerManager currentJumper;
-    private float jumpChargeTime = 2.5f; // Time to fully charge the jump
     private NetworkVariable<float> chargeTimer = new NetworkVariable<float>();
     private float cooldownTimer = 0f; // Delay between jumps
     private bool isJumping = false;
