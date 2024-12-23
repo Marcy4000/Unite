@@ -30,6 +30,12 @@ public class SettingsManager : MonoBehaviour
     {
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = 75;
+        }
     }
 
     void Start()
@@ -91,7 +97,6 @@ public class SettingsManager : MonoBehaviour
             fullscreenToggle.interactable = false;
             vsyncToggle.interactable = false;
             resolutionDropdown.interactable = false;
-            Application.targetFrameRate = Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value);
             keybindsOption.SetActive(false);
         }
 

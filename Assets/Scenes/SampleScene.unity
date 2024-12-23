@@ -38,7 +38,6 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -179,6 +178,7 @@ Terrain:
   m_DetailObjectDensity: 1
   m_HeightmapPixelError: 5
   m_SplatMapDistance: 1000
+  m_HeightmapMinimumLODSimplification: 0
   m_HeightmapMaximumLOD: 0
   m_ShadowCastingMode: 2
   m_DrawHeightmap: 1
@@ -433,14 +433,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cc791b2db2613f8458c1648b0f062d3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pokemon: {fileID: 8953947684907780853, guid: 6a218e69d04f39244b0af4f3f725a2ea, type: 3}
-  expYield: 250
-  energyYield: 5
+  pokemonPrefab: {fileID: 0}
+  wildPokemonID: 0
+  usesTimeRemaining: 1
   firstSpawnTime: 590
-  cooldown: 10
-  canRespawn: 1
+  respawnCooldown: 0
+  respawnType: 0
+  specificRespawnTimes: []
+  despawnTime: 0
   isObjective: 0
   isSpawnedOnMap: 0
+  soldierLaneID: 0
 --- !u!114 &1072224811
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -575,6 +578,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -2446589551574899645, guid: c8d11fe1d6382c745a9c915e36b0fd86,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 3340270572
+      objectReference: {fileID: 0}
     - target: {fileID: 374489646787953985, guid: c8d11fe1d6382c745a9c915e36b0fd86,
         type: 3}
       propertyPath: isBigEnergy
@@ -648,6 +656,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -2446589551574899645, guid: c8d11fe1d6382c745a9c915e36b0fd86,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 1335443364
+      objectReference: {fileID: 0}
     - target: {fileID: 374489646787953985, guid: c8d11fe1d6382c745a9c915e36b0fd86,
         type: 3}
       propertyPath: isBigEnergy
@@ -809,6 +822,16 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 844971095323143376, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 844971095323143376, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1100196091475963234, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: m_Follow
@@ -957,6 +980,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -2446589551574899645, guid: c8d11fe1d6382c745a9c915e36b0fd86,
+        type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 2465985087
+      objectReference: {fileID: 0}
     - target: {fileID: 7969331495162129233, guid: c8d11fe1d6382c745a9c915e36b0fd86,
         type: 3}
       propertyPath: m_LocalPosition.x
