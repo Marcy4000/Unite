@@ -11,6 +11,13 @@ public class WildPokemonSpawner : NetworkBehaviour
         SpecificTimesRespawn
     }
 
+    public enum BuffToGive
+    {
+        None,
+        RedBuff,
+        BlueBuff
+    }
+
     [SerializeField] private GameObject pokemonPrefab;
     [SerializeField] private AvailableWildPokemons wildPokemonID;
     [SerializeField] private bool usesTimeRemaining = true;
@@ -22,6 +29,7 @@ public class WildPokemonSpawner : NetworkBehaviour
     [SerializeField] private bool isObjective;
     [SerializeField] private bool isSpawnedOnMap;
     [SerializeField] private int soldierLaneID;
+    [SerializeField] private BuffToGive buffToGive;
 
     private float timer;
     private bool spawnedFirstTime = false;
@@ -31,6 +39,9 @@ public class WildPokemonSpawner : NetworkBehaviour
     public WildPokemon WildPokemon => wildPokemon;
     public float RespawnCooldown => respawnCooldown;
     public RespawnType PokemonRespawnType => respawnType;
+
+    private StatusEffect redBuff = new StatusEffect(StatusType.RedBuff, 0f, false, 1);
+    private StatusEffect blueBuff = new StatusEffect(StatusType.BlueBuff, 0f, false, 1);
 
     private void Start()
     {
@@ -143,6 +154,11 @@ public class WildPokemonSpawner : NetworkBehaviour
         wildPokemon.SoldierLaneID = soldierLaneID;
         wildPokemon.Pokemon.OnDeath += HandlePokemonDeath;
         isSpawnedOnMap = true;
+
+        if (buffToGive != BuffToGive.None)
+        {
+            wildPokemon.Pokemon.AddStatusEffect(buffToGive == BuffToGive.RedBuff ? redBuff : blueBuff);
+        }
     }
 
     public void DespawnPokemon(bool canRespawn)

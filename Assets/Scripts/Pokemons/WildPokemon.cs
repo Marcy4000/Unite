@@ -11,6 +11,7 @@ public class WildPokemon : NetworkBehaviour
     private Pokemon pokemon;
     [SerializeField] private WildPokemonInfo wildPokemonInfo;
     [SerializeField] private HPBarWild hpBar;
+    [SerializeField] private RedBlueBuffAura redBlueBuffAura;
 
     [SerializeField] private GameObject soldierPrefab;
     private AvailableWildPokemons soldierToSpawn;
@@ -62,6 +63,7 @@ public class WildPokemon : NetworkBehaviour
             vision.AddObject(pokemon.ActiveModel);
         }
         vision.AddObject(hpBar.gameObject);
+        vision.AddObject(redBlueBuffAura.AuraHolder.gameObject);
         vision.SetVisibility(false);
     }
 
@@ -87,8 +89,48 @@ public class WildPokemon : NetworkBehaviour
             if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].TryGetComponent(out PlayerManager player))
             {
                 GiveAttackerEnergy(player);
+                GivePlayerBuff(player);
             }
+
             StartCoroutine(DumbDespawn());
+        }
+    }
+
+    private void GivePlayerBuff(PlayerManager player)
+    {
+        if (pokemon.HasStatusEffect(StatusType.BlueBuff))
+        {
+            StatusEffect buff = new StatusEffect();
+            foreach (var status in pokemon.StatusEffects)
+            {
+                if (status.Type == StatusType.BlueBuff)
+                {
+                    buff = status;
+                    break;
+                }
+            }
+
+            buff.IsTimed = true;
+            buff.Duration = 70f;
+
+            player.Pokemon.AddStatusEffect(buff);
+        }
+        else if (pokemon.HasStatusEffect(StatusType.RedBuff))
+        {
+            StatusEffect buff = new StatusEffect();
+            foreach (var status in pokemon.StatusEffects)
+            {
+                if (status.Type == StatusType.RedBuff)
+                {
+                    buff = status;
+                    break;
+                }
+            }
+
+            buff.IsTimed = true;
+            buff.Duration = 70f;
+
+            player.Pokemon.AddStatusEffect(buff);
         }
     }
 

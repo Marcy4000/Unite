@@ -637,28 +637,7 @@ public class Pokemon : NetworkBehaviour
 
     public void AddStatChange(StatChange change)
     {
-        if (IsServer)
-        {
-            statChanges.Add(change);
-            if (change.IsTimed)
-            {
-                statTimers.Add(change.Duration);
-            }
-            else
-            {
-                statTimers.Add(-1);
-            }
-            NetworkListEvent<StatChange> networkListEvent = new NetworkListEvent<StatChange>();
-            networkListEvent.PreviousValue = change;
-            networkListEvent.Value = change;
-            networkListEvent.Type = NetworkListEvent<StatChange>.EventType.Add;
-            networkListEvent.Index = statChanges.Count - 1;
-            OnStatChange?.Invoke(networkListEvent);
-        }
-        else
-        {
-            AddStatChangeRPC(change);
-        }
+        AddStatChangeRPC(change);
     }
 
     [Rpc(SendTo.Server)]
@@ -673,6 +652,12 @@ public class Pokemon : NetworkBehaviour
         {
             statTimers.Add(-1);
         }
+        NetworkListEvent<StatChange> networkListEvent = new NetworkListEvent<StatChange>();
+        networkListEvent.PreviousValue = change;
+        networkListEvent.Value = change;
+        networkListEvent.Type = NetworkListEvent<StatChange>.EventType.Add;
+        networkListEvent.Index = statChanges.Count - 1;
+        OnStatChange?.Invoke(networkListEvent);
     }
 
     [Rpc(SendTo.Server)]

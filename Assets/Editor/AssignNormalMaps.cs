@@ -72,7 +72,8 @@ public class AssignNormalMaps : EditorWindow
                 foreach (var material in renderer.sharedMaterials)
                 {
                     if (material == null) continue;
-                    AssignNormalMapToMaterial(material, folderPath);
+                    //AssignNormalMapToMaterial(material, folderPath);
+                    ChangeMaterialShader(material);
                 }
             }
         }
@@ -131,6 +132,22 @@ public class AssignNormalMaps : EditorWindow
         {
             Debug.LogWarning($"Normal map not found for material '{material.name}' in '{folderPath}'.");
         }
+    }
+
+    private static void ChangeMaterialShader(Material material)
+    {
+        material.shader = Shader.Find("Lpk/LightModel/ToonLightBase");
+
+        material.renderQueue = 3000;
+        material.SetFloat("_ShadowStep", 0.65f);
+        material.SetFloat("_ShadowStepSmooth", 0.04f);
+        material.SetFloat("_SpecularStep", 0.0f);
+        material.SetFloat("_SpecularStepSmooth", 0.0f);
+        material.SetFloat("_RimStep", 0.05f);
+        material.SetFloat("_RimStepSmooth", 0.4f);
+        material.SetFloat("_OutlineWidth", 0.015f);
+        EditorUtility.SetDirty(material);
+        Debug.Log($"Set all specified properties to zero for material '{material.name}'.");
     }
 
     // Folder mapping for different clothing types

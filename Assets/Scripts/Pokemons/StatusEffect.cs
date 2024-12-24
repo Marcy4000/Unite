@@ -1,7 +1,7 @@
 using System;
 using Unity.Netcode;
 
-public enum StatusType : byte { Immobilized, Incapacitated, Asleep, Frozen, Bound, Unstoppable, Invincible, Untargetable, HindranceResistance, Invisible, VisionObscuring, Scriptable, Burned, Poisoned }
+public enum StatusType : byte { Immobilized, Incapacitated, Asleep, Frozen, Bound, Unstoppable, Invincible, Untargetable, HindranceResistance, Invisible, VisionObscuring, Scriptable, Burned, Poisoned, RedBuff, BlueBuff }
 
 public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
 {

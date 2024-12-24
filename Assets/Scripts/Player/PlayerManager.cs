@@ -31,6 +31,7 @@ public class PlayerManager : NetworkBehaviour
     private HeldItemManager heldItemManager;
     [SerializeField] private VisionController visionController;
     [SerializeField] private HPBar hpBar;
+    [SerializeField] private RedBlueBuffAura redBlueBuffAura;
 
     [SerializeField] private PokemonBase selectedPokemon;
 
@@ -305,6 +306,7 @@ public class PlayerManager : NetworkBehaviour
         vision.ResetObjects();
         vision.AddObject(pokemon.ActiveModel);
         vision.AddObject(hpBar.gameObject);
+        vision.AddObject(redBlueBuffAura.AuraHolder.gameObject);
     }
 
     [Rpc(SendTo.Everyone)]
