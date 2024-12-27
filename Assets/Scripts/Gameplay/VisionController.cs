@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,7 +18,7 @@ public class VisionController : MonoBehaviour
     public bool IsBlinded { get => isBlinded; set => UpdateBlindState(value); }
     public GameObject CurrentBush { get => currentBush; set => UpdateBush(value);}
 
-    private List<Vision> visibleObjects = new List<Vision>();
+    private HashSet<Vision> visibleObjects = new HashSet<Vision>();
 
     void Start()
     {
@@ -182,20 +183,22 @@ public class VisionController : MonoBehaviour
 
     private void UpdateVision()
     {
-        for (int i = visibleObjects.Count; i > 0; i--)
+        visibleObjects.RemoveWhere(item => item == null);
+
+        foreach (Vision vision in visibleObjects)
         {
-            int index = i - 1;
-            if (visibleObjects[index] == null)
+            if (vision.HasATeam && vision.CurrentTeam == teamToIgnore)
             {
-                visibleObjects.RemoveAt(index);
+                continue;
             }
-            else if (visibleObjects[index].IsVisible && !visibleObjects[index].IsRendered && !IsBlinded && (!visibleObjects[index].IsInBush || visibleObjects[index].IsVisibleInBush.Count > 0))
+
+            if (vision.IsVisible && !vision.IsRendered && !IsBlinded && (!vision.IsInBush || vision.IsVisibleInBush.Count > 0))
             {
-                visibleObjects[index].SetVisibility(true);
+                vision.SetVisibility(true);
             }
-            else if (!visibleObjects[index].IsVisible || IsBlinded || !(!visibleObjects[index].IsInBush || visibleObjects[index].IsVisibleInBush.Count > 0))
+            else if (!vision.IsVisible || IsBlinded || !(!vision.IsInBush || vision.IsVisibleInBush.Count > 0))
             {
-                visibleObjects[index].SetVisibility(false);
+                vision.SetVisibility(false);
             }
         }
     }

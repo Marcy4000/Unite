@@ -9,7 +9,8 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 public class WildPokemon : NetworkBehaviour
 {
     private Pokemon pokemon;
-    [SerializeField] private WildPokemonInfo wildPokemonInfo;
+    private AnimationManager animationManager;
+    private WildPokemonInfo wildPokemonInfo;
     [SerializeField] private HPBarWild hpBar;
     [SerializeField] private RedBlueBuffAura redBlueBuffAura;
 
@@ -19,13 +20,15 @@ public class WildPokemon : NetworkBehaviour
     private Vision vision;
     private Rigidbody rb;
 
-    private string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
+    private const string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
     private float healingTick;
+    private ObjectiveType objectiveType;
 
     private AsyncOperationHandle<PokemonBase> pokemonLoadHandle;
 
     public Pokemon Pokemon => pokemon;
     public WildPokemonInfo WildPokemonInfo { get => wildPokemonInfo; set { wildPokemonInfo = value; } }
+    public AnimationManager AnimationManager => animationManager;
     public int ExpYield { get => wildPokemonInfo.ExpYield; }
     public ushort EnergyYield { get => wildPokemonInfo.EnergyYield; }
 
@@ -34,11 +37,11 @@ public class WildPokemon : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         pokemon = GetComponent<Pokemon>();
+        animationManager = GetComponent<AnimationManager>();
         vision = GetComponentInChildren<Vision>();
         rb = GetComponent<Rigidbody>();
         vision.HasATeam = false;
         vision.IsVisible = true;
-        //pokemon.SetNewPokemon(wildPokemonInfo.PokemonBase);
         pokemon.Type = PokemonType.Wild;
         pokemon.OnEvolution += AssignVisionObjects;
         NetworkObject.DestroyWithScene = true;
@@ -57,6 +60,8 @@ public class WildPokemon : NetworkBehaviour
 
     private void AssignVisionObjects()
     {
+        animationManager.AssignAnimator(pokemon.ActiveModel.GetComponentInChildren<Animator>());
+
         vision.ResetObjects();
         if (pokemon.Type != PokemonType.Objective)
         {
@@ -80,7 +85,7 @@ public class WildPokemon : NetworkBehaviour
             ShowKillRpc(info);
             if (pokemonLoadHandle.IsValid())
             {
-                HandleObjectiveBehaviour(ObjectivesDatabase.GetObjectiveType(pokemonLoadHandle.Result.PokemonName), info);
+                HandleObjectiveBehaviour(objectiveType, info);
             }
         }
         else
@@ -141,86 +146,109 @@ public class WildPokemon : NetworkBehaviour
         switch (objectiveType)
         {
             case ObjectiveType.Zapdos:
-                Team teamToBuff = attacker.TeamMember.Team;
-                if (attacker.TryGetComponent(out PlayerManager player))
-                {
-                    GiveAttackerEnergy(player);
-                }
-
-                foreach (var playerManager in GameManager.Instance.Players)
-                {
-                    if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamToBuff) && playerManager.PlayerState != PlayerState.Dead)
-                    {
-                        playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.Rayquaza, 25f, true));
-                    }
-                }
-
-                LaneManager opposingLane = GameManager.Instance.Lanes.ToList().Find(lane => lane.Team != teamToBuff);
-
-                foreach (var goalZone in opposingLane.GoalZones)
-                {
-                    goalZone.WeaknenGoalZoneRPC(20f);
-                }
-
-                pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);
-                StartCoroutine(DumbDespawn());
+                HandleZapdos(attacker, info);
                 break;
             case ObjectiveType.Drednaw:
-                Team teamtToGiveExp = pokemon.TeamMember.Team;
-                if (attacker.TryGetComponent(out PlayerManager player2))
-                {
-                    GiveAttackerEnergy(player2);
-                }
-
-                foreach (var playerManager in GameManager.Instance.Players)
-                {
-                    if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamtToGiveExp))
-                    {
-                        playerManager.Pokemon.GainExperienceRPC(Mathf.RoundToInt(ExpYield * 0.50f));
-                        if (playerManager.PlayerState != PlayerState.Dead)
-                        {
-                            playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 60f, true));
-                        }
-                    }
-                }
-
-                StartCoroutine(DumbDespawn());
+                HandleDrednaw(attacker, info);
                 break;
             case ObjectiveType.Rotom:
-                SpawnSoldierRPC(attacker.GetComponent<PlayerManager>().CurrentTeam.Team);
-
-                // Spawn soldier rotom
-                pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);
-                GiveAttackerEnergy(attacker.GetComponent<PlayerManager>());
-                StartCoroutine(DumbDespawn());
+                HandleRotom(attacker, info);
                 break;
             case ObjectiveType.Registeel:
-                Team teamtToGiveExp2 = pokemon.TeamMember.Team;
-                if (attacker.TryGetComponent(out PlayerManager player3))
-                {
-                    GiveAttackerEnergy(player3);
-                }
-
-                foreach (var playerManager in GameManager.Instance.Players)
-                {
-                    if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamtToGiveExp2))
-                    {
-                        playerManager.Pokemon.GainExperienceRPC(Mathf.RoundToInt(ExpYield * 0.60f));
-                        if (playerManager.PlayerState != PlayerState.Dead)
-                        {
-                            playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 30f, true));
-                            playerManager.Pokemon.AddStatChange(new StatChange(15, Stat.Attack, 90f, true, true, true, 0));
-                            playerManager.Pokemon.AddStatChange(new StatChange(15, Stat.SpAttack, 90f, true, true, true, 0));
-                        }
-                    }
-                }
-
-                StartCoroutine(DumbDespawn());
+                HandleRegisteel(attacker, info);
                 break;
             default:
                 break;
         }
     }
+
+    private void HandleZapdos(Pokemon attacker, DamageInfo info)
+    {
+        Team teamToBuff = attacker.TeamMember.Team;
+        if (attacker.TryGetComponent(out PlayerManager player))
+        {
+            GiveAttackerEnergy(player);
+        }
+
+        foreach (var playerManager in GameManager.Instance.Players)
+        {
+            if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamToBuff) && playerManager.PlayerState != PlayerState.Dead)
+            {
+                playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.Rayquaza, 25f, true));
+            }
+        }
+
+        LaneManager opposingLane = GameManager.Instance.Lanes.ToList().Find(lane => lane.Team != teamToBuff);
+
+        foreach (var goalZone in opposingLane.GoalZones)
+        {
+            goalZone.WeaknenGoalZoneRPC(20f);
+        }
+
+        pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);
+        StartCoroutine(DumbDespawn());
+    }
+
+    private void HandleDrednaw(Pokemon attacker, DamageInfo info)
+    {
+        Team teamToGiveExp = pokemon.TeamMember.Team;
+        if (attacker.TryGetComponent(out PlayerManager player))
+        {
+            GiveAttackerEnergy(player);
+        }
+
+        foreach (var playerManager in GameManager.Instance.Players)
+        {
+            if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamToGiveExp))
+            {
+                playerManager.Pokemon.GainExperienceRPC(Mathf.RoundToInt(ExpYield * 0.50f));
+                if (playerManager.PlayerState != PlayerState.Dead)
+                {
+                    playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 60f, true));
+                }
+            }
+        }
+
+        StartCoroutine(DumbDespawn());
+    }
+
+    private void HandleRotom(Pokemon attacker, DamageInfo info)
+    {
+        if (attacker.TryGetComponent(out PlayerManager player))
+        {
+            SpawnSoldierRPC(player.CurrentTeam.Team);
+            GiveAttackerEnergy(player);
+        }
+
+        pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);
+        StartCoroutine(DumbDespawn());
+    }
+
+    private void HandleRegisteel(Pokemon attacker, DamageInfo info)
+    {
+        Team teamToGiveExp = pokemon.TeamMember.Team;
+        if (attacker.TryGetComponent(out PlayerManager player))
+        {
+            GiveAttackerEnergy(player);
+        }
+
+        foreach (var playerManager in GameManager.Instance.Players)
+        {
+            if (playerManager != null && playerManager.CurrentTeam.IsOnSameTeam(teamToGiveExp))
+            {
+                playerManager.Pokemon.GainExperienceRPC(Mathf.RoundToInt(ExpYield * 0.60f));
+                if (playerManager.PlayerState != PlayerState.Dead)
+                {
+                    playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 30f, true));
+                    playerManager.Pokemon.AddStatChange(new StatChange(15, Stat.Attack, 90f, true, true, true, 0));
+                    playerManager.Pokemon.AddStatChange(new StatChange(15, Stat.SpAttack, 90f, true, true, true, 0));
+                }
+            }
+        }
+
+        StartCoroutine(DumbDespawn());
+    }
+
 
     [Rpc(SendTo.Server)]
     private void SpawnSoldierRPC(Team orangeTeam)
@@ -313,6 +341,7 @@ public class WildPokemon : NetworkBehaviour
                 if (isObjective)
                 {
                     MinimapManager.Instance.CreateObjectiveIcon(this);
+                    objectiveType = wildPokemonInfo.ObjectiveType;
                 }
             }
             else

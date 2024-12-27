@@ -10,7 +10,6 @@ public class SoldierPokemon : NetworkBehaviour
 
     private NavMeshAgent agent;
     private WildPokemon wildPokemon;
-    private AnimationManager animationManager;
     private int currentTargetIndex = 0;
 
     public TeamMember CurrentTeam => wildPokemon.Pokemon.TeamMember;
@@ -20,8 +19,10 @@ public class SoldierPokemon : NetworkBehaviour
     {
         wildPokemon = GetComponent<WildPokemon>();
         agent = GetComponent<NavMeshAgent>();
-        animationManager = GetComponent<AnimationManager>();
-        GetComponent<Pokemon>().OnEvolution += InitializeVision;
+
+        Pokemon pokemon = GetComponent<Pokemon>();
+        pokemon.OnEvolution += InitializeVision;
+        pokemon.OnTeamChange += (team) => StartCoroutine(InitializeVisionCoroutine());
     }
 
     private void InitializeVision()
@@ -37,6 +38,9 @@ public class SoldierPokemon : NetworkBehaviour
         vision.CurrentTeam = CurrentTeam.Team;
         vision.IsVisible = true;
         vision.SetVisibility(LobbyController.Instance.GetLocalPlayerTeam() == CurrentTeam.Team);
+
+        if (IsServer)
+            wildPokemon.AnimationManager.SetBool("Walking", true);
     }
 
     [Rpc(SendTo.Server)]
@@ -44,28 +48,29 @@ public class SoldierPokemon : NetworkBehaviour
     {
         wildPokemon.Pokemon.UpdateTeamRPC(orangeTeam);
 
-        if (IsServer)
+        wildPokemon.SetWildPokemonInfoRPC((short)pokemon, false);
+        wildPokemon.Pokemon.OnLevelChange += UpdateSpeed;
+        wildPokemon.Pokemon.OnPokemonInitialized += UpdateSpeed;
+        wildPokemon.Pokemon.OnStatChange += UpdateSpeed;
+
+        targets.Add(transform.position);
+
+        Team rotomPathTeam = orangeTeam == Team.Orange ? Team.Blue : Team.Orange;
+
+        Vector3[] positions = GameManager.Instance.GetRotomPath(rotomPathTeam, laneID);
+        foreach (var pos in positions)
         {
-            wildPokemon.SetWildPokemonInfoRPC((short)pokemon, false);
-            wildPokemon.Pokemon.OnLevelChange += UpdateSpeed;
-            wildPokemon.Pokemon.OnPokemonInitialized += UpdateSpeed;
-            wildPokemon.Pokemon.OnStatChange += UpdateSpeed;
-
-            targets.Add(transform.position);
-
-            Team rotomPathTeam = orangeTeam == Team.Orange ? Team.Blue : Team.Orange;
-
-            Vector3[] positions = GameManager.Instance.GetRotomPath(rotomPathTeam, laneID);
-            foreach (var pos in positions)
-            {
-                targets.Add(pos);
-            }
-
-            animationManager.SetBool("Walking", true);
-
-            MoveToNextTarget();
+            targets.Add(pos);
         }
 
+        MoveToNextTarget();
+
+        InitializeClientsRPC();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void InitializeClientsRPC()
+    {
         MinimapManager.Instance.CreateObjectiveIcon(wildPokemon);
     }
 

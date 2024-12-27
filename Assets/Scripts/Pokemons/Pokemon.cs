@@ -97,6 +97,8 @@ public class Pokemon : NetworkBehaviour
     public event Action<Vector3, float> OnKnockback;
     public event Action<float, float> OnKnockup;
 
+    public event Action<TeamMember> OnTeamChange;
+
     private DamageInfo lastHit;
 
     private void Awake()
@@ -149,9 +151,15 @@ public class Pokemon : NetworkBehaviour
         currentExp.OnValueChanged += CurrentExpValueChanged;
         currentLevel.OnValueChanged += CurrentLevelChanged;
         statChanges.OnListChanged += OnStatListChanged;
+        team.OnValueChanged += OnTeamChanged;
         CheckEvolution();
 
         OnPokemonInitialized?.Invoke();
+    }
+
+    private void OnTeamChanged(TeamMember previous, TeamMember current)
+    {
+        OnTeamChange?.Invoke(current);
     }
 
     private void CurrentHpChanged(int previous, int current)
