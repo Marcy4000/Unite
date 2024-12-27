@@ -37,6 +37,8 @@ public class QuickChatUI : MonoBehaviour
         playerPokemonIcon.sprite = player.Pokemon.Portrait;
         messageText.text = message.message;
 
+        MinimapManager.Instance.CreatePingIcon(player.transform.position);
+
         AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Signal);
 
         StartCoroutine(HideMessage());

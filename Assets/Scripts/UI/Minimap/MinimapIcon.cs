@@ -9,7 +9,7 @@ public class MinimapIcon : MonoBehaviour
 
     private RectTransform iconRect;
 
-    void Start()
+    void Awake()
     {
         iconRect = GetComponent<RectTransform>();
     }
@@ -35,7 +35,12 @@ public class MinimapIcon : MonoBehaviour
     {
         if (target == null) return;
 
-        Vector3 relativePosition = target.position;
+        UpdateIconPosition(target.position);
+    }
+
+    public void UpdateIconPosition(Vector3 position)
+    {
+        Vector3 relativePosition = position;
 
         float normalizedX = relativePosition.x / worldSizeX;
         float normalizedZ = relativePosition.z / worldSizeZ;

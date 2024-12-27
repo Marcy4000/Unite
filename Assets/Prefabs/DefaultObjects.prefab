@@ -2394,6 +2394,7 @@ MonoBehaviour:
   - {fileID: 8505167507105043005}
   - {fileID: 2055226587767550088}
   - {fileID: 8107660398642200564}
+  - {fileID: 5283194523653131785}
   playerIconPrefab: {fileID: 3830787727629688450, guid: 58b85cc27966b79488a14a21045cb86b,
     type: 3}
   goalzoneIconPrefab: {fileID: 5906556327596779501, guid: 1ca869e1663a4d74a8db17b7cfe2daca,
@@ -2401,6 +2402,8 @@ MonoBehaviour:
   objectiveIconPrefab: {fileID: 2703671550853314571, guid: 4982532310e76d647b0922109bc9af88,
     type: 3}
   wildPokemonIconPrefab: {fileID: 3723319078527265298, guid: a7492517f446b684c9168c290c6be2f3,
+    type: 3}
+  pingIconPrefab: {fileID: 2703671550853314571, guid: 2ee309d9fece47340bf8090aa46cd6a2,
     type: 3}
   worldSizeX: 170
   worldSizeZ: 120
@@ -8670,6 +8673,7 @@ RectTransform:
   - {fileID: 2055226587767550088}
   - {fileID: 8505167507105043005}
   - {fileID: 588837428356595408}
+  - {fileID: 5283194523653131785}
   m_Father: {fileID: 1520411107411237649}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -9257,7 +9261,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 1
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -13574,6 +13578,41 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!1 &6301897388822440266
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5283194523653131785}
+  m_Layer: 5
+  m_Name: Pings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &5283194523653131785
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6301897388822440266}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 385133727036363622}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &6324873924684802239
 GameObject:
   m_ObjectHideFlags: 0

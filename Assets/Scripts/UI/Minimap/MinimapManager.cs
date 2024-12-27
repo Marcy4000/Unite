@@ -12,6 +12,7 @@ public class MinimapManager : MonoBehaviour
     [SerializeField] private GameObject goalzoneIconPrefab;
     [SerializeField] private GameObject objectiveIconPrefab;
     [SerializeField] private GameObject wildPokemonIconPrefab;
+    [SerializeField] private GameObject pingIconPrefab;
 
     public float worldSizeX = 100f;
     public float worldSizeZ = 100f;
@@ -43,8 +44,6 @@ public class MinimapManager : MonoBehaviour
         MapObjective objectiveIcon = icon.GetComponent<MapObjective>();
         objectiveIcon.Initialize(wildPokemon);
         objectiveIcon.MinimapIcon.Initialize(minimapRect, worldSizeX, worldSizeZ);
-
-        icon.transform.SetSiblingIndex(1);
     }
 
     public void CreateWildPokemonIcon(WildPokemonSpawner wildPokemonSpawner)
@@ -53,7 +52,14 @@ public class MinimapManager : MonoBehaviour
         MapWildPokemon wildPokemonIcon = icon.GetComponent<MapWildPokemon>();
         wildPokemonIcon.Initialize(wildPokemonSpawner);
         wildPokemonIcon.MinimapIcon.Initialize(minimapRect, worldSizeX, worldSizeZ);
+    }
 
-        icon.transform.SetSiblingIndex(1);
+    public void CreatePingIcon(Vector3 position)
+    {
+        GameObject icon = Instantiate(pingIconPrefab, minimapLayers[4]);
+        MapPing pingIcon = icon.GetComponent<MapPing>();
+        pingIcon.DoAnimation();
+        pingIcon.MinimapIcon.Initialize(minimapRect, worldSizeX, worldSizeZ);
+        pingIcon.MinimapIcon.UpdateIconPosition(position);
     }
 }

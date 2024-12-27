@@ -16,9 +16,6 @@ public class PokemonListMenu : MonoBehaviour
     private List<PokemonBase> pokemons = new List<PokemonBase>();
     private List<AsyncOperationHandle<PokemonBase>> pokemonBaseHandles = new List<AsyncOperationHandle<PokemonBase>>();
 
-    private CharacterInfo currentPokemon;
-
-    private AsyncOperationHandle<GameObject> modelHandle;
     private GameObject modelInstance;
 
     private void OnEnable()
@@ -31,12 +28,10 @@ public class PokemonListMenu : MonoBehaviour
     private void OnDisable()
     {
         // Release the model asset
-        if (modelHandle.IsValid())
+        if (modelInstance != null)
         {
             Destroy(modelInstance);
             pokemonModel.ObjectPrefab = null;
-            pokemonModel.gameObject.SetActive(false);
-            Addressables.Release(modelHandle);
         }
 
         // Release all loaded PokemonBase assets
@@ -92,7 +87,7 @@ public class PokemonListMenu : MonoBehaviour
             progressionMenu.InitializeMenus(pokemons[GetCharacterIndex(characterInfo)], characterInfo);
         }
 
-        StartCoroutine(LoadPokemonModel(characterInfo));
+        LoadPokemonModel(characterInfo);
     }
 
     private int GetCharacterIndex(CharacterInfo info)
@@ -108,34 +103,19 @@ public class PokemonListMenu : MonoBehaviour
         return -1;
     }
 
-    private IEnumerator LoadPokemonModel(CharacterInfo characterInfo)
+    private void LoadPokemonModel(CharacterInfo characterInfo)
     {
-        // Release previous model if valid
-        if (modelHandle.IsValid())
+        if (modelInstance != null)
         {
             Destroy(modelInstance);
-            pokemonModel.ObjectPrefab = null;
-            pokemonModel.gameObject.SetActive(false);
-            Addressables.Release(modelHandle);
         }
 
-        // Load the model asset asynchronously
-        modelHandle = Addressables.LoadAssetAsync<GameObject>(characterInfo.model);
+        PokemonBase pokemon = pokemons[GetCharacterIndex(characterInfo)];
 
-        yield return modelHandle;
-
-        if (modelHandle.Status != AsyncOperationStatus.Succeeded)
-        {
-            Debug.LogError("Failed to load model");
-            yield break;
+        if (pokemon != null) {
+            modelInstance = Instantiate(pokemon.Evolutions[pokemon.Evolutions.Length - 1].newModel);
+            pokemonModel.ObjectPrefab = modelInstance.transform;
         }
-
-        // Instantiate the loaded GameObject
-        modelInstance = Instantiate(modelHandle.Result);
-
-        // Set the instantiated model as the prefab for the UI object
-        pokemonModel.gameObject.SetActive(true);
-        pokemonModel.ObjectPrefab = modelInstance.transform;
     }
 
     public void ShowProgressionMenu()
