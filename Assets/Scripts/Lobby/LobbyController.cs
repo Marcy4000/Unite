@@ -155,11 +155,11 @@ public class LobbyController : MonoBehaviour
 
             try
             {
-                clothes = PlayerPrefs.HasKey("ClothingInfo") ? PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo")) : new PlayerClothesInfo();
+                clothes = PlayerPrefs.HasKey("ClothingInfo") ? PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo")) : PlayerClothesInfo.Deserialize("AAAAAAAAMQAAZDIkbDcAAAAAAKwAc9qAAA==");
             }
             catch (Exception)
             {
-                clothes = new PlayerClothesInfo();
+                clothes = PlayerClothesInfo.Deserialize("AAAAAAAAMQAAZDIkbDcAAAAAAKwAc9qAAA==");
             }
 
             localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>

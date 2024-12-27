@@ -31,6 +31,8 @@ public class WildPokemonSpawner : NetworkBehaviour
     [SerializeField] private int soldierLaneID;
     [SerializeField] private BuffToGive buffToGive;
 
+    private NetworkVariable<bool> isSpawned = new NetworkVariable<bool>(false);
+
     private float timer;
     private bool spawnedFirstTime = false;
 
@@ -55,7 +57,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 
         if (usesTimeRemaining)
         {
-            if (firstSpawnTime > 0) 
+            if (firstSpawnTime > 0)
             {
                 firstSpawnTime = GameManager.Instance.MAX_GAME_TIME - firstSpawnTime;
             }
@@ -78,7 +80,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     private void OnVisibilityChanged(bool visible)
     {
-        if (visible && wildPokemon == null)
+        if (visible && !isSpawned.Value)
         {
             OnShouldDestroyIcon?.Invoke();
         }
@@ -170,12 +172,13 @@ public class WildPokemonSpawner : NetworkBehaviour
         wildPokemon.SoldierLaneID = soldierLaneID;
         wildPokemon.Pokemon.OnDeath += HandlePokemonDeath;
         isSpawnedOnMap = true;
+        isSpawned.Value = true;
 
         if (buffToGive != BuffToGive.None)
             wildPokemon.Pokemon.AddStatusEffect(buffToGive == BuffToGive.RedBuff ? redBuff : blueBuff);
 
         if (!isObjective)
-            MinimapManager.Instance.CreateWildPokemonIcon(this);
+            NotifyAboutIconRPC(true);
     }
 
     public void DespawnPokemon(bool canRespawn)
@@ -190,26 +193,46 @@ public class WildPokemonSpawner : NetworkBehaviour
             respawnType = RespawnType.NoRespawn;
         }
         wildPokemon.Pokemon.TakeDamageRPC(new DamageInfo(wildPokemon.NetworkObjectId, 999f, 999, 9999, DamageType.True));
-        OnShouldDestroyIcon?.Invoke();
+        NotifyAboutIconRPC(false);
     }
 
     private void HandlePokemonDeath(DamageInfo info)
     {
         isSpawnedOnMap = false;
+        isSpawned.Value = false;
         wildPokemon = null;
         if (respawnType == RespawnType.TimedRespawn)
         {
             timer = respawnCooldown;
         }
 
+        RemoveIconIfNotRenderedRPC();
+    }
+
+    private bool IsPokemonSpawned()
+    {
+        return isSpawnedOnMap;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void RemoveIconIfNotRenderedRPC()
+    {
         if (vision.IsRendered)
         {
             OnShouldDestroyIcon?.Invoke();
         }
     }
 
-    private bool IsPokemonSpawned()
+        [Rpc(SendTo.ClientsAndHost)]
+    private void NotifyAboutIconRPC(bool create)
     {
-        return isSpawnedOnMap;
+        if (create)
+        {
+            MinimapManager.Instance.CreateWildPokemonIcon(this);
+        }
+        else
+        {
+            OnShouldDestroyIcon?.Invoke();
+        }
     }
 }

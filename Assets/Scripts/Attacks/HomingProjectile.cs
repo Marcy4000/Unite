@@ -45,6 +45,11 @@ public class HomingProjectile : NetworkBehaviour
             return;
         }
 
+        if (target == null)
+        {
+            return;
+        }
+
         if (other.gameObject == target.gameObject)
         {
             // Deal damage to the target
