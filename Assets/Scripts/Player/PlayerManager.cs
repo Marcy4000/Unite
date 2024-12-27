@@ -203,7 +203,6 @@ public class PlayerManager : NetworkBehaviour
         }
 
         UpdateEnergyGraphic();
-        AssignVisionObjects();
     }
 
     private void InitializeStatusActions()

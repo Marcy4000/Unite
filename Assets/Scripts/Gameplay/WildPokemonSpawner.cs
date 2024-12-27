@@ -35,6 +35,7 @@ public class WildPokemonSpawner : NetworkBehaviour
     private bool spawnedFirstTime = false;
 
     private WildPokemon wildPokemon;
+    private Vision vision;
 
     public WildPokemon WildPokemon => wildPokemon;
     public float RespawnCooldown => respawnCooldown;
@@ -43,8 +44,15 @@ public class WildPokemonSpawner : NetworkBehaviour
     private StatusEffect redBuff = new StatusEffect(StatusType.RedBuff, 0f, false, 1);
     private StatusEffect blueBuff = new StatusEffect(StatusType.BlueBuff, 0f, false, 1);
 
+    public event System.Action OnShouldDestroyIcon;
+
     private void Start()
     {
+        vision = GetComponent<Vision>();
+
+        vision.IsVisible = true;
+        vision.OnVisibilityChanged += OnVisibilityChanged;
+
         if (usesTimeRemaining)
         {
             if (firstSpawnTime > 0) 
@@ -65,6 +73,14 @@ public class WildPokemonSpawner : NetworkBehaviour
             {
                 specificRespawnTimes[i] = GameManager.Instance.MAX_GAME_TIME - specificRespawnTimes[i];
             }
+        }
+    }
+
+    private void OnVisibilityChanged(bool visible)
+    {
+        if (visible && wildPokemon == null)
+        {
+            OnShouldDestroyIcon?.Invoke();
         }
     }
 
@@ -156,9 +172,10 @@ public class WildPokemonSpawner : NetworkBehaviour
         isSpawnedOnMap = true;
 
         if (buffToGive != BuffToGive.None)
-        {
             wildPokemon.Pokemon.AddStatusEffect(buffToGive == BuffToGive.RedBuff ? redBuff : blueBuff);
-        }
+
+        if (!isObjective)
+            MinimapManager.Instance.CreateWildPokemonIcon(this);
     }
 
     public void DespawnPokemon(bool canRespawn)
@@ -173,6 +190,7 @@ public class WildPokemonSpawner : NetworkBehaviour
             respawnType = RespawnType.NoRespawn;
         }
         wildPokemon.Pokemon.TakeDamageRPC(new DamageInfo(wildPokemon.NetworkObjectId, 999f, 999, 9999, DamageType.True));
+        OnShouldDestroyIcon?.Invoke();
     }
 
     private void HandlePokemonDeath(DamageInfo info)
@@ -182,6 +200,11 @@ public class WildPokemonSpawner : NetworkBehaviour
         if (respawnType == RespawnType.TimedRespawn)
         {
             timer = respawnCooldown;
+        }
+
+        if (vision.IsRendered)
+        {
+            OnShouldDestroyIcon?.Invoke();
         }
     }
 

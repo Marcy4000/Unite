@@ -131,27 +131,19 @@ public class VisionController : MonoBehaviour
             return;
         }
 
-        Vision vision;
-        if (other.TryGetComponent(out vision))
+        if (other.TryGetComponent(out Vision vision))
         {
-            if (vision.HasATeam && vision.CurrentTeam == teamToIgnore)
+            if ((vision.HasATeam && vision.CurrentTeam == teamToIgnore) || (vision.IsVisible && !isBlinded && (!vision.IsInBush || vision.IsVisibleInBush.Count > 0)))
             {
-                return;
+                vision.SetVisibility(true);
             }
             else
             {
-                if (vision.IsVisible && !isBlinded && (!vision.IsInBush || vision.IsVisibleInBush.Count > 0))
-                {
-                    vision.SetVisibility(true);
-                }
-                else
-                {
-                    vision.SetVisibility(false);
-                }
-
-                vision.OnBushChanged += OnVisibleObjectBushChange;
-                visibleObjects.Add(vision);
+                vision.SetVisibility(false);
             }
+
+            vision.OnBushChanged += OnVisibleObjectBushChange;
+            visibleObjects.Add(vision);
         }
     }
 
@@ -162,16 +154,16 @@ public class VisionController : MonoBehaviour
             return;
         }
 
-        Vision vision;
-        if (other.TryGetComponent(out vision))
+        if (other.TryGetComponent(out Vision vision))
         {
+            visibleObjects.Remove(vision);
+
+            vision.OnBushChanged -= OnVisibleObjectBushChange;
+
             if (vision.HasATeam && vision.CurrentTeam == teamToIgnore)
             {
                 return;
             }
-            visibleObjects.Remove(vision);
-
-            vision.OnBushChanged -= OnVisibleObjectBushChange;
             vision.SetVisibility(false);
         }
     }
