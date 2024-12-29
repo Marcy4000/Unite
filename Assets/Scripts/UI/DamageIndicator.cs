@@ -51,6 +51,7 @@ public class DamageIndicator : MonoBehaviour
         rb.AddTorque(Random.insideUnitSphere * 8f, ForceMode.Impulse);
         damageText.text = heal.ToString();
         damageText.color = Color.green;
+        damageText.fontSize = 4.5f;
         critImage.gameObject.SetActive(false);
         Destroy(gameObject, 1f);
     }

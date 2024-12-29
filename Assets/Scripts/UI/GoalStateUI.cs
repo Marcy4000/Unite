@@ -5,8 +5,8 @@ public class GoalStateUI : MonoBehaviour
     [SerializeField] private GameObject[] blueDots;
     [SerializeField] private GameObject[] orangeDots;
 
-    private int blueActiveGoals = 4;
-    private int orangeActiveGoals = 4;
+    [SerializeField] private int blueActiveGoals = 4;
+    [SerializeField] private int orangeActiveGoals = 4;
 
     public void UpdateGoalState(Team orangeTeam)
     {

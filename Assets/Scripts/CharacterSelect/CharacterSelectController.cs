@@ -273,7 +273,7 @@ public class CharacterSelectController : NetworkBehaviour
         while (!found)
         {
             character = CharactersList.Instance.Characters[UnityEngine.Random.Range(0, CharactersList.Instance.Characters.Length)];
-            if (IsCharacterAvailable(character.pokemonName))
+            if (IsCharacterAvailable(character.pokemonName) && !character.Hidden)
             {
                 found = true;
             }

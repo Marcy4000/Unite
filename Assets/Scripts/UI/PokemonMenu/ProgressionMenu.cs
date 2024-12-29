@@ -4,7 +4,7 @@ using UnityEngine.UI;
 public class ProgressionMenu : MonoBehaviour
 {
     [SerializeField] private EvolutionMenu evolutionMenu;
-    [SerializeField] private GameObject movesMenu;
+    [SerializeField] private MovesMenu movesMenu;
 
     [SerializeField] private Toggle[] menuToggles;
 
@@ -25,7 +25,7 @@ public class ProgressionMenu : MonoBehaviour
         if (value)
         {
             evolutionMenu.gameObject.SetActive(true);
-            movesMenu.SetActive(false);
+            movesMenu.gameObject.SetActive(false);
         }
     }
 
@@ -34,7 +34,7 @@ public class ProgressionMenu : MonoBehaviour
         if (value)
         {
             evolutionMenu.gameObject.SetActive(false);
-            movesMenu.SetActive(true);
+            movesMenu.gameObject.SetActive(true);
         }
     }
 
@@ -46,5 +46,6 @@ public class ProgressionMenu : MonoBehaviour
     public void InitializeMenus(PokemonBase pokemon, CharacterInfo characterInfo)
     {
         evolutionMenu.Initialize(pokemon, characterInfo);
+        movesMenu.Initialize(pokemon);
     }
 }
