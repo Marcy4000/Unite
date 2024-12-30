@@ -18,7 +18,7 @@ public class MovesLevelButton : MonoBehaviour
     public void Initialize(Sprite portrait, int level, int movesIndex, ToggleGroup toggleGroup)
     {
         this.portrait.sprite = portrait;
-        levelText.text = $"{level+1}";
+        levelText.text = $"<size=60%>L. <size=100%>{level+1}";
         this.movesIndex = movesIndex;
         toggle.group = toggleGroup;
 

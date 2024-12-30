@@ -430,6 +430,7 @@ GameObject:
   - component: {fileID: 6663991461620214003}
   - component: {fileID: 5618080328145490703}
   - component: {fileID: 6972305723842734982}
+  - component: {fileID: 4339793114586872073}
   m_Layer: 5
   m_Name: BottomBar
   m_TagString: Untagged
@@ -539,6 +540,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4339793114586872073
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2498268312053624782}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09010d45efb7b5d4981dcce9c3efdec7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sounds: 3e000000
+  PlayOnClick: 1
 --- !u!1 &4187213169732406639
 GameObject:
   m_ObjectHideFlags: 0
@@ -793,6 +808,7 @@ MonoBehaviour:
   movePreview: {fileID: 6702753060837755900}
   normalFrame: {fileID: 6265606071250997617}
   uniteFrame: {fileID: 5247690638123862521}
+  moreInfoButton: {fileID: 6972305723842734982}
 --- !u!1 &5247690638123862521
 GameObject:
   m_ObjectHideFlags: 0

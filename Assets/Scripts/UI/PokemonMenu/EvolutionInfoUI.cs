@@ -11,7 +11,7 @@ public class EvolutionInfoUI : MonoBehaviour
     public void SetEvolutionInfo(PokemonEvolution evolution)
     {
         evolutionName.text = evolution.EvolutionName;
-        evolutionLevel.text = $"L.{evolution.level+1}";
+        evolutionLevel.text = $"<size=60%>L.<size=100%>{evolution.level+1}";
         evolutionIcon.sprite = evolution.newSprite;
     }
 }

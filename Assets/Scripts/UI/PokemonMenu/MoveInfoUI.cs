@@ -10,12 +10,15 @@ public class MoveInfoUI : MonoBehaviour
     [SerializeField] private TMP_Text moveNameText, moveTypeText, moveCooldownText;
     [SerializeField] private Image moveIcon, movePreview;
     [SerializeField] private GameObject normalFrame, uniteFrame;
+    [SerializeField] private Button moreInfoButton;
 
     private MoveAsset move;
 
     private AsyncOperationHandle<Sprite> previewHandle;
 
-    public void Initialize(MoveAsset move)
+    public event System.Action<MoveAsset> OnMoreInfoClicked;
+
+    public void Initialize(MoveAsset move, System.Action<MoveAsset> onMoreInfoClicked)
     {
         this.move = move;
         moveNameText.text = move.moveName;
@@ -25,6 +28,9 @@ public class MoveInfoUI : MonoBehaviour
 
         normalFrame.SetActive(move.moveType != MoveType.UniteMove);
         uniteFrame.SetActive(move.moveType == MoveType.UniteMove);
+
+        moreInfoButton.onClick.AddListener(() => OnMoreInfoClicked?.Invoke(move));
+        OnMoreInfoClicked += onMoreInfoClicked;
 
         LoadPreview();
     }

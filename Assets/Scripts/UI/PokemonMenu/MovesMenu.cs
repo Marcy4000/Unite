@@ -7,6 +7,7 @@ public class MovesMenu : MonoBehaviour
     [SerializeField] private GameObject levelButtonPrefab, moveInfoPrefab;
     [SerializeField] private Transform levelButtonParent, moveInfoParent;
     [SerializeField] private ToggleGroup levelButtonToggleGroup;
+    [SerializeField] private MessageBox messageBox;
 
     private List<MovesLevelButton> levelButtons = new List<MovesLevelButton>();
 
@@ -34,6 +35,7 @@ public class MovesMenu : MonoBehaviour
         }
 
         ShowMoveInfo(0);
+        messageBox.Hide();
     }
 
     private Sprite GetBestEvolutionPortrait(PokemonBase pokemon, int moveLevel)
@@ -70,7 +72,19 @@ public class MovesMenu : MonoBehaviour
         foreach (var move in currentPokemon.LearnableMoves[movesIndex].moves)
         {
             MoveInfoUI moveInfoUI = Instantiate(moveInfoPrefab, moveInfoParent).GetComponent<MoveInfoUI>();
-            moveInfoUI.Initialize(move);
+            moveInfoUI.Initialize(move, ShowMessageBox);
         }
+    }
+
+    private void ShowMessageBox(MoveAsset move)
+    {
+        Announcement announcement = new Announcement
+        {
+            title = move.moveName,
+            message = move.description,
+        };
+
+        messageBox.SetAnnouncement(announcement);
+        messageBox.Show();
     }
 }
