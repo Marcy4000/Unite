@@ -140,7 +140,7 @@ public class TrainerModel : MonoBehaviour
             if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null)
             {
                 var result = handle.Result;
-                Debug.Log($"Successfully loaded clothing item of type {(ClothingType)i}.");
+                //Debug.Log($"Successfully loaded clothing item of type {(ClothingType)i}.");
 
                 result.transform.SetParent(holder, false);
                 UpdateObjectLayer(result, holder.gameObject.layer);

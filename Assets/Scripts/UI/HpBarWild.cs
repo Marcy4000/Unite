@@ -45,6 +45,11 @@ public class HPBarWild : MonoBehaviour
                 StopAllCoroutines();
                 StartCoroutine(UpdateHP(pokemon.CurrentHp / pokemon.GetMaxHp()));
             }
+            else
+            {
+                hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
+                damageBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
+            }
         }
         else
         {

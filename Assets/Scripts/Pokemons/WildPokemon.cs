@@ -191,7 +191,7 @@ public class WildPokemon : NetworkBehaviour
 
     private void HandleDrednaw(Pokemon attacker, DamageInfo info)
     {
-        Team teamToGiveExp = pokemon.TeamMember.Team;
+        Team teamToGiveExp = attacker.TeamMember.Team;
         if (attacker.TryGetComponent(out PlayerManager player))
         {
             GiveAttackerEnergy(player);
@@ -226,7 +226,7 @@ public class WildPokemon : NetworkBehaviour
 
     private void HandleRegisteel(Pokemon attacker, DamageInfo info)
     {
-        Team teamToGiveExp = pokemon.TeamMember.Team;
+        Team teamToGiveExp = attacker.TeamMember.Team;
         if (attacker.TryGetComponent(out PlayerManager player))
         {
             GiveAttackerEnergy(player);

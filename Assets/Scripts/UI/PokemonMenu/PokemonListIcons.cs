@@ -20,6 +20,9 @@ public class PokemonListIcons : MonoBehaviour
 
         foreach (var pokemon in CharactersList.Instance.Characters)
         {
+            if (pokemon.Hidden)
+                continue;
+
             var iconObj = Instantiate(pokemonIconPrefab, pokemonIconParent);
             var icon = iconObj.GetComponent<CharacterSelectIcon>();
 

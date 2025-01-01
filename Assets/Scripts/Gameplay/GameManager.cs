@@ -350,29 +350,19 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        Team orangeTeam;
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out Pokemon pokemon))
+        {
+            if (pokemon.Type == PokemonType.Player)
+                ShowGoalScoredRpc(info);
 
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out PlayerManager playerManager))
-        {
-            orangeTeam = playerManager.CurrentTeam.Team;
-            ShowGoalScoredRpc(info);
-        }
-        else if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out SoldierPokemon soldierPokemon))
-        {
-            orangeTeam = soldierPokemon.CurrentTeam.Team;
-        }
-        else
-        {
-            return;
-        }
-
-        if (orangeTeam == Team.Orange)
-        {
-            orangeTeamScore.Value += info.scoredPoints;
-        }
-        else
-        {
-            blueTeamScore.Value += info.scoredPoints;
+            if (pokemon.TeamMember.Team == Team.Orange)
+            {
+                orangeTeamScore.Value += info.scoredPoints;
+            }
+            else
+            {
+                blueTeamScore.Value += info.scoredPoints;
+            }
         }
     }
 
@@ -383,7 +373,6 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        // TODO: implement an anctual surrender vote
         surrenderManager.StartSurrenderVoteRPC(LobbyController.Instance.GetLocalPlayerTeam());
         StartCoroutine(SurrenderCooldown());
     }

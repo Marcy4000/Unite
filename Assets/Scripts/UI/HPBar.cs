@@ -9,7 +9,7 @@ public class HPBar : MonoBehaviour
     [SerializeField] private TMP_Text lvText, playerNameText, energyText;
     [SerializeField] private Pokemon pokemon;
     [SerializeField] private Sprite orangeEnergyBG, blueEnergyBG;
-    [SerializeField] private GameObject generigGuage;
+    [SerializeField] private GameObject generigGuage, eyeIcon;
 
     [SerializeField] private GameObject linePrefab;
     [SerializeField] private RectTransform linesHolder;
@@ -27,6 +27,16 @@ public class HPBar : MonoBehaviour
         UpdateExp();
         ShowGenericGuage(false);
         CreateHPMarkers(pokemon.GetMaxHp());
+    }
+
+    public void AssignVision(Vision vision)
+    {
+        vision.OnBushChanged += UpdateEyeIcon;
+    }
+
+    private void UpdateEyeIcon(GameObject currentBush)
+    {
+        eyeIcon.SetActive(currentBush != null);
     }
 
     public void UpdatePlayerName(string playerName)

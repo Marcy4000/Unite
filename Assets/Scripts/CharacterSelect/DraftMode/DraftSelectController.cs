@@ -29,6 +29,7 @@ public class DraftSelectController : NetworkBehaviour
     [SerializeField] private GameObject background;
     [SerializeField] private Transform pokemonSpawnPoint;
     [SerializeField] private TrainerModel trainerModel;
+    [SerializeField] private PkmnListSideInfo pkmnListSideInfo;
 
     [Space]
     [SerializeField] private Transform allyBanHolder, enemyBanHolder;
@@ -169,6 +170,7 @@ public class DraftSelectController : NetworkBehaviour
         switchButton.onClick.AddListener(OnSwitchButtonClicked);
         banRequestButton.onClick.AddListener(OnBanRequestButtonClicked);
         battlePrepButton.gameObject.SetActive(false);
+        pkmnListSideInfo.gameObject.SetActive(false);
 
         for (int i = 0; i < maxBansPerTeam; i++)
         {
@@ -371,6 +373,8 @@ public class DraftSelectController : NetworkBehaviour
                 SpawnPokemon(selectedCharacterInfo);
                 draftCharacterSelector.gameObject.SetActive(false);
                 battlePrepButton.gameObject.SetActive(true);
+                pkmnListSideInfo.gameObject.SetActive(true);
+                pkmnListSideInfo.SetPokemonInfo(selectedCharacterInfo);
             }
             else if (isBan)
             {

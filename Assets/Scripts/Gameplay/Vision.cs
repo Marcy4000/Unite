@@ -14,7 +14,7 @@ public class Vision : MonoBehaviour
     [SerializeField] private List<GameObject> objectsToDisable = new List<GameObject>();
     [SerializeField] private List<Renderer> renderersToDisable = new List<Renderer>();
 
-    private List<int> isVisibleInBush = new List<int>();
+    private HashSet<int> isVisibleInBush = new HashSet<int>();
 
     public bool IsRendered => isRendered;
 
@@ -28,7 +28,7 @@ public class Vision : MonoBehaviour
     public event System.Action<bool> OnVisibilityChanged;
     public event System.Action<GameObject> OnBushChanged;
 
-    public List<int> IsVisibleInBush { get => isVisibleInBush; set => isVisibleInBush = value; }
+    public HashSet<int> IsVisibleInBush { get => isVisibleInBush; set => isVisibleInBush = value; }
 
     public void SetVisibility(bool isVisible)
     {

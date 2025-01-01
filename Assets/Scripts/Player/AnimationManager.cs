@@ -28,68 +28,68 @@ public class AnimationManager : NetworkBehaviour
     {
         if (IsAnimatorNull())
             return;
-        SetBoolRpc(name, value);
+        SetBoolRpc(Animator.StringToHash(name), value);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void SetBoolRpc(string name, bool value)
+    private void SetBoolRpc(int hash, bool value)
     {
         if (IsAnimatorNull())
             return;
-        animator.SetBool(name, value);
+        animator.SetBool(hash, value);
     }
 
     public void SetTrigger(string name)
     {
-        SetTriggerRpc(name);
+        SetTriggerRpc(Animator.StringToHash(name));
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    public void SetTriggerRpc(string name)
+    public void SetTriggerRpc(int hash)
     {
         if (IsAnimatorNull())
             return;
 
-        animator.ResetTrigger(name);
-        animator.SetTrigger(name);
+        animator.ResetTrigger(hash);
+        animator.SetTrigger(hash);
     }
 
     public void SetFloat(string name, float value)
     {
-        SetFloatRpc(name, value);
+        SetFloatRpc(Animator.StringToHash(name), value);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void SetFloatRpc(string name, float value)
+    private void SetFloatRpc(int hash, float value)
     {
         if (IsAnimatorNull())
             return;
-        animator.SetFloat(name, value);
+        animator.SetFloat(hash, value);
     }
 
     public void SetInt(string name, int value)
     {
-        SetIntRpc(name, value);
+        SetIntRpc(Animator.StringToHash(name), value);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void SetIntRpc(string name, int value)
+    private void SetIntRpc(int hash, int value)
     {
         if (IsAnimatorNull())
             return;
-        animator.SetInteger(name, value);
+        animator.SetInteger(hash, value);
     }
 
     public void PlayAnimation(string name)
     {
-        PlayAnimationRpc(name);
+        PlayAnimationRpc(Animator.StringToHash(name));
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void PlayAnimationRpc(string name)
+    private void PlayAnimationRpc(int hash)
     {
         if (IsAnimatorNull())
             return;
-        animator.Play(name);
+        animator.Play(hash);
     }
 }

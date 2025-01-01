@@ -295,6 +295,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 812593093479346479, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1245131042469740442, guid: a756823054e665240abb282f8c29d172,
         type: 3}
       propertyPath: m_Convex
@@ -313,6 +318,22 @@ PrefabInstance:
     - target: {fileID: 1596485650271775432, guid: a756823054e665240abb282f8c29d172,
         type: 3}
       propertyPath: m_Convex
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1785265217082930466, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_NavMeshData
+      value: 
+      objectReference: {fileID: 23800000, guid: 838edb746744e0b45837c8a201d03ed9,
+        type: 2}
+    - target: {fileID: 1785265217082930466, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_GenerateLinks
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1785265217082930466, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_BuildHeightMesh
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1818737735880873431, guid: a756823054e665240abb282f8c29d172,
@@ -490,15 +511,40 @@ PrefabInstance:
       propertyPath: m_Convex
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6556663419483820073, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6708020606892841380, guid: a756823054e665240abb282f8c29d172,
         type: 3}
       propertyPath: m_Convex
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6708020606892841380, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6759265662104368097, guid: a756823054e665240abb282f8c29d172,
         type: 3}
       propertyPath: m_Convex
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6800563597216079668, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6800563597216079668, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_OverrideArea
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6800563597216079668, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      propertyPath: m_IgnoreFromBuild
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7291817835280657918, guid: a756823054e665240abb282f8c29d172,
         type: 3}
@@ -558,8 +604,37 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6556663419483820073, guid: a756823054e665240abb282f8c29d172,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2085159169}
   m_SourcePrefab: {fileID: 100100000, guid: a756823054e665240abb282f8c29d172, type: 3}
+--- !u!1 &2085159168 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6556663419483820073, guid: a756823054e665240abb282f8c29d172,
+    type: 3}
+  m_PrefabInstance: {fileID: 2085159167}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2085159169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2085159168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_OverrideArea: 0
+  m_Area: 0
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 1
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &2086227019
 GameObject:
   m_ObjectHideFlags: 0

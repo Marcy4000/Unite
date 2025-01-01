@@ -189,6 +189,8 @@ public class PlayerManager : NetworkBehaviour
             visionController.IsEnabled = tempTeam == currentPlayerTeam;
         }
 
+        hpBar.AssignVision(vision);
+
         vision.OnBushChanged += (bush) =>
         {
             visionController.CurrentBush = bush;
