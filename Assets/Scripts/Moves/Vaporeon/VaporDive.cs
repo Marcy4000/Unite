@@ -8,7 +8,7 @@ public class VaporDive : MoveBase
     private bool isFinishing;
     private float underwaterTime = 5f;
 
-    private DamageInfo damageInfo = new DamageInfo(0, 0.25f, 6, 120, DamageType.Special);
+    private DamageInfo damageInfo = new DamageInfo(0, 0.7f, 6, 200, DamageType.Special);
 
     private VaporeonDiveWarning diveWarning;
     private string assetPath = "Assets/Prefabs/Objects/Moves/Vaporeon/VaporeonDive.prefab";

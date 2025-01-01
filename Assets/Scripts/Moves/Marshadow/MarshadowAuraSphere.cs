@@ -11,7 +11,7 @@ public class MarshadowAuraSphere : MoveBase
 
     private Vector3 direction;
 
-    private DamageInfo sphereDamage = new DamageInfo(0, 1.12f, 7, 110, DamageType.Physical);
+    private DamageInfo sphereDamage = new DamageInfo(0, 1.12f, 7, 210, DamageType.Physical);
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Marshadow/AuraSphere.prefab";
 
@@ -90,7 +90,7 @@ public class MarshadowAuraSphere : MoveBase
 
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
 
-        yield return new WaitForSeconds(1.164f);
+        yield return new WaitForSeconds(0.9f);
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
         playerManager.MovesController.UnlockEveryAction();
 
@@ -118,12 +118,14 @@ public class MarshadowAuraSphere : MoveBase
         playerManager.PlayerMovement.CanMove = true;
         if (Aim.Instance.CanPokemonBeTargeted(target.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam))
         {
-            target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.RoundToInt(150 + (target.GetMissingHp()*0.15f)), DamageType.Physical));
+            target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.RoundToInt(250 + (target.GetMissingHp()*0.2f)), DamageType.Physical));
         }
         target = null;
 
         playerManager.MovesController.UnlockEveryAction();
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+
+        playerManager.MovesController.ReduceMoveCooldown(MoveType.MoveB, playerManager.MovesController.GetMove(MoveType.MoveB).Cooldown * 0.3f);
     }
 
     private void CancelJump(DamageInfo info)

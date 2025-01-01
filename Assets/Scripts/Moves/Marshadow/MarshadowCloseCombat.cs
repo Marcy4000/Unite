@@ -13,8 +13,8 @@ public class MarshadowCloseCombat : MoveBase
     private Vector3 initialDashDirection;
     private Vector3 dashDirection;
 
-    private DamageInfo normalDamage = new DamageInfo(0, 1.4f, 5, 120, DamageType.Physical);
-    private DamageInfo finalDamage = new DamageInfo(0, 1.75f, 6, 140, DamageType.Physical);
+    private DamageInfo normalDamage = new DamageInfo(0, 1.4f, 5, 220, DamageType.Physical);
+    private DamageInfo finalDamage = new DamageInfo(0, 1.75f, 6, 240, DamageType.Physical);
 
     Collider[] hits = new Collider[15];
     private List<Pokemon> recentlyHitPokemon = new List<Pokemon>();

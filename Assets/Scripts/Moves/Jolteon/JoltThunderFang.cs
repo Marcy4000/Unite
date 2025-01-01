@@ -5,8 +5,8 @@ using UnityEngine;
 
 public class JoltThunderFang : MoveBase
 {
-    private DamageInfo biteDamage = new DamageInfo(0, 1.72f, 9, 300, DamageType.Physical);
-    private DamageInfo biteDamageBoosted = new DamageInfo(0, 1.9f, 10, 350, DamageType.Physical);
+    private DamageInfo biteDamage = new DamageInfo(0, 1.72f, 9, 350, DamageType.Physical);
+    private DamageInfo biteDamageBoosted = new DamageInfo(0, 1.9f, 10, 400, DamageType.Physical);
     private StatusEffect stun = new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0);
     private StatChange speedBoost = new StatChange(60, Stat.Speed, 1.5f, true, true, true, 0);
 
@@ -108,13 +108,13 @@ public class JoltThunderFang : MoveBase
             }
 
             playerManager.transform.rotation = Quaternion.LookRotation(direction);
-            playerManager.StartCoroutine(BiteRoutine(1));
+            playerManager.StartCoroutine(BiteRoutine());
         }
         Aim.Instance.HideDashAim();
         base.Finish();
     }
 
-    private IEnumerator BiteRoutine(int biteAmounts)
+    private IEnumerator BiteRoutine()
     {
         playerManager.PlayerMovement.CanMove = false;
         playerManager.AnimationManager.PlayAnimation($"pm0135_00_ba20_thunderFang");
@@ -129,7 +129,7 @@ public class JoltThunderFang : MoveBase
         playerManager.MovesController.BattleItemStatus.AddStatus(ActionStatusType.Disabled);
         playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
 
-        yield return new WaitForSeconds(0.675f);
+        yield return new WaitForSeconds(0.35f);
         isMoving = true;
         var movement = playerManager.transform.DOJump(playerManager.transform.position + (direction.normalized * distance), 0.5f, 1, 0.2f).onComplete += () =>
         {
