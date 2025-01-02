@@ -27,31 +27,33 @@ public class BattleItemUI : MonoBehaviour
         lockImage.SetActive(isLocked);
     }
 
-    public void StartCooldown(float cooldownDuration)
+    public void StartCooldown(float cooldownDuration, float maxCdDuration)
     {
         if (cooldownCoroutine != null)
             StopCoroutine(cooldownCoroutine);
 
-        cooldownCoroutine = StartCoroutine(CooldownRoutine(cooldownDuration));
+        cooldownCoroutine = StartCoroutine(CooldownRoutine(cooldownDuration, maxCdDuration));
     }
 
-    private IEnumerator CooldownRoutine(float cooldownDuration)
+    private IEnumerator CooldownRoutine(float currentCooldown, float maxCooldownDuration)
     {
         cdHolder.SetActive(true);
 
-        float timer = cooldownDuration;
+        float timer = currentCooldown;
 
-        cdLine.transform.rotation = Quaternion.identity;
+        // Calculate the initial rotation based on the current cooldown
+        float initialRotation = -(360f * (1 - (currentCooldown / maxCooldownDuration)));
+        cdLine.transform.rotation = Quaternion.Euler(0f, 0f, initialRotation);
 
         while (timer > 0)
         {
             timer -= Time.deltaTime;
 
             // Update cooldown text
-            cdText.text = Mathf.CeilToInt(timer).ToString();
+            cdText.text = timer < 1 ? timer.ToString("F1") : Mathf.CeilToInt(timer).ToString();
 
             // Rotate the cooldown line clockwise
-            cdLine.transform.Rotate(Vector3.forward, -(360f / cooldownDuration) * Time.deltaTime);
+            cdLine.transform.Rotate(Vector3.forward, -(360f / maxCooldownDuration) * Time.deltaTime);
 
             yield return null;
         }

@@ -68,7 +68,7 @@ public class GoalZone : NetworkBehaviour
         }
         scoreText.color = GetTeamColor();
         DestroyUneededModels();
-        scoreText.text = $"{maxScore - currentScore.Value}/{maxScore}";
+        scoreText.text = $"{maxScore - currentScore.Value}<color=\"white\">/{maxScore}";
         currentScore.OnValueChanged += UpdateGraphics;
         goalStatus.OnValueChanged += (previous, current) => { onGoalStatusChanged?.Invoke(current); };
 
@@ -91,7 +91,7 @@ public class GoalZone : NetworkBehaviour
         switch (team)
         {
             case Team.Blue:
-                return Color.blue;
+                return Color.cyan;
             case Team.Orange:
                 return Color.yellow;
             default:
@@ -258,7 +258,7 @@ public class GoalZone : NetworkBehaviour
 
     private void UpdateGraphics(int previous, int current)
     {
-        scoreText.text = $"{maxScore - current}/{maxScore}";
+        scoreText.text = $"{maxScore - current}<color=\"white\">/{maxScore}";
         if (current >= maxScore)
         {
             DestroyGoalZone();

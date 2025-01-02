@@ -48,6 +48,7 @@ public class MovesController : NetworkBehaviour
 
     public event Action onBasicAttackPerformed;
     public event Action<MoveBase> onMovePerformed;
+    public event Action onBattleItemUsed;
 
     public event Action<GameObject> onObjectSpawned;
 
@@ -400,6 +401,8 @@ public class MovesController : NetworkBehaviour
         battleItemStatus.AddStatus(ActionStatusType.Cooldown);
         battleItemStatus.Cooldown = battleItem.Cooldown;
         UpdateBattleItemUI();
+
+        onBattleItemUsed?.Invoke();
     }
 
     public MoveBase GetMove(MoveType moveType)
@@ -464,18 +467,19 @@ public class MovesController : NetworkBehaviour
 
     private void UpdateBattleItemUI()
     {
-        bool showLock = battleItemStatus.HasStatus(ActionStatusType.Disabled) || battleItemStatus.HasStatus(ActionStatusType.Stunned);
+        bool showLock = battleItemStatus.HasStatus(ActionStatusType.Disabled) || battleItemStatus.HasStatus(ActionStatusType.Stunned) || battleItemStatus.HasStatus(ActionStatusType.Busy);
+
         BattleUIManager.instance.SetBattleItemLock(showLock);
 
         if (battleItemStatus.HasStatus(ActionStatusType.Cooldown))
         {
-            BattleUIManager.instance.ShowBattleItemCooldown(battleItemStatus.Cooldown);
+            BattleUIManager.instance.ShowBattleItemCooldown(battleItemStatus.Cooldown, battleItem.Cooldown);
         }
     }
 
     private void UpdateUniteMoveUI()
     {
-        bool showLock = uniteMoveStatus.HasStatus(ActionStatusType.Disabled) || uniteMoveStatus.HasStatus(ActionStatusType.Stunned);
+        bool showLock = uniteMoveStatus.HasStatus(ActionStatusType.Disabled) || uniteMoveStatus.HasStatus(ActionStatusType.Stunned) || uniteMoveStatus.HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetUniteMoveDisabledLock(showLock);
 
         BattleUIManager.instance.UpdateUniteMoveCooldown(uniteMoveCharge, uniteMoveMaxCharge);

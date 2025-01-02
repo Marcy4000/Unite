@@ -38,9 +38,9 @@ public class MovesHolderUI : MonoBehaviour
         uniteMoveUI.ShowSecondaryCooldown(time);
     }
 
-    public void ShowBattleItemCooldown(float time)
+    public void ShowBattleItemCooldown(float time, float maxCdDuration)
     {
-        battleItemUI.StartCooldown(time);
+        battleItemUI.StartCooldown(time, maxCdDuration);
     }
 
     public void UpdateUniteMoveCooldown(int currCharge, int maxCharge)

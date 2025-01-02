@@ -181,7 +181,10 @@ public class SmallJumpPad : NetworkBehaviour
             if (playerManager == currentJumper)
             {
                 ShowGaugeToPlayerRPC(playerManager.OwnerClientId, false);
-                UnlockPlayerMovementRPC(playerManager.NetworkObjectId, RpcTarget.Single(playerManager.OwnerClientId, RpcTargetUse.Temp)); // Unlock movement after jump starts
+                if (!isJumping)
+                {
+                    UnlockPlayerMovementRPC(playerManager.NetworkObjectId, RpcTarget.Single(playerManager.OwnerClientId, RpcTargetUse.Temp)); // Unlock movement after jump starts
+                }
                 currentJumper = null;
                 chargeTimer.Value = 0f; // Reset charge time
             }

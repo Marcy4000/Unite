@@ -167,6 +167,7 @@ public class PlayerManager : NetworkBehaviour
 
             movesController.onBasicAttackPerformed += () => CancelRecall();
             movesController.onMovePerformed += (MoveBase) => CancelRecall();
+            movesController.onBattleItemUsed += () => CancelRecall();
 
             pokemon.OnKnockback += playerMovement.Knockback;
             pokemon.OnKnockup += playerMovement.Knockup;

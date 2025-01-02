@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class FlygonBite : MoveBase
 {
-    private DamageInfo damage = new DamageInfo(0, 0.45f, 6, 150, DamageType.Physical);
+    private DamageInfo damage = new DamageInfo(0, 0.8f, 6, 180, DamageType.Physical);
     private float range = 3f;
 
     private Vector3 direction;
