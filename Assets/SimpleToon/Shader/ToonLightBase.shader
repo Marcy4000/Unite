@@ -153,7 +153,8 @@ Shader "Lpk/LightModel/ToonLightBase"
                 float rim = smoothstep((1-_RimStep) - _RimStepSmooth * 0.5, (1-_RimStep) + _RimStepSmooth * 0.5, 0.5 - NV);
                 
                 //diffuse
-                float3 diffuse = _MainLightColor.rgb * baseMap * _BaseColor * shadowNL * shadow;
+                float3 lightColor = saturate(_MainLightColor.rgb); // Clamp to 0-1 range
+                float3 diffuse = lightColor * baseMap * _BaseColor * shadowNL * shadow;
                 
                 //specular
                 float3 specular = _SpecularColor * shadow * shadowNL *  specularNH;
@@ -162,7 +163,7 @@ Shader "Lpk/LightModel/ToonLightBase"
                 float3 ambient =  rim * _RimColor + SampleSH(N) * _BaseColor * baseMap;
             
                 float3 finalColor = diffuse + ambient + specular;
-                finalColor = MixFog(finalColor, input.fogCoord);
+                finalColor.rgb = MixFog(finalColor.rgb, input.fogCoord);
                 return float4(finalColor , 1.0);
             }
             ENDHLSL

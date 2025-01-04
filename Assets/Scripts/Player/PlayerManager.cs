@@ -41,6 +41,7 @@ public class PlayerManager : NetworkBehaviour
     private NetworkVariable<ushort> currentEnergy = new NetworkVariable<ushort>();
 
     private BattleActionStatus scoreStatus = new BattleActionStatus(0);
+    private BattleActionStatus recallStatus = new BattleActionStatus(0);
     private NetworkVariable<float> scoreGuageValue = new NetworkVariable<float>(writePerm:NetworkVariableWritePermission.Owner);
     private bool isScoring = false;
 
@@ -81,6 +82,7 @@ public class PlayerManager : NetworkBehaviour
     public ushort MaxEnergyCarry { get => maxEnergyCarry; set => maxEnergyCarry = value; }
     public ushort CurrentEnergy { get => currentEnergy.Value; }
     public BattleActionStatus ScoreStatus { get => scoreStatus; }
+    public BattleActionStatus RecallStatus { get => recallStatus; }
     public float ScoreGuageValue { get => scoreGuageValue.Value; }
 
     public GoalZone GoalZone { get => goalZone; set => goalZone = value; }
@@ -168,6 +170,13 @@ public class PlayerManager : NetworkBehaviour
             movesController.onBasicAttackPerformed += () => CancelRecall();
             movesController.onMovePerformed += (MoveBase) => CancelRecall();
             movesController.onBattleItemUsed += () => CancelRecall();
+            recallStatus.OnStatusChange += () =>
+            {
+                if (!recallStatus.HasStatus(ActionStatusType.None))
+                {
+                    CancelRecall();
+                }
+            };
 
             pokemon.OnKnockback += playerMovement.Knockback;
             pokemon.OnKnockup += playerMovement.Knockup;
@@ -540,7 +549,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void StartRecalling()
     {
-        if (isRecalling)
+        if (!recallStatus.HasStatus(ActionStatusType.None) || isRecalling)
         {
             return;
         }

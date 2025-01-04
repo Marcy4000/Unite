@@ -99,12 +99,16 @@ public class LobbyController : MonoBehaviour
         };
     }
 
-    public void StartGame(string playerName)
+    public async void StartGame(string playerName)
     {
         if (UnityServices.State != ServicesInitializationState.Initialized)
         {
             return;
         }
+
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+
+        await AuthenticationService.Instance.UpdatePlayerNameAsync(playerName);
 
         ChangePlayerName(playerName);
         StartCoroutine(LoadLobbyAsync());
