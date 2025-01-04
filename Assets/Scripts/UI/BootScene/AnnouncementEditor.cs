@@ -4,6 +4,7 @@ using UnityEngine;
 public class AnnouncementEditor : MonoBehaviour
 {
     [SerializeField] private TMP_InputField titleField, contentField;
+    [SerializeField] private TMP_Text previewText;
 
     public void SaveAnnouncement()
     {
@@ -37,5 +38,10 @@ public class AnnouncementEditor : MonoBehaviour
         string path = Application.dataPath + "/" + fileName;
         System.IO.File.WriteAllText(path, json);
         Debug.Log("JSON saved to: " + path);
+    }
+
+    public void EnableRichText(bool enable)
+    {
+        previewText.richText = enable;
     }
 }

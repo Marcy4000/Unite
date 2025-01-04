@@ -8,6 +8,7 @@ using JSAM;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.AddressableAssets;
 using DG.Tweening;
+using UnityEngine.TextCore.Text;
 
 public enum CharacterSelectPhase : byte { Selection, Preview }
 
@@ -235,7 +236,7 @@ public class CharacterSelectController : NetworkBehaviour
 
     private void ChangeCharacter(CharacterInfo character)
     {
-        if (!IsCharacterAvailable(character.pokemonName) && !ALLOW_DUPLICATE_CHARACTERS)
+        if (!IsCharacterAvailable(CharactersList.Instance.GetCharacterID(character)) && !ALLOW_DUPLICATE_CHARACTERS)
         {
             return;
         }
@@ -247,14 +248,14 @@ public class CharacterSelectController : NetworkBehaviour
         SpawnPokemon(character);
     }
 
-    private bool IsCharacterAvailable(string characterName)
+    private bool IsCharacterAvailable(short characterID)
     {
         Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam());
         foreach (var player in localTeamPlayers)
         {
             if (player.Id != LobbyController.Instance.Player.Id)
             {
-                if (player.Data["SelectedCharacter"].Value == characterName)
+                if (player.Data["SelectedCharacter"].Value == NumberEncoder.ToBase64(characterID))
                 {
                     return false;
                 }
@@ -273,7 +274,7 @@ public class CharacterSelectController : NetworkBehaviour
         while (!found)
         {
             character = CharactersList.Instance.Characters[UnityEngine.Random.Range(0, CharactersList.Instance.Characters.Length)];
-            if (IsCharacterAvailable(character.pokemonName) && !character.Hidden)
+            if (IsCharacterAvailable(CharactersList.Instance.GetCharacterID(character)) && !character.Hidden)
             {
                 found = true;
             }
