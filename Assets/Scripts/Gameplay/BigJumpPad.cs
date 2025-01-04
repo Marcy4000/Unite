@@ -243,6 +243,7 @@ public class BigJumpPad : NetworkBehaviour
         return jumpAnimations[selectedAnimation];
     }
 
+    [Rpc(SendTo.SpecifiedInParams)]
     private void StartJumpForPlayerRPC(ulong playerID, Vector3 targetPosition, RpcParams rpcParams = default)
     {
         PlayerManager jumper = NetworkManager.SpawnManager.SpawnedObjects[playerID].GetComponent<PlayerManager>();
