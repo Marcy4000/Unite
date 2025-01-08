@@ -77,6 +77,11 @@ public class WildPokemonSpawner : NetworkBehaviour
                 specificRespawnTimes[i] = GameManager.Instance.MAX_GAME_TIME - specificRespawnTimes[i];
             }
         }
+
+        if (aiSettings.homePosition == Vector2.zero)
+        {
+            aiSettings.homePosition = new Vector2(transform.position.x, transform.position.z);
+        }
     }
 
     private void OnVisibilityChanged(bool visible)

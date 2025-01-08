@@ -165,6 +165,7 @@ public class PlayerManager : NetworkBehaviour
             pokemon.OnDeath += OnPokemonDeath;
             pokemon.OnDamageTaken += OnPokemonDamage;
             pokemon.OnStatusChange += OnPokemonStatusChange;
+            pokemon.OnOtherPokemonKilled += OnOtherPokemonKilled;
             playerState.OnValueChanged += OnPlayerStateChange;
 
             movesController.onBasicAttackPerformed += () => CancelRecall();
@@ -317,6 +318,25 @@ public class PlayerManager : NetworkBehaviour
         vision.AddObject(pokemon.ActiveModel);
         vision.AddObject(hpBar.gameObject);
         vision.AddObject(redBlueBuffAura.AuraHolder.gameObject);
+    }
+
+    private void OnOtherPokemonKilled(ulong killedID)
+    {
+        Pokemon other = NetworkManager.SpawnManager.SpawnedObjects[killedID].GetComponent<Pokemon>();
+
+        if (other.Type == PokemonType.Wild)
+        {
+            StartCoroutine(WildPokemonHeal());
+        }
+    }
+
+    private IEnumerator WildPokemonHeal()
+    {
+        pokemon.HealDamageRPC(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.03f));
+
+        yield return new WaitForSeconds(1f);
+
+        pokemon.HealDamageRPC(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.03f));
     }
 
     [Rpc(SendTo.Everyone)]

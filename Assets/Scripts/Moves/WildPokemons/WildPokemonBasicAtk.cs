@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class WildPokemonBasicAtk : BasicAttackBase
 {
-    private DamageInfo normalDamage = new DamageInfo(0, 1f, 0, 100, DamageType.Physical, DamageProprieties.IsBasicAttack);
+    private DamageInfo normalDamage = new DamageInfo(0, 1f, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack);
 
     private WildPokemonAI wildPokemonAI;
 
