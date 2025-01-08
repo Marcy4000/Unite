@@ -70,7 +70,10 @@ public class RedBlueBuffAura : MonoBehaviour
 
     private void Update()
     {
-        auraHolder.transform.position = transform.position;
+        if (auraHolder != null)
+        {
+            auraHolder.transform.position = transform.position;
+        }
     }
 
     private void UpdateBuffAura()

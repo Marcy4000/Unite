@@ -56,7 +56,6 @@ public class WildPokemon : NetworkBehaviour
         if (IsServer)
         {
             pokemon.OnDeath += Die;
-            GameManager.Instance.onFarmLevelUps += LevelUpWildMon;
         }
     }
 
@@ -74,8 +73,10 @@ public class WildPokemon : NetworkBehaviour
         vision.SetVisibility(false);
     }
 
-    private void SetInitialLevel()
+    private IEnumerator SetInitialLevel()
     {
+        yield return new WaitUntil(() => pokemon.CurrentHp != 0);
+
         int totalLevelUps = CalculateTimeHits();
 
         int totalExp = 0;
@@ -86,22 +87,18 @@ public class WildPokemon : NetworkBehaviour
         }
 
         pokemon.GainExperienceRPC(totalExp);
+        GameManager.Instance.onFarmLevelUps += LevelUpWildMon;
     }
 
     private int CalculateTimeHits()
     {
         int firstLevelUpTime = 30; // Initial 10 seconds delay
 
-        // Count how many level-ups occurred by counting the 30-second intervals
-        int totalHits = 0;
-        for (float t = firstLevelUpTime; t <= GameManager.Instance.MAX_GAME_TIME; t += 30)
-        {
-            // Count the level-up only if the current time has passed the threshold
-            if (GameManager.Instance.GameTime >= t)
-                totalHits++;
-        }
+        // Calculate the number of 30-second intervals that have passed
+        int totalHits = Mathf.FloorToInt((GameManager.Instance.GameTime - firstLevelUpTime) / 30);
 
-        return totalHits;
+        // Ensure totalHits is not negative
+        return Mathf.Max(totalHits, 0);
     }
 
     private void LevelUpWildMon()
@@ -382,7 +379,7 @@ public class WildPokemon : NetworkBehaviour
 
                 if (IsServer)
                 {
-                    SetInitialLevel();
+                    StartCoroutine(SetInitialLevel());
                 }
             }
             else

@@ -1452,7 +1452,7 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void LevelUpRPC()
     {
-        float hpPercentage = (float)currentHp.Value / GetMaxHp();
+        float hpPercentage = (float)currentHp.Value / GetMaxHp(localLevel);
 
         localExp -= baseStats.GetExpForNextLevel(localLevel);
         localLevel++;

@@ -26,7 +26,7 @@ public class MinimapIcon : MonoBehaviour
         this.target = target;
     }
 
-    void Update()
+    void FixedUpdate()
     {
         UpdateIconPosition();
     }

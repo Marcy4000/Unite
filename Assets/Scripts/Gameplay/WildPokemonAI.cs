@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -26,6 +27,8 @@ public class WildPokemonAI : NetworkBehaviour
     private BattleActionStatus[] moveStatuses = new BattleActionStatus[0];
     private MoveBase[] moves = new MoveBase[0];
 
+    private Vector3 originalRotation;
+
     //private int currentMoveIndex = -1;
     private float stunnedTimer;
     private Transform currentTarget; // Keeps track of the current aggro target
@@ -40,6 +43,8 @@ public class WildPokemonAI : NetworkBehaviour
         aiSettings = settings;
         state = WildPokemonState.Idle;
         basicAttackStatus = new BattleActionStatus(0);
+
+        originalRotation = transform.eulerAngles;
 
         basicAttack.Initialize(this, aiSettings.basicAttackRange);
 
@@ -79,6 +84,11 @@ public class WildPokemonAI : NetworkBehaviour
         }
         else if (aiSettings.movementType == WildPokemonAISettings.MovementType.ChasePlayer)
         {
+            if (state == WildPokemonState.Stunned || state == WildPokemonState.MovingToPosition)
+            {
+                return;
+            }
+
             Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
 
             if (attacker == null || attacker.Type != PokemonType.Player)
@@ -109,31 +119,35 @@ public class WildPokemonAI : NetworkBehaviour
             return;
         }
 
+        UpdateCooldowns();
+        HandleAnimations();
+    }
+
+    private void FixedUpdate()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
         switch (state)
         {
             case WildPokemonState.Idle:
                 HandleIdleState();
                 break;
-
             case WildPokemonState.MovingToPosition:
                 HandleMovingToPositionState();
                 break;
-
             case WildPokemonState.Chasing:
                 HandleChasingState();
                 break;
-
             case WildPokemonState.Attacking:
                 HandleAttackingState();
                 break;
-
             case WildPokemonState.Stunned:
                 HandleStunnedState();
                 break;
         }
-
-        UpdateCooldowns();
-        HandleAnimations();
     }
 
     private void UpdateCooldowns()
@@ -189,6 +203,11 @@ public class WildPokemonAI : NetworkBehaviour
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
             state = WildPokemonState.Idle;
+
+            if (agent.destination.x == aiSettings.homePosition.x && agent.destination.z == aiSettings.homePosition.y)
+            {
+                StartCoroutine(RotateToOriginalRotation());
+            }
         }
     }
 
@@ -196,9 +215,8 @@ public class WildPokemonAI : NetworkBehaviour
     {
         if (currentTarget == null)
         {
-            // Transition to Idle and return to home position
-            state = WildPokemonState.Idle;
-            agent.SetDestination(new Vector3(aiSettings.homePosition.x, 0, aiSettings.homePosition.y));
+            // Return to home position
+            WalkHome();
             return;
         }
 
@@ -208,8 +226,7 @@ public class WildPokemonAI : NetworkBehaviour
         if (Vector3.Distance(transform.position, homePosition) > aiSettings.homeRadius)
         {
             currentTarget = null;
-            state = WildPokemonState.Idle;
-            agent.SetDestination(homePosition);
+            WalkHome();
             return;
         }
 
@@ -309,6 +326,23 @@ public class WildPokemonAI : NetworkBehaviour
         }
 
         animationManager.SetBool("Walking", isMoving);
+    }
+
+    private void WalkHome()
+    {
+        state = WildPokemonState.MovingToPosition;
+        agent.SetDestination(new Vector3(aiSettings.homePosition.x, 0, aiSettings.homePosition.y));
+    }
+
+    private IEnumerator RotateToOriginalRotation()
+    {
+        float time = 0;
+        while (time < 1)
+        {
+            time += Time.deltaTime;
+            transform.eulerAngles = Vector3.Lerp(transform.eulerAngles, originalRotation, time);
+            yield return null;
+        }
     }
 }
 
