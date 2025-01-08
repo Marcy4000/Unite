@@ -80,7 +80,7 @@ public class PokemonBase : ScriptableObject
             case 13:
                 return 2670;
             default:
-                return -1;
+                return 3000;
         }
     }
 

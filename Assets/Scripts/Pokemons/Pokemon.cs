@@ -22,6 +22,8 @@ public class Pokemon : NetworkBehaviour
     private int localStoredExp;
     private int localLevel;
 
+    private int levelCap { get { return GetLevelCap(); } }
+
     private PokemonType type;
 
     private GameObject activeModel;
@@ -1018,7 +1020,8 @@ public class Pokemon : NetworkBehaviour
 
         if (Keyboard.current.kKey.wasPressedThisFrame)
         {
-            GainExperienceRPC(100);
+            if (type == PokemonType.Player)
+                GainExperienceRPC(100);
         }
 
         if (Keyboard.current.lKey.wasPressedThisFrame)
@@ -1436,7 +1439,7 @@ public class Pokemon : NetworkBehaviour
         
         localExp += amount;
 
-        while (localExp >= baseStats.GetExpForNextLevel(localLevel) && localLevel < 14)
+        while (localExp >= baseStats.GetExpForNextLevel(localLevel) && localLevel < levelCap - 1)
         {
             LevelUpRPC();
         }
@@ -1453,7 +1456,8 @@ public class Pokemon : NetworkBehaviour
 
         localExp -= baseStats.GetExpForNextLevel(localLevel);
         localLevel++;
-        Debug.Log("Level Up! Current Level: " + localLevel);
+        if (type == PokemonType.Player)
+            Debug.Log("Level Up! Current Level: " + localLevel);
 
         currentHp.Value = Mathf.RoundToInt(GetMaxHp(localLevel) * hpPercentage);
     }
@@ -1475,12 +1479,6 @@ public class Pokemon : NetworkBehaviour
     private void SetCurrentEXPServerRPC(int amount)
     {
         currentExp.Value = amount;
-    }
-
-    [Rpc(SendTo.Server)]
-    private void SetCurrentLevelServerRPC(int amount)
-    {
-        currentLevel.Value = amount;
     }
 
     [Rpc(SendTo.Server)]
@@ -1616,5 +1614,19 @@ public class Pokemon : NetworkBehaviour
     public int GetMissingHp()
     {
         return GetMaxHp() - currentHp.Value;
+    }
+
+    private int GetLevelCap()
+    {
+        switch (type)
+        {
+            case PokemonType.Player:
+                return 15;
+            case PokemonType.Wild:
+            case PokemonType.Objective:
+                return 22;
+            default:
+                return 15;
+        }
     }
 }

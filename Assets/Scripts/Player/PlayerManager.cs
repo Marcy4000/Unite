@@ -276,7 +276,6 @@ public class PlayerManager : NetworkBehaviour
         AssignVisionObjects();
         vision.SetVisibility(tempTeam == currentTeam);
 
-
         if (IsOwner)
         {
             passiveController.LearnPassive();

@@ -10,7 +10,7 @@ public class FluxZone : NetworkBehaviour
     [SerializeField] private GameObject graphic;
 
     private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
-    private List<Pokemon> pokemonInZone = new List<Pokemon>();
+    private HashSet<Pokemon> pokemonInZone = new HashSet<Pokemon>();
 
     public Team Team => team;
     public int LaneID => laneID;
@@ -48,6 +48,11 @@ public class FluxZone : NetworkBehaviour
 
         if (other.TryGetComponent(out Pokemon pokemon))
         {
+            if (pokemon.Type != PokemonType.Player)
+            {
+                return;
+            }
+
             pokemonInZone.Add(pokemon);
             int value = pokemon.TeamMember.IsOnSameTeam(team) ? 60 : 50;
             StatChange statChange = new StatChange((short)value, Stat.Speed, 0, false, pokemon.TeamMember.IsOnSameTeam(team), true, 1);
@@ -100,7 +105,7 @@ public class FluxZone : NetworkBehaviour
 
         if (isActive.Value)
         {
-            pokemonInZone.RemoveAll(pokemon => pokemon == null);
+            pokemonInZone.RemoveWhere(pokemon => pokemon == null);
         }
     }
 }

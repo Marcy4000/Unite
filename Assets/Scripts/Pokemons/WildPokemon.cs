@@ -29,8 +29,8 @@ public class WildPokemon : NetworkBehaviour
     public Pokemon Pokemon => pokemon;
     public WildPokemonInfo WildPokemonInfo { get => wildPokemonInfo; set { wildPokemonInfo = value; } }
     public AnimationManager AnimationManager => animationManager;
-    public int ExpYield { get => wildPokemonInfo.ExpYield; }
-    public ushort EnergyYield { get => wildPokemonInfo.EnergyYield; }
+    public int ExpYield { get => wildPokemonInfo.ExpYield[pokemon.CurrentLevel]; }
+    public ushort EnergyYield { get => wildPokemonInfo.EnergyYield[pokemon.CurrentLevel]; }
 
     public int SoldierLaneID { get; set; }
 
@@ -44,6 +44,7 @@ public class WildPokemon : NetworkBehaviour
         vision.IsVisible = true;
         pokemon.Type = PokemonType.Wild;
         pokemon.OnEvolution += AssignVisionObjects;
+        pokemon.OnLevelChange += () => hpBar.UpdateEnergyAmount(EnergyYield);
         NetworkObject.DestroyWithScene = true;
 
         if (IsOwner)
@@ -55,6 +56,7 @@ public class WildPokemon : NetworkBehaviour
         if (IsServer)
         {
             pokemon.OnDeath += Die;
+            GameManager.Instance.onFarmLevelUps += LevelUpWildMon;
         }
     }
 
@@ -70,6 +72,41 @@ public class WildPokemon : NetworkBehaviour
         vision.AddObject(hpBar.gameObject);
         vision.AddObject(redBlueBuffAura.AuraHolder.gameObject);
         vision.SetVisibility(false);
+    }
+
+    private void SetInitialLevel()
+    {
+        int totalLevelUps = CalculateTimeHits();
+
+        int totalExp = 0;
+
+        for (int i = 0; i < totalLevelUps; i++)
+        {
+            totalExp += pokemon.BaseStats.GetExpForNextLevel(pokemon.CurrentLevel + i);
+        }
+
+        pokemon.GainExperienceRPC(totalExp);
+    }
+
+    private int CalculateTimeHits()
+    {
+        int firstLevelUpTime = 30; // Initial 10 seconds delay
+
+        // Count how many level-ups occurred by counting the 30-second intervals
+        int totalHits = 0;
+        for (float t = firstLevelUpTime; t <= GameManager.Instance.MAX_GAME_TIME; t += 30)
+        {
+            // Count the level-up only if the current time has passed the threshold
+            if (GameManager.Instance.GameTime >= t)
+                totalHits++;
+        }
+
+        return totalHits;
+    }
+
+    private void LevelUpWildMon()
+    {
+        pokemon.GainExperienceRPC(pokemon.BaseStats.GetExpForNextLevel(pokemon.CurrentLevel));
     }
 
     private void Die(DamageInfo info)
@@ -249,7 +286,6 @@ public class WildPokemon : NetworkBehaviour
         StartCoroutine(DumbDespawn());
     }
 
-
     [Rpc(SendTo.Server)]
     private void SpawnSoldierRPC(Team orangeTeam)
     {
@@ -277,13 +313,13 @@ public class WildPokemon : NetworkBehaviour
             return;
         }
 
-        if (attacker.AvailableEnergy() >= wildPokemonInfo.EnergyYield)
+        if (attacker.AvailableEnergy() >= EnergyYield)
         {
-            attacker.GainEnergyRPC(wildPokemonInfo.EnergyYield);
+            attacker.GainEnergyRPC(EnergyYield);
         }
         else
         {
-            SpawnEnergy((short)(wildPokemonInfo.EnergyYield - attacker.AvailableEnergy()));
+            SpawnEnergy((short)(EnergyYield - attacker.AvailableEnergy()));
             attacker.GainEnergyRPC(attacker.AvailableEnergy());
         }
     }
@@ -343,6 +379,11 @@ public class WildPokemon : NetworkBehaviour
                     MinimapManager.Instance.CreateObjectiveIcon(this);
                     objectiveType = wildPokemonInfo.ObjectiveType;
                 }
+
+                if (IsServer)
+                {
+                    SetInitialLevel();
+                }
             }
             else
             {
@@ -385,6 +426,7 @@ public class WildPokemon : NetworkBehaviour
         {
             Addressables.Release(pokemonLoadHandle);
         }
+        GameManager.Instance.onFarmLevelUps -= LevelUpWildMon;
         base.OnDestroy();
     }
 

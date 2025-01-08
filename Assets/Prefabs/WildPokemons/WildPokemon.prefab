@@ -18,6 +18,8 @@ GameObject:
   - component: {fileID: -7771111983008086099}
   - component: {fileID: -106310329676102820}
   - component: {fileID: 2849314583341337282}
+  - component: {fileID: 2054797202977555652}
+  - component: {fileID: 1884056972833796195}
   m_Layer: 7
   m_Name: WildPokemon
   m_TagString: Untagged
@@ -54,7 +56,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3353566335
+  GlobalObjectIdHash: 66388048
   InScenePlacedSourceGlobalObjectIdHash: 2640768568
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -112,10 +114,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 788d5d11b372c2b40816f4d1a7c56c77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  wildPokemonInfo: {fileID: 0}
   hpBar: {fileID: 5284035416719741777}
   redBlueBuffAura: {fileID: 3820963255332138539}
-  animationManager: {fileID: 2849314583341337282}
   soldierPrefab: {fileID: 4674675999896457163, guid: 61cc06971931f61498bb700401dc4751,
     type: 3}
 --- !u!114 &1881094195903526419
@@ -215,6 +215,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36c573e7e80b17e47b97cad21509ad9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2054797202977555652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8963844837946224362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f21964570dc23c84b8850c022345431e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  wildPokemon: {fileID: 8415087467801378016}
+  animationManager: {fileID: 2849314583341337282}
+  agent: {fileID: 1884056972833796195}
+--- !u!195 &1884056972833796195
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8963844837946224362}
+  m_Enabled: 1
+  m_AgentTypeID: -1372625422
+  m_Radius: 0.1
+  m_Speed: 3.5
+  m_Acceleration: 120
+  avoidancePriority: 50
+  m_AngularSpeed: 180
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 2
 --- !u!1001 &109556461290637085
 PrefabInstance:
   m_ObjectHideFlags: 0

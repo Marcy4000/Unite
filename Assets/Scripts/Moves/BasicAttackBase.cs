@@ -63,6 +63,8 @@ public static class BasicAttacksDatabase
                 return new EmboarBasicAtk();
             case "flareon":
                 return new FlareonBasicAtk();
+            case "wildpokemon":
+                return new WildPokemonBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

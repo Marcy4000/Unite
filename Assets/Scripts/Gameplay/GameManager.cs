@@ -64,6 +64,7 @@ public class GameManager : NetworkBehaviour
     public event Action<int> onUpdatePassiveExp;
     public event Action<GameState> onGameStateChanged;
     public event Action onFinalStretch;
+    public event Action onFarmLevelUps;
 
     private AsyncOperationHandle<SceneInstance> loadHandle;
     private AsyncOperationHandle<IList<PokemonBase>> pokemonHandle;
@@ -179,6 +180,7 @@ public class GameManager : NetworkBehaviour
         MAX_GAME_TIME = currentMap.gameTime;
 
         StartCoroutine(HandlePassiveExp());
+        StartCoroutine(HandleFarmLevelUps());
     }
 
     [Rpc(SendTo.Server)]
@@ -241,6 +243,8 @@ public class GameManager : NetworkBehaviour
 
     private IEnumerator HandlePassiveExp()
     {
+        yield return new WaitUntil(() => gameState.Value == GameState.Playing);
+
         while (true)
         {
             yield return new WaitForSeconds(1f);
@@ -254,6 +258,20 @@ public class GameManager : NetworkBehaviour
                 {
                     onUpdatePassiveExp?.Invoke(6);
                 }
+            }
+        }
+    }
+
+    private IEnumerator HandleFarmLevelUps()
+    {
+        yield return new WaitUntil(() => gameState.Value == GameState.Playing);
+
+        while (true)
+        {
+            yield return new WaitForSeconds(30f);
+            if (gameState.Value == GameState.Playing)
+            {
+                onFarmLevelUps?.Invoke();
             }
         }
     }

@@ -30,6 +30,7 @@ public class WildPokemonSpawner : NetworkBehaviour
     [SerializeField] private bool isSpawnedOnMap;
     [SerializeField] private int soldierLaneID;
     [SerializeField] private BuffToGive buffToGive;
+    [SerializeField] private WildPokemonAISettings aiSettings;
 
     private NetworkVariable<bool> isSpawned = new NetworkVariable<bool>(false);
 
@@ -174,11 +175,22 @@ public class WildPokemonSpawner : NetworkBehaviour
         isSpawnedOnMap = true;
         isSpawned.Value = true;
 
+        wildPokemon.Pokemon.OnPokemonInitialized += InitializeAISettings;
+
         if (buffToGive != BuffToGive.None)
             wildPokemon.Pokemon.AddStatusEffect(buffToGive == BuffToGive.RedBuff ? redBuff : blueBuff);
 
         if (!isObjective)
             NotifyAboutIconRPC(true);
+    }
+
+    private void InitializeAISettings()
+    {
+        if (wildPokemon.TryGetComponent(out WildPokemonAI wildPokemonAI))
+        {
+            wildPokemonAI.Initialize(aiSettings);
+        }
+        wildPokemon.Pokemon.OnPokemonInitialized -= InitializeAISettings;
     }
 
     public void DespawnPokemon(bool canRespawn)

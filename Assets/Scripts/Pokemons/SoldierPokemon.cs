@@ -130,7 +130,7 @@ public class SoldierPokemon : NetworkBehaviour
     private int CalculateScoreAmount()
     {
         float hpPercentage = (float)wildPokemon.Pokemon.CurrentHp / wildPokemon.Pokemon.GetMaxHp();
-        int scoreAmount = wildPokemon.WildPokemonInfo.EnergyYield;
+        int scoreAmount = wildPokemon.EnergyYield;
 
         if (hpPercentage <= 0.2f)
         {
