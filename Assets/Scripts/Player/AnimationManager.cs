@@ -31,6 +31,13 @@ public class AnimationManager : NetworkBehaviour
         SetBoolRpc(Animator.StringToHash(name), value);
     }
 
+    public void SetBool(int hash, bool value)
+    {
+        if (IsAnimatorNull())
+            return;
+        SetBoolRpc(hash, value);
+    }
+
     [Rpc(SendTo.ClientsAndHost)]
     private void SetBoolRpc(int hash, bool value)
     {

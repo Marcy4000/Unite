@@ -28,6 +28,7 @@ public class WildPokemonAI : NetworkBehaviour
     private MoveBase[] moves = new MoveBase[0];
 
     private Vector3 originalRotation;
+    private int animationHashWalking = Animator.StringToHash("Walking");
 
     //private int currentMoveIndex = -1;
     private float stunnedTimer;
@@ -37,6 +38,7 @@ public class WildPokemonAI : NetworkBehaviour
     public WildPokemonAISettings AISettings => aiSettings;
     public WildPokemonState State => state;
     public AnimationManager AnimationManager => animationManager;
+
 
     public void Initialize(WildPokemonAISettings settings)
     {
@@ -312,7 +314,7 @@ public class WildPokemonAI : NetworkBehaviour
         }
 
         bool isMoving = agent.remainingDistance > agent.stoppingDistance && agent.velocity.magnitude > 0.1f;
-        if (isMoving != animationManager.Animator.GetBool("Walking"))
+        if (isMoving != animationManager.Animator.GetBool(animationHashWalking))
         {
             UpdateAnimations(isMoving);
         }
@@ -325,7 +327,7 @@ public class WildPokemonAI : NetworkBehaviour
             return;
         }
 
-        animationManager.SetBool("Walking", isMoving);
+        animationManager.SetBool(animationHashWalking, isMoving);
     }
 
     private void WalkHome()
