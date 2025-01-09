@@ -1279,7 +1279,8 @@ public class Pokemon : NetworkBehaviour
             {
                 if (shields[i].ID == info.ID)
                 {
-                    shields[i] = new ShieldInfo(shields[i].Amount+info.Amount, info.ID, shields[i].Priority, shields[i].Duration, shields[i].IsTimed);
+                    shields[i] = shields[i] = new ShieldInfo(info.MaxStacks == 0 ? shields[i].Amount + info.Amount : Mathf.Min(shields[i].Amount + info.Amount, info.MaxStacks),
+                            info.ID, shields[i].Priority, shields[i].Duration, shields[i].IsTimed);
                     shieldTimers[i] += info.Duration;
                     OnShieldListChangedRPC(shields.Count);
                     return;
@@ -1381,10 +1382,7 @@ public class Pokemon : NetworkBehaviour
             shieldTimers.Add(shield.Duration);
         }
 
-        if (oldShields.Count != filteredShields.Count)
-        {
-            OnShieldListChangedRPC(shieldTimers.Count);
-        }
+        OnShieldListChangedRPC(shieldTimers.Count);
     }
 
     [Rpc(SendTo.Everyone)]
