@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,9 +16,15 @@ public class MapWildPokemon : MonoBehaviour
     {
         minimapIcon = GetComponent<MinimapIcon>();
         this.wildPokemon = wildPokemon;
-        minimapIcon.SetTarget(wildPokemon.transform);
+        StartCoroutine(SetInitialPosition());
 
         wildPokemon.OnShouldDestroyIcon += DestroyIcon;
+    }
+
+    private IEnumerator SetInitialPosition()
+    {
+        yield return new WaitForEndOfFrame();
+        minimapIcon.UpdateIconPosition(wildPokemon.transform.position);
     }
 
     public void HideIcon()

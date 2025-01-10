@@ -31,6 +31,7 @@ public class WildPokemon : NetworkBehaviour
     public AnimationManager AnimationManager => animationManager;
     public int ExpYield { get => wildPokemonInfo.ExpYield[pokemon.CurrentLevel]; }
     public ushort EnergyYield { get => wildPokemonInfo.EnergyYield[pokemon.CurrentLevel]; }
+    public Vision Vision => vision;
 
     public int SoldierLaneID { get; set; }
 
