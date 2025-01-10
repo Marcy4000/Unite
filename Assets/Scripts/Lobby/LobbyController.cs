@@ -301,7 +301,7 @@ public class LobbyController : MonoBehaviour
                 Player = localPlayer,
                 Data = new Dictionary<string, DataObject>
                 {
-                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))}
+                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Public, NumberEncoder.ToBase64<short>(0))}
                 },
             };
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
@@ -341,17 +341,31 @@ public class LobbyController : MonoBehaviour
         }
     }
 
-    public async void TryLobbyJoin(string joinCode)
+    public async void TryLobbyJoin(string joinCode, bool useID = false)
     {
         try
         {
             LoadingScreen.Instance.ShowGenericLoadingScreen();
-            var joinOptions = new JoinLobbyByCodeOptions()
-            {
-                Player = localPlayer
-            };
 
-            partyLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(joinCode, joinOptions);
+
+            if (useID)
+            {
+                var joinOptions = new JoinLobbyByIdOptions()
+                {
+                    Player = localPlayer
+                };
+
+                partyLobby = await LobbyService.Instance.JoinLobbyByIdAsync(joinCode, joinOptions);
+            }
+            else
+            {
+                var joinOptions = new JoinLobbyByCodeOptions()
+                {
+                    Player = localPlayer
+                };
+
+                partyLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(joinCode, joinOptions);
+            }
 
             JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
 
@@ -423,6 +437,24 @@ public class LobbyController : MonoBehaviour
         {
             Debug.LogWarning(e);
             return false;
+        }
+    }
+
+    public async Task<QueryResponse> GetOpenLobbies()
+    {
+        try
+        {
+            QueryLobbiesOptions options = new QueryLobbiesOptions();
+
+            var lobbies = await LobbyService.Instance.QueryLobbiesAsync(options);
+
+            return lobbies;
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.LogError(e);
+
+            return default;
         }
     }
 
@@ -796,7 +828,44 @@ public class LobbyController : MonoBehaviour
         options.MaxPlayers = partyLobby.MaxPlayers;
         options.HostId = partyLobby.HostId;
         options.Name = partyLobby.Name;
+        options.IsLocked = partyLobby.IsLocked;
         options.IsPrivate = isPrivate;
+
+        UpdateLobbyData(options);
+    }
+
+    public void SetLobbyLockedAndPrivate(bool isLocked)
+    {
+        if (partyLobby.HostId != localPlayer.Id)
+        {
+            return;
+        }
+
+        UpdateLobbyOptions options = new UpdateLobbyOptions();
+        options.Data = partyLobby.Data;
+        options.MaxPlayers = partyLobby.MaxPlayers;
+        options.HostId = partyLobby.HostId;
+        options.Name = partyLobby.Name;
+        options.IsPrivate = isLocked;
+        options.IsLocked = isLocked;
+
+        UpdateLobbyData(options);
+    }
+
+    public void SetLobbyLocked(bool isLocked)
+    {
+        if (partyLobby.HostId != localPlayer.Id)
+        {
+            return;
+        }
+
+        UpdateLobbyOptions options = new UpdateLobbyOptions();
+        options.Data = partyLobby.Data;
+        options.MaxPlayers = partyLobby.MaxPlayers;
+        options.HostId = partyLobby.HostId;
+        options.Name = partyLobby.Name;
+        options.IsPrivate = partyLobby.IsPrivate;
+        options.IsLocked = isLocked;
 
         UpdateLobbyData(options);
     }
@@ -814,7 +883,8 @@ public class LobbyController : MonoBehaviour
         options.HostId = partyLobby.HostId;
         options.Name = partyLobby.Name;
         options.IsPrivate = partyLobby.IsPrivate;
-        options.Data["SelectedMap"] = new DataObject(DataObject.VisibilityOptions.Member, NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)));
+        options.IsLocked = partyLobby.IsLocked;
+        options.Data["SelectedMap"] = new DataObject(DataObject.VisibilityOptions.Public, NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)));
 
         UpdateLobbyData(options);
     }
@@ -876,26 +946,15 @@ public class LobbyController : MonoBehaviour
         {
             return;
         }
-        ChangeLobbyVisibility(true);
+        SetLobbyLockedAndPrivate(true);
 
-
-        string mapMode;
-
-        switch (CharactersList.Instance.GetCurrentLobbyMap().characterSelectType)
+        string mapMode = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType switch
         {
-            case CharacterSelectType.BlindPick:
-                mapMode = "CharacterSelect";
-                break;
-            case CharacterSelectType.Draft:
-                mapMode = "DraftSelect";
-                break;
-            case CharacterSelectType.PsyduckRacing:
-                mapMode = "RacingReadyScreen";
-                break;
-            default:
-                mapMode = "CharacterSelect";
-                break;
-        }
+            CharacterSelectType.BlindPick => "CharacterSelect",
+            CharacterSelectType.Draft => "DraftSelect",
+            CharacterSelectType.PsyduckRacing => "RacingReadyScreen",
+            _ => "CharacterSelect",
+        };
 
         NetworkManager.Singleton.SceneManager.LoadScene(mapMode, LoadSceneMode.Single);
     }
@@ -916,6 +975,8 @@ public class LobbyController : MonoBehaviour
         {
             return;
         }
+
+        SetLobbyLocked(false);
 
         LoadingScreen.Instance.ShowGenericLoadingScreen();
 

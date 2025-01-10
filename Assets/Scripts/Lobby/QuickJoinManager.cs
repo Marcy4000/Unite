@@ -10,6 +10,7 @@ public class QuickJoinManager : MonoBehaviour
     [SerializeField] MatchmakingBarUI matchmakingBarUI;
     [SerializeField] private Button startSearchButton;
     [SerializeField] private Button createLobbyButton;
+    [SerializeField] private Button lobbyFinderButton;
 
     [SerializeField] private TMP_InputField lobbyCodeInput;
 
@@ -43,6 +44,7 @@ public class QuickJoinManager : MonoBehaviour
         startSearchButton.interactable = false;
         createLobbyButton.interactable = false;
         lobbyCodeInput.interactable = false;
+        lobbyFinderButton.interactable = false;
 
         isSearching = true;
 
@@ -62,6 +64,7 @@ public class QuickJoinManager : MonoBehaviour
         startSearchButton.interactable = true;
         createLobbyButton.interactable = true;
         lobbyCodeInput.interactable = true;
+        lobbyFinderButton.interactable = true;
 
         isSearching = false;
 
@@ -100,6 +103,7 @@ public class QuickJoinManager : MonoBehaviour
                 startSearchButton.interactable = true;
                 createLobbyButton.interactable = true;
                 lobbyCodeInput.interactable = true;
+                lobbyFinderButton.interactable = true;
                 searchCoroutine = null;
                 yield break;
             }

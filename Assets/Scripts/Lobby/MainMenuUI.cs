@@ -152,6 +152,21 @@ public class MainMenuUI : MonoBehaviour
         lobbyUIs[5].SetActive(true);
     }
 
+    public void ShowFindLobbyMenu()
+    {
+        foreach (var lobbyUI in lobbyUIs)
+        {
+            lobbyUI.SetActive(false);
+        }
+
+        foreach (var lobbyScene in lobbyScenes)
+        {
+            lobbyScene.SetActive(false);
+        }
+
+        lobbyUIs[6].SetActive(true);
+    }
+
     public void UpdatePartyScreenUI()
     {
         partyScreenUI.UpdatePlayers(LobbyController.Instance.Lobby);

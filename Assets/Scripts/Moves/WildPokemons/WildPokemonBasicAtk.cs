@@ -60,6 +60,12 @@ public class WildPokemonBasicAtk : BasicAttackBase
                 distance = curDistance;
             }
         }
+
+        if (closest == null)
+        {
+            return null;
+        }
+
         return closest.transform;
     }
 
