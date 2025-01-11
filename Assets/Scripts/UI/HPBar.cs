@@ -114,25 +114,33 @@ public class HPBar : MonoBehaviour
         energyText.text = amount.ToString();
     }
 
+    private Coroutine updateHPCoroutine;
+
     public void UpdateUI()
     {
-        if (hpBar.fillAmount > (pokemon.CurrentHp / pokemon.GetMaxHp()))
+        float newHp = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
+        if (hpBar.fillAmount > newHp)
         {
+            if (updateHPCoroutine != null && Mathf.Approximately(hpBar.fillAmount, newHp))
+            {
+                return;
+            }
+
             StopAllCoroutines();
             if (isActiveAndEnabled)
             {
-                StartCoroutine(UpdateHP(pokemon.CurrentHp / pokemon.GetMaxHp()));
+                updateHPCoroutine = StartCoroutine(UpdateHP(newHp));
             }
             else
             {
-                hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
-                damageBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
+                hpBar.fillAmount = newHp;
+                damageBar.fillAmount = newHp;
             }
         }
         else
         {
-            hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
-            damageBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
+            hpBar.fillAmount = newHp;
+            damageBar.fillAmount = newHp;
         }
 
         shieldBar.fillAmount = (float)pokemon.ShieldHp / pokemon.GetMaxHp();
@@ -202,5 +210,4 @@ public class HPBar : MonoBehaviour
             lineRectTransform.anchoredPosition = new Vector2(spacing * i, 0);
         }
     }
-
 }

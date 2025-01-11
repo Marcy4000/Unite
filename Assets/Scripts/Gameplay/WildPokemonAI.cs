@@ -39,6 +39,13 @@ public class WildPokemonAI : NetworkBehaviour
     public WildPokemonState State => state;
     public AnimationManager AnimationManager => animationManager;
 
+    public override void OnNetworkSpawn()
+    {
+        if (!IsServer)
+        {
+            agent.enabled = false;
+        }
+    }
 
     public void Initialize(WildPokemonAISettings settings)
     {

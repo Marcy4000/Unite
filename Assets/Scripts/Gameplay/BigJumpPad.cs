@@ -43,6 +43,8 @@ public class BigJumpPad : NetworkBehaviour
 
         ExitJumpSelection();
 
+        SetJumpPadActive(false, isActive.Value);
+
         if (!IsServer)
         {
             return;

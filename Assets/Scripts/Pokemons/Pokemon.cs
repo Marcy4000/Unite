@@ -1209,7 +1209,8 @@ public class Pokemon : NetworkBehaviour
     private void ClientDamageRPC(int actualDamage, DamageInfo damage)
     {
         lastHit = damage;
-        DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
+        Transform parent = activeModel == null ? transform : activeModel.transform;
+        DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, parent).GetComponent<DamageIndicator>();
         indicator.ShowDamage(actualDamage, damage.type, damage.proprieties.HasFlag(DamageProprieties.WasCriticalHit));
 
         if (IsServer)
@@ -1223,7 +1224,8 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void ClientHealRpc(int actualHeal)
     {
-        DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, transform).GetComponent<DamageIndicator>();
+        Transform parent = activeModel == null ? transform : activeModel.transform;
+        DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, parent).GetComponent<DamageIndicator>();
         indicator.ShowHeal(actualHeal);
     }
 
