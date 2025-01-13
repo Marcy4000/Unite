@@ -1,13 +1,15 @@
+using System.Collections;
 using System.IO;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 public class ScreenshotScript : MonoBehaviour
 {
     public string folderPath = "Screenshots"; // Folder to save screenshots
     public string fileNamePrefix = "Screenshot"; // Prefix for screenshot files
+
+    public bool useNewCode;
 
     private Camera cam;
 
@@ -32,11 +34,18 @@ public class ScreenshotScript : MonoBehaviour
     {
         if (Keyboard.current.f2Key.wasPressedThisFrame && cam != null)
         {
-            TakeScreenshot();
+            if (useNewCode)
+            {
+                StartCoroutine(TakeScreenshowNew());
+            }
+            else
+            {
+                TakeScreenshotOld();
+            }
         }
     }
 
-    void TakeScreenshot()
+    void TakeScreenshotOld()
     {
         // Create a temporary RenderTexture for capturing
         int width = Screen.width;
@@ -64,7 +73,7 @@ public class ScreenshotScript : MonoBehaviour
         cam.Render();
 
         // Create Texture2D from RenderTexture
-        Texture2D screenshot = new Texture2D(width, height, TextureFormat.RGB24, false);
+        Texture2D screenshot = new Texture2D(width, height, TextureFormat.RGB9e5Float, false);
         screenshot.ReadPixels(new Rect(0, 0, width, height), 0, 0);
         screenshot.Apply();
 
@@ -91,5 +100,24 @@ public class ScreenshotScript : MonoBehaviour
 
         Destroy(renderTexture);
         Destroy(screenshot);
+    }
+
+    IEnumerator TakeScreenshowNew()
+    {
+        GameObject canvas = GameObject.Find("Canvas");
+
+        canvas.SetActive(false);
+
+        yield return null;
+
+        string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string filePath = Path.Combine(folderPath, $"{fileNamePrefix}_{timestamp}.png");
+        ScreenCapture.CaptureScreenshot(filePath);
+
+        Debug.Log($"Screenshot saved to: {filePath}");
+
+        yield return null;
+
+        canvas.SetActive(true);
     }
 }
