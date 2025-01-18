@@ -4,7 +4,7 @@ using UnityEngine.AddressableAssets;
 
 public enum ClothingType : byte
 {
-    Hat, Hair, Face, Eyes, Shirt, Overwear, Gloves, Pants, Socks, Shoes
+    Hat, Hair, Face, Eyes, Shirt, Overwear, Gloves, Pants, Socks, Shoes, Backpack
 }
 
 [CreateAssetMenu(fileName = "New Clothing Item", menuName = "Clothes")]
@@ -15,7 +15,7 @@ public class ClothingItem : ScriptableObject
     public ClothingType clothingType;
 
     public AssetReferenceSprite sprite;
-    public AssetReferenceGameObject prefab;
+    public List<AssetReferenceGameObject> prefabs = new List<AssetReferenceGameObject>();
 
     public List<ClothingType> disablesClothingType = new List<ClothingType>();
 }

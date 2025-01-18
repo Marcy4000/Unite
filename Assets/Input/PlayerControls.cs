@@ -121,7 +121,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""BasicAttackWild"",
                     ""type"": ""Button"",
                     ""id"": ""beb62765-5e9f-46e6-86f2-1442a2a0fcf4"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -547,10 +547,19 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""name"": ""OpenQuickChat"",
                     ""type"": ""Button"",
                     ""id"": ""7dc978cb-9b1b-482c-8cc4-f1e7526ac8f7"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ModelRotate"",
+                    ""type"": ""Value"",
+                    ""id"": ""aa615a11-f45d-47d2-9b83-a07cd3bb1559"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -586,6 +595,72 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""action"": ""OpenQuickChat"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""97d50d20-a673-4181-8959-868d25ae790c"",
+                    ""path"": ""<Gamepad>/rightStick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Gamepad"",
+                    ""action"": ""ModelRotate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""2D Vector"",
+                    ""id"": ""f36d4e25-c621-47f6-9440-312f6002ce84"",
+                    ""path"": ""2DVector"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ModelRotate"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""up"",
+                    ""id"": ""db92100f-90a4-4ee8-a098-f1f392ee4e81"",
+                    ""path"": ""<Keyboard>/upArrow"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";MouseAndKeyboard"",
+                    ""action"": ""ModelRotate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""down"",
+                    ""id"": ""38b6d4b2-56be-434d-93fa-594e156fc276"",
+                    ""path"": ""<Keyboard>/downArrow"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";MouseAndKeyboard"",
+                    ""action"": ""ModelRotate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""left"",
+                    ""id"": ""5cd70637-7718-4a3d-8aa9-f69e2c17938f"",
+                    ""path"": ""<Keyboard>/leftArrow"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";MouseAndKeyboard"",
+                    ""action"": ""ModelRotate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""right"",
+                    ""id"": ""28badc87-42a4-42ad-af60-f07f93577aca"",
+                    ""path"": ""<Keyboard>/rightArrow"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";MouseAndKeyboard"",
+                    ""action"": ""ModelRotate"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         }
@@ -647,6 +722,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_UI_OpenScoreboard = m_UI.FindAction("OpenScoreboard", throwIfNotFound: true);
         m_UI_CloseScoreboard = m_UI.FindAction("CloseScoreboard", throwIfNotFound: true);
         m_UI_OpenQuickChat = m_UI.FindAction("OpenQuickChat", throwIfNotFound: true);
+        m_UI_ModelRotate = m_UI.FindAction("ModelRotate", throwIfNotFound: true);
     }
 
     ~@PlayerControls()
@@ -961,6 +1037,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_UI_OpenScoreboard;
     private readonly InputAction m_UI_CloseScoreboard;
     private readonly InputAction m_UI_OpenQuickChat;
+    private readonly InputAction m_UI_ModelRotate;
     public struct UIActions
     {
         private @PlayerControls m_Wrapper;
@@ -968,6 +1045,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         public InputAction @OpenScoreboard => m_Wrapper.m_UI_OpenScoreboard;
         public InputAction @CloseScoreboard => m_Wrapper.m_UI_CloseScoreboard;
         public InputAction @OpenQuickChat => m_Wrapper.m_UI_OpenQuickChat;
+        public InputAction @ModelRotate => m_Wrapper.m_UI_ModelRotate;
         public InputActionMap Get() { return m_Wrapper.m_UI; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -986,6 +1064,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @OpenQuickChat.started += instance.OnOpenQuickChat;
             @OpenQuickChat.performed += instance.OnOpenQuickChat;
             @OpenQuickChat.canceled += instance.OnOpenQuickChat;
+            @ModelRotate.started += instance.OnModelRotate;
+            @ModelRotate.performed += instance.OnModelRotate;
+            @ModelRotate.canceled += instance.OnModelRotate;
         }
 
         private void UnregisterCallbacks(IUIActions instance)
@@ -999,6 +1080,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @OpenQuickChat.started -= instance.OnOpenQuickChat;
             @OpenQuickChat.performed -= instance.OnOpenQuickChat;
             @OpenQuickChat.canceled -= instance.OnOpenQuickChat;
+            @ModelRotate.started -= instance.OnModelRotate;
+            @ModelRotate.performed -= instance.OnModelRotate;
+            @ModelRotate.canceled -= instance.OnModelRotate;
         }
 
         public void RemoveCallbacks(IUIActions instance)
@@ -1064,5 +1148,6 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         void OnOpenScoreboard(InputAction.CallbackContext context);
         void OnCloseScoreboard(InputAction.CallbackContext context);
         void OnOpenQuickChat(InputAction.CallbackContext context);
+        void OnModelRotate(InputAction.CallbackContext context);
     }
 }

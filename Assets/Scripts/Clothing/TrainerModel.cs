@@ -118,7 +118,18 @@ public class TrainerModel : MonoBehaviour
 
             var item = ClothesList.Instance.GetClothingItem((ClothingType)i, info.GetClothingIndex((ClothingType)i), info.IsMale);
 
-            if (item == null || !item.prefab.RuntimeKeyIsValid())
+            int modelIndex = 0;
+
+            if (item.clothingType == ClothingType.Shirt && item.prefabs.Count > 1)
+            {
+                modelIndex = info.GetClothingIndex(ClothingType.Overwear) != 0 ? 0 : 1;
+            }
+            else if (item.clothingType == ClothingType.Socks)
+            {
+                modelIndex = Mathf.Min(item.prefabs.Count-1, 2);
+            }
+
+            if (item == null || item.prefabs.Count <= modelIndex || !item.prefabs[modelIndex].RuntimeKeyIsValid())
             {
                 Debug.LogWarning(item == null
                     ? $"Clothing item of type {(ClothingType)i} not found."
@@ -127,7 +138,7 @@ public class TrainerModel : MonoBehaviour
             }
 
             // Instantiate the clothing item asynchronously
-            var handle = Addressables.InstantiateAsync(item.prefab, holder);
+            var handle = Addressables.InstantiateAsync(item.prefabs[modelIndex], holder);
 
             handle.Completed += (op) =>
             {

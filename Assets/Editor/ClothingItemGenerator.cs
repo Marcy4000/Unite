@@ -26,7 +26,8 @@ public class ClothingItemGenerator : MonoBehaviour
         { "Hat", (ClothingType.Hat, "Hats") },
         { "Top", (ClothingType.Shirt, "Shirt") },
         { "Foot", (ClothingType.Shoes, "Shoes") },
-        { "Head", (ClothingType.Face, "Face") }
+        { "Head", (ClothingType.Face, "Face") },
+        { "Backpack", (ClothingType.Backpack, "Backpack")   }
     };
 
     private static int undefinedNameCounter = -1;
@@ -68,7 +69,6 @@ public class ClothingItemGenerator : MonoBehaviour
                         if (match.Success)
                         {
                             string numberString = match.Value;
-                            int number = int.Parse(numberString);
 
                             int firstTwoDigits = int.Parse(numberString.Substring(0, 2));
                             bool isMale = firstTwoDigits == 40;
@@ -82,7 +82,7 @@ public class ClothingItemGenerator : MonoBehaviour
                             Debug.Log($"Match found: {clothingInfo}, isMale: {isMale}, type: {clothingType}, model ID: {modelId}");
 
                             ClothingItem clothingItem = ScriptableObject.CreateInstance<ClothingItem>();
-                            clothingItem.itemName = clothingInfo;
+                            clothingItem.itemName = string.IsNullOrEmpty(clothingInfo) ? "undefined name" : clothingInfo;
                             clothingItem.isMale = isMale;
                             clothingItem.clothingType = clothingType;
 
@@ -95,15 +95,38 @@ public class ClothingItemGenerator : MonoBehaviour
                                 continue;
                             }
 
-                            SetDisablesClothingType(prefabPath, clothingItem);
-
                             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
                             AddressableAssetGroup group = settings.FindGroup("ClothingItems");
                             string guid = AssetDatabase.AssetPathToGUID(prefabPath);
                             AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group);
                             entry.address = addressableName;
 
-                            clothingItem.prefab = new AssetReferenceGameObject(guid);
+                            if (clothingType == ClothingType.Shirt)
+                            {
+                                if (folderName.Contains("top_"))
+                                {
+                                    clothingItem.prefabs.Add(new AssetReferenceGameObject(guid));
+                                }
+                                else
+                                {
+                                    SetShirtVariants(clothingItem, folderName, modelFolder);
+                                }
+                            }
+                            else if (clothingType == ClothingType.Socks)
+                            {
+                                SetSockVariants(clothingItem, folderName, modelFolder, isMale);
+                            }
+                            else
+                            {
+                                clothingItem.prefabs.Add(new AssetReferenceGameObject(guid));
+                            }
+
+                            SetDisablesClothingType(prefabPath, clothingItem);
+
+                            if (clothingItem.prefabs.Count == 0)
+                            {
+                                continue;
+                            }
 
                             string genderString = isMale ? "male" : "female";
 
@@ -117,8 +140,17 @@ public class ClothingItemGenerator : MonoBehaviour
                             {
                                 folderMappingKey = "Socks";
                             }
+                            else if (folderMappingKey.Equals("Backpack"))
+                            {
+                                folderMappingKey = "Bag";
+                            }
 
                             string iconPath = $"t_{folderMappingKey}_{genderString}_{modelId}_";
+
+                            if (clothingType == ClothingType.Face)
+                            {
+                                iconPath = $"t_face_{genderString}{modelId}_";
+                            }
 
                             foreach (string file in Directory.GetFiles(clothesIconsPath))
                             {
@@ -154,17 +186,90 @@ public class ClothingItemGenerator : MonoBehaviour
         AssetDatabase.Refresh();
     }
 
+    private static void SetShirtVariants(ClothingItem clothingItem, string folderName, string modelFolder)
+    {
+        if (!folderName.Contains("top1"))
+        {
+            return;
+        }
+
+        string[] variants = { "top1", "top2" };
+
+        clothingItem.prefabs.Clear();
+
+        foreach (string variant in variants)
+        {
+            string targetFolder = folderName.Replace("top1", variant);
+
+            string newModelFolder = modelFolder.Replace("top1", variant);
+
+            string prefabPath = $"{newModelFolder}/{targetFolder}.fbx";
+            string addressableName = $"Assets/AddressableAssets/{targetFolder}.fbx"; // Adjust this to your addressable setup
+
+            if (!File.Exists(prefabPath))
+            {
+                continue;
+            }
+
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            AddressableAssetGroup group = settings.FindGroup("ClothingItems");
+            string guid = AssetDatabase.AssetPathToGUID(prefabPath);
+            AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group);
+            entry.address = addressableName;
+
+            clothingItem.prefabs.Add(new AssetReferenceGameObject(guid));
+        }
+    }
+
+    private static void SetSockVariants(ClothingItem clothingItem, string folderName, string modelFolder, bool isMale)
+    {
+        if (!folderName.Contains("sock1"))
+        {
+            return;
+        }
+
+        string[] variants = isMale ? new string[] { "sock1", "sock2" } : new string[] { "sock1", "sock2", "sock3" };
+
+        clothingItem.prefabs.Clear();
+
+        foreach (string variant in variants)
+        {
+            string targetFolder = folderName.Replace("sock1", variant);
+
+            string newModelFolder = modelFolder.Replace("sock1", variant);
+
+            string prefabPath = $"{newModelFolder}/{targetFolder}.fbx";
+            string addressableName = $"Assets/AddressableAssets/{targetFolder}.fbx"; // Adjust this to your addressable setup
+            if (!File.Exists(prefabPath))
+            {
+                continue;
+            }
+
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            AddressableAssetGroup group = settings.FindGroup("ClothingItems");
+            string guid = AssetDatabase.AssetPathToGUID(prefabPath);
+            AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group);
+            entry.address = addressableName;
+
+            clothingItem.prefabs.Add(new AssetReferenceGameObject(guid));
+        }
+    }
+
     private static void SetDisablesClothingType(string prefabPath, ClothingItem clothingItem)
     {
         // Load FBX as GameObject
         GameObject fbxObject = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         if (fbxObject == null)
         {
-            Debug.LogWarning($"Failed to load FBX: {prefabPath}");
             return;
         }
 
         clothingItem.disablesClothingType = new List<ClothingType>();
+
+        if (clothingItem.clothingType == ClothingType.Shirt && clothingItem.prefabs.Count == 1)
+        {
+            clothingItem.disablesClothingType.Add(ClothingType.Overwear);
+        }
 
         // Iterate through all SkinnedMeshRenderers in FBX
         foreach (var renderer in fbxObject.GetComponentsInChildren<SkinnedMeshRenderer>())
@@ -174,6 +279,18 @@ public class ClothingItemGenerator : MonoBehaviour
                 clothingType.type != clothingItem.clothingType) // Avoid disabling its own type
             {
                 clothingItem.disablesClothingType.Add(clothingType.type);
+            }
+
+            if (clothingItem.clothingType == ClothingType.Hat)
+            {
+                foreach (var mat in renderer.sharedMaterials)
+                {
+                    if (mat.name.ContainsInsensitive("hair"))
+                    {
+                        clothingItem.disablesClothingType.Add(ClothingType.Hair);
+                        break;
+                    }
+                }
             }
         }
     }
@@ -253,6 +370,10 @@ public class ClothingItemGenerator : MonoBehaviour
                         else if (clothingTypeStrLower.Equals("socks"))
                         {
                             clothingTypeStr = "Sock";
+                        }
+                        else if (clothingTypeStrLower.Equals("bag"))
+                        {
+                            clothingTypeStr = "Backpack";
                         }
 
                         if (folderMappings.ContainsKey(clothingTypeStr))

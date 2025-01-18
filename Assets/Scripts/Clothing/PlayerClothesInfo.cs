@@ -11,6 +11,7 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
     public byte Pants;
     public byte Socks;
     public byte Shoes;
+    public byte Backpack;
 
     private byte _faceAndHair; // Encodes IsMale (1 bit), Face (3 bits), and Hair (4 bits)
 
@@ -66,6 +67,7 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
             case ClothingType.Pants: return Pants;
             case ClothingType.Socks: return Socks;
             case ClothingType.Shoes: return Shoes;
+            case ClothingType.Backpack: return Backpack;
             default: throw new ArgumentException("Invalid clothing type.");
         }
     }
@@ -84,13 +86,14 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
             case ClothingType.Pants: Pants = index; break;
             case ClothingType.Socks: Socks = index; break;
             case ClothingType.Shoes: Shoes = index; break;
+            case ClothingType.Backpack: Backpack = index; break;
             default: throw new ArgumentException("Invalid clothing type.");
         }
     }
 
     public string Serialize()
     {
-        byte[] data = new byte[25];
+        byte[] data = new byte[26];
         data[0] = Hat;
         data[1] = _faceAndHair; // Encodes Face, Hair, and IsMale
         data[2] = Eyes;
@@ -107,8 +110,9 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
         data[13] = EyeColor.g;
         data[14] = EyeColor.b;
         data[15] = SkinColor;
+        data[16] = Backpack;
 
-        TrainerCardInfo.Serialize().CopyTo(data, 16);
+        TrainerCardInfo.Serialize().CopyTo(data, 17);
 
         return Convert.ToBase64String(data);
     }
@@ -117,26 +121,7 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
     {
         byte[] bytes = Convert.FromBase64String(data);
 
-        if (bytes.Length == 17) // Handle old format
-        {
-            return new PlayerClothesInfo
-            {
-                Hat = bytes[0],
-                _faceAndHair = (byte)((bytes[2] & 0x7F) << 4 | (bytes[1] & 0x0F)), // Combine Face and Hair
-                Eyes = bytes[3],
-                Shirt = bytes[4],
-                Overwear = bytes[5],
-                Gloves = bytes[6],
-                Pants = bytes[7],
-                Socks = bytes[8],
-                Shoes = bytes[9],
-                HairColor = new Color32(bytes[10], bytes[11], bytes[12], 255),
-                EyeColor = new Color32(bytes[13], bytes[14], bytes[15], 255),
-                SkinColor = bytes[16],
-                IsMale = (bytes[2] & 0x80) != 0 // Old IsMale from Shoes' MSB
-            };
-        }
-        else if (bytes.Length == 16) // New format
+        if (bytes.Length == 16) // New format
         {
             return new PlayerClothesInfo
             {
@@ -154,10 +139,10 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
                 SkinColor = bytes[15]
             };
         }
-        else if (bytes.Length == 25)
+        else if (bytes.Length == 26)
         {
             byte[] trainerCardData = new byte[9];
-            Array.Copy(bytes, 16, trainerCardData, 0, 9);
+            Array.Copy(bytes, 17, trainerCardData, 0, 9);
 
             return new PlayerClothesInfo
             {
@@ -173,12 +158,13 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
                 HairColor = new Color32(bytes[9], bytes[10], bytes[11], 255),
                 EyeColor = new Color32(bytes[12], bytes[13], bytes[14], 255),
                 SkinColor = bytes[15],
+                Backpack = bytes[16],
                 TrainerCardInfo = TrainerCardInfo.Deserialize(trainerCardData)
             };
         }
         else
         {
-            throw new ArgumentException("Invalid data length. Expected 16 or 17 bytes.");
+            throw new ArgumentException("Invalid data length. Expected 16 or 26 bytes.");
         }
     }
 
@@ -195,6 +181,7 @@ public struct PlayerClothesInfo : IEquatable<PlayerClothesInfo>
                Shoes == other.Shoes &&
                HairColor.Equals(other.HairColor) &&
                EyeColor.Equals(other.EyeColor) &&
-               SkinColor == other.SkinColor;
+               SkinColor == other.SkinColor &&
+               Backpack == other.Backpack;
     }
 }
