@@ -116,7 +116,9 @@ public class TrainerModel : MonoBehaviour
                 continue;
             }
 
-            var item = ClothesList.Instance.GetClothingItem((ClothingType)i, info.GetClothingIndex((ClothingType)i), info.IsMale);
+            int clothingIndex = (ClothingType)i == ClothingType.Eyes ? info.GetClothingIndex(ClothingType.Face) : info.GetClothingIndex((ClothingType)i);
+
+            var item = ClothesList.Instance.GetClothingItem((ClothingType)i, clothingIndex, info.IsMale);
 
             int modelIndex = 0;
 
@@ -126,14 +128,13 @@ public class TrainerModel : MonoBehaviour
             }
             else if (item.clothingType == ClothingType.Socks)
             {
-                modelIndex = Mathf.Min(item.prefabs.Count-1, 2);
+                var pants = ClothesList.Instance.GetClothingItem(ClothingType.Pants, info.GetClothingIndex(ClothingType.Pants), info.IsMale);
+
+                modelIndex = pants != null ? Mathf.Min(item.prefabs.Count - 1, pants.sockTypeToUse) : Mathf.Min(item.prefabs.Count - 1, 2);
             }
 
             if (item == null || item.prefabs.Count <= modelIndex || !item.prefabs[modelIndex].RuntimeKeyIsValid())
             {
-                Debug.LogWarning(item == null
-                    ? $"Clothing item of type {(ClothingType)i} not found."
-                    : $"Clothing item prefab is not set for type {(ClothingType)i}.");
                 continue;
             }
 

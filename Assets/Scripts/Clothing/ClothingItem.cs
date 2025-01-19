@@ -18,4 +18,6 @@ public class ClothingItem : ScriptableObject
     public List<AssetReferenceGameObject> prefabs = new List<AssetReferenceGameObject>();
 
     public List<ClothingType> disablesClothingType = new List<ClothingType>();
+
+    public int sockTypeToUse = 0; // only used for pants
 }
