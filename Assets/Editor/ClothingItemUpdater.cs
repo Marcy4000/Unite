@@ -12,7 +12,7 @@ using UnityEngine.AddressableAssets;
 
 public class ClothingItemUpdater : MonoBehaviour
 {
-    private static string dataJsFilePath = "Assets/Clothes/ElChicoEevee_files/index_data/data.js";
+    private static string dataJsFilePath = "Assets/Clothes/ElChicoEevee_files/index_data/databin_AvatarSuit_parsed.json";
     private static string clothesIconsPath = "Assets/Clothes/ElChicoEevee_files/index_data";
 
     private static readonly Dictionary<string, (ClothingType type, string outputFolder)> folderMappings = new Dictionary<string, (ClothingType, string)>
@@ -30,8 +30,8 @@ public class ClothingItemUpdater : MonoBehaviour
         { "Backpack", (ClothingType.Backpack, "Backpack")   }
     };
 
-    [ContextMenu("Update Clothing Items")]
-    public void UpdateClothingItems()
+    [MenuItem("Tools/Update Clothing Items")]
+    public static void UpdateClothingItems()
     {
         var clothingData = ParseClothingDataFromJs(dataJsFilePath);
 
@@ -55,53 +55,69 @@ public class ClothingItemUpdater : MonoBehaviour
 
                 foreach (var guid in clothingItemGuids)
                 {
+                    bool editedSomething = false;
+
                     string clothingItemPath = AssetDatabase.GUIDToAssetPath(guid);
                     ClothingItem clothingItem = AssetDatabase.LoadAssetAtPath<ClothingItem>(clothingItemPath);
 
                     string genderString = clothingItem.isMale ? "male" : "female";
                     int modelId = GetModelId(clothingItem);
 
+                    string folderMappingKey = folderMapping.Key;
+
                     if (clothingData.TryGetValue((modelId, clothingItem.isMale, clothingItem.clothingType), out var clothingName))
                     {
                         clothingItem.itemName = string.IsNullOrEmpty(clothingName) ? "undefined name" : clothingName;
 
-                        string folderMappingKey = folderMapping.Key;
+                        string sanitizedFileName = SanitizeFileName(clothingItem.itemName);
 
-                        if (folderMappingKey.Equals("Outwear"))
+                        if (!string.IsNullOrEmpty(sanitizedFileName))
                         {
-                            folderMappingKey = "Outerwear";
-                        }
-                        else if (folderMappingKey.Equals("Sock"))
-                        {
-                            folderMappingKey = "Socks";
-                        }
-                        else if (folderMappingKey.Equals("Backpack"))
-                        {
-                            folderMappingKey = "Bag";
+                            clothingItemPath = clothingItemPath.Replace(clothingItem.name, sanitizedFileName);
+                            AssetDatabase.RenameAsset(clothingItemPath, sanitizedFileName);
                         }
 
-                        string iconPath = $"t_{folderMappingKey}_{genderString}_{modelId}_";
+                        Debug.Log($"Updated {clothingItem.itemName} ({clothingItem.clothingType})");
+                        editedSomething = true;
+                    }
 
-                        if (clothingItem.clothingType == ClothingType.Face)
+                    if (folderMappingKey.Equals("Outwear"))
+                    {
+                        folderMappingKey = "Outerwear";
+                    }
+                    else if (folderMappingKey.Equals("Sock"))
+                    {
+                        folderMappingKey = "Socks";
+                    }
+                    else if (folderMappingKey.Equals("Backpack"))
+                    {
+                        folderMappingKey = "Bag";
+                    }
+
+                    string iconPath = $"t_{folderMappingKey}_{genderString}_{modelId}_";
+
+                    if (clothingItem.clothingType == ClothingType.Face)
+                    {
+                        iconPath = $"t_face_{genderString}{modelId}_";
+                    }
+
+                    foreach (string file in Directory.GetFiles(clothesIconsPath))
+                    {
+                        if (Path.GetFileName(file).StartsWith(iconPath))
                         {
-                            iconPath = $"t_face_{genderString}{modelId}_";
+                            string guidIcon = AssetDatabase.AssetPathToGUID(file);
+                            AddressableAssetEntry entryIcon = settings.CreateOrMoveEntry(guidIcon, group);
+                            entryIcon.address = $"Assets/AddressableAssets/{Path.GetFileName(file)}";
+
+                            clothingItem.sprite = new AssetReferenceSprite(guidIcon);
+                            editedSomething = true;
+                            break;
                         }
+                    }
 
-                        foreach (string file in Directory.GetFiles(clothesIconsPath))
-                        {
-                            if (Path.GetFileName(file).StartsWith(iconPath))
-                            {
-                                string guidIcon = AssetDatabase.AssetPathToGUID(file);
-                                AddressableAssetEntry entryIcon = settings.CreateOrMoveEntry(guidIcon, group);
-                                entryIcon.address = $"Assets/AddressableAssets/{Path.GetFileName(file)}";
-
-                                clothingItem.sprite = new AssetReferenceSprite(guidIcon);
-                                break;
-                            }
-                        }
-
+                    if (editedSomething)
+                    {
                         EditorUtility.SetDirty(clothingItem);
-
                     }
                 }
             }
@@ -111,9 +127,9 @@ public class ClothingItemUpdater : MonoBehaviour
         AssetDatabase.Refresh();
     }
 
-    private int GetModelId(ClothingItem clothingItem)
+    private static int GetModelId(ClothingItem clothingItem)
     {
-        Match match = Regex.Match(clothingItem.prefabs[0].Asset.name, @"\d{5}");
+        Match match = Regex.Match(clothingItem.prefabs[0].editorAsset.name, @"\d{5}");
 
         if (match.Success)
         {
@@ -164,8 +180,6 @@ public class ClothingItemUpdater : MonoBehaviour
                         bool isMale = parts[2].Substring(0, 4) == "male";
                         int modelId = int.Parse(parts[2][parts[2].Length - 1].ToString());
 
-                        Debug.Log($"Name: {name}, Type: {clothingTypeStr}, isMale: {isMale}, Model ID: {modelId}");
-
                         if (folderMappings.ContainsKey(clothingTypeStr))
                         {
                             clothingData[(modelId, isMale, folderMappings[clothingTypeStr].type)] = name;
@@ -175,8 +189,6 @@ public class ClothingItemUpdater : MonoBehaviour
                     {
                         bool isMale = parts[2] == "male";
                         int modelId = int.Parse(parts[3]);
-
-                        Debug.Log($"Name: {name}, Type: {clothingTypeStr}, isMale: {isMale}, Model ID: {modelId}");
 
                         var clothingTypeStrLower = clothingTypeStr.ToLower();
 
@@ -195,6 +207,7 @@ public class ClothingItemUpdater : MonoBehaviour
 
                         if (folderMappings.ContainsKey(clothingTypeStr))
                         {
+                            Debug.Log($"Parsed type: {clothingTypeStr}, {modelId}; {isMale}; {folderMappings[clothingTypeStr].type}");
                             clothingData[(modelId, isMale, folderMappings[clothingTypeStr].type)] = name;
                         }
                     }
@@ -208,5 +221,24 @@ public class ClothingItemUpdater : MonoBehaviour
         }
 
         return clothingData;
+    }
+
+    public static string SanitizeFileName(string input)
+    {
+        if (string.IsNullOrEmpty(input) || input.Equals("undefined name"))
+        {
+            return $"";
+        }
+
+        // Define the regex pattern to match illegal file name characters
+        string illegalCharsPattern = @"[\/:*?""<>|]";
+
+        // Replace each illegal character with an underscore
+        string cleanedFileName = Regex.Replace(input, illegalCharsPattern, "_");
+
+        // Optionally, you can also remove any leading or trailing whitespace
+        cleanedFileName = cleanedFileName.Trim();
+
+        return cleanedFileName;
     }
 }
