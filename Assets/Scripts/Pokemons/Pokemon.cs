@@ -787,7 +787,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        if (HasStatusEffect(effect.Type))
+        if (HasStatusEffect(effect))
         {
             statusTimers[statusEffects.IndexOf(effect)] += effect.Duration;
         }
@@ -888,6 +888,19 @@ public class Pokemon : NetworkBehaviour
         foreach (StatusEffect effect in statusEffects)
         {
             if (effect.Type == type)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool HasStatusEffect(StatusEffect newEffect)
+    {
+        foreach (StatusEffect effect in statusEffects)
+        {
+            if (newEffect.Equals(effect))
             {
                 return true;
             }

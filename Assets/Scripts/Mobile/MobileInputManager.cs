@@ -5,18 +5,11 @@ public class MobileInputManager : MonoBehaviour
 {
     private void Awake()
     {
-        if (Application.isEditor)
-        {
-            return;
-        }
-
-        if (Application.platform != RuntimePlatform.Android)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
+#if UNITY_ANDROID
         EnhancedTouchSupport.Enable();
+#else
+        Destroy(gameObject);
+#endif
     }
 
     private void OnDisable()

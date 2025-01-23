@@ -72,8 +72,8 @@ public class AssignNormalMaps : EditorWindow
                 foreach (var material in renderer.sharedMaterials)
                 {
                     if (material == null) continue;
-                    //AssignNormalMapToMaterial(material, folderPath);
-                    ChangeMaterialShader(material);
+                    AssignNormalMapToMaterial(material, folderPath);
+                    //ChangeMaterialShader(material);
                 }
             }
         }
@@ -162,6 +162,7 @@ public class AssignNormalMaps : EditorWindow
         { "Hat", (ClothingType.Hat, "Hats") },
         { "Top", (ClothingType.Shirt, "Shirt") },
         { "Foot", (ClothingType.Shoes, "Shoes") },
-        { "Head", (ClothingType.Face, "Face") }
+        { "Head", (ClothingType.Face, "Face") },
+        { "Backpack", (ClothingType.Backpack, "Backpack")   }
     };
 }

@@ -130,7 +130,7 @@ public class TrainerModel : MonoBehaviour
             {
                 var pants = ClothesList.Instance.GetClothingItem(ClothingType.Pants, info.GetClothingIndex(ClothingType.Pants), info.IsMale);
 
-                modelIndex = pants != null ? Mathf.Min(item.prefabs.Count - 1, pants.sockTypeToUse) : Mathf.Min(item.prefabs.Count - 1, 2);
+                modelIndex = (pants != null && !ArePantsDisabled(info)) ? Mathf.Min(item.prefabs.Count - 1, pants.sockTypeToUse) : Mathf.Min(item.prefabs.Count - 1, 2);
             }
 
             if (item == null || item.prefabs.Count <= modelIndex || !item.prefabs[modelIndex].RuntimeKeyIsValid())
@@ -243,6 +243,29 @@ public class TrainerModel : MonoBehaviour
         initializing = false;
 
         onClothesInitialized?.Invoke();
+    }
+
+    private bool ArePantsDisabled(PlayerClothesInfo info)
+    {
+        for (int i = 0; i < clothingHolders.Length; i++)
+        {
+            var item = ClothesList.Instance.GetClothingItem((ClothingType)i, info.GetClothingIndex((ClothingType)i), info.IsMale);
+
+            if (item == null)
+            {
+                continue;
+            }
+
+            foreach (var disableType in item.disablesClothingType)
+            {
+                if (disableType == ClothingType.Pants)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public void UpdateMaterialColors(PlayerClothesInfo info)

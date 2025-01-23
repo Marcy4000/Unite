@@ -95,6 +95,12 @@ public class PsyduckRacePassive : PassiveBase
         {
             HandleMovement(playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>());
         }
+
+        if (UnityEngine.InputSystem.Keyboard.current.gKey.wasPressedThisFrame)
+        {
+            playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1.2f, true, 0));
+        }
+
         UpdateAnimations();
     }
 
