@@ -21,6 +21,8 @@ public class DraftPlayerIcon : MonoBehaviour
 
     [SerializeField] private Sprite emptyBattleItem;
 
+    [SerializeField] private Button switchRequestButton, switchConfirmButton;
+
     [Space]
 
     [SerializeField] private float playerBGIdlePos, playerBGSelectedPos;
@@ -37,6 +39,17 @@ public class DraftPlayerIcon : MonoBehaviour
     public CharacterInfo SelectedCharacter => selectedCharacter;
     public CharacterInfo BannedCharacter => bannedCharacter;
 
+    public event System.Action<DraftPlayerIcon> OnRequestSwitch;
+    public event System.Action<DraftPlayerIcon> OnConfirmSwitch;
+
+    private void Start()
+    {
+        if (switchRequestButton == null || switchConfirmButton == null) return;
+
+        switchRequestButton.onClick.AddListener(() => OnRequestSwitch?.Invoke(this));
+        switchConfirmButton.onClick.AddListener(() => OnConfirmSwitch?.Invoke(this));
+    }
+
     public void Initialize(Player player, bool autoSyncCharacter=true)
     {
         assignedPlayer = player;
@@ -44,6 +57,8 @@ public class DraftPlayerIcon : MonoBehaviour
         this.autoSyncCharacter = autoSyncCharacter;
         UpdateSelectedCharacter(null);
         UpdateBannedCharacter(null);
+        SetConfirmButton(false);
+        SetRequestButton(false);
         playerHead.InitializeHead(PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value));
         UpdateIconState(DraftPlayerState.Idle);
     }
@@ -108,6 +123,20 @@ public class DraftPlayerIcon : MonoBehaviour
                     heldItemsHolder.gameObject.SetActive(false);
                 break;
         }
+    }
+
+    public void SetRequestButton(bool isBanRequest)
+    {
+        if (switchRequestButton == null) return;
+
+        switchRequestButton.gameObject.SetActive(isBanRequest);
+    }
+
+    public void SetConfirmButton(bool isBanRequest)
+    {
+        if (switchConfirmButton == null) return;
+
+        switchConfirmButton.gameObject.SetActive(isBanRequest);
     }
 
     private void UpdateHighlitedState(bool highlighted)

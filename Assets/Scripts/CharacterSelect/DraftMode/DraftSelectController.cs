@@ -25,6 +25,7 @@ public class DraftSelectController : NetworkBehaviour
     [SerializeField] private DraftCharacterSelector draftCharacterSelector;
     [SerializeField] private DraftBansShowcase draftBansShowcase;
     [SerializeField] private DraftPicksShowcaser pickShowcaserBlue, pickShowcaserOrange;
+    [SerializeField] private DraftSwitchController switchController;
     [SerializeField] private Button confirmButton, switchButton, battlePrepButton, banRequestButton;
     [SerializeField] private GameObject background;
     [SerializeField] private Transform pokemonSpawnPoint;
@@ -106,6 +107,13 @@ public class DraftSelectController : NetworkBehaviour
             LobbyController.Instance.ChangePlayerCharacter(-1);
             trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
         }
+
+        switchController.Initialize(draftPlayerHolderBlue.PlayerIcons);
+        switchController.OnCharacterChanged += (characterID) =>
+        {
+            SpawnPokemon(CharactersList.Instance.GetCharacterFromID(characterID));
+            UpdateHoveredSelectedCharacterRPC(LobbyController.Instance.Player.Id, characterID);
+        };
 
         AudioManager.StopAllMusic();
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon);
@@ -262,6 +270,10 @@ public class DraftSelectController : NetworkBehaviour
         if (current == DraftPhase.Picking)
         {
             StartCoroutine(ShowBansWhenUpdated());
+        }
+        else if (current == DraftPhase.Preparation)
+        {
+            switchController.SetPrepPhaseSwitch(true);
         }
 
         OnPhaseChanged?.Invoke(current);
