@@ -12,7 +12,7 @@ public class CinderPassive : PassiveBase
         base.Start(playerManager);
         IsActive = false;
 
-        playerManager.Pokemon.OnHpOrShieldChange += CinderPassiveEffect;
+        playerManager.Pokemon.OnHpChange += CinderPassiveEffect;
     }
 
     override public void Update()

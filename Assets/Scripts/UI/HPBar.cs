@@ -19,10 +19,12 @@ public class HPBar : MonoBehaviour
     public void SetPokemon(Pokemon pokemon)
     {
         this.pokemon = pokemon;
-        pokemon.OnHpOrShieldChange += UpdateUI;
+        pokemon.OnHpChange += UpdateHPUI;
+        pokemon.OnShieldChange += UpdateShieldsUI;
         pokemon.OnLevelChange += UpdateLevel;
         pokemon.OnExpChange += UpdateExp;
-        UpdateUI();
+        UpdateHPUI();
+        UpdateShieldsUI();
         UpdateLevel();
         UpdateExp();
         ShowGenericGuage(false);
@@ -114,22 +116,15 @@ public class HPBar : MonoBehaviour
         energyText.text = amount.ToString();
     }
 
-    private Coroutine updateHPCoroutine;
-
-    public void UpdateUI()
+    public void UpdateHPUI()
     {
         float newHp = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
         if (hpBar.fillAmount > newHp)
         {
-            if (updateHPCoroutine != null && Mathf.Approximately(hpBar.fillAmount, newHp))
-            {
-                return;
-            }
-
             StopAllCoroutines();
             if (isActiveAndEnabled)
             {
-                updateHPCoroutine = StartCoroutine(UpdateHP(newHp));
+                StartCoroutine(UpdateHP(newHp));
             }
             else
             {
@@ -142,7 +137,10 @@ public class HPBar : MonoBehaviour
             hpBar.fillAmount = newHp;
             damageBar.fillAmount = newHp;
         }
+    }
 
+    private void UpdateShieldsUI()
+    {
         shieldBar.fillAmount = (float)pokemon.ShieldHp / pokemon.GetMaxHp();
     }
 

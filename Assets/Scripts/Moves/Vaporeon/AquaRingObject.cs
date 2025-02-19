@@ -22,14 +22,14 @@ public class AquaRingObject : NetworkBehaviour
         healAmount = heal;
         target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetId].GetComponent<PlayerManager>();
         target.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(target.Pokemon.GetMaxHp()*0.20f), 2, 1, 6f, true));
-        target.Pokemon.OnHpOrShieldChange += CheckIfShouldBreakEarly;
+        target.Pokemon.OnShieldChange += CheckIfShouldBreakEarly;
         target.Pokemon.OnDeath += OnTargetDeath;
         initialized = true;
     }
 
     private void OnTargetDeath(DamageInfo info)
     {
-        target.Pokemon.OnHpOrShieldChange -= CheckIfShouldBreakEarly;
+        target.Pokemon.OnShieldChange -= CheckIfShouldBreakEarly;
         target.Pokemon.OnDeath -= OnTargetDeath;
         NetworkObject.Despawn(true);
     }
@@ -39,7 +39,7 @@ public class AquaRingObject : NetworkBehaviour
         if (!target.Pokemon.HasShieldWithID(2))
         {
             initialized = false;
-            target.Pokemon.OnHpOrShieldChange -= CheckIfShouldBreakEarly;
+            target.Pokemon.OnShieldChange -= CheckIfShouldBreakEarly;
             NetworkObject.Despawn(true);
         }
     }
@@ -64,7 +64,7 @@ public class AquaRingObject : NetworkBehaviour
 
         if (ringDuration <= 0)
         {
-            target.Pokemon.OnHpOrShieldChange -= CheckIfShouldBreakEarly;
+            target.Pokemon.OnShieldChange -= CheckIfShouldBreakEarly;
             NetworkObject.Despawn(true);
         }
     }

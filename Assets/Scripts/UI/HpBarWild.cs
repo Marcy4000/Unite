@@ -13,10 +13,12 @@ public class HPBarWild : MonoBehaviour
     public void SetPokemon(Pokemon pokemon)
     {
         this.pokemon = pokemon;
-        pokemon.OnHpOrShieldChange += UpdateUI;
+        pokemon.OnHpChange += UpdateHPUI;
+        pokemon.OnShieldChange += UpdateShieldsUI;
         float width = pokemon.Type == PokemonType.Wild ? 1f : 2f;
         bar.sizeDelta = new Vector2(width, bar.sizeDelta.y);
-        UpdateUI();
+        UpdateHPUI();
+        UpdateShieldsUI();
     }
 
     public void InitializeEnergyUI(ushort energyAmount, bool hideUI = false)
@@ -36,7 +38,7 @@ public class HPBarWild : MonoBehaviour
         energyText.text = amount.ToString();
     }
 
-    public void UpdateUI()
+    public void UpdateHPUI()
     {
         if (hpBar.fillAmount > (pokemon.CurrentHp / pokemon.GetMaxHp()))
         {
@@ -56,6 +58,10 @@ public class HPBarWild : MonoBehaviour
             hpBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
             damageBar.fillAmount = (float)pokemon.CurrentHp / pokemon.GetMaxHp();
         }
+    }
+
+    public void UpdateShieldsUI()
+    {
         shieldBar.fillAmount = (float)pokemon.ShieldHp / pokemon.GetMaxHp();
     }
 

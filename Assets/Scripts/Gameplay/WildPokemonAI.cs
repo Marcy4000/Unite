@@ -213,7 +213,7 @@ public class WildPokemonAI : NetworkBehaviour
         {
             state = WildPokemonState.Idle;
 
-            if (agent.destination.x == aiSettings.homePosition.x && agent.destination.z == aiSettings.homePosition.y)
+            if (Mathf.Approximately(agent.destination.x, aiSettings.homePosition.x) && Mathf.Approximately(agent.destination.z, aiSettings.homePosition.y))
             {
                 StartCoroutine(RotateToOriginalRotation());
             }

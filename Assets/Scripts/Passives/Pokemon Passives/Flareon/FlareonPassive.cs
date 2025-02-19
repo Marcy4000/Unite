@@ -16,14 +16,14 @@ public class FlareonPassive : PassiveBase
         base.Start(controller);
         playerManager.Pokemon.OnEvolution += OnEvolution;
         playerManager.Pokemon.OnDamageDealt += OnDamageDealt;
-        playerManager.Pokemon.OnHpOrShieldChange += OnHpOrShieldChange;
+        playerManager.Pokemon.OnHpChange += OnHpOrShieldChange;
     }
 
     private void OnEvolution()
     {
         isEvolved = true;
         playerManager.Pokemon.RemoveStatChangeWithIDRPC(22);
-        playerManager.Pokemon.OnHpOrShieldChange -= OnHpOrShieldChange;
+        playerManager.Pokemon.OnHpChange -= OnHpOrShieldChange;
     }
 
     private void OnDamageDealt(ulong attackedId, DamageInfo damageInfo)

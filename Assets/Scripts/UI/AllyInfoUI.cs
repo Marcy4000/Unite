@@ -16,7 +16,7 @@ public class AllyInfoUI : MonoBehaviour
         allyPokemon = player;
         portrait.sprite = player.Pokemon.Portrait;
         hpBar.fillAmount = (float)player.Pokemon.CurrentHp / player.Pokemon.GetMaxHp();
-        player.Pokemon.OnHpOrShieldChange += UpdateHpBar;
+        player.Pokemon.OnHpChange += UpdateHpBar;
         player.Pokemon.OnEvolution += UpdatePortrait;
         player.Pokemon.OnDeath += OnDeath;
         player.OnRespawn += OnRespawn;

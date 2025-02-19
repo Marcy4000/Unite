@@ -82,7 +82,8 @@ public class Pokemon : NetworkBehaviour
 
     public TeamMember TeamMember { get { return team.Value; } }
 
-    public event Action OnHpOrShieldChange;
+    public event Action OnHpChange;
+    public event Action OnShieldChange;
     public event Action OnLevelChange;
     public event Action OnExpChange;
     public event Action OnEvolution;
@@ -170,7 +171,7 @@ public class Pokemon : NetworkBehaviour
         {
             OnDeath?.Invoke(lastHit);
         }
-        OnHpOrShieldChange?.Invoke();
+        OnHpChange?.Invoke();
     }
 
     [Rpc(SendTo.Everyone)]
@@ -188,7 +189,7 @@ public class Pokemon : NetworkBehaviour
             yield return null;
         }
 
-        OnHpOrShieldChange?.Invoke();
+        OnShieldChange?.Invoke();
     }
 
     private void CurrentExpValueChanged(int previous, int current)

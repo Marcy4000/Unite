@@ -8,7 +8,7 @@ public class FocusBand : HeldItemBase
     public override void Initialize(PlayerManager controller)
     {
         base.Initialize(controller);
-        playerManager.Pokemon.OnHpOrShieldChange += OnHpOrShieldChange;
+        playerManager.Pokemon.OnHpChange += OnHpOrShieldChange;
     }
 
     private void OnHpOrShieldChange()

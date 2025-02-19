@@ -14,7 +14,7 @@ public class LunarBlessingShield : NetworkBehaviour
     {
         target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetId].GetComponent<Pokemon>();
         target.OnDeath += (killer) => NetworkObject.Despawn(true);
-        target.OnHpOrShieldChange += CheckForShield;
+        target.OnShieldChange += CheckForShield;
         timer = 4.8f;
         initialized = true;
     }
@@ -23,7 +23,7 @@ public class LunarBlessingShield : NetworkBehaviour
     {
         if (!target.HasShieldWithID(8))
         {
-            target.OnHpOrShieldChange -= CheckForShield;
+            target.OnShieldChange -= CheckForShield;
             NetworkObject.Despawn(true);
         }
     }
@@ -49,7 +49,7 @@ public class LunarBlessingShield : NetworkBehaviour
         }
         else
         {
-            target.OnHpOrShieldChange -= CheckForShield;
+            target.OnShieldChange -= CheckForShield;
             if (target.HasShieldWithID(8))
             {
                 target.HealDamageRPC(target.GetShieldWithID(8).Value.Amount);
