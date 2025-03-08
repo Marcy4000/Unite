@@ -22,7 +22,6 @@ public class Pokemon : NetworkBehaviour
     private int localStoredExp;
     private int localLevel;
 
-    private int levelCap { get { return GetLevelCap(); } }
 
     private PokemonType type;
 
@@ -77,6 +76,8 @@ public class Pokemon : NetworkBehaviour
     public NetworkList<StatusEffect> StatusEffects { get { return statusEffects; } }
 
     public PokemonEvolution CurrentEvolution { get { return currentEvolution; } }
+
+    public int LevelCap { get { return GetLevelCap(); } }
 
     public int KillStreak { get { return killStreak.Value; } }
 
@@ -1453,7 +1454,7 @@ public class Pokemon : NetworkBehaviour
         
         localExp += amount;
 
-        while (localExp >= baseStats.GetExpForNextLevel(localLevel) && localLevel < levelCap - 1)
+        while (localExp >= baseStats.GetExpForNextLevel(localLevel) && localLevel < LevelCap - 1)
         {
             LevelUpRPC();
         }

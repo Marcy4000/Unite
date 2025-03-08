@@ -153,6 +153,13 @@ public class HPBar : MonoBehaviour
 
     private void UpdateExp()
     {
+        if (pokemon.LocalLevel == pokemon.LevelCap - 1)
+        {
+            expBar.fillAmount = 1;
+            storedExpBar.fillAmount = 0;
+            return;
+        }
+
         float normalizedExp = (float)pokemon.LocalExp / pokemon.BaseStats.GetExpForNextLevel(pokemon.LocalLevel);
         float normalizedStoredExp = (float)pokemon.LocalStoredExp / pokemon.BaseStats.GetExpForNextLevel(pokemon.LocalLevel);
         normalizedStoredExp += normalizedExp;

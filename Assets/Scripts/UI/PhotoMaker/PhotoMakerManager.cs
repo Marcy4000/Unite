@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -6,60 +5,128 @@ using UnityEngine.UI;
 
 public class PhotoMakerManager : MonoBehaviour
 {
-    [SerializeField] private TrainerModel[] trainerModels;
-    [SerializeField] private TMP_Dropdown[] trainerAnimationsDropdown;
-    [SerializeField] private TMP_InputField[] trainerClothesInputField;
-    [SerializeField] private Button[] trainerInitializeButtons;
+    [SerializeField] private GameObject trainerModelPrefab;
+    [SerializeField] private Transform spawnPoint;
+    [SerializeField] private TMP_Dropdown trainerAnimationsDropdown;
+    [SerializeField] private TMP_InputField trainerClothesInputField;
+    [SerializeField] private Button trainerInitializeButton;
+    [SerializeField] private Button nextTrainerButton;
+    [SerializeField] private Button prevTrainerButton;
+    [SerializeField] private Button spawnTrainerButton;
+    [SerializeField] private Button despawnTrainerButton;
+    [SerializeField] private TMP_Text currentTrainerText;
 
-    private List<List<string>> modelAnimationsNames;
+    private List<TrainerModel> trainerModels = new List<TrainerModel>();
+    private int currentTrainerIndex = -1;
+    private List<string> currentModelAnimationsNames = new List<string>();
 
     private void Start()
     {
-        modelAnimationsNames = new List<List<string>>();
-        for (int i = 0; i < trainerModels.Length; i++)
-        {
-            int index = i;
-            trainerAnimationsDropdown[i].onValueChanged.AddListener(delegate { OnTrainerAnimationChanged(index); });
-            trainerInitializeButtons[i].onClick.AddListener(delegate { OnTrainerClothesChanged(index); });
-            trainerModels[i].onClothesInitialized += delegate { OnTrainerClothesInitialized(index); };
-
-            modelAnimationsNames.Add(new List<string>());
-        }
+        trainerAnimationsDropdown.onValueChanged.AddListener(OnTrainerAnimationChanged);
+        trainerInitializeButton.onClick.AddListener(OnTrainerClothesChanged);
+        nextTrainerButton.onClick.AddListener(SelectNextTrainer);
+        prevTrainerButton.onClick.AddListener(SelectPreviousTrainer);
+        spawnTrainerButton.onClick.AddListener(SpawnTrainer);
+        despawnTrainerButton.onClick.AddListener(DespawnTrainer);
     }
 
     private void OnTrainerAnimationChanged(int index)
     {
-        if (!trainerModels[index].IsInitialized)
-            return;
+        if (currentTrainerIndex == -1 || trainerModels.Count == 0) return;
+        if (!trainerModels[currentTrainerIndex].IsInitialized) return;
 
-        trainerModels[index].ActiveAnimator.Play(modelAnimationsNames[index][trainerAnimationsDropdown[index].value]);
+        trainerModels[currentTrainerIndex].ActiveAnimator.Play(currentModelAnimationsNames[index]);
     }
 
-    private void OnTrainerClothesChanged(int index)
+    private void OnTrainerClothesChanged()
     {
-        trainerModels[index].InitializeClothes(PlayerClothesInfo.Deserialize(trainerClothesInputField[index].text));
+        if (currentTrainerIndex == -1 || trainerModels.Count == 0) return;
 
-        modelAnimationsNames[index].Clear();
-
-        foreach (var clip in trainerModels[index].ActiveAnimator.runtimeAnimatorController.animationClips)
-        {
-            modelAnimationsNames[index].Add(clip.name);
-        }
+        trainerModels[currentTrainerIndex].InitializeClothes(PlayerClothesInfo.Deserialize(trainerClothesInputField.text));
+        UpdateAnimationList();
     }
 
-    private void OnTrainerClothesInitialized(int index)
+    private void UpdateAnimationList()
     {
-        modelAnimationsNames[index].Clear();
+        if (currentTrainerIndex == -1 || trainerModels.Count == 0) return;
 
-        foreach (var clip in trainerModels[index].ActiveAnimator.runtimeAnimatorController.animationClips)
+        currentModelAnimationsNames.Clear();
+
+        if (!trainerModels[currentTrainerIndex].IsInitialized) return;
+
+        foreach (var clip in trainerModels[currentTrainerIndex].ActiveAnimator.runtimeAnimatorController.animationClips)
         {
-            modelAnimationsNames[index].Add(clip.name);
+            currentModelAnimationsNames.Add(clip.name);
         }
 
-        trainerAnimationsDropdown[index].ClearOptions();
+        trainerAnimationsDropdown.ClearOptions();
+        trainerAnimationsDropdown.AddOptions(currentModelAnimationsNames);
 
-        trainerAnimationsDropdown[index].AddOptions(modelAnimationsNames[index]);
+        string currentAnimation = trainerModels[currentTrainerIndex].ActiveAnimator.GetCurrentAnimatorClipInfo(0)[0].clip.name;
+        int currentIndex = currentModelAnimationsNames.IndexOf(currentAnimation);
+        trainerAnimationsDropdown.value = currentIndex != -1 ? currentIndex : 0;
+    }
 
-        trainerAnimationsDropdown[index].value = 0;
+    private void SelectNextTrainer()
+    {
+        if (trainerModels.Count == 0) return;
+        currentTrainerIndex = (currentTrainerIndex + 1) % trainerModels.Count;
+        UpdateUI();
+    }
+
+    private void SelectPreviousTrainer()
+    {
+        if (trainerModels.Count == 0) return;
+        currentTrainerIndex = (currentTrainerIndex - 1 + trainerModels.Count) % trainerModels.Count;
+        UpdateUI();
+    }
+
+    private void SpawnTrainer()
+    {
+        GameObject newTrainerObj = Instantiate(trainerModelPrefab, spawnPoint.position, Quaternion.identity);
+        TrainerModel newTrainer = newTrainerObj.GetComponent<TrainerModel>();
+        newTrainer.onClothesInitialized += UpdateAnimationList;
+        trainerModels.Add(newTrainer);
+        currentTrainerIndex = trainerModels.Count - 1;
+        UpdateUI();
+    }
+
+    private void DespawnTrainer()
+    {
+        if (trainerModels.Count == 0 || currentTrainerIndex == -1) return;
+
+        Destroy(trainerModels[currentTrainerIndex].gameObject);
+        trainerModels.RemoveAt(currentTrainerIndex);
+
+        if (trainerModels.Count == 0)
+            currentTrainerIndex = -1;
+        else
+            currentTrainerIndex = Mathf.Clamp(currentTrainerIndex, 0, trainerModels.Count - 1);
+
+        UpdateUI();
+    }
+
+    private void UpdateUI()
+    {
+        bool hasTrainer = trainerModels.Count > 0 && currentTrainerIndex != -1;
+        trainerAnimationsDropdown.interactable = hasTrainer;
+        trainerClothesInputField.interactable = hasTrainer;
+        trainerInitializeButton.interactable = hasTrainer;
+        nextTrainerButton.interactable = hasTrainer && trainerModels.Count > 1;
+        prevTrainerButton.interactable = hasTrainer && trainerModels.Count > 1;
+        despawnTrainerButton.interactable = hasTrainer;
+
+        if (hasTrainer)
+        {
+            currentTrainerText.text = $"Trainer {currentTrainerIndex + 1}";
+            trainerClothesInputField.text = trainerModels[currentTrainerIndex].PlayerClothesInfo.Serialize();
+            UpdateAnimationList();
+        }
+        else
+        {
+            currentTrainerText.text = "No trainers";
+            trainerAnimationsDropdown.ClearOptions();
+            trainerClothesInputField.text = "";
+        }
     }
 }
