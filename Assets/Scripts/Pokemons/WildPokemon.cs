@@ -287,7 +287,14 @@ public class WildPokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void SpawnSoldierRPC(Team orangeTeam)
     {
-        SoldierPokemon soldier = Instantiate(soldierPrefab, transform.position, transform.rotation).GetComponent<SoldierPokemon>();
+        Vector3 groundPosition = transform.position;
+        groundPosition.y += 5;
+        if (Physics.Raycast(groundPosition, Vector3.down, out RaycastHit hit, Mathf.Infinity, LayerMask.GetMask("Default")))
+        {
+            groundPosition = hit.point;
+        }
+
+        SoldierPokemon soldier = Instantiate(soldierPrefab, groundPosition, transform.rotation).GetComponent<SoldierPokemon>();
         soldier.GetComponent<NetworkObject>().Spawn(true);
         soldier.InitializeRPC(orangeTeam, soldierToSpawn, SoldierLaneID);
     }
