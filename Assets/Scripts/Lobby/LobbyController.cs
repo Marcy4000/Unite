@@ -103,6 +103,7 @@ public class LobbyController : MonoBehaviour
     {
         if (UnityServices.State != ServicesInitializationState.Initialized)
         {
+            Debug.LogError("Unity Services not initialized.");
             return;
         }
 
@@ -159,11 +160,11 @@ public class LobbyController : MonoBehaviour
 
             try
             {
-                clothes = PlayerPrefs.HasKey("ClothingInfo") ? PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo")) : PlayerClothesInfo.Deserialize("AAAAAAAAAAAAZDIkbDcAAAAAAACsAHPagAA=");
+                clothes = PlayerPrefs.HasKey("ClothingInfo") ? PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo")) : PlayerClothesInfo.Deserialize("AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA=");
             }
             catch (Exception)
             {
-                clothes = PlayerClothesInfo.Deserialize("AAAAAAAAAAAAZDIkbDcAAAAAAACsAHPagAA=");
+                clothes = PlayerClothesInfo.Deserialize("AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA=");
             }
 
             localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>

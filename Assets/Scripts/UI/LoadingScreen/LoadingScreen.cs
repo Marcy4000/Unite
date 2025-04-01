@@ -83,7 +83,13 @@ public class LoadingScreen : MonoBehaviour
 
     public void ShowGenericLoadingScreen()
     {
-        AudioManager.PlaySound(DefaultAudioSounds.Loading_Sfx);
+        try
+        {
+            AudioManager.PlaySound(DefaultAudioSounds.Loading_Sfx);
+        }
+        catch (System.Exception)
+        {
+        }
         loadingScreen.SetActive(true);
     }
 

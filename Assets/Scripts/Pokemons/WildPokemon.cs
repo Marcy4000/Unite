@@ -302,7 +302,7 @@ public class WildPokemon : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowKillRpc(DamageInfo info)
     {
-        BattleUIManager.instance.ShowKill(info, pokemon);
+        BattleUIManager.instance.ShowKill(info, pokemon, wildPokemonInfo.KillNotification);
     }
 
     private IEnumerator DumbDespawn()

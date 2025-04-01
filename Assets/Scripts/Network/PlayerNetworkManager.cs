@@ -306,6 +306,6 @@ public class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowKillRpc(DamageInfo info)
     {
-        BattleUIManager.instance.ShowKill(info, playerManager.Pokemon);
+        BattleUIManager.instance.ShowKill(info, playerManager.Pokemon, null);
     }
 }

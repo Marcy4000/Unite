@@ -100,9 +100,9 @@ public class BattleUIManager : MonoBehaviour
         currentUI.InitializeMoveLearnPanel(moves);
     }
 
-    public void ShowKill(DamageInfo info, Pokemon killed)
+    public void ShowKill(DamageInfo info, Pokemon killed, string killNotification)
     {
-        KillInfo killInfo = new KillInfo(info, killed);
+        KillInfo killInfo = new KillInfo(info, killed, killNotification);
         killNotificationUI.EnqueueKill(killInfo);
     }
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
@@ -17,6 +18,7 @@ public class WildPokemonAI : NetworkBehaviour
     [SerializeField] private WildPokemon wildPokemon;
     [SerializeField] private AnimationManager animationManager;
     [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private Rigidbody rb;
 
     private WildPokemonAISettings aiSettings;
     private Vector3 targetPosition;
@@ -31,8 +33,13 @@ public class WildPokemonAI : NetworkBehaviour
     private int animationHashWalking = Animator.StringToHash("Walking");
 
     //private int currentMoveIndex = -1;
-    private float stunnedTimer;
     private Transform currentTarget; // Keeps track of the current aggro target
+
+    private Dictionary<StatusType, System.Action> statusAddedActions;
+    private Dictionary<StatusType, System.Action> statusRemovedActions;
+
+    private WildPokemonState previousState;
+    private Vector3 previousTargetPosition;
 
     public WildPokemon WildPokemon => wildPokemon;
     public WildPokemonAISettings AISettings => aiSettings;
@@ -45,6 +52,55 @@ public class WildPokemonAI : NetworkBehaviour
         {
             agent.enabled = false;
         }
+
+        InitializeStatusActions();
+    }
+
+    private void InitializeStatusActions()
+    {
+        statusAddedActions = new Dictionary<StatusType, System.Action>
+        {
+            { StatusType.Immobilized, ApplyStun },
+            { StatusType.Frozen, ApplyStun },
+            { StatusType.Incapacitated, ApplyStun },
+            { StatusType.Asleep, ApplyStun },
+            { StatusType.Bound, ApplyStun },
+            // Add other statuses
+        };
+
+        statusRemovedActions = new Dictionary<StatusType, System.Action>
+        {
+            { StatusType.Immobilized, RemoveStun },
+            { StatusType.Frozen, RemoveStun },
+            { StatusType.Incapacitated, RemoveStun },
+            { StatusType.Asleep, RemoveStun },
+            { StatusType.Bound, RemoveStun },
+            // Add other statuses
+        };
+    }
+
+    private void ApplyStun()
+    {
+        if (state != WildPokemonState.Stunned)
+        {
+            previousState = state;
+            previousTargetPosition = agent.destination;
+        }
+
+        state = WildPokemonState.Stunned;
+        rb.isKinematic = false;
+        agent.enabled = false;
+
+        currentTarget = null;
+    }
+
+    private void RemoveStun()
+    {
+        state = previousState;
+        rb.isKinematic = true;
+        agent.enabled = true;
+
+        agent.SetDestination(previousTargetPosition);
     }
 
     public void Initialize(WildPokemonAISettings settings)
@@ -56,6 +112,8 @@ public class WildPokemonAI : NetworkBehaviour
         originalRotation = transform.eulerAngles;
 
         basicAttack.Initialize(this, aiSettings.basicAttackRange);
+
+        rb.isKinematic = true;
 
         if (wildPokemon.Pokemon.BaseStats.LearnableMoves.Length > 0)
         {
@@ -74,6 +132,7 @@ public class WildPokemonAI : NetworkBehaviour
         wildPokemon.Pokemon.OnLevelChange += UpdateSpeed;
         wildPokemon.Pokemon.OnPokemonInitialized += UpdateSpeed;
         wildPokemon.Pokemon.OnStatChange += UpdateSpeed;
+        wildPokemon.Pokemon.OnStatusChange += OnPokemonStatusChange;
 
         if (settings.movementType == WildPokemonAISettings.MovementType.MoveToPointUponAttack || settings.movementType == WildPokemonAISettings.MovementType.ChasePlayer)
         {
@@ -83,13 +142,28 @@ public class WildPokemonAI : NetworkBehaviour
         UpdateSpeed();
     }
 
+    private void OnPokemonStatusChange(StatusEffect effect, bool added)
+    {
+        // This is so incredibly stupid but it'll do for now
+        // Update: no longer as stupid, still stupid
+        if (added && statusAddedActions.TryGetValue(effect.Type, out System.Action addAction))
+        {
+            addAction.Invoke();
+        }
+        else if (!added && statusRemovedActions.TryGetValue(effect.Type, out System.Action removeAction))
+        {
+            removeAction.Invoke();
+        }
+    }
+
     private void OnPokemonDamage(DamageInfo damage)
     {
         if (aiSettings.movementType == WildPokemonAISettings.MovementType.MoveToPointUponAttack)
         {
             state = WildPokemonState.MovingToPosition;
             targetPosition = new Vector3(aiSettings.positionToMoveTo.x, 0, aiSettings.positionToMoveTo.y);
-            agent.SetDestination(targetPosition);
+            if (agent.isActiveAndEnabled)
+                agent.SetDestination(targetPosition);
         }
         else if (aiSettings.movementType == WildPokemonAISettings.MovementType.ChasePlayer)
         {
@@ -107,7 +181,8 @@ public class WildPokemonAI : NetworkBehaviour
 
             state = WildPokemonState.Chasing;
             currentTarget = attacker.transform;
-            agent.SetDestination(attacker.transform.position);
+            if (agent.isActiveAndEnabled)
+                agent.SetDestination(attacker.transform.position);
         }
     }
 
@@ -209,11 +284,17 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void HandleMovingToPositionState()
     {
+        if (!agent.isActiveAndEnabled)
+        {
+            return;
+        }
+
         if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
         {
             state = WildPokemonState.Idle;
 
-            if (Mathf.Approximately(agent.destination.x, aiSettings.homePosition.x) && Mathf.Approximately(agent.destination.z, aiSettings.homePosition.y))
+            if (Mathf.Approximately(agent.destination.x, aiSettings.homePosition.x) &&
+                Mathf.Approximately(agent.destination.z, aiSettings.homePosition.y))
             {
                 StartCoroutine(RotateToOriginalRotation());
             }
@@ -222,9 +303,13 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void HandleChasingState()
     {
+        if (!agent.isActiveAndEnabled)
+        {
+            return;
+        }
+
         if (currentTarget == null)
         {
-            // Return to home position
             WalkHome();
             return;
         }
@@ -288,11 +373,7 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void HandleStunnedState()
     {
-        stunnedTimer -= Time.deltaTime;
-        if (stunnedTimer <= 0)
-        {
-            state = WildPokemonState.Idle;
-        }
+
     }
 
     private Transform GetClosestPlayer(GameObject[] players)
@@ -315,7 +396,7 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void HandleAnimations()
     {
-        if (animationManager.IsAnimatorNull())
+        if (animationManager.IsAnimatorNull() || !agent.isActiveAndEnabled)
         {
             return;
         }
@@ -339,6 +420,11 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void WalkHome()
     {
+        if (!agent.isActiveAndEnabled)
+        {
+            return;
+        }
+
         state = WildPokemonState.MovingToPosition;
         agent.SetDestination(new Vector3(aiSettings.homePosition.x, 0, aiSettings.homePosition.y));
     }

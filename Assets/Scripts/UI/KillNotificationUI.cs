@@ -2,6 +2,7 @@ using DG.Tweening;
 using JSAM;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +13,8 @@ public class KillNotificationUI : MonoBehaviour
     [SerializeField] Image background;
     [SerializeField] Image leftPreview, rightPreview;
     [SerializeField] Image streakImage;
+    [SerializeField] GameObject notificationHolder;
+    [SerializeField] TMP_Text notificationText;
     [SerializeField] Sprite[] backgrounds;
 
     [SerializeField] Sprite[] orangeKoSprites;
@@ -42,9 +45,28 @@ public class KillNotificationUI : MonoBehaviour
         leftPreview.sprite = attacker.Portrait;
         rightPreview.sprite = killInfo.killed.Portrait;
 
+        notificationHolder.SetActive(!string.IsNullOrEmpty(killInfo.killNotification));
+        notificationText.text = FormatKillNotificationText(killInfo.killNotification, attacker);
+
         PlayCorrectSound(attacker, killInfo.killed);
 
         StartCoroutine(KillAnimation());
+    }
+
+    private string FormatKillNotificationText(string killNotification, Pokemon attacker)
+    {
+        if (string.IsNullOrEmpty(killNotification))
+        {
+            return "";
+        }
+
+        string newNotification = killNotification.Replace("{teamName}", attacker.TeamMember.Team.ToString());
+
+        string teamFriendlyName = LobbyController.Instance.GetLocalPlayerTeam() == attacker.TeamMember.Team ? "Ally" : "Opposing";
+        newNotification = newNotification.Replace("{teamFriendlyName}", teamFriendlyName);
+        newNotification = newNotification.Replace("{!teamFriendlyName}", teamFriendlyName == "Ally" ? "Opposing" : "Ally");
+
+        return newNotification;
     }
 
     private void SetStreakText(Pokemon attacker, Pokemon killed)
@@ -173,10 +195,12 @@ public class KillInfo
 {
     public DamageInfo info;
     public Pokemon killed;
+    public string killNotification;
 
-    public KillInfo(DamageInfo info, Pokemon killed)
+    public KillInfo(DamageInfo info, Pokemon killed, string killNotification)
     {
         this.info = info;
         this.killed = killed;
+        this.killNotification = killNotification;
     }
 }
