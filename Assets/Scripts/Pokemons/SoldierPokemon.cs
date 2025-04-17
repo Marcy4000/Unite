@@ -36,7 +36,7 @@ public class SoldierPokemon : NetworkBehaviour
         Vision vision = GetComponentInChildren<Vision>();
         vision.HasATeam = true;
         vision.CurrentTeam = CurrentTeam.Team;
-        vision.IsVisible = true;
+        vision.IsVisiblyEligible = true;
         vision.SetVisibility(LobbyController.Instance.GetLocalPlayerTeam() == CurrentTeam.Team);
 
         if (IsServer)

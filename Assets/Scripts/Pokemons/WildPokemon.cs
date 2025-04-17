@@ -42,7 +42,7 @@ public class WildPokemon : NetworkBehaviour
         vision = GetComponentInChildren<Vision>();
         rb = GetComponent<Rigidbody>();
         vision.HasATeam = false;
-        vision.IsVisible = true;
+        vision.IsVisiblyEligible = true;
         pokemon.Type = PokemonType.Wild;
         pokemon.OnEvolution += AssignVisionObjects;
         pokemon.OnLevelChange += () => hpBar.UpdateEnergyAmount(EnergyYield);

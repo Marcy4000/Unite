@@ -75,6 +75,7 @@ public class GoalZone : NetworkBehaviour
         visionController.TeamToIgnore = team;
         visionController.IsEnabled = team == LobbyController.Instance.GetLocalPlayerTeam();
         visionController.transform.parent = null;
+        visionController.gameObject.SetActive(team == LobbyController.Instance.GetLocalPlayerTeam());
 
         MinimapManager.Instance.CreateGoalzoneIcon(this);
 

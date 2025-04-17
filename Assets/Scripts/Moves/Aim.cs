@@ -519,7 +519,7 @@ public class Aim : NetworkBehaviour
 
         if (pokemonObject.TryGetComponent(out Vision vision))
         {
-            if ((!vision.IsRendered || !vision.IsVisible) && !canHitInvisTargets)
+            if ((!vision.IsRendered || !vision.IsVisiblyEligible) && !canHitInvisTargets)
             {
                 return false;
             }

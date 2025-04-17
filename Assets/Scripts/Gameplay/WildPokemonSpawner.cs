@@ -53,7 +53,7 @@ public class WildPokemonSpawner : NetworkBehaviour
     {
         vision = GetComponent<Vision>();
 
-        vision.IsVisible = true;
+        vision.IsVisiblyEligible = true;
         vision.OnVisibilityChanged += OnVisibilityChanged;
 
         if (usesTimeRemaining)

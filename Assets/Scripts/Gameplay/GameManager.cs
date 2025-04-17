@@ -147,6 +147,7 @@ public class GameManager : NetworkBehaviour
             {
                 AudioManager.StopAllMusic();
                 AudioManager.PlayMusic(currentMap.finalStretchMusic, true);
+                AudioManager.PlaySound(DefaultAudioSounds.Final_Stretch_Begin);
                 AudioManager.PlaySound(DefaultAudioSounds.AnnouncerFinalStretch);
                 onFinalStretch?.Invoke();
             }

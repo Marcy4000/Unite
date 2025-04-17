@@ -149,7 +149,7 @@ public class PlayerManager : NetworkBehaviour
         visionController.TeamToIgnore = tempTeam;
         vision.CurrentTeam = tempTeam;
         vision.HasATeam = true;
-        vision.IsVisible = true;
+        vision.IsVisiblyEligible = true;
 
         hpBar.InitializeEnergyUI(PokemonType.Player, tempTeam == Team.Orange, IsOwner);
         hpBar.UpdateHpBarColor(tempTeam != currentPlayerTeam, IsOwner);
@@ -193,7 +193,6 @@ public class PlayerManager : NetworkBehaviour
             };
 
             visionController.IsEnabled = true;
-            vision.SetVisibility(true);
         }
         else
         {
@@ -925,7 +924,7 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     public void SetPlayerVisibilityRPC(bool isVisible)
     {
-        vision.IsVisible = isVisible;
+        vision.IsVisiblyEligible = isVisible;
     }
 
 

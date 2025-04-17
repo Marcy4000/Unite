@@ -31,8 +31,7 @@ public class MapBerry : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         isCollected.OnValueChanged += OnIsCollectedChanged;
-        vision.IsVisible = true;
-        vision.SetVisibility(false);
+        vision.IsVisiblyEligible = true;
         if (IsServer)
         {
             isCollected.Value = true;
