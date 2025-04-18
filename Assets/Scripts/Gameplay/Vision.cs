@@ -1,6 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum RevealType
+{
+    Attack,
+    DamageTaken,
+    AbilityCast,
+    RevealedBySkill,
+    TrueSight
+}
+
 public class Vision : MonoBehaviour
 {
     private bool isRendered = false;
@@ -27,6 +36,9 @@ public class Vision : MonoBehaviour
     private bool pendingVisibilityState = false;
     private bool hasAppliedInitialVisibility = false;
 
+    private float revealTimer = 0f;
+    private bool temporarilyRevealed = false;
+
     public bool IsVisiblyEligible
     {
         get => isVisiblyEligible;
@@ -37,6 +49,8 @@ public class Vision : MonoBehaviour
                 SetVisibility(false);
         }
     }
+
+    public bool TemporarilyRevealed => temporarilyRevealed;
 
     public event System.Action<bool> OnVisibilityChanged;
     public event System.Action<GameObject> OnBushChanged;
@@ -78,6 +92,25 @@ public class Vision : MonoBehaviour
     public void ResetObjects() => objectsToDisable.Clear();
     public void ResetRenderers() => renderersToDisable.Clear();
 
+    public void RevealTemporarily(RevealType reason, float duration = 2f)
+    {
+        temporarilyRevealed = true;
+        revealTimer = duration;
+    }
+
+    private void Update()
+    {
+        if (temporarilyRevealed)
+        {
+            revealTimer -= Time.deltaTime;
+            if (revealTimer <= 0f)
+            {
+                temporarilyRevealed = false;
+                // Reevaluate visibility naturally (e.g., VisionController will update on next tick)
+            }
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.TryGetComponent(out BushCollider bushCollider))
@@ -89,7 +122,6 @@ public class Vision : MonoBehaviour
                 OnBushChanged?.Invoke(bush);
             }
         }
-
     }
 
     private void OnTriggerExit(Collider other)

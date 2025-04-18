@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 public class WildPokemonSpawner : NetworkBehaviour
 {
@@ -82,6 +83,16 @@ public class WildPokemonSpawner : NetworkBehaviour
         {
             aiSettings.homePosition = new Vector2(transform.position.x, transform.position.z);
         }
+
+        StartCoroutine(FixVisionBug());
+    }
+
+    private IEnumerator FixVisionBug()
+    {
+        yield return new WaitForSeconds(0.01f);
+        vision.enabled = false;
+        yield return new WaitForSeconds(0.01f);
+        vision.enabled = true;
     }
 
     private void OnVisibilityChanged(bool visible)

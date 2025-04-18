@@ -22,7 +22,6 @@ public class Pokemon : NetworkBehaviour
     private int localStoredExp;
     private int localLevel;
 
-
     private PokemonType type;
 
     private GameObject activeModel;

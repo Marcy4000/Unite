@@ -72,7 +72,7 @@ public class GoalZone : NetworkBehaviour
         currentScore.OnValueChanged += UpdateGraphics;
         goalStatus.OnValueChanged += (previous, current) => { onGoalStatusChanged?.Invoke(current); };
 
-        visionController.TeamToIgnore = team;
+        visionController.CurrentTeam = team;
         visionController.IsEnabled = team == LobbyController.Instance.GetLocalPlayerTeam();
         visionController.transform.parent = null;
         visionController.gameObject.SetActive(team == LobbyController.Instance.GetLocalPlayerTeam());

@@ -21,7 +21,7 @@ public class GlobalVisionInitializer : NetworkBehaviour
         if (state == GameState.Playing)
         {
             visionController.enabled = true;
-            visionController.TeamToIgnore = team;
+            visionController.CurrentTeam = team;
             visionController.IsEnabled = team == LobbyController.Instance.GetLocalPlayerTeam();
             visionController.transform.parent = null;
             visionCollider.enabled = true;

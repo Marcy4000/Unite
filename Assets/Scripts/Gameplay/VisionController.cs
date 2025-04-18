@@ -11,7 +11,7 @@ public class VisionController : MonoBehaviour
     private SphereCollider visionCollider;
     private GameObject currentBush;
 
-    public Team TeamToIgnore { get; set; }
+    public Team CurrentTeam { get; set; }
     public bool IsEnabled { get; set; } = true;
     public bool IsBlinded { get; set; } = false;
     public GameObject CurrentBush

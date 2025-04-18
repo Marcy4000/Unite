@@ -59,36 +59,41 @@ public class VisionManager : MonoBehaviour
                 continue;
             }
 
-            bool visible = false;
-
+            // Always visible if on the same team as the local player
             if (vision.CurrentTeam == LocalPlayerTeam)
             {
                 vision.SetVisibility(true);
                 continue;
             }
 
+            bool isVisible = false;
+
             foreach (var controller in allControllers)
             {
-                if (!controller.IsEnabled || controller.IsBlinded)
+                // Only vision controllers from the local player's team can reveal enemies
+                if (!controller.IsEnabled || controller.IsBlinded || controller.CurrentTeam != LocalPlayerTeam)
                     continue;
 
-                if (controller.TeamToIgnore == vision.CurrentTeam)
+                // Temporarily revealed enemies are always visible
+                if (vision.TemporarilyRevealed)
                 {
-                    visible = true;
+                    isVisible = true;
                     break;
                 }
 
+                // If controller sees the vision and it is not hidden in a bush
                 if (controller.ContainsVision(vision) &&
                     (!vision.IsInBush || vision.IsVisibleInBush.Contains(controller.gameObject.GetInstanceID())))
                 {
-                    visible = true;
+                    isVisible = true;
                     break;
                 }
             }
 
-            vision.SetVisibility(visible);
+            vision.SetVisibility(isVisible);
         }
     }
+
 
     public void ForceUpdate()
     {

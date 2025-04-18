@@ -9,12 +9,19 @@ public class GoalWeakTimerUI : MonoBehaviour
     [SerializeField] private Image portraitImage;
     [SerializeField] private GameObject holder;
 
+    [SerializeField] private Sprite orangeIcon;
+
     [SerializeField] private GoalZone goalZone;
 
     private void Start()
     {
         goalZone.onGoalStatusChanged += OnGoalStatusChanged;
         holder.SetActive(false);
+
+        if (goalZone.Team == Team.Orange)
+        {
+            portraitImage.sprite = orangeIcon;
+        }
     }
 
     private void OnGoalStatusChanged(GoalStatus goalStatus)

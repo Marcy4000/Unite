@@ -146,7 +146,7 @@ public class PlayerManager : NetworkBehaviour
         Team currentPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
         aim.TeamToIgnore = tempTeam;
-        visionController.TeamToIgnore = tempTeam;
+        visionController.CurrentTeam = tempTeam;
         vision.CurrentTeam = tempTeam;
         vision.HasATeam = true;
         vision.IsVisiblyEligible = true;
