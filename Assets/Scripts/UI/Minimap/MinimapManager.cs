@@ -44,6 +44,8 @@ public class MinimapManager : MonoBehaviour
         MapObjective objectiveIcon = icon.GetComponent<MapObjective>();
         objectiveIcon.Initialize(wildPokemon);
         objectiveIcon.MinimapIcon.Initialize(minimapRect, worldSizeX, worldSizeZ);
+
+        objectiveIcon.DoAnimation();
     }
 
     public void CreateWildPokemonIcon(WildPokemonSpawner wildPokemonSpawner)
