@@ -292,7 +292,6 @@ public class Aim : NetworkBehaviour
 
         if (activeControlScheme == "Keyboard")
         {
-            // Mouse aiming
             Vector2 mousePosition = Mouse.current.position.ReadValue();
             Vector3 playerScreenPosition = Camera.main.WorldToScreenPoint(playerTransform.position);
             Vector2 screenDirection = mousePosition - (Vector2)playerScreenPosition;
@@ -300,46 +299,56 @@ public class Aim : NetworkBehaviour
         }
         else
         {
-            // Controller stick aiming
             Vector2 stickInput = controls.Movement.AimMove.ReadValue<Vector2>();
             aimDirection = new Vector3(stickInput.x, 0f, stickInput.y).normalized;
 
             if (aimDirection.magnitude == 0)
             {
-                aimDirection = playerTransform.forward; // Default to forward if no input
+                aimDirection = playerTransform.forward;
             }
         }
 
-
         autoAimIndicator.transform.rotation = Quaternion.LookRotation(aimDirection);
         autoAimIndicator.transform.localScale = new Vector3(coneAngle / 25f, 1, coneDistance / 5f);
+        circleIndicator.transform.localScale = new Vector3(coneDistance / 2.5f, 1, coneDistance / 2.5f);
 
-        circleIndicator.transform.localScale = new Vector3(coneDistance/2.5f, 1, coneDistance/2.5f);
-
-        // Perform cone-based targeting
-        RaycastHit[] hits = Physics.SphereCastAll(playerTransform.position, 3f, aimDirection.normalized, coneDistance-3, targetMask);
-
-        // Convert angle from degrees to radians
         float angleInRadians = coneAngle * Mathf.Deg2Rad;
         float cosOfAngle = Mathf.Cos(angleInRadians);
+
+        // Check for very close targets first
+        Collider[] nearbyTargets = Physics.OverlapSphere(playerTransform.position, 3f, targetMask);
+        foreach (Collider nearTarget in nearbyTargets)
+        {
+            if (nearTarget.gameObject == gameObject) continue;
+
+            Vector3 toTarget = (nearTarget.transform.position - transform.position).normalized;
+            float dot = Vector3.Dot(aimDirection, toTarget);
+
+            if (dot >= cosOfAngle)
+            {
+                if (CanPokemonBeTargeted(nearTarget.gameObject, autoaimTarget, TeamToIgnore, false))
+                {
+                    return nearTarget.gameObject;
+                }
+            }
+        }
+
+        // If no close targets found, check further with SphereCast
+        RaycastHit[] hits = Physics.SphereCastAll(playerTransform.position, 3f, aimDirection, coneDistance - 3, targetMask);
 
         foreach (RaycastHit hit in hits)
         {
             Vector3 toTarget = (hit.point - transform.position).normalized;
-            float dot = Vector3.Dot(aimDirection.normalized, toTarget);
+            float dot = Vector3.Dot(aimDirection, toTarget);
+
             if (dot >= cosOfAngle)
             {
-                if (hit.collider.gameObject == gameObject)
-                {
-                    continue;
-                }
+                if (hit.collider.gameObject == gameObject) continue;
 
-                if (!CanPokemonBeTargeted(hit.collider.gameObject, autoaimTarget, TeamToIgnore, false))
+                if (CanPokemonBeTargeted(hit.collider.gameObject, autoaimTarget, TeamToIgnore, false))
                 {
-                    continue;
+                    return hit.collider.gameObject;
                 }
-
-                return hit.collider.gameObject;
             }
         }
 

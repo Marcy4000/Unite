@@ -334,4 +334,14 @@ public class GoalZone : NetworkBehaviour
             UpdateGoalStatusRPC(GoalStatus.Active);
         }
     }
+
+    private void LateUpdate()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        playerManagerList.RemoveAll(player => player == null);
+    }
 }

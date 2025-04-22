@@ -34,14 +34,19 @@ public class ScreenshotScript : MonoBehaviour
     {
         if (Keyboard.current.f2Key.wasPressedThisFrame && cam != null)
         {
-            if (useNewCode)
-            {
-                StartCoroutine(TakeScreenshowNew());
-            }
-            else
-            {
-                TakeScreenshotOld();
-            }
+            TakeScreenshot();
+        }
+    }
+
+    public void TakeScreenshot()
+    {
+        if (useNewCode)
+        {
+            StartCoroutine(TakeScreenshowNew());
+        }
+        else
+        {
+            TakeScreenshotOld();
         }
     }
 
@@ -112,7 +117,11 @@ public class ScreenshotScript : MonoBehaviour
 
         string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
         string filePath = Path.Combine(folderPath, $"{fileNamePrefix}_{timestamp}.png");
-        ScreenCapture.CaptureScreenshot(filePath);
+
+        if (Application.platform == RuntimePlatform.Android)
+            ScreenCapture.CaptureScreenshot($"{fileNamePrefix}_{timestamp}.png");
+        else
+            ScreenCapture.CaptureScreenshot(filePath);
 
         Debug.Log($"Screenshot saved to: {filePath}");
 

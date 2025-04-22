@@ -41,6 +41,8 @@ public static class PassiveDatabase
                 return new FlareonPassive();
             case AvailablePassives.PsyduckRacePassive:
                 return new PsyduckRacePassive();
+            case AvailablePassives.SerperiorPassive:
+                return new SerperiorPassive();
             default:
                 return new EmptyPassive();
         }
@@ -62,4 +64,5 @@ public enum AvailablePassives
     EmboarPassive,
     FlareonPassive,
     PsyduckRacePassive,
+    SerperiorPassive,
 }

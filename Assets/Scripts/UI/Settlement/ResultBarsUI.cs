@@ -9,11 +9,26 @@ public class ResultBarsUI : MonoBehaviour
     public void InitializeUI(int maxPoints)
     {
         this.maxPoints = maxPoints;
+
+        if (maxPoints == 0)
+        {
+            blueBar.transform.localScale = Vector3.zero;
+            orangeBar.transform.localScale = Vector3.zero;
+            return;
+        }
+
         SetBars(0, 0);
     }
 
     public void SetBars(int blueValue, int orangeValue)
     {
+        if (maxPoints == 0)
+        {
+            blueBar.transform.localScale = Vector3.zero;
+            orangeBar.transform.localScale = Vector3.zero;
+            return;
+        }
+
         float blueScaleY = (float)blueValue / maxPoints;
         float orangeScaleY = (float)orangeValue / maxPoints;
 

@@ -45,12 +45,18 @@ public class TrainerModel : MonoBehaviour
 
     private void OnEnable()
     {
-        LobbyController.Instance.onLobbyUpdate += OnLobbyUpdate;
+        if (LobbyController.Instance != null)
+        {
+            LobbyController.Instance.onLobbyUpdate += OnLobbyUpdate;
+        }
     }
 
     private void OnDisable()
     {
-        LobbyController.Instance.onLobbyUpdate -= OnLobbyUpdate;
+        if (LobbyController.Instance != null)
+        {
+            LobbyController.Instance.onLobbyUpdate -= OnLobbyUpdate;
+        }
         initializing = false;
     }
 

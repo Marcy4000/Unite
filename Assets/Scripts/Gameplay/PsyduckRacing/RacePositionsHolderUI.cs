@@ -10,11 +10,18 @@ public class RacePositionsHolderUI : MonoBehaviour
 
     private void Start()
     {
-        RaceManager.Instance.onInitializedPlayers += InitializePlayers;
+        RaceManager.Instance.OnInitializedPlayers += InitializePlayers;
     }
 
     private void InitializePlayers()
     {
+        foreach (var raceUI in racePositionUIs)
+        {
+            Destroy(raceUI.gameObject);
+        }
+
+        racePositionUIs.Clear();
+
         foreach (var player in RaceManager.Instance.PlayerLapCounters)
         {
             GameObject spawnedObject = Instantiate(prefab, transform);
@@ -25,6 +32,8 @@ public class RacePositionsHolderUI : MonoBehaviour
 
             racePositionUIs.Add(racePositionUI);
         }
+
+        ReorderRacePositions();
     }
 
     private void ReorderRacePositions()

@@ -246,5 +246,6 @@
         MerStadiumFinalStretch,
         TheiaSkyRuins,
         TheiaSkyRuinsFinalStretch,
-        PsyduckRacingBGM
+        PsyduckRacingBGM,
+        PhotoMakerTheme
     }

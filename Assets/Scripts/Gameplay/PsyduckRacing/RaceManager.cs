@@ -20,13 +20,26 @@ public class RaceManager : NetworkBehaviour
     private List<RacePlayerResult> racePlayerResults = new List<RacePlayerResult>();
 
     public Dictionary<ulong, RaceLapCounter> PlayerLapCounters => playerLapCounters;
-    public event System.Action onInitializedPlayers;
+    public event System.Action OnInitializedPlayers;
 
     public MoveAsset EmptyMove => emptyMove;
 
     private void Awake()
     {
         Instance = this;
+
+        if (IsServer)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (IsServer)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+        }
     }
 
     public override void OnNetworkSpawn()
@@ -36,6 +49,21 @@ public class RaceManager : NetworkBehaviour
         checkpointList.AddRange(FindObjectsOfType<RaceCheckpoint>());
 
         checkpointList.Sort((a, b) => a.CheckpointIndex.CompareTo(b.CheckpointIndex));
+    }
+
+    private void OnClientDisconnect(ulong clientId)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        if (playerLapCounters.ContainsKey(clientId))
+        {
+            playerLapCounters.Remove(clientId);
+
+            NotifyPlayersInitializedRPC();
+        }
     }
 
     private void OnGameStateChanged(GameState state)
@@ -90,7 +118,7 @@ public class RaceManager : NetworkBehaviour
         }
         else
         {
-            onInitializedPlayers?.Invoke();
+            OnInitializedPlayers?.Invoke();
         }
     }
 
@@ -101,7 +129,7 @@ public class RaceManager : NetworkBehaviour
             yield return null; // Wait for the next frame
         }
 
-        onInitializedPlayers?.Invoke();
+        OnInitializedPlayers?.Invoke();
     }
 
     private bool AreAllLapCountersInitialized()
@@ -224,6 +252,11 @@ public class RaceManager : NetworkBehaviour
 
         foreach (var player in playerLapCounters)
         {
+            if (player.Value == null)
+            {
+                continue;
+            }
+
             player.Value.SetCurrentPlaceRPC(GetPlayerPlace(player.Value));
         }
     }
@@ -232,6 +265,8 @@ public class RaceManager : NetworkBehaviour
     {
         // Create a sorted list of players based on laps, checkpoints, and distance to next checkpoint
         List<RaceLapCounter> sortedLapCounters = new List<RaceLapCounter>(playerLapCounters.Values);
+
+        sortedLapCounters.RemoveAll(lap => lap == null); // Remove null references
 
         sortedLapCounters.Sort((a, b) =>
         {

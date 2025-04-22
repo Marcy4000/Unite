@@ -1,4 +1,4 @@
-using JSAM;
+﻿using JSAM;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -73,6 +73,7 @@ public class GameManager : NetworkBehaviour
     {
         Instance = this;
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
     }
 
     private void OnDisable()
@@ -80,7 +81,19 @@ public class GameManager : NetworkBehaviour
         if (NetworkManager.Singleton != null)
         {
             NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
         }
+    }
+
+    private void OnClientDisconnect(ulong clientId)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        players.RemoveAll(player => player.OwnerClientId == clientId);
+        players.RemoveAll(player => player == null);
     }
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)

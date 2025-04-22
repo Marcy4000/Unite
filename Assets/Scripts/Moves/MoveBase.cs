@@ -216,6 +216,13 @@ public static class MoveDatabase
             case AvailableMoves.PsyduckRaceShield:
                 return new PsyduckRaceShield();
 
+            case AvailableMoves.SerperiorCut:
+                return new SerperiorCut();
+            case AvailableMoves.SerperiorAerialAce:
+                return new SerperiorAerialAce();
+            case AvailableMoves.SerperiorWringOut:
+                return new SerperiorWringOut();
+
             default:
                 return null;
         }
@@ -318,5 +325,13 @@ public enum AvailableMoves : uint
     PsyduckRaceConfuseRay,
     PsyduckRaceFreezeRay,
     PsyduckRaceBubble,
-    PsyduckRaceShield
+    PsyduckRaceShield,
+
+    SerperiorCut,
+    SerperiorAerialAce,
+    SerperiorLeafBlade,
+    SerperiorDragonTail,
+    SerperiorWringOut,
+    SerperiorBrutalSwing,
+    SerperiorUnite,
 }

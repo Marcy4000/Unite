@@ -176,4 +176,14 @@ public class MainMenuUI : MonoBehaviour
     {
         trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
     }
+
+    public void LoadPhotoMaker()
+    {
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+
+        AudioManager.StopAllMusic();
+        AudioManager.PlayMusic(DefaultAudioMusic.PhotoMakerTheme, true);
+
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("PhotoMaker");
+    }
 }

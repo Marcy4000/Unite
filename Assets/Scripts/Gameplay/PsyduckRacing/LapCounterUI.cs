@@ -8,13 +8,20 @@ public class LapCounterUI : MonoBehaviour
 {
     [SerializeField] private TMP_Text lapCounterText;
 
+    private bool initialized = false;
+
     private void Start()
     {
-        RaceManager.Instance.onInitializedPlayers += OnInitializedPlayers;
+        RaceManager.Instance.OnInitializedPlayers += OnInitializedPlayers;
     }
 
     private void OnInitializedPlayers()
     {
+        if (initialized)
+        {
+            return;
+        }
+
         foreach (var player in RaceManager.Instance.PlayerLapCounters)
         {
             NetworkObject playerNetworkObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[player.Key];
@@ -24,6 +31,7 @@ public class LapCounterUI : MonoBehaviour
                 player.Value.OnLapChanged += OnLapChanged;
                 OnLapChanged(player.Value.LapCount);
 
+                initialized = true;
                 break;
             }
         }

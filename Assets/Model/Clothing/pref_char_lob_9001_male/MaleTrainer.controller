@@ -88,7 +88,8 @@ AnimatorState:
   m_Name: ani_win02_lob_40040_male
   m_Speed: 1
   m_CycleOffset: 0
-  m_Transitions: []
+  m_Transitions:
+  - {fileID: -2871815444403896841}
   m_StateMachineBehaviours: []
   m_Position: {x: 50, y: 50, z: 0}
   m_IKOnFeet: 0
@@ -882,6 +883,28 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
+--- !u!1101 &-2871815444403896841
+AnimatorStateTransition:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_Conditions: []
+  m_DstStateMachine: {fileID: 0}
+  m_DstState: {fileID: 2761884863300095225}
+  m_Solo: 0
+  m_Mute: 0
+  m_IsExit: 0
+  serializedVersion: 3
+  m_TransitionDuration: 0.25
+  m_TransitionOffset: 0
+  m_ExitTime: 0.8026316
+  m_HasExitTime: 1
+  m_HasFixedDuration: 1
+  m_InterruptionSource: 0
+  m_OrderedInterruption: 1
+  m_CanTransitionToSelf: 1
 --- !u!1102 &-2854842662714599751
 AnimatorState:
   serializedVersion: 6
@@ -1745,10 +1768,10 @@ AnimatorStateMachine:
     m_Position: {x: 934, y: 904, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -7952479624647151865}
-    m_Position: {x: 944, y: 914, z: 0}
+    m_Position: {x: 840, y: 1340, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 2761884863300095225}
-    m_Position: {x: 954, y: 924, z: 0}
+    m_Position: {x: 840, y: 1400, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 6986596375969204293}
     m_Position: {x: 700, y: 1010, z: 0}
@@ -1760,10 +1783,10 @@ AnimatorStateMachine:
     m_Position: {x: 740, y: 1120, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 6238080978067598615}
-    m_Position: {x: 990, y: 960, z: 0}
+    m_Position: {x: 560, y: 1330, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -738476002877219937}
-    m_Position: {x: 990, y: 970, z: 0}
+    m_Position: {x: 1010, y: 1000, z: 0}
   - serializedVersion: 1
     m_State: {fileID: -3665666680980652419}
     m_Position: {x: 1010, y: 980, z: 0}
@@ -1772,7 +1795,7 @@ AnimatorStateMachine:
     m_Position: {x: 740, y: 1180, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 2128116330591750903}
-    m_Position: {x: 1030, y: 1000, z: 0}
+    m_Position: {x: 560, y: 1400, z: 0}
   - serializedVersion: 1
     m_State: {fileID: 1668460199809384327}
     m_Position: {x: 1044, y: 1014, z: 0}
@@ -2337,7 +2360,8 @@ AnimatorState:
   m_Name: ani_win03_40350_lob_male
   m_Speed: 1
   m_CycleOffset: 0
-  m_Transitions: []
+  m_Transitions:
+  - {fileID: 6733017194929748088}
   m_StateMachineBehaviours: []
   m_Position: {x: 50, y: 50, z: 0}
   m_IKOnFeet: 0
@@ -2432,6 +2456,28 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
+--- !u!1101 &6733017194929748088
+AnimatorStateTransition:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_Conditions: []
+  m_DstStateMachine: {fileID: 0}
+  m_DstState: {fileID: 2128116330591750903}
+  m_Solo: 0
+  m_Mute: 0
+  m_IsExit: 0
+  serializedVersion: 3
+  m_TransitionDuration: 0.25
+  m_TransitionOffset: 0
+  m_ExitTime: 0.82954544
+  m_HasExitTime: 1
+  m_HasFixedDuration: 1
+  m_InterruptionSource: 0
+  m_OrderedInterruption: 1
+  m_CanTransitionToSelf: 1
 --- !u!1102 &6787092456822621554
 AnimatorState:
   serializedVersion: 6
