@@ -135,7 +135,70 @@ public class PartyScreenUI : MonoBehaviour
 
     public void StartGame()
     {
-        LobbyController.Instance.StartGame();
+        switch (selectedMap.startRestriction)
+        {
+            case StartRestriction.None:
+                LobbyController.Instance.StartGame();
+                break;
+            case StartRestriction.SameTeamSizes:
+                if (LobbyController.Instance.Lobby.Players.Count % 2 != 0)
+                {
+                    return;
+                }
+
+                int blueTeamCount = 0;
+                int orangeTeamCount = 0;
+
+                for (int i = 0; i < LobbyController.Instance.Lobby.Players.Count; i++)
+                {
+                    if (LobbyController.Instance.Lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
+                    {
+                        blueTeamCount++;
+                    }
+                    else
+                    {
+                        orangeTeamCount++;
+                    }
+                }
+
+                if (blueTeamCount != orangeTeamCount)
+                {
+                    return;
+                }
+
+                LobbyController.Instance.StartGame();
+                break;
+            case StartRestriction.FullTeams:
+                if (LobbyController.Instance.Lobby.Players.Count != maxPlayers)
+                {
+                    return;
+                }
+
+                int blueTeamCountFull = 0;
+                int orangeTeamCountFull = 0;
+
+                for (int i = 0; i < LobbyController.Instance.Lobby.Players.Count; i++)
+                {
+                    if (LobbyController.Instance.Lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
+                    {
+                        blueTeamCountFull++;
+                    }
+                    else
+                    {
+                        orangeTeamCountFull++;
+                    }
+                }
+
+                if (blueTeamCountFull != maxPlayers / 2 || orangeTeamCountFull != maxPlayers / 2)
+                {
+                    return;
+                }
+
+                LobbyController.Instance.StartGame();
+                break;
+            default:
+                break;
+        }
     }
 
     public void CopyLobbyID()

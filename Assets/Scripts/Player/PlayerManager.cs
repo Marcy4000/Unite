@@ -326,6 +326,7 @@ public class PlayerManager : NetworkBehaviour
         if (other.Type == PokemonType.Wild)
         {
             StartCoroutine(WildPokemonHeal());
+            movesController.IncrementUniteCharge(5000);
         }
     }
 

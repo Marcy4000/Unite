@@ -12,6 +12,8 @@ public class Dialogue
 
     [TextArea]
     public string Body;
+
+    public Sprite PreviewImage; // Reference to the preview image
 }
 
 public class DialogueSystem : MonoBehaviour
@@ -29,6 +31,7 @@ public class DialogueSystem : MonoBehaviour
     [SerializeField] private GameObject dialoguePanel; // Reference to the Dialogue Panel
 
     [SerializeField] private UIObject3D professor;
+    [SerializeField] private Image previewImage; // Reference to the Image component for the preview image
 
     private int currentDialogueIndex = 0; // Tracks the current dialogue index
 
@@ -71,6 +74,16 @@ public class DialogueSystem : MonoBehaviour
         {
             PlayProfessorAnimation();
             titleText.text = dialogues[currentDialogueIndex].Title;
+
+            if (dialogues[currentDialogueIndex].PreviewImage != null)
+            {
+                previewImage.sprite = dialogues[currentDialogueIndex].PreviewImage;
+                previewImage.gameObject.SetActive(true);
+            }
+            else
+            {
+                previewImage.gameObject.SetActive(false);
+            }
 
             StopAllCoroutines();
             StartCoroutine(WriteDialogue(dialogues[currentDialogueIndex].Body));

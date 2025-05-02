@@ -31,6 +31,7 @@ public class MapInfo : ScriptableObject
     [Space]
 
     public CharacterSelectType characterSelectType;
+    public StartRestriction startRestriction;
 
     [TextArea(3, 10)]
     public string description;
@@ -42,9 +43,16 @@ public enum GameMode : byte
     Timeless
 }
 
-public enum CharacterSelectType 
+public enum CharacterSelectType : byte
 {
     BlindPick,
     Draft,
     PsyduckRacing
+}
+
+public enum StartRestriction : byte
+{
+    None,
+    SameTeamSizes,
+    FullTeams
 }

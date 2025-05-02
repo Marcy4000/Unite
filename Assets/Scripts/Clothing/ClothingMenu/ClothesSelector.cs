@@ -28,9 +28,14 @@ public class ClothesSelector : MonoBehaviour
 
     private bool isShowingColorPickers;
 
+    private PlayerClothesInfo localPlayerClothesInfo;
+
+    public PlayerClothesInfo LocalPlayerClothesInfo => localPlayerClothesInfo;
+
     private void Start()
     {
         PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
+        localPlayerClothesInfo = playerClothesInfo;
 
         genderToggles[playerClothesInfo.IsMale ? 0 : 1].isOn = true;
 
@@ -56,13 +61,31 @@ public class ClothesSelector : MonoBehaviour
         clothesMenuSelector.OnSelectedMenuChanged += (type) =>
         {
             currentMenu = type;
-            InitializeMenuItems(GetPlayerClothesInfo().IsMale);
+            InitializeMenuItems(localPlayerClothesInfo.IsMale);
         };
 
         isShowingColorPickers = false;
         colorPickersHolder.SetActive(isShowingColorPickers);
 
         InitializeMenuItems(playerClothesInfo.IsMale);
+    }
+
+    public void SetNewClothesInfo(PlayerClothesInfo newClothesInfo)
+    {
+        localPlayerClothesInfo = newClothesInfo;
+
+        genderToggles[localPlayerClothesInfo.IsMale ? 0 : 1].isOn = true;
+        genderToggles[localPlayerClothesInfo.IsMale ? 1 : 0].isOn = false;
+
+        hairColor.SetColorNoAlpha(localPlayerClothesInfo.HairColor);
+        eyeColor.SetColorNoAlpha(localPlayerClothesInfo.EyeColor);
+
+        skinColor.value = localPlayerClothesInfo.SkinColor;
+
+        if (trainerModel != null)
+            trainerModel.InitializeClothes(localPlayerClothesInfo);
+
+        InitializeMenuItems(localPlayerClothesInfo.IsMale);
     }
 
     private void OnEnable()
@@ -85,7 +108,7 @@ public class ClothesSelector : MonoBehaviour
         yield return null;
 
         trainerModel = trainerModelUI.TargetGameObject.GetComponent<TrainerModel>();
-        trainerModel.InitializeClothes(GetPlayerClothesInfo());
+        trainerModel.InitializeClothes(localPlayerClothesInfo);
     }
 
     private void InitializeMenuItems(bool isMale)
@@ -110,7 +133,7 @@ public class ClothesSelector : MonoBehaviour
             selectionItem.ItemToggle.group = selectionToggleGroup;
             menuToggles.Add(selectionItem.ItemToggle);
 
-            if (ClothesList.Instance.GetClothingIndex(currentMenu, item, isMale) == GetPlayerClothesInfo().GetClothingIndex(currentMenu))
+            if (ClothesList.Instance.GetClothingIndex(currentMenu, item, isMale) == localPlayerClothesInfo.GetClothingIndex(currentMenu))
             {
                 selectionItem.ItemToggle.isOn = true;
             }
@@ -134,19 +157,16 @@ public class ClothesSelector : MonoBehaviour
     {
         yield return null;
 
-        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
-
         foreach (var toggle in menuToggles)
         {
             if (toggle.isOn)
             {
                 ClothingItem item = toggle.GetComponent<ClothingSelectionItem>().Item;
-                playerClothesInfo.SetClothingItem(currentMenu, ClothesList.Instance.GetClothingIndex(currentMenu, item, playerClothesInfo.IsMale));
+                localPlayerClothesInfo.SetClothingItem(currentMenu, ClothesList.Instance.GetClothingIndex(currentMenu, item, localPlayerClothesInfo.IsMale));
             }
         }
 
-        trainerModel.InitializeClothes(playerClothesInfo);
-        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+        trainerModel.InitializeClothes(localPlayerClothesInfo);
     }
 
     private PlayerClothesInfo GetPlayerClothesInfo()
@@ -158,50 +178,42 @@ public class ClothesSelector : MonoBehaviour
     {
         yield return null;
 
-        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
-
-        playerClothesInfo.IsMale = genderToggles[0].isOn;
+        localPlayerClothesInfo.IsMale = genderToggles[0].isOn;
 
         StartCoroutine(SetTrainerModel());
-        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
 
-        InitializeMenuItems(playerClothesInfo.IsMale);
+        InitializeMenuItems(localPlayerClothesInfo.IsMale);
     }
 
     public void SaveClothingChanges()
     {
-        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
-        PlayerPrefs.SetString("ClothingInfo", playerClothesInfo.Serialize());
+        PlayerPrefs.SetString("ClothingInfo", localPlayerClothesInfo.Serialize());
+
+        LobbyController.Instance.UpdatePlayerClothes(localPlayerClothesInfo);
     }
 
     private void ChangeHairColor(Color color)
     {
-        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
-        playerClothesInfo.HairColor = color;
-        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+        localPlayerClothesInfo.HairColor = color;
 
         if (trainerModel != null)
-            trainerModel.UpdateMaterialColors(playerClothesInfo);
+            trainerModel.UpdateMaterialColors(localPlayerClothesInfo);
     }
 
     private void ChangeEyeColor(Color color)
     {
-        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
-        playerClothesInfo.EyeColor = color;
-        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+        localPlayerClothesInfo.EyeColor = color;
 
         if (trainerModel != null)
-            trainerModel.UpdateMaterialColors(playerClothesInfo);
+            trainerModel.UpdateMaterialColors(localPlayerClothesInfo);
     }
 
     private void ChangeSkinColor(int index)
     {
-        PlayerClothesInfo playerClothesInfo = GetPlayerClothesInfo();
-        playerClothesInfo.SkinColor = (byte)index;
-        LobbyController.Instance.UpdatePlayerClothes(playerClothesInfo);
+        localPlayerClothesInfo.SkinColor = (byte)index;
 
         if (trainerModel != null)
-            trainerModel.UpdateMaterialColors(playerClothesInfo);
+            trainerModel.UpdateMaterialColors(localPlayerClothesInfo);
     }
 
     public void ToggleColorPickers()

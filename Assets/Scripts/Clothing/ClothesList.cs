@@ -84,4 +84,70 @@ public class ClothesList : MonoBehaviour
 
         return null;
     }
+
+    //Code to print the clothing items to a JSON file for the uniteapi webscraper
+    /*[Serializable]
+    private class ClothesTypeData
+    {
+        public string type;
+        public List<string> items = new List<string>();
+    }
+
+    [Serializable]
+    private class ClothesData
+    {
+        public List<ClothesTypeData> maleClothes = new List<ClothesTypeData>();
+        public List<ClothesTypeData> femaleClothes = new List<ClothesTypeData>();
+    }
+
+    private void PrintClothesImgNamesToJSON()
+    {
+        var clothesData = new ClothesData();
+
+        // Process male clothes
+        foreach (var clothingTypeList in maleClothes)
+        {
+            var typeData = new ClothesTypeData
+            {
+                type = clothingTypeList.clothingType.ToString()
+            };
+
+            foreach (var clothingItem in clothingTypeList.clothingItems)
+            {
+                string fileName = clothingItem.sprite.AssetGUID;
+                string filePath = UnityEditor.AssetDatabase.GUIDToAssetPath(fileName);
+                string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath);
+                typeData.items.Add(string.IsNullOrEmpty(fileNameWithoutExtension) ? "null" : fileNameWithoutExtension);
+            }
+
+            clothesData.maleClothes.Add(typeData);
+        }
+
+        // Process female clothes
+        foreach (var clothingTypeList in femaleClothes)
+        {
+            var typeData = new ClothesTypeData
+            {
+                type = clothingTypeList.clothingType.ToString()
+            };
+
+            foreach (var clothingItem in clothingTypeList.clothingItems)
+            {
+                string fileName = clothingItem.sprite.AssetGUID;
+                string filePath = UnityEditor.AssetDatabase.GUIDToAssetPath(fileName);
+                string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(filePath);
+                typeData.items.Add(string.IsNullOrEmpty(fileNameWithoutExtension) ? "null" : fileNameWithoutExtension);
+            }
+
+            clothesData.femaleClothes.Add(typeData);
+        }
+
+        string jsonString = JsonUtility.ToJson(clothesData, true);
+        Debug.Log($"Clothes JSON:\n{jsonString}");
+
+        string path = Application.dataPath + "/ClothesData.json";
+        System.IO.File.WriteAllText(path, jsonString);
+        Debug.Log($"Clothes data saved to {path}");
+    }*/
+
 }

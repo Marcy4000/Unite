@@ -5,19 +5,8 @@ using System.Collections;
 
 public class WildPokemonSpawner : NetworkBehaviour
 {
-    public enum RespawnType
-    {
-        NoRespawn,
-        TimedRespawn,
-        SpecificTimesRespawn
-    }
-
-    public enum BuffToGive
-    {
-        None,
-        RedBuff,
-        BlueBuff
-    }
+    public enum RespawnType { NoRespawn, TimedRespawn, SpecificTimesRespawn }
+    public enum BuffToGive { None, RedBuff, BlueBuff }
 
     [SerializeField] private GameObject pokemonPrefab;
     [SerializeField] private AvailableWildPokemons wildPokemonID;
@@ -28,12 +17,14 @@ public class WildPokemonSpawner : NetworkBehaviour
     [SerializeField] private List<float> specificRespawnTimes;
     [SerializeField] private float despawnTime;
     [SerializeField] private bool isObjective;
-    [SerializeField] private bool isSpawnedOnMap;
     [SerializeField] private int soldierLaneID;
     [SerializeField] private BuffToGive buffToGive;
     [SerializeField] private WildPokemonAISettings aiSettings;
 
-    private NetworkVariable<bool> isSpawned = new NetworkVariable<bool>(false);
+    private NetworkVariable<bool> isSpawned = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
 
     private float timer;
     private bool spawnedFirstTime = false;
@@ -50,41 +41,89 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     public event System.Action OnShouldDestroyIcon;
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         vision = GetComponent<Vision>();
+        if (vision == null)
+        {
+            Debug.LogError($"Vision component missing on {gameObject.name}", this);
+            return;
+        }
 
         vision.IsVisiblyEligible = true;
-        vision.OnVisibilityChanged += OnVisibilityChanged;
+        vision.OnVisibilityChanged += HandleVisibilityChanged;
+        isSpawned.OnValueChanged += HandleSpawnStateChanged;
 
-        if (usesTimeRemaining)
+        HandleSpawnStateChanged(isSpawned.Value, isSpawned.Value);
+
+        StartCoroutine(FixVisionBug());
+
+
+        if (IsServer)
         {
-            if (firstSpawnTime > 0)
+            // --- Server-side Time Calculation ---
+            if (usesTimeRemaining)
             {
-                firstSpawnTime = GameManager.Instance.MAX_GAME_TIME - firstSpawnTime;
+                StartCoroutine(InitializeTimers());
             }
             else
             {
-                firstSpawnTime = Mathf.Infinity;
+                if (firstSpawnTime < 0) firstSpawnTime = Mathf.Infinity;
+                if (despawnTime < 0) despawnTime = Mathf.Infinity;
             }
 
-            if (despawnTime > 0f)
-            {
-                despawnTime = GameManager.Instance.MAX_GAME_TIME - despawnTime;
-            }
 
-            for (int i = 0; i < specificRespawnTimes.Count; i++)
+            if (aiSettings.homePosition == Vector2.zero)
             {
-                specificRespawnTimes[i] = GameManager.Instance.MAX_GAME_TIME - specificRespawnTimes[i];
+                aiSettings.homePosition = new Vector2(transform.position.x, transform.position.z);
             }
         }
+    }
 
-        if (aiSettings.homePosition == Vector2.zero)
+    private IEnumerator InitializeTimers()
+    {
+        yield return null;
+
+        if (firstSpawnTime > 0)
         {
-            aiSettings.homePosition = new Vector2(transform.position.x, transform.position.z);
+            firstSpawnTime = GameManager.Instance.MAX_GAME_TIME - firstSpawnTime;
+        }
+        else
+        {
+            firstSpawnTime = Mathf.Infinity; // Indicates never spawn automatically initially
         }
 
-        StartCoroutine(FixVisionBug());
+        if (despawnTime > 0f)
+        {
+            despawnTime = GameManager.Instance.MAX_GAME_TIME - despawnTime;
+        }
+        else
+        {
+            despawnTime = Mathf.Infinity; // Indicates never despawn automatically
+        }
+
+        for (int i = 0; i < specificRespawnTimes.Count; i++)
+        {
+            specificRespawnTimes[i] = GameManager.Instance.MAX_GAME_TIME - specificRespawnTimes[i];
+        }
+        specificRespawnTimes.Sort(); // Important for HandleSpecificTimesRespawn
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        // Unsubscribe from events to prevent errors
+        if (vision != null)
+        {
+            vision.OnVisibilityChanged -= HandleVisibilityChanged;
+        }
+        isSpawned.OnValueChanged -= HandleSpawnStateChanged;
+
+        // Clean up potential icon if object is destroyed
+        OnShouldDestroyIcon?.Invoke();
+
+        base.OnNetworkDespawn();
     }
 
     private IEnumerator FixVisionBug()
@@ -95,57 +134,93 @@ public class WildPokemonSpawner : NetworkBehaviour
         vision.enabled = true;
     }
 
-    private void OnVisibilityChanged(bool visible)
+    private void HandleSpawnStateChanged(bool previousValue, bool newValue)
     {
-        if (visible && !isSpawned.Value)
+        if (!IsServer || IsHost)
         {
-            OnShouldDestroyIcon?.Invoke();
+            if (newValue == true)
+            {
+                if (MinimapManager.Instance != null)
+                {
+                    MinimapManager.Instance.CreateWildPokemonIcon(this);
+                }
+            }
+            else
+            {
+                if (vision != null && vision.IsRendered)
+                {
+                    OnShouldDestroyIcon?.Invoke();
+                }
+            }
+        }
+    }
+
+    private void HandleVisibilityChanged(bool visible)
+    {
+        if ((!IsServer || IsHost) && visible)
+        {
+            if (!isSpawned.Value)
+            {
+                OnShouldDestroyIcon?.Invoke();
+            }
         }
     }
 
     private void Update()
     {
-        if (!IsServer || GameManager.Instance.GameState != GameState.Playing)
+        if (!IsServer || GameManager.Instance == null || GameManager.Instance.GameState != GameState.Playing)
         {
             return;
         }
 
-        if (despawnTime > 0f && GameManager.Instance.GameTime >= despawnTime)
+        // --- Despawning ---
+        if (despawnTime != Mathf.Infinity && GameManager.Instance.GameTime >= despawnTime)
         {
-            DespawnPokemon(false);
-            return;
+            // Check if pokemon exists before trying to despawn
+            if (wildPokemon != null)
+            {
+                DespawnPokemon(false); // Despawn permanently
+            }
+            // Prevent further spawning attempts by setting time to infinity
+            despawnTime = Mathf.Infinity;
+            firstSpawnTime = Mathf.Infinity;
+            respawnType = RespawnType.NoRespawn; // Ensure no respawn
+            return; // Exit update after despawning
         }
 
-        if (GameManager.Instance.GameTime >= firstSpawnTime && firstSpawnTime != Mathf.Infinity)
+        // --- Initial Spawning ---
+        if (!spawnedFirstTime && firstSpawnTime != Mathf.Infinity && GameManager.Instance.GameTime >= firstSpawnTime)
         {
             SpawnPokemon();
             spawnedFirstTime = true;
-            firstSpawnTime = Mathf.Infinity;
+            firstSpawnTime = Mathf.Infinity; // Prevent re-triggering initial spawn
         }
 
-        if (!spawnedFirstTime || IsPokemonSpawned())
+        // --- Respawning ---
+        // Only process respawn logic if the first spawn happened AND pokemon is not currently spawned
+        if (spawnedFirstTime && wildPokemon == null) // Use wildPokemon null check on server
         {
-            return;
-        }
+            switch (respawnType)
+            {
+                case RespawnType.NoRespawn:
+                    // Do nothing
+                    break;
 
-        switch (respawnType)
-        {
-            case RespawnType.NoRespawn:
-                // No respawn logic needed
-                break;
+                case RespawnType.TimedRespawn:
+                    HandleTimedRespawn();
+                    break;
 
-            case RespawnType.TimedRespawn:
-                HandleTimedRespawn();
-                break;
-
-            case RespawnType.SpecificTimesRespawn:
-                HandleSpecificTimesRespawn();
-                break;
+                case RespawnType.SpecificTimesRespawn:
+                    HandleSpecificTimesRespawn();
+                    break;
+            }
         }
     }
 
     private void HandleTimedRespawn()
     {
+        if (timer <= 0) return;
+
         timer -= Time.deltaTime;
         if (timer <= 0)
         {
@@ -155,53 +230,76 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     private void HandleSpecificTimesRespawn()
     {
-        float currentTime = GameManager.Instance.GameTime;
-        foreach (float respawnTime in specificRespawnTimes)
+        if (specificRespawnTimes.Count > 0)
         {
-            if (Mathf.Approximately(currentTime, respawnTime))
+            float nextRespawnTime = specificRespawnTimes[0];
+            if (GameManager.Instance.GameTime >= nextRespawnTime)
             {
                 SpawnPokemon();
-                break;
+                specificRespawnTimes.RemoveAt(0);
             }
+        }
+        else
+        {
+            respawnType = RespawnType.NoRespawn;
         }
     }
 
     public void EnableSpawner()
     {
-        if (!IsServer)
+        if (!IsServer) return;
+        firstSpawnTime = Mathf.Max(GameManager.Instance.GameTime, usesTimeRemaining ? GameManager.Instance.MAX_GAME_TIME - firstSpawnTime : firstSpawnTime);
+        spawnedFirstTime = false;
+
+        if (respawnType == RespawnType.TimedRespawn)
         {
-            return;
+            timer = 0;
         }
-        firstSpawnTime = GameManager.Instance.GameTime;
     }
 
     public void SpawnPokemon()
     {
-        if (IsPokemonSpawned() || !IsServer)
+        if (wildPokemon != null || !IsServer)
         {
             return;
         }
 
-        wildPokemon = Instantiate(pokemonPrefab, transform.position, transform.rotation, transform).GetComponent<WildPokemon>();
-        var instanceNetworkObject = wildPokemon.GetComponent<NetworkObject>();
+        GameObject pokemonInstance = Instantiate(pokemonPrefab, transform.position, transform.rotation, transform);
+        wildPokemon = pokemonInstance.GetComponent<WildPokemon>();
+        if (wildPokemon == null)
+        {
+            Debug.LogError($"Prefab {pokemonPrefab.name} is missing WildPokemon component!", this);
+            Destroy(pokemonInstance);
+            return;
+        }
+
+        NetworkObject instanceNetworkObject = wildPokemon.GetComponent<NetworkObject>();
+        if (instanceNetworkObject == null)
+        {
+            Debug.LogError($"Prefab {pokemonPrefab.name} is missing NetworkObject component!", this);
+            Destroy(pokemonInstance);
+            wildPokemon = null;
+            return;
+        }
         instanceNetworkObject.Spawn();
+
         wildPokemon.SetWildPokemonInfoRPC((short)wildPokemonID, isObjective);
         wildPokemon.SoldierLaneID = soldierLaneID;
         wildPokemon.Pokemon.OnDeath += HandlePokemonDeath;
-        isSpawnedOnMap = true;
-        isSpawned.Value = true;
-
         wildPokemon.Pokemon.OnPokemonInitialized += InitializeAISettings;
 
         if (buffToGive != BuffToGive.None)
+        {
             wildPokemon.Pokemon.AddStatusEffect(buffToGive == BuffToGive.RedBuff ? redBuff : blueBuff);
+        }
 
-        if (!isObjective)
-            NotifyAboutIconRPC(true);
+        isSpawned.Value = true;
     }
 
     private void InitializeAISettings()
     {
+        if (wildPokemon == null || !IsServer) return;
+
         if (wildPokemon.TryGetComponent(out WildPokemonAI wildPokemonAI))
         {
             wildPokemonAI.Initialize(aiSettings);
@@ -211,7 +309,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     public void DespawnPokemon(bool canRespawn)
     {
-        if (!IsPokemonSpawned() || !IsServer)
+        if (wildPokemon == null || !IsServer)
         {
             return;
         }
@@ -219,46 +317,38 @@ public class WildPokemonSpawner : NetworkBehaviour
         if (!canRespawn)
         {
             respawnType = RespawnType.NoRespawn;
+            specificRespawnTimes.Clear();
         }
+
         wildPokemon.Pokemon.TakeDamageRPC(new DamageInfo(wildPokemon.NetworkObjectId, 999f, 999, 9999, DamageType.True));
-        NotifyAboutIconRPC(false);
     }
 
     private void HandlePokemonDeath(DamageInfo info)
     {
-        isSpawnedOnMap = false;
+        if (!IsServer) return;
+
+        if (wildPokemon != null)
+        {
+            wildPokemon.Pokemon.OnDeath -= HandlePokemonDeath;
+            wildPokemon.Pokemon.OnPokemonInitialized -= InitializeAISettings;
+            wildPokemon = null;
+        }
+
+
         isSpawned.Value = false;
-        wildPokemon = null;
+
         if (respawnType == RespawnType.TimedRespawn)
         {
             timer = respawnCooldown;
         }
 
-        RemoveIconIfNotRenderedRPC();
-    }
-
-    private bool IsPokemonSpawned()
-    {
-        return isSpawnedOnMap;
+        ConfirmPokemonDeathClientRpc();
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void RemoveIconIfNotRenderedRPC()
+    private void ConfirmPokemonDeathClientRpc()
     {
-        if (vision.IsRendered)
-        {
-            OnShouldDestroyIcon?.Invoke();
-        }
-    }
-
-        [Rpc(SendTo.ClientsAndHost)]
-    private void NotifyAboutIconRPC(bool create)
-    {
-        if (create)
-        {
-            MinimapManager.Instance.CreateWildPokemonIcon(this);
-        }
-        else
+        if (vision != null && vision.IsRendered)
         {
             OnShouldDestroyIcon?.Invoke();
         }

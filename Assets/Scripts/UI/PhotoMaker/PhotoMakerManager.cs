@@ -32,6 +32,9 @@ public class PhotoMakerManager : MonoBehaviour
     [SerializeField] private Button spawnTrainerButton;
     [SerializeField] private Button despawnTrainerButton;
     [SerializeField] private TMP_Text currentTrainerText;
+    [SerializeField] private ClothesSelector clothesSelector;
+    [SerializeField] private GameObject clothesMenu;
+    [SerializeField] private DialogueTrigger dialogueTrigger;
 
     [SerializeField] private FixedJoystick positionJoystick, rotationJoystick;
 
@@ -54,8 +57,25 @@ public class PhotoMakerManager : MonoBehaviour
 
         if (LoadingScreen.Instance != null)
         {
-            LoadingScreen.Instance.HideGenericLoadingScreen();
+            StartCoroutine(InitializeRoutine());
         }
+        else
+        {
+            clothesMenu.SetActive(false);
+        }
+    }
+
+    private IEnumerator InitializeRoutine()
+    {
+        clothesMenu.SetActive(true);
+
+        yield return new WaitForSeconds(0.15f);
+
+        clothesMenu.SetActive(false);
+
+        dialogueTrigger.TriggerDialogue();
+
+        LoadingScreen.Instance.HideGenericLoadingScreen();
     }
 
     private void OnTrainerAnimationChanged(int index)
@@ -256,6 +276,27 @@ public class PhotoMakerManager : MonoBehaviour
         {
             trainerModels[currentTrainerIndex].transform.LookAt(Camera.main.transform);
             trainerModels[currentTrainerIndex].transform.rotation = Quaternion.Euler(0, trainerModels[currentTrainerIndex].transform.rotation.eulerAngles.y, 0);
+        }
+    }
+
+    public void OpenClothesMenu()
+    {
+        if (currentTrainerIndex == -1 || trainerModels.Count == 0) return;
+
+        if (trainerModels[currentTrainerIndex].IsInitialized)
+        {
+            clothesMenu.SetActive(true);
+            clothesSelector.SetNewClothesInfo(trainerModels[currentTrainerIndex].PlayerClothesInfo);
+        }
+    }
+
+    public void CloseClothesMenu()
+    {
+        clothesMenu.SetActive(false);
+        if (currentTrainerIndex == -1 || trainerModels.Count == 0) return;
+        if (trainerModels[currentTrainerIndex].IsInitialized)
+        {
+            trainerModels[currentTrainerIndex].InitializeClothes(clothesSelector.LocalPlayerClothesInfo);
         }
     }
 }

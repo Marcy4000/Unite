@@ -15,11 +15,21 @@ public class UiSoundHandler : MonoBehaviour, IPointerClickHandler
             return;
         }
 
+        if (AudioManager.Instance == null)
+        {
+            return;
+        }
+
         AudioManager.PlaySound(sounds[id]);
     }
 
     public void OnPointerClick(PointerEventData dt)
     {
+        if (AudioManager.Instance == null)
+        {
+            return;
+        }
+
         if (PlayOnClick)
             AudioManager.PlaySound(sounds[0]);
     }

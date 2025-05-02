@@ -29,11 +29,16 @@ public class SmallJumpPad : NetworkBehaviour
     private float cooldownTimer = 0f; // Delay between jumps
     private bool isJumping = false;
 
-    public override void OnNetworkSpawn()
+    private void Start()
     {
         isActive.OnValueChanged += SetJumpPadActive;
         chargeTimer.OnValueChanged += UpdateGauge;
 
+        SetJumpPadActive(false, false);
+    }
+
+    public override void OnNetworkSpawn()
+    { 
         if (!IsServer)
         {
             return;
