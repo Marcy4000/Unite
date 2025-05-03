@@ -32,7 +32,6 @@ public class WildPokemonAI : NetworkBehaviour
     private Vector3 originalRotation;
     private int animationHashWalking = Animator.StringToHash("Walking");
 
-    //private int currentMoveIndex = -1;
     private Transform currentTarget; // Keeps track of the current aggro target
 
     private Dictionary<StatusType, System.Action> statusAddedActions;
@@ -65,7 +64,6 @@ public class WildPokemonAI : NetworkBehaviour
             { StatusType.Incapacitated, ApplyStun },
             { StatusType.Asleep, ApplyStun },
             { StatusType.Bound, ApplyStun },
-            // Add other statuses
         };
 
         statusRemovedActions = new Dictionary<StatusType, System.Action>
@@ -75,7 +73,6 @@ public class WildPokemonAI : NetworkBehaviour
             { StatusType.Incapacitated, RemoveStun },
             { StatusType.Asleep, RemoveStun },
             { StatusType.Bound, RemoveStun },
-            // Add other statuses
         };
     }
 
@@ -144,8 +141,6 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void OnPokemonStatusChange(StatusEffect effect, bool added)
     {
-        // This is so incredibly stupid but it'll do for now
-        // Update: no longer as stupid, still stupid
         if (added && statusAddedActions.TryGetValue(effect.Type, out System.Action addAction))
         {
             addAction.Invoke();
@@ -286,19 +281,31 @@ public class WildPokemonAI : NetworkBehaviour
     {
         if (!agent.isActiveAndEnabled)
         {
-            return;
+            return; // Agent can't move or check path if disabled
         }
 
-        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+        // Check if the agent has reached *very close* to its destination
+        // Use a slightly larger tolerance than stoppingDistance to be safe
+        // Also check if the agent has effectively stopped moving
+        if (!agent.pathPending &&
+            agent.remainingDistance <= agent.stoppingDistance * 1.1f && // Added tolerance
+            (!agent.hasPath || agent.velocity.sqrMagnitude < 0.1f)) // Check if velocity is near zero
         {
-            state = WildPokemonState.Idle;
+            Vector3 homePositionVec3 = new Vector3(aiSettings.homePosition.x, transform.position.y, aiSettings.homePosition.y);
+            // Check if the destination we were heading towards was the home position
+            bool wasHeadingHome = Vector3.Distance(agent.destination, homePositionVec3) < 0.1f;
 
-            if (Mathf.Approximately(agent.destination.x, aiSettings.homePosition.x) &&
-                Mathf.Approximately(agent.destination.z, aiSettings.homePosition.y))
+            state = WildPokemonState.Idle;
+            agent.ResetPath(); // Clear the path now that we've arrived
+
+            // Only rotate if the destination reached was the home position
+            if (wasHeadingHome)
             {
                 StartCoroutine(RotateToOriginalRotation());
             }
         }
+        // If still moving towards the destination, the agent continues its path.
+        // No state change needed here.
     }
 
     private void HandleChasingState()
@@ -316,7 +323,7 @@ public class WildPokemonAI : NetworkBehaviour
 
         Vector3 homePosition = new Vector3(aiSettings.homePosition.x, 0, aiSettings.homePosition.y);
 
-        // If the Pokémon moves out of its home radius, reset to home
+        // If the PokÃ©mon moves out of its home radius, reset to home
         if (Vector3.Distance(transform.position, homePosition) > aiSettings.homeRadius)
         {
             currentTarget = null;
@@ -425,8 +432,11 @@ public class WildPokemonAI : NetworkBehaviour
             return;
         }
 
+        currentTarget = null; // Ensure no target when walking home
         state = WildPokemonState.MovingToPosition;
-        agent.SetDestination(new Vector3(aiSettings.homePosition.x, 0, aiSettings.homePosition.y));
+        // Use current Y position for destination to avoid issues with NavMesh verticality
+        Vector3 homeDestination = new Vector3(aiSettings.homePosition.x, transform.position.y, aiSettings.homePosition.y);
+        agent.SetDestination(homeDestination);
     }
 
     private IEnumerator RotateToOriginalRotation()

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UI.ThreeDimensional;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameBeginScreenUI : MonoBehaviour
 {
@@ -22,6 +23,8 @@ public class GameBeginScreenUI : MonoBehaviour
 
     private Coroutine fadeInRoutine;
     private Coroutine fadeOutRoutine;
+
+    private CanvasScaler canvasScaler;
 
     private Dictionary<int, string> playerAnimationsBlueMale = new Dictionary<int, string>()
     {
@@ -61,6 +64,8 @@ public class GameBeginScreenUI : MonoBehaviour
 
     private void Start()
     {
+        canvasScaler = GetComponentInParent<CanvasScaler>();
+
         blueTeamObjects = new UIObject3D[blueTeamPlayers.Length];
         orangeTeamObjects = new UIObject3D[orangeTeamPlayers.Length];
 
@@ -135,10 +140,10 @@ public class GameBeginScreenUI : MonoBehaviour
         bluePlayerHolder.SetActive(false);
         orangePlayerHolder.SetActive(false);
 
-        blueTeam.anchoredPosition = new Vector2(-Screen.width, 0);
+        blueTeam.anchoredPosition = new Vector2(-canvasScaler.referenceResolution.x, 0);
         blueTeam.DOAnchorPosX(0, 0.3f);
 
-        orangeTeam.anchoredPosition = new Vector2(Screen.width, 0);
+        orangeTeam.anchoredPosition = new Vector2(canvasScaler.referenceResolution.x, 0);
         orangeTeam.DOAnchorPosX(0, 0.3f);
 
         yield return new WaitForSeconds(0.3f);
@@ -221,8 +226,8 @@ public class GameBeginScreenUI : MonoBehaviour
             yield return null;
         }
 
-        blueTeam.DOAnchorPosX(-Screen.width, 0.3f);
-        orangeTeam.DOAnchorPosX(Screen.width, 0.3f);
+        blueTeam.DOAnchorPosX(-canvasScaler.referenceResolution.x, 0.3f);
+        orangeTeam.DOAnchorPosX(canvasScaler.referenceResolution.x, 0.3f);
 
         lineObject.SetActive(false);
 

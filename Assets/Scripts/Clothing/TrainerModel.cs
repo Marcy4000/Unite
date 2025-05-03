@@ -75,16 +75,19 @@ public class TrainerModel : MonoBehaviour
         initialized = false;
         initializing = true;
 
-        yield return null;
+        yield return null; // Allow one frame for setup
+        if (this == null) yield break;
 
         loadingText.SetActive(true);
 
         playerClothesInfo = info;
         SetGender(info.IsMale);
+        if (this == null) yield break;
 
         Debug.Log($"Initializing clothes for player. Serialized info: {info.Serialize()}");
 
-        // Clear existing clothes
+        // --- 1. Clear existing clothes ---
+        List<GameObject> clothesToDestroy = new List<GameObject>();
         foreach (var holder in clothingHolders)
         {
             if (holder == null)
@@ -92,162 +95,195 @@ public class TrainerModel : MonoBehaviour
                 Debug.LogError("Clothing holder is null. Check inspector assignments.");
                 continue;
             }
-
             foreach (Transform child in holder)
             {
                 if (child != null)
                 {
-                    Addressables.ReleaseInstance(child.gameObject);
-
-                    if (child != null)
-                    {
-                        Destroy(child.gameObject);
-                    }
+                    clothesToDestroy.Add(child.gameObject);
                 }
             }
         }
 
-        // List to hold bones and instantiated clothes
-        var bonesToSync = new List<Transform>(10);  // Pre-allocate for expected size
-        var instantiatedClothes = new List<GameObject>(10);  // Pre-allocate for expected size
+        foreach (var go in clothesToDestroy)
+        {
+            Addressables.ReleaseInstance(go);
+            Destroy(go);
+        }
+        yield return null;
+        if (this == null) yield break;
 
-        // Load and instantiate new clothes
+        // --- 2. Start loading new clothes concurrently ---
+        var loadHandles = new List<AsyncOperationHandle<GameObject>>();
+        var loadInfoList = new List<(int holderIndex, ClothingItem item, int modelIndex)>();
+
         for (int i = 0; i < clothingHolders.Length; i++)
         {
             var holder = clothingHolders[i];
-
             if (holder == null)
             {
                 Debug.LogError($"Clothing holder at index {i} is null. Skipping.");
                 continue;
             }
 
-            int clothingIndex = (ClothingType)i == ClothingType.Eyes ? info.GetClothingIndex(ClothingType.Face) : info.GetClothingIndex((ClothingType)i);
+            ClothingType currentType = (ClothingType)i;
+            int clothingIndex = currentType == ClothingType.Eyes ? info.GetClothingIndex(ClothingType.Face) : info.GetClothingIndex(currentType);
+            var item = ClothesList.Instance.GetClothingItem(currentType, clothingIndex, info.IsMale);
 
-            var item = ClothesList.Instance.GetClothingItem((ClothingType)i, clothingIndex, info.IsMale);
+            if (item == null) continue;
 
             int modelIndex = 0;
-
             if (item.clothingType == ClothingType.Shirt && item.prefabs.Count > 1)
             {
-                modelIndex = info.GetClothingIndex(ClothingType.Overwear) != 0 ? 0 : 1;
+                modelIndex = info.GetClothingIndex(ClothingType.Overwear) != 0 ? 0 : (item.prefabs.Count > 1 ? 1 : 0);
             }
             else if (item.clothingType == ClothingType.Socks)
             {
-                var pants = ClothesList.Instance.GetClothingItem(ClothingType.Pants, info.GetClothingIndex(ClothingType.Pants), info.IsMale);
-
-                modelIndex = (pants != null && !ArePantsDisabled(info)) ? Mathf.Min(item.prefabs.Count - 1, pants.sockTypeToUse) : Mathf.Min(item.prefabs.Count - 1, 2);
+                var pantsItem = ClothesList.Instance.GetClothingItem(ClothingType.Pants, info.GetClothingIndex(ClothingType.Pants), info.IsMale);
+                int sockTypeBasedOnPants = (pantsItem != null && !ArePantsDisabled(info)) ? pantsItem.sockTypeToUse : 2;
+                modelIndex = Mathf.Min(item.prefabs.Count - 1, sockTypeBasedOnPants);
             }
 
-            if (item == null || item.prefabs.Count <= modelIndex || !item.prefabs[modelIndex].RuntimeKeyIsValid())
+            if (item.prefabs.Count <= modelIndex || !item.prefabs[modelIndex].RuntimeKeyIsValid())
             {
                 continue;
             }
 
-            // Instantiate the clothing item asynchronously
             var handle = Addressables.InstantiateAsync(item.prefabs[modelIndex], holder);
-
+            
+            // Add callback to disable the object immediately upon instantiation
             handle.Completed += (op) =>
             {
-                var result = op.Result;
-                result.SetActive(false);
+                if (op.Status == AsyncOperationStatus.Succeeded && op.Result != null)
+                {
+                    op.Result.SetActive(false); // Deactivate as soon as it's loaded
+                }
             };
 
+            loadHandles.Add(handle);
+            loadInfoList.Add((i, item, modelIndex));
+            if (this == null) yield break;
+        }
+
+        // --- 3. Wait for all loading operations to complete ---
+        foreach (var handle in loadHandles)
+        {
             yield return handle;
+            if (this == null)
+            {
+                foreach (var completedHandle in loadHandles)
+                {
+                    if (completedHandle.IsValid() && completedHandle.Status == AsyncOperationStatus.Succeeded && completedHandle.Result != null)
+                    {
+                        Addressables.ReleaseInstance(completedHandle.Result);
+                    }
+                }
+                yield break;
+            }
+        }
+
+        // --- 4. Process loaded clothes ---
+        var bonesToSync = new List<Transform>(loadHandles.Count);
+        var instantiatedInfo = new List<(GameObject instance, ClothingItem item)>(loadHandles.Count);
+
+        for (int j = 0; j < loadHandles.Count; j++)
+        {
+            if (this == null)
+            {
+                foreach (var infoPair in instantiatedInfo)
+                {
+                    if (infoPair.instance != null) Addressables.ReleaseInstance(infoPair.instance);
+                }
+                for (int k = j; k < loadHandles.Count; k++)
+                {
+                    var handle1 = loadHandles[k];
+                    if (handle1.IsValid() && handle1.Status == AsyncOperationStatus.Succeeded && handle1.Result != null)
+                    {
+                        Addressables.ReleaseInstance(handle1.Result);
+                    }
+                }
+                yield break;
+            }
+
+            var handle = loadHandles[j];
+            var loadInfo = loadInfoList[j];
+            var holder = clothingHolders[loadInfo.holderIndex];
 
             if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null)
             {
                 var result = handle.Result;
-                //Debug.Log($"Successfully loaded clothing item of type {(ClothingType)i}.");
 
                 result.transform.SetParent(holder, false);
                 UpdateObjectLayer(result, holder.gameObject.layer);
+
                 bonesToSync.Add(GetChildToSync(result.transform));
-                instantiatedClothes.Add(result);
-
-                SkinnedMeshRenderer[] meshRenderers = result.GetComponentsInChildren<SkinnedMeshRenderer>();
-
-                foreach (var meshRenderer in meshRenderers)
-                {
-                    foreach (var material in meshRenderer.materials)
-                    {
-                        if (material.name.Contains("body_yellow") || material.name.Contains("head_yellow") || material.name.Contains("ow_yellow") || material.name.Contains("0000hand"))
-                        {
-                            material.SetColor("_BaseColor", skinColors[info.SkinColor % skinColors.Length]);
-                        }
-                        else if (material.name.Contains("hair") || material.name.Contains("00000shadow"))
-                        {
-                            material.SetColor("_BaseColor", info.HairColor);
-                        }
-                        else if (material.name.Contains("eye00"))
-                        {
-                            material.SetColor("_BaseColor", info.EyeColor);
-                        }
-
-                        material.SetFloat("_Metallic", 0.0f);
-                        material.SetFloat("_Smoothness", 0.1f);
-                    }
-                }
-
-                result.SetActive(false);  // Start inactive until bones are synced
+                instantiatedInfo.Add((result, loadInfo.item));
             }
             else
             {
-                Debug.LogError($"Failed to load clothing item: {(ClothingType)i}");
+                Debug.LogError($"Failed to load clothing item for holder index {loadInfo.holderIndex}: {loadInfo.item?.name ?? "Unknown"}. Error: {handle.OperationException}");
             }
         }
 
-        // Set synced bones
+        if (this == null)
+        {
+            foreach (var infoPair in instantiatedInfo)
+            {
+                if (infoPair.instance != null) Addressables.ReleaseInstance(infoPair.instance);
+            }
+            yield break;
+        }
+
+        // --- Call UpdateMaterialColors after processing all items ---
+        UpdateMaterialColors(info);
+        if (this == null) yield break;
+
+        // --- 5. Sync bones ---
         if (activeBoneSync != null)
         {
             activeBoneSync.clothingRoots = bonesToSync.ToArray();
         }
         else
         {
-            Debug.LogError("ActiveBoneSync is null. Cannot set clothing roots.");
+            if (this != null) Debug.LogError("ActiveBoneSync is null. Cannot set clothing roots.");
         }
+        if (this == null) yield break;
 
-        // Activate instantiated clothes
-        foreach (var go in instantiatedClothes)
+        // --- 6. Determine which clothes should be active ---
+        HashSet<GameObject> activeInstances = new HashSet<GameObject>(instantiatedInfo.Select(info => info.instance));
+
+        foreach (var infoPair in instantiatedInfo)
         {
-            if (go != null)
-            {
-                go.SetActive(true);
-            }
-            else
-            {
-                Debug.LogWarning("An instantiated clothing item is null.");
-            }
-        }
+            if (infoPair.instance == null || infoPair.item == null) continue;
 
-        // Disable clothing that are disabled by the current clothing
-        for (int i = 0; i < instantiatedClothes.Count; i++)
-        {
-            var item = ClothesList.Instance.GetClothingItem((ClothingType)i, info.GetClothingIndex((ClothingType)i), info.IsMale);
-
-            if (item == null)
+            foreach (var disableType in infoPair.item.disablesClothingType)
             {
-                continue;
-            }
-
-            foreach (var disableType in item.disablesClothingType)
-            {
-                int index = (int)disableType;
-                if (index >= 0 && index < clothingHolders.Length)
+                foreach (var otherInfo in instantiatedInfo)
                 {
-                    foreach (Transform child in clothingHolders[index])
+                    if (otherInfo.instance != null && otherInfo.item?.clothingType == disableType)
                     {
-                        child.gameObject.SetActive(false);
+                        activeInstances.Remove(otherInfo.instance);
                     }
                 }
             }
         }
+        if (this == null) yield break;
+
+        // --- 7. Activate only the necessary clothes ---
+        foreach (var instance in activeInstances)
+        {
+            if (instance != null)
+            {
+                instance.SetActive(true);
+            }
+        }
+        if (this == null) yield break;
+
+        // --- 8. Finalize ---
+        if (this == null) yield break;
 
         loadingText.SetActive(false);
-
         initialized = true;
         initializing = false;
-
         onClothesInitialized?.Invoke();
     }
 
@@ -296,21 +332,27 @@ public class TrainerModel : MonoBehaviour
                     continue;
                 }
 
-                SkinnedMeshRenderer[] meshRenderers = child.GetComponentsInChildren<SkinnedMeshRenderer>();
+                SkinnedMeshRenderer[] meshRenderers = child.GetComponentsInChildren<SkinnedMeshRenderer>(true);
 
                 foreach (var meshRenderer in meshRenderers)
                 {
-                    foreach (var material in meshRenderer.materials)
+                    Material[] materials = meshRenderer.materials;
+                    for (int matIndex = 0; matIndex < materials.Length; matIndex++)
                     {
-                        if (material.name.Contains("body_yellow") || material.name.Contains("head_yellow") || material.name.Contains("ow_yellow") || material.name.Contains("0000hand"))
+                        var material = materials[matIndex];
+                        if (material == null) continue;
+
+                        string matName = material.name.ToLowerInvariant();
+
+                        if (matName.Contains("body") || matName.Contains("head") || matName.Contains("000hand"))
                         {
                             material.SetColor("_BaseColor", skinColors[info.SkinColor % skinColors.Length]);
                         }
-                        else if (material.name.Contains("hair") || material.name.Contains("00000shadow"))
+                        else if (matName.Contains("hair") || matName.Contains("shadow"))
                         {
                             material.SetColor("_BaseColor", info.HairColor);
                         }
-                        else if (material.name.Contains("eye00"))
+                        else if (matName.Contains("eye0"))
                         {
                             material.SetColor("_BaseColor", info.EyeColor);
                         }
@@ -381,24 +423,40 @@ public class TrainerModel : MonoBehaviour
 
     private void OnDestroy()
     {
-        foreach (var holder in clothingHolders)
-        {
-            if (holder == null)
-            {
-                continue;
-            }
+        initializing = false;
 
-            foreach (Transform child in holder)
+        if (LobbyController.Instance != null)
+        {
+            LobbyController.Instance.onLobbyUpdate -= OnLobbyUpdate;
+        }
+
+        if (clothingHoldersMale != null)
+        {
+            foreach (var holder in clothingHoldersMale)
             {
-                if (child != null)
-                {
-                    Addressables.ReleaseInstance(child.gameObject);
-                    
-                    if (child != null)
-                    {
-                        Destroy(child.gameObject);
-                    }
-                }
+                ReleaseHolderInstances(holder);
+            }
+        }
+        if (clothingHoldersFemale != null)
+        {
+            foreach (var holder in clothingHoldersFemale)
+            {
+                ReleaseHolderInstances(holder);
+            }
+        }
+    }
+
+    private void ReleaseHolderInstances(Transform holder)
+    {
+        if (holder == null) return;
+
+        for (int i = holder.childCount - 1; i >= 0; i--)
+        {
+            Transform child = holder.GetChild(i);
+            if (child != null)
+            {
+                Addressables.ReleaseInstance(child.gameObject);
+                Destroy(child.gameObject);
             }
         }
     }

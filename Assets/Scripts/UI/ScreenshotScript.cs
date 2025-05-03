@@ -110,18 +110,51 @@ public class ScreenshotScript : MonoBehaviour
     IEnumerator TakeScreenshowNew()
     {
         GameObject canvas = GameObject.Find("Canvas");
-
         canvas.SetActive(false);
 
         yield return null;
 
         string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        string filePath = Path.Combine(folderPath, $"{fileNamePrefix}_{timestamp}.png");
+        string fileName = $"{fileNamePrefix}_{timestamp}.png";
+        string filePath;
+
+        // Different paths based on platform
+        if (Application.isEditor)
+        {
+            // Keep current behavior in editor
+            filePath = Path.Combine(Application.dataPath, folderPath, fileName);
+        }
+        else if (Application.platform == RuntimePlatform.Android)
+        {
+            // On Android, save to gallery (ScreenCapture handles the path)
+            filePath = fileName;
+        }
+        else
+        {
+            // On other platforms, save to Screenshot folder next to the executable
+            string screenshotFolder = Path.Combine(Application.dataPath, "..", "Screenshots");
+            Directory.CreateDirectory(screenshotFolder);
+            filePath = Path.Combine(screenshotFolder, fileName);
+        }
 
         if (Application.platform == RuntimePlatform.Android)
-            ScreenCapture.CaptureScreenshot($"{fileNamePrefix}_{timestamp}.png");
+        {
+            // Android gallery save
+            Texture2D ss = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
+            ss.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+            ss.Apply();
+
+            // Save the screenshot to Gallery/Photos
+            NativeGallery.SaveImageToGallery(ss, "PokemonUniteRecScreenshots", fileName, (success, path) => Debug.Log("Media save result: " + success + " " + path));
+
+            // To avoid memory leaks
+            Destroy(ss);
+        }
         else
+        {
+            // Regular file save for other platforms
             ScreenCapture.CaptureScreenshot(filePath);
+        }
 
         Debug.Log($"Screenshot saved to: {filePath}");
 

@@ -14,7 +14,12 @@ public class DialogueTrigger : MonoBehaviour
 
     public void TriggerDialogue()
     {
-        if (triggerOnlyOnce && PlayerPrefs.GetInt(prefsKey, 0) == 1)
+        TriggerDialogue(false);
+    }
+
+    public void TriggerDialogue(bool skipRepeatingCheck)
+    {
+        if (triggerOnlyOnce && PlayerPrefs.GetInt(prefsKey, 0) == 1 && !skipRepeatingCheck)
         {
             return; // Dialogue has already been triggered
         }
