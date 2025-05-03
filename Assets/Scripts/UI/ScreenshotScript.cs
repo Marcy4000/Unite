@@ -13,6 +13,8 @@ public class ScreenshotScript : MonoBehaviour
 
     private Camera cam;
 
+    [SerializeField] private Canvas uiCanvasToHide; // Assign the main UI Canvas here if needed
+
     void Start()
     {
         // Ensure the folder exists
@@ -161,5 +163,45 @@ public class ScreenshotScript : MonoBehaviour
         yield return null;
 
         canvas.SetActive(true);
+    }
+
+    // New Coroutine for capturing and saving to a specific path
+    public IEnumerator CaptureAndSaveScreenshotCoroutine(string filePath)
+    {
+        bool wasCanvasActive = false;
+        if (uiCanvasToHide != null)
+        {
+            wasCanvasActive = uiCanvasToHide.gameObject.activeSelf;
+            uiCanvasToHide.gameObject.SetActive(false); // Hide UI
+        }
+
+        // Wait for rendering to complete
+        yield return new WaitForEndOfFrame();
+
+        // Capture screen content
+        Texture2D screenshotTexture = ScreenCapture.CaptureScreenshotAsTexture();
+
+        // Encode texture to PNG
+        byte[] pngData = screenshotTexture.EncodeToPNG();
+
+        // Clean up the texture to avoid memory leaks
+        Destroy(screenshotTexture);
+
+        // Save the PNG file
+        try
+        {
+            File.WriteAllBytes(filePath, pngData);
+            Debug.Log($"Screenshot saved to: {filePath}");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Failed to save screenshot to {filePath}: {ex.Message}");
+        }
+
+        // Restore UI visibility
+        if (uiCanvasToHide != null)
+        {
+            uiCanvasToHide.gameObject.SetActive(wasCanvasActive);
+        }
     }
 }

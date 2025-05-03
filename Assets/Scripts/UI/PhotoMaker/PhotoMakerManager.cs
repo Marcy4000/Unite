@@ -1,6 +1,8 @@
 using JSAM;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO; // Added for Path
+using System.Text.RegularExpressions; // Added for Regex
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,6 +21,8 @@ public class PhotoMakerManager : MonoBehaviour
     [System.Serializable]
     private class TrainerLayoutWrapper
     {
+        public string LayoutName = "Default Layout"; // Added
+        public string ImagePath = ""; // Added
         public List<TrainerLayoutData> trainers = new List<TrainerLayoutData>();
     }
 
@@ -202,12 +206,35 @@ public class PhotoMakerManager : MonoBehaviour
         LobbyController.Instance.ReturnToLobby(false);
     }
 
-    public void SaveCurrentLayout()
+    // Helper function to create safe filenames - MAKE PUBLIC
+    public string SanitizeFileName(string name)
     {
-        if (currentTrainerIndex == -1 || trainerModels.Count == 0) return;
+        string invalidChars = Regex.Escape(new string(Path.GetInvalidFileNameChars()));
+        string invalidRegStr = string.Format(@"([{0}]*\.+$)|([{0}]+)", invalidChars);
+        return Regex.Replace(name, invalidRegStr, "_");
+    }
 
-        string filePath = Application.persistentDataPath + "/trainer_layout.json";
-        TrainerLayoutWrapper wrapper = new TrainerLayoutWrapper();
+    public void SaveCurrentLayout(string layoutName, string imagePath = "")
+    {
+        if (currentTrainerIndex == -1 || trainerModels.Count == 0 || string.IsNullOrWhiteSpace(layoutName))
+        {
+            Debug.LogError("Cannot save layout: No trainers available or layout name is empty.");
+            return;
+        }
+
+        string sanitizedName = SanitizeFileName(layoutName); // Use the public method
+        if (string.IsNullOrWhiteSpace(sanitizedName))
+        {
+            Debug.LogError("Cannot save layout: Sanitized layout name is empty.");
+            return;
+        }
+
+        string filePath = Path.Combine(Application.persistentDataPath, $"{sanitizedName}_layout.json");
+        TrainerLayoutWrapper wrapper = new TrainerLayoutWrapper
+        {
+            LayoutName = layoutName, // Store the original name
+            ImagePath = imagePath   // Store the image path
+        };
 
         foreach (var trainer in trainerModels)
         {
@@ -222,31 +249,74 @@ public class PhotoMakerManager : MonoBehaviour
         }
 
         string json = JsonUtility.ToJson(wrapper, true);
-        Debug.Log("Saving layout to: " + filePath);
+        Debug.Log($"Saving layout '{layoutName}' to: {filePath}");
         System.IO.File.WriteAllText(filePath, json);
     }
 
-    public void LoadLayout()
+    // Make sure TryGetLayoutInfo is public if it isn't already
+    public bool TryGetLayoutInfo(string sanitizedLayoutName, out string foundLayoutName, out string foundImagePath)
     {
-        string filePath = Application.persistentDataPath + "/trainer_layout.json";
-        if (!System.IO.File.Exists(filePath)) return;
+        foundLayoutName = "";
+        foundImagePath = "";
+        if (string.IsNullOrWhiteSpace(sanitizedLayoutName)) return false;
 
-        Debug.Log("Loading layout from: " + filePath);
+        string filePath = Path.Combine(Application.persistentDataPath, $"{sanitizedLayoutName}_layout.json");
+        if (!System.IO.File.Exists(filePath)) return false;
 
-        // Clear existing trainers
+        try
+        {
+            string json = System.IO.File.ReadAllText(filePath);
+            TrainerLayoutWrapper wrapper = JsonUtility.FromJson<TrainerLayoutWrapper>(json);
+            foundLayoutName = wrapper.LayoutName;
+            foundImagePath = wrapper.ImagePath;
+            return true;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Error reading layout info for '{sanitizedLayoutName}': {ex.Message}");
+            return false;
+        }
+    }
+
+    public void LoadLayout(string sanitizedLayoutName) // Ensure parameter is the sanitized name
+    {
+        if (string.IsNullOrWhiteSpace(sanitizedLayoutName))
+        {
+            Debug.LogError("Cannot load layout: Sanitized layout name is empty.");
+            return;
+        }
+
+        string filePath = Path.Combine(Application.persistentDataPath, $"{sanitizedLayoutName}_layout.json");
+        if (!System.IO.File.Exists(filePath))
+        {
+            Debug.LogWarning($"Layout file '{sanitizedLayoutName}' not found at: {filePath}");
+            return;
+        }
+
+        Debug.Log($"Loading layout '{sanitizedLayoutName}' from: {filePath}");
+
+        int previousIndex = currentTrainerIndex;
         for (int i = trainerModels.Count - 1; i >= 0; i--)
         {
+            currentTrainerIndex = i;
             DespawnTrainer();
         }
+        currentTrainerIndex = -1;
 
         string json = System.IO.File.ReadAllText(filePath);
         TrainerLayoutWrapper wrapper = JsonUtility.FromJson<TrainerLayoutWrapper>(json);
 
+        if (wrapper.trainers.Count == 0)
+        {
+            UpdateUI();
+            return;
+        }
+
         foreach (var data in wrapper.trainers)
         {
             SpawnTrainer();
-            var trainer = trainerModels[trainerModels.Count - 1];
-            
+            var trainer = trainerModels[currentTrainerIndex];
+
             StartCoroutine(LoadTrainer(trainer, data));
         }
 
@@ -265,7 +335,23 @@ public class PhotoMakerManager : MonoBehaviour
 
         yield return new WaitUntil(() => trainerModel.IsInitialized);
 
-        trainerModel.ActiveAnimator.Play(data.Animation);
+        bool animFound = false;
+        foreach (var clip in trainerModel.ActiveAnimator.runtimeAnimatorController.animationClips)
+        {
+            if (clip.name == data.Animation)
+            {
+                animFound = true;
+                break;
+            }
+        }
+        if (animFound)
+        {
+            trainerModel.ActiveAnimator.Play(data.Animation);
+        }
+        else
+        {
+            Debug.LogWarning($"Animation '{data.Animation}' not found for trainer. Playing default state.");
+        }
     }
 
     public void LookAtCamera()
