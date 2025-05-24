@@ -453,6 +453,17 @@ public class GameManager : NetworkBehaviour
         }
     }
 
+    public void EndGame()
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        GameResults results = GenerateGameResults();
+        EndGameRPC(results);
+    }
+
     [Rpc(SendTo.Everyone)]
     void EndGameRPC(GameResults gameResults)
     {

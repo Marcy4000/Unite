@@ -29,7 +29,10 @@ public class MoveLearnPanel : MonoBehaviour
 
     public void EnqueueNewMove(MoveAsset[] moves)
     {
-        moveQueue.Enqueue(moves);
+        if (moves != null && moves.Length > 0)
+        {
+            moveQueue.Enqueue(moves);
+        }
     }
 
     public void ShowLearnMovePanel(MoveAsset[] moves)

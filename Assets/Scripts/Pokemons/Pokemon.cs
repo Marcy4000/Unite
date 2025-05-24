@@ -201,7 +201,6 @@ public class Pokemon : NetworkBehaviour
     private void CurrentLevelChanged(int previous, int current)
     {
         localLevel = current;
-        CheckEvolution();
         OnLevelChange?.Invoke();
     }
 
@@ -245,7 +244,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueHp = baseStats.MaxHp[level] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -276,7 +275,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueAtk = baseStats.Attack[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -307,7 +306,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueDef = baseStats.Defense[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -338,7 +337,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueSpAtk = baseStats.SpAttack[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -369,7 +368,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueSpDef = baseStats.SpDefense[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -400,7 +399,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueCrit = baseStats.CritRate[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -431,7 +430,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueCDR = baseStats.Cdr[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -462,7 +461,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueLifeSteal = baseStats.LifeSteal[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -493,7 +492,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         float trueLifeSteal = baseStats.SpellVamp[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -524,7 +523,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         float trueAtkSpeed = baseStats.AtkSpeed[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -556,7 +555,7 @@ public class Pokemon : NetworkBehaviour
             }
         }
 
-        // Step 3: Add the flat modifier to the Pokémon's natural movement speed stat
+        // Step 3: Add the flat modifier to the Pokï¿½mon's natural movement speed stat
         int trueSpeed = baseStats.Speed[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
@@ -1474,6 +1473,8 @@ public class Pokemon : NetworkBehaviour
             Debug.Log("Level Up! Current Level: " + localLevel);
 
         currentHp.Value = Mathf.RoundToInt(GetMaxHp(localLevel) * hpPercentage);
+
+        CheckEvolution();
     }
 
     [Rpc(SendTo.Server)]
@@ -1527,12 +1528,15 @@ public class Pokemon : NetworkBehaviour
         PokemonEvolution evolution = baseStats.IsNewEvoLevel(localLevel);
         if (evolution != null)
         {
-            Evolve(evolution);
+            EvolveRPC(localLevel);
         }
     }
 
-    private void Evolve(PokemonEvolution evolution)
+    [Rpc(SendTo.ClientsAndHost)]
+    private void EvolveRPC(int evolutionLevel)
     {
+        PokemonEvolution evolution = baseStats.IsNewEvoLevel(evolutionLevel);
+
         if (activeModel != null)
         {
             Destroy(activeModel);

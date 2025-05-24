@@ -69,6 +69,9 @@ public class MovesController : NetworkBehaviour
         new AttackSpeedCooldown { threshold = 285f, cooldown = 0.26667f },
 };
 
+    private Queue<LearnableMove> learnableMoveQueue = new Queue<LearnableMove>();
+    private bool isProcessingMoveLearnQueue = false;
+
     void Start()
     {
         pokemon = GetComponent<Pokemon>();
@@ -80,7 +83,7 @@ public class MovesController : NetworkBehaviour
         }
 
         pokemon.OnLevelChange += CheckIfCanLearnMove;
-        MoveLearnPanel.onSelectedMove += LearnMove;
+        MoveLearnPanel.onSelectedMove += OnMoveSelectedFromPanel;
 
         SelectBattleItem();
         battleItemStatus.OnStatusChange += UpdateBattleItemUI;
@@ -229,19 +232,45 @@ public class MovesController : NetworkBehaviour
     {
         Debug.Log($"Checking if can learn move. Current level: {pokemon.CurrentLevel}, Previous level: {prevLevel}");
 
-        for (int i = prevLevel+1; i <= pokemon.CurrentLevel; i++)
+        for (int i = prevLevel + 1; i <= pokemon.CurrentLevel; i++)
         {
             for (int j = 0; j < pokemon.BaseStats.LearnableMoves.Length; j++)
             {
                 if (i == pokemon.BaseStats.LearnableMoves[j].level)
                 {
-                    LearnableMove learnableMove = RemoveAlreadyLearnedMoves(pokemon.BaseStats.LearnableMoves[j]);
-                    BattleUIManager.instance.InitializeMoveLearnPanel(learnableMove.moves);
+                    learnableMoveQueue.Enqueue(pokemon.BaseStats.LearnableMoves[j]);
                 }
             }
         }
 
         prevLevel = pokemon.CurrentLevel;
+
+        if (!isProcessingMoveLearnQueue)
+        {
+            ProcessNextMoveLearn();
+        }
+    }
+
+    private void ProcessNextMoveLearn()
+    {
+        while (learnableMoveQueue.Count > 0)
+        {
+            var learnableMove = learnableMoveQueue.Dequeue();
+            var filtered = RemoveAlreadyLearnedMoves(learnableMove);
+            if (filtered.moves != null && filtered.moves.Length > 0)
+            {
+                isProcessingMoveLearnQueue = true;
+                BattleUIManager.instance.InitializeMoveLearnPanel(filtered.moves);
+                return;
+            }
+        }
+        isProcessingMoveLearnQueue = false;
+    }
+
+    private void OnMoveSelectedFromPanel(MoveAsset move)
+    {
+        LearnMove(move);
+        ProcessNextMoveLearn();
     }
 
     private LearnableMove RemoveAlreadyLearnedMoves(LearnableMove learnableMoves)

@@ -247,5 +247,7 @@
         TheiaSkyRuins,
         TheiaSkyRuinsFinalStretch,
         PsyduckRacingBGM,
-        PhotoMakerTheme
+        PhotoMakerTheme,
+        ElectrodeVolleyballTheme,
+        ElectrodeVolleyballThemeFinalStretch
     }
