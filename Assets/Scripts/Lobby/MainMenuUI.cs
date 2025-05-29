@@ -17,13 +17,14 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private LobbyPlayerInfoIcons lobbyPlayerInfoIcons;
 
     [SerializeField] private TrainerModel trainerModel;
+    [SerializeField] private MatchmakingBarUI matchmakingBarUI;
 
     private void Start()
     {
         startLobbyButton.onClick.AddListener(() =>
         {
             AudioManager.PlaySound(DefaultAudioSounds.Home_ui_start_04);
-            LobbyController.Instance.CreateLobby();
+            LobbyController.Instance.CreateLobby(LobbyController.LobbyType.Custom);
         });
 
         lobbyIdField.onEndEdit.AddListener((string lobbyId) =>
@@ -185,5 +186,26 @@ public class MainMenuUI : MonoBehaviour
         AudioManager.PlayMusic(DefaultAudioMusic.PhotoMakerTheme, true);
 
         UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("PhotoMaker");
+    }
+
+    public void ShowMatchmakingBarUI(System.Action onCancel)
+    {
+        matchmakingBarUI.SetCancelButtonAction(onCancel);
+        matchmakingBarUI.StartSearching();
+    }
+
+    public void HideMatchmakingBarUI()
+    {
+        matchmakingBarUI.StopSearching();
+    }
+
+    public void SetMatchmakingEstimatedTime(string time)
+    {
+        matchmakingBarUI.SetEstimatedTime(time);
+    }
+
+    public void SetMatchmakingElapsedTime(string time)
+    {
+        matchmakingBarUI.SetElapsedTime(time);
     }
 }

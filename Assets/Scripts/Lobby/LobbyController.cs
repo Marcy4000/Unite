@@ -50,6 +50,13 @@ public class LobbyController : MonoBehaviour
     private string connectionType = "dtls";
 #endif
 
+    private Lobby originalPartyLobby;
+    private string originalLobbyId;
+    private string originalLobbyCode;
+    private bool isInMatchmakingGame = false;
+    private bool isPartyLeader => partyLobby != null && partyLobby.HostId == localPlayer.Id;
+    private string partyMatchmakerTicketId = null;
+
     public Lobby Lobby => partyLobby;
     public Player Player => localPlayer;
     public List<PlayerNetworkManager> PlayerNetworkManagers => playerNetworkManagers;
@@ -62,6 +69,15 @@ public class LobbyController : MonoBehaviour
     public ILobbyEvents LobbyEvents => lobbyEvents;
 
     public event Action<Lobby> onLobbyUpdate;
+
+    public enum LobbyType
+    {
+        Custom,
+        Standards
+    }
+
+    private LobbyType currentLobbyType = LobbyType.Custom;
+    public LobbyType CurrentLobbyType => currentLobbyType;
 
     private void Awake()
     {
@@ -89,6 +105,8 @@ public class LobbyController : MonoBehaviour
 
     private void Start()
     {
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectFromServer;
+
         NetworkManager.Singleton.OnClientConnectedCallback += (clientId) =>
         {
             if (clientId != NetworkManager.Singleton.LocalClientId)
@@ -211,6 +229,7 @@ public class LobbyController : MonoBehaviour
             partyLobby = null;
             PlayerClothesPreloader.Instance.ClearAllModels();
             NetworkManager.Singleton.Shutdown();
+            playerNetworkManagers.Clear();
             if (lobbyUI != null)
             {
                 lobbyUI.ShowMainMenuUI();
@@ -272,6 +291,9 @@ public class LobbyController : MonoBehaviour
                 lobbyUpdateTimer = 1.1f;
                 partyLobby = await LobbyService.Instance.GetLobbyAsync(partyLobby.Id);
                 localPlayer = partyLobby.Players.Find(player => player.Id == localPlayer.Id);
+
+                SyncLobbyTypeFromLobby();
+
                 onLobbyUpdate?.Invoke(Lobby);
             }
         }
@@ -291,7 +313,7 @@ public class LobbyController : MonoBehaviour
         }
     }
 
-    public async void CreateLobby()
+    public async void CreateLobby(LobbyType type = LobbyType.Custom)
     {
         try
         {
@@ -302,11 +324,16 @@ public class LobbyController : MonoBehaviour
                 Player = localPlayer,
                 Data = new Dictionary<string, DataObject>
                 {
-                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Public, NumberEncoder.ToBase64<short>(0))}
+                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Public, NumberEncoder.ToBase64<short>(0))},
+                    {"LobbyType", new DataObject(DataObject.VisibilityOptions.Public, type.ToString())}
                 },
             };
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
-            partyLobby = await LobbyService.Instance.CreateLobbyAsync(partyLobbyName, maxPartyMembers, partyLobbyOptions);
+            int maxPlayers = (type == LobbyType.Standards)
+                ? CharactersList.Instance.GetMapFromID(0).maxTeamSize
+                : CharactersList.Instance.GetMapFromID(0).maxTeamSize * 2;
+            partyLobby = await LobbyService.Instance.CreateLobbyAsync(partyLobbyName, maxPlayers, partyLobbyOptions);
+            currentLobbyType = type;
             Debug.Log($"Joined lobby: {partyLobby.Name}, code: {partyLobby.LobbyCode}");
 
             Allocation allocation = await AllocateRelay();
@@ -459,9 +486,40 @@ public class LobbyController : MonoBehaviour
         }
     }
 
+    public void ReturnToOriginalLobbyAfterMatch()
+    {
+        if (!isInMatchmakingGame)
+            return;
+
+        isInMatchmakingGame = false;
+
+        if (!string.IsNullOrEmpty(originalLobbyId))
+        {
+            TryLobbyJoin(originalLobbyId, useID: true);
+        }
+        else if (!string.IsNullOrEmpty(originalLobbyCode))
+        {
+            TryLobbyJoin(originalLobbyCode, useID: false);
+        }
+        else
+        {
+            lobbyUI.ShowMainMenuUI();
+        }
+    }
+
+    public void OnMatchmakingGameEnded()
+    {
+        ReturnToOriginalLobbyAfterMatch();
+    }
+
     private async Task PollMatchmakerTicket()
     {
-        Unity.Services.Matchmaker.Models.TicketStatusResponse ticketStatusResponse = await MatchmakerService.Instance.GetTicketAsync(createTicketResponse.Id);
+        if (!isPartyLeader)
+        {
+            return;
+        }
+
+        Unity.Services.Matchmaker.Models.TicketStatusResponse ticketStatusResponse = await MatchmakerService.Instance.GetTicketAsync(partyMatchmakerTicketId);
 
         if (ticketStatusResponse == null)
         {
@@ -512,7 +570,8 @@ public class LobbyController : MonoBehaviour
                 Player = localPlayer,
                 Data = new Dictionary<string, DataObject>
                 {
-                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))}
+                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
+                    {"LobbyType", new DataObject(DataObject.VisibilityOptions.Public, LobbyType.Custom.ToString())}
                 },
             };
 
@@ -584,14 +643,16 @@ public class LobbyController : MonoBehaviour
 
     private IEnumerator PollMatchmakerTicketRoutine()
     {
-        while (isSearching)
+        while (isSearching && isPartyLeader)
         {
             Task searchTask = PollMatchmakerTicket();
+
 
             yield return new WaitUntil(() => searchTask.IsCompleted);
 
             yield return new WaitForSeconds(1.1f);
         }
+        lobbyUI.HideMatchmakingBarUI();
     }
 
     public async void FindMatch()
@@ -601,9 +662,25 @@ public class LobbyController : MonoBehaviour
             return;
         }
 
-        createTicketResponse = await MatchmakerService.Instance.CreateTicketAsync(GetMatchmakerPlayers(), new CreateTicketOptions("StandardsQueue"));
+        if (!isPartyLeader)
+        {
+            Debug.Log("Solo il leader del party può avviare il matchmaking.");
+            return;
+        }
+
+        originalPartyLobby = partyLobby;
+        originalLobbyId = partyLobby?.Id;
+        originalLobbyCode = partyLobby?.LobbyCode;
+        isInMatchmakingGame = false;
+
+        var matchmakerPlayers = GetMatchmakerPlayers();
+
+        createTicketResponse = await MatchmakerService.Instance.CreateTicketAsync(matchmakerPlayers, new CreateTicketOptions("StandardsQueue"));
+        partyMatchmakerTicketId = createTicketResponse.Id;
 
         isSearching = true;
+
+        lobbyUI.ShowMatchmakingBarUI(CancelMatchmaking);
 
         StartCoroutine(PollMatchmakerTicketRoutine());
     }
@@ -617,13 +694,14 @@ public class LobbyController : MonoBehaviour
 
         isSearching = false;
         createTicketResponse = null;
+
+        lobbyUI.HideMatchmakingBarUI();
     }
 
     public void CheckIfShouldChangePos(int maxTeamSize)
     {
         HashSet<string> usedPositions = new HashSet<string>();
 
-        // Track all used positions
         foreach (var player in partyLobby.Players)
         {
             if (player.Id == localPlayer.Id)
@@ -638,17 +716,14 @@ public class LobbyController : MonoBehaviour
         string localTeam = localPlayer.Data["PlayerTeam"].Value;
         short localPos = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
 
-        // Clamp the local player's position within the valid range
         if (localPos >= maxTeamSize)
         {
             localPos = (short)(maxTeamSize - 1);
             UpdatePlayerTeamAndPos(localTeam, localPos);
         }
 
-        // Check if local player's position is already taken
         if (usedPositions.Contains(localTeam + localPos.ToString()))
         {
-            // Find the next available position
             for (int i = 0; i < maxTeamSize * 2; i++)
             {
                 string team = i < maxTeamSize ? "Blue" : "Orange";
@@ -723,7 +798,6 @@ public class LobbyController : MonoBehaviour
         await RemoveFromParty(playerID);
     }
 
-    // This function goes unused in favor of the UpdatePlayerTeamAndPos function
     public void PlayerSwitchTeam()
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();
@@ -947,6 +1021,13 @@ public class LobbyController : MonoBehaviour
         {
             return;
         }
+
+        if (IsStandardsLobby())
+        {
+            FindMatch();
+            return;
+        }
+
         SetLobbyLockedAndPrivate(true);
 
         string mapMode = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType switch
@@ -1064,7 +1145,6 @@ public class LobbyController : MonoBehaviour
             }
         }
 
-        // Sort the players by their position
         teamPlayers.Sort((p1, p2) =>
         {
             short pos1 = NumberEncoder.FromBase64<short>(p1.Data["PlayerPos"].Value);
@@ -1077,7 +1157,6 @@ public class LobbyController : MonoBehaviour
 
     public Team GetLocalPlayerTeam()
     {
-        //return localPlayer.Data["PlayerTeam"].Value == "Orange";
 
         string team = localPlayer.Data["PlayerTeam"].Value.ToLower();
 
@@ -1126,5 +1205,67 @@ public class LobbyController : MonoBehaviour
             players.Add(new Unity.Services.Matchmaker.Models.Player(player.Id, new Dictionary<string, string>()));
         }
         return players;
+    }
+
+    public void ChangeLobbyType(LobbyType newType)
+    {
+        if (partyLobby == null || partyLobby.HostId != localPlayer.Id)
+            return;
+
+        if (currentLobbyType == newType)
+            return;
+
+        currentLobbyType = newType;
+
+        UpdateLobbyOptions options = new UpdateLobbyOptions();
+        options.Data = partyLobby.Data;
+        options.MaxPlayers = (newType == LobbyType.Standards)
+            ? CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize
+            : CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * 2;
+        options.HostId = partyLobby.HostId;
+        options.Name = partyLobby.Name;
+        options.IsPrivate = partyLobby.IsPrivate;
+        options.IsLocked = partyLobby.IsLocked;
+
+        if (options.Data.ContainsKey("LobbyType"))
+            options.Data["LobbyType"] = new DataObject(DataObject.VisibilityOptions.Public, newType.ToString());
+        else
+            options.Data.Add("LobbyType", new DataObject(DataObject.VisibilityOptions.Public, newType.ToString()));
+
+        UpdateLobbyData(options);
+
+        Debug.Log($"Changed lobby type to {newType}");
+    }
+
+    private void SyncLobbyTypeFromLobby()
+    {
+        if (partyLobby != null && partyLobby.Data != null && partyLobby.Data.ContainsKey("LobbyType"))
+        {
+            if (Enum.TryParse<LobbyType>(partyLobby.Data["LobbyType"].Value, out var parsedType))
+            {
+                currentLobbyType = parsedType;
+            }
+        }
+    }
+
+    public bool IsCustomLobby() => currentLobbyType == LobbyType.Custom;
+    public bool IsStandardsLobby() => currentLobbyType == LobbyType.Standards;
+
+    public int GetMaxPartyMembers()
+    {
+        if (IsStandardsLobby())
+            return CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize;
+        else
+            return CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * 2;
+    }
+
+    private void OnClientDisconnectFromServer(ulong clientId)
+    {
+        if (clientId == NetworkManager.Singleton.LocalClientId) return;
+
+        if (NetworkManager.Singleton.IsClient && clientId == (ulong.TryParse(GetPlayerByID(Lobby.HostId).Data["OwnerID"].Value, out ulong localPlayerId) ? localPlayerId : 69420))
+        {
+            ReturnToLobby(true);
+        }
     }
 }

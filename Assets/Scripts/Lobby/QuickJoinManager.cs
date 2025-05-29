@@ -22,8 +22,7 @@ public class QuickJoinManager : MonoBehaviour
     private void Start()
     {
         startSearchButton.onClick.AddListener(StartSearch);
-        matchmakingBarUI.SetCancelButtonAction(CancelSearch);
-
+        // Non impostare qui la callback, verrà impostata ogni volta che parte una ricerca
         matchmakingBarUI.SetBarVisibility(false);
     }
 
@@ -36,17 +35,17 @@ public class QuickJoinManager : MonoBehaviour
 
         AudioManager.PlaySound(DefaultAudioSounds.Home_ui_start_04);
 
+        isSearching = true;
         timeElapsed = 0f;
 
-        matchmakingBarUI.SetBarVisibility(true);
-        matchmakingBarUI.SetEstimatedTime("Estimated time: N/A");
+        // Imposta la callback di annullamento ogni volta che parte una ricerca
+        matchmakingBarUI.SetCancelButtonAction(CancelSearch);
+        matchmakingBarUI.StartSearching();
 
         startSearchButton.interactable = false;
         createLobbyButton.interactable = false;
         lobbyCodeInput.interactable = false;
         lobbyFinderButton.interactable = false;
-
-        isSearching = true;
 
         searchCoroutine = StartCoroutine(SearchForMatch());
     }
@@ -59,17 +58,14 @@ public class QuickJoinManager : MonoBehaviour
             searchCoroutine = null;
         }
 
-        AudioManager.PlaySound(DefaultAudioSounds.Home_ui_back_01);
-
         startSearchButton.interactable = true;
         createLobbyButton.interactable = true;
         lobbyCodeInput.interactable = true;
         lobbyFinderButton.interactable = true;
 
         isSearching = false;
-
-        matchmakingBarUI.SetBarVisibility(false);
         timeElapsed = 0f;
+        matchmakingBarUI.StopSearching();
     }
 
     private void Update()
@@ -91,15 +87,14 @@ public class QuickJoinManager : MonoBehaviour
     {
         while (isSearching)
         {
-            Task<bool> searchTask = LobbyController.Instance.QuickJoin();
+            var searchTask = LobbyController.Instance.QuickJoin();
 
             yield return new WaitUntil(() => searchTask.IsCompleted);
 
             if (searchTask.Result)
             {
                 isSearching = false;
-                matchmakingBarUI.SetBarVisibility(false);
-                timeElapsed = 0f;
+                matchmakingBarUI.StopSearching();
                 startSearchButton.interactable = true;
                 createLobbyButton.interactable = true;
                 lobbyCodeInput.interactable = true;
@@ -110,5 +105,7 @@ public class QuickJoinManager : MonoBehaviour
 
             yield return new WaitForSeconds(10.1f);
         }
+        // Se la ricerca viene annullata, assicurati che la barra venga nascosta
+        matchmakingBarUI.StopSearching();
     }
 }
