@@ -5,46 +5,51 @@ public static class RespawnSystem
 {
     public static float CalculateRespawnTime(int level, int killsSinceLastDeath, int pointsSinceLastDeath, float timeRemaining)
     {
-        int L = GetLevelDuration(level);
-        float K = Mathf.Clamp(killsSinceLastDeath / 2f, 0f, 10f);
-        float P = Mathf.Clamp(pointsSinceLastDeath / 60f, 0f, 10f);
-        int T = GetTimeBasedDuration(timeRemaining);
+        var currentMap = CharactersList.Instance.GetCurrentLobbyMap();
+        if (currentMap == null)
+            return 0f;
+
+        int L = GetLevelDuration(level, currentMap);
+        float K = Mathf.Clamp(
+            killsSinceLastDeath / currentMap.killsDivisor,
+            currentMap.killsClampMin,
+            currentMap.killsClampMax
+        );
+        float P = Mathf.Clamp(
+            pointsSinceLastDeath / currentMap.pointsDivisor,
+            currentMap.pointsClampMin,
+            currentMap.pointsClampMax
+        );
+        int T = GetTimeBasedDuration(timeRemaining, currentMap);
 
         int result = Mathf.RoundToInt(L + K + P + T);
 
-        return Mathf.Clamp(result, 0, 45);
+        return Mathf.Clamp(result, currentMap.timeClampMin, currentMap.timeClampMax);
     }
 
-    private static int GetLevelDuration(int level)
+    private static int GetLevelDuration(int level, MapInfo map)
     {
-        Dictionary<int, int> levelDurations = new Dictionary<int, int>
+        // level parte da 0, respawnLevelDurations ha 15 elementi (0-14)
+        if (map.respawnLevelDurations != null && level >= 0 && level < map.respawnLevelDurations.Length)
         {
-            { 1, 4 }, { 2, 4 }, { 3, 4 }, { 4, 4 },
-            { 5, 5 }, { 6, 6 }, { 7, 8 }, { 8, 9 },
-            { 9, 10 }, { 10, 11 }, { 11, 12 }, { 12, 15 },
-            { 13, 17 }, { 14, 19 }, { 15, 19 }
-        };
-
-        if (levelDurations.TryGetValue(level+1, out int duration))
-        {
-            return duration;
+            return map.respawnLevelDurations[level];
         }
         return 4;
     }
 
-    private static int GetTimeBasedDuration(float timeRemaining)
+    private static int GetTimeBasedDuration(float timeRemaining, MapInfo map)
     {
-        if (timeRemaining > 120)
+        if (map.respawnTimeThresholds != null && map.respawnTimeThresholds.Length > 0)
         {
-            return 0;
+            foreach (var threshold in map.respawnTimeThresholds)
+            {
+                if (timeRemaining >= threshold.minTime && timeRemaining < threshold.maxTime)
+                {
+                    return threshold.value;
+                }
+            }
         }
-        else if (timeRemaining > 60)
-        {
-            return 4;
-        }
-        else
-        {
-            return 10;
-        }
+        // Se nessuna soglia corrisponde, ritorna 0 come default
+        return 0;
     }
 }

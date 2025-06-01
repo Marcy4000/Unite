@@ -74,6 +74,12 @@ public class PlayerNetworkManager : NetworkBehaviour
         SceneManager.sceneUnloaded -= OnSceneUnloaded;
         LobbyController.Instance.onLobbyUpdate -= HandleLobbyUpdate;
         playerStats.OnValueChanged -= HandlePlayerStatsChange;
+
+        // Rimuovi la sottoscrizione all'evento OnRespawn se necessario
+        if (playerManager != null)
+        {
+            playerManager.OnRespawn -= OnPlayerRespawned;
+        }
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -141,6 +147,13 @@ public class PlayerNetworkManager : NetworkBehaviour
         }
     }
 
+    private void OnPlayerRespawned()
+    {
+        localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.MAX_GAME_TIME - GameManager.Instance.GameTime);
+        deathTimer.Value = localDeathTimer;
+        BattleUIManager.instance.HideDeathScreen();
+    }
+
     private void Update()
     {
         if (!IsOwner || playerManager == null)
@@ -162,6 +175,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                 deathTimer.Value = localDeathTimer;
             }
         }
+        // Rimosso il controllo duplicato per il respawn anticipato, ora gestito da OnRespawn
     }
 
     private void HandleGameStateChanged(GameState state)
@@ -232,6 +246,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                         player.Pokemon.OnDamageDealt += OnPlayerDealDamage;
                         player.onGoalScored += OnGoalScored;
                         player.Pokemon.OnOtherPokemonKilled += OnOtherPokemonKilled;
+                        player.OnRespawn += OnPlayerRespawned;
 
                         short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
                         Transform spawnpoint = team == Team.Orange ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);

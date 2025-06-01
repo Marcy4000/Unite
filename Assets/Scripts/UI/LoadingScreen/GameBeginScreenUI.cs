@@ -82,15 +82,6 @@ public class GameBeginScreenUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    private void Update()
-    {
-        if (UnityEngine.InputSystem.Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            InitializeUI(5, 5);
-            FadeIn();
-        }
-    }
-
     public void InitializeUI(int bluePlayers, int orangePlayers)
     {
         for (int i = 0; i < blueTeamPlayers.Length; i++)

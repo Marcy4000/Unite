@@ -97,9 +97,13 @@ public class VolleyballManager : NetworkBehaviour
                 }
                 RespawnPlayersRPC();
                 ball.GetComponent<VolleyballElectrode>().ResetBall();
+                // Disabilita il movimento dei giocatori durante l'animazione di inizio round
+                SetPlayersCanMoveRPC(false);
                 break;
             case VolleyballState.Playing:
                 ball.GetComponent<VolleyballElectrode>().EnableInteractions();
+                // Abilita il movimento dei giocatori solo ora
+                SetPlayersCanMoveRPC(true);
                 break;
             case VolleyballState.RoundEnding:
                 HidePlayersRPC();
@@ -194,7 +198,6 @@ public class VolleyballManager : NetworkBehaviour
             player.Respawn();
             Transform spawnpoint = GetSpawnPoint(player);
             player.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
-            player.PlayerMovement.CanMove = true;
 
             break;
         }
@@ -303,5 +306,16 @@ public class VolleyballManager : NetworkBehaviour
     private void PlayRoundTransitionAnimationRPC(bool isFinalStretch)
     {
         roundScreen.StartAnimation(isFinalStretch);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void SetPlayersCanMoveRPC(bool canMove)
+    {
+        foreach (var player in GameManager.Instance.Players)
+        {
+            if (player == null || !player.IsLocalPlayer) continue;
+            player.PlayerMovement.CanMove = canMove;
+            break;
+        }
     }
 }
