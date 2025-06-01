@@ -50,12 +50,6 @@ public class MapInfo : ScriptableObject
     public StartRestriction startRestriction;
 
     [Space]
-    [Header("Description")]
-    [TextArea(3, 10)]
-    [Tooltip("Description of the map shown in the lobby.")]
-    public string description;
-
-    [Space]
     [Header("Respawn Settings")]
     [Tooltip("Base respawn duration for each level (index = level, value = seconds). Used as the starting value in the respawn time calculation.")]
     public int[] respawnLevelDurations = new int[15] { 4, 4, 4, 4, 5, 6, 8, 9, 10, 11, 12, 15, 17, 19, 19 };

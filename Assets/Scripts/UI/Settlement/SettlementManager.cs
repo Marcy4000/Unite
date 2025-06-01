@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class SettlementManager : MonoBehaviour
 {
@@ -123,6 +124,8 @@ public class SettlementManager : MonoBehaviour
 
         resultBarsUI.InitializeUI(maxScore);
 
+        AnimateAppear(resultBarsUI.gameObject);
+
         StartCoroutine(ShowScoreRoutine());
     }
 
@@ -139,25 +142,20 @@ public class SettlementManager : MonoBehaviour
 
         yield return new WaitForSeconds(1.5f);
 
-        // Store the total game time (the end goal)
         float totalTime = gameResults.TotalGameTime;
         Debug.Log($"Total Game Time: {totalTime}");
 
-        // Fixed duration for animation to take exactly 5 seconds
         float animationDuration = 3.5f;
         AudioManager.PlaySound(DefaultAudioSounds.Play_JieSuan_FenShu);
 
-        // Start time progression: linearly interpolate from 0 to totalTime over 5 seconds
-        float timeElapsed = 0f; // Track time elapsed for animation duration
+        float timeElapsed = 0f;
 
         while (!finished)
         {
             timeElapsed += Time.deltaTime;
 
-            // Calculate the current time in the animation (0 to totalTime, but over 5 seconds)
             float interpolatedTime = Mathf.Lerp(0f, totalTime, timeElapsed / animationDuration);
 
-            // Handle the score updates based on the interpolated time
             for (int i = blueTeamScores.Count - 1; i >= 0; i--)
             {
                 if (blueTeamScores[i].Time <= interpolatedTime)
@@ -178,18 +176,15 @@ public class SettlementManager : MonoBehaviour
                 }
             }
 
-            // Update the countdown timer display (remaining time from totalTime)
             UpdateTimerText(totalTime - interpolatedTime);
 
-            // Update UI bars with the current score
             resultBarsUI.SetBars(blueScoreValue, orangeScoreValue);
 
-            // Once the animation duration is over (after 5 seconds)
             if (timeElapsed >= animationDuration)
             {
                 finished = true;
-                UpdateTimerText(0f);  // Ensure the timer reaches 0
-                yield return new WaitForSeconds(1f);  // Wait before finishing
+                UpdateTimerText(0f);
+                yield return new WaitForSeconds(1f);
                 OnShowScoreEnded();
             }
 
@@ -211,15 +206,8 @@ public class SettlementManager : MonoBehaviour
         resultBarsUI.gameObject.SetActive(false);
         gameInfoUI.gameObject.SetActive(true);
 
-        blueScoreText.gameObject.SetActive(true);
-        orangeScoreText.gameObject.SetActive(true);
-
-        blueResultText.gameObject.SetActive(true);
-        orangeResultText.gameObject.SetActive(true);
-
-        continueButton.SetActive(true);
-
         UpdateVictoryText();
+        StartCoroutine(ShowScoreAndVictoryTextsWithDelay());
 
         timerObject.SetActive(false);
 
@@ -229,6 +217,49 @@ public class SettlementManager : MonoBehaviour
         Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
         gameWon = LobbyController.Instance.GameResults.WinningTeam == localPlayerTeam;
         StartCoroutine(PlayResultSound(gameWon));
+    }
+
+    private IEnumerator ShowScoreAndVictoryTextsWithDelay()
+    {
+        AnimateAppearInward(blueScoreText.gameObject);
+        AnimateAppearInward(orangeScoreText.gameObject);
+
+        yield return new WaitForSeconds(0.35f);
+
+        AnimateAppearInward(blueResultText.gameObject);
+        AnimateAppearInward(orangeResultText.gameObject);
+
+        yield return new WaitForSeconds(0.15f);
+
+        AnimateAppear(continueButton);
+    }
+
+    private void AnimateAppearInward(GameObject go)
+    {
+        go.SetActive(true);
+        var cg = go.GetComponent<CanvasGroup>();
+        if (cg == null)
+        {
+            cg = go.AddComponent<CanvasGroup>();
+        }
+        cg.alpha = 0f;
+        cg.transform.localScale = Vector3.one * 1.4f;
+        cg.DOFade(1f, 0.45f).SetEase(Ease.OutQuad);
+        cg.transform.DOScale(1f, 0.45f).SetEase(Ease.InBack);
+    }
+
+    private void AnimateAppear(GameObject go)
+    {
+        go.SetActive(true);
+        var cg = go.GetComponent<CanvasGroup>();
+        if (cg == null)
+        {
+            cg = go.AddComponent<CanvasGroup>();
+        }
+        cg.alpha = 0f;
+        cg.transform.localScale = Vector3.one * 0.7f;
+        cg.DOFade(1f, 0.5f).SetEase(Ease.OutQuad);
+        cg.transform.DOScale(1f, 0.5f).SetEase(Ease.OutBack);
     }
 
     private void UpdateVictoryText()

@@ -131,14 +131,21 @@ public class PsyduckRacePassive : PassiveBase
             currentFacingDirection = playerManager.transform.forward;
         }
 
-        // Adjust acceleration based on alignment and speed
-        float alignmentFactor = Vector3.Dot(currentFacingDirection, inputDirection);
-        alignmentFactor = Mathf.Clamp01((alignmentFactor + 1f) / 2f); // Scale from 0 (opposite) to 1 (aligned)
+        float modifiedMaxSpeed = maxSpeed * speedModifier;
 
-        // Accelerate in the current facing direction
         if (inputDirection.magnitude > 0)
         {
-            currentVelocity += currentFacingDirection * acceleration * alignmentFactor * Time.deltaTime;
+            // Calcola la componente della velocità nella direzione desiderata
+            float forwardComponent = Vector3.Dot(currentVelocity, currentFacingDirection);
+
+            // Se la componente è negativa (stai andando all'indietro rispetto alla direzione desiderata), annullala
+            if (forwardComponent < 0f)
+                forwardComponent = 0f;
+
+            // Aggiorna la velocità solo nella direzione desiderata, mantenendo la magnitudo attuale se > 0
+            float targetSpeed = Mathf.Min(forwardComponent + acceleration * Time.deltaTime, modifiedMaxSpeed);
+            currentVelocity = currentFacingDirection * targetSpeed;
+
             SetWalking(true);
         }
         else
@@ -148,15 +155,14 @@ public class PsyduckRacePassive : PassiveBase
             SetWalking(false);
         }
 
-        // Clamp speed
-        float modifiedMaxSpeed = maxSpeed * speedModifier;
+        // Clamp speed (già fatto sopra, ma per sicurezza)
         if (currentVelocity.magnitude > modifiedMaxSpeed)
         {
             currentVelocity = currentVelocity.normalized * modifiedMaxSpeed;
         }
 
         // Apply drift effect
-        float speedFactor = currentVelocity.magnitude / modifiedMaxSpeed; // Higher effect at higher speeds
+        float speedFactor = currentVelocity.magnitude / modifiedMaxSpeed;
         Vector3 lateralVelocity = Vector3.Cross(Vector3.up, currentFacingDirection) * Vector3.Dot(currentVelocity, Vector3.Cross(Vector3.up, currentFacingDirection));
         Vector3 driftVelocity = currentVelocity - lateralVelocity * (1f - driftFactor * speedFactor);
 
