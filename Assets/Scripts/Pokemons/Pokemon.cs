@@ -1535,6 +1535,16 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void EvolveRPC(int evolutionLevel)
     {
+        StartCoroutine(EvolveRoutine(evolutionLevel));
+    }
+
+    private IEnumerator EvolveRoutine(int evolutionLevel)
+    {
+        while (baseStats == null)
+        {
+            yield return null;
+        }
+
         PokemonEvolution evolution = baseStats.IsNewEvoLevel(evolutionLevel);
 
         if (activeModel != null)

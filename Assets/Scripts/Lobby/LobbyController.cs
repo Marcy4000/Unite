@@ -704,10 +704,6 @@ public class LobbyController : MonoBehaviour
 
         foreach (var player in partyLobby.Players)
         {
-            if (player.Id == localPlayer.Id)
-            {
-                continue;
-            }
             string playerTeam = player.Data["PlayerTeam"].Value;
             string playerPos = NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value).ToString();
             usedPositions.Add(playerTeam + playerPos);
@@ -716,13 +712,19 @@ public class LobbyController : MonoBehaviour
         string localTeam = localPlayer.Data["PlayerTeam"].Value;
         short localPos = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
 
+        // Se il proprio slot è già occupato da qualcun altro, trova il primo slot libero
+        bool slotOccupiedByOther = partyLobby.Players.Any(p =>
+            p.Id != localPlayer.Id &&
+            p.Data["PlayerTeam"].Value == localTeam &&
+            NumberEncoder.FromBase64<short>(p.Data["PlayerPos"].Value) == localPos);
+
         if (localPos >= maxTeamSize)
         {
             localPos = (short)(maxTeamSize - 1);
             UpdatePlayerTeamAndPos(localTeam, localPos);
         }
 
-        if (usedPositions.Contains(localTeam + localPos.ToString()))
+        if (slotOccupiedByOther)
         {
             for (int i = 0; i < maxTeamSize * 2; i++)
             {
@@ -858,6 +860,18 @@ public class LobbyController : MonoBehaviour
 
         Debug.Log($"Changed owner ID to {options.Data["OwnerID"].Value}");
         yield return null;
+        UpdatePlayerData(options);
+    }
+
+    public void UpdatePlayerItemsPokemonAndBattleItem(string heldItems, short characterID, string battleItemID)
+    {
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["HeldItems"].Value = heldItems;
+        options.Data["SelectedCharacter"].Value = NumberEncoder.ToBase64(characterID);
+        options.Data["BattleItem"].Value = battleItemID;
+        Debug.Log($"Changed held items to {options.Data["HeldItems"].Value}, character to {options.Data["SelectedCharacter"].Value}, and battle item to {options.Data["BattleItem"].Value}");
+
         UpdatePlayerData(options);
     }
     

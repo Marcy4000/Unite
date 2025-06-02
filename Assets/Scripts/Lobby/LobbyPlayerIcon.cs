@@ -12,6 +12,8 @@ public class LobbyPlayerIcon : MonoBehaviour
     [SerializeField] private GameObject ownerStar;
     [SerializeField] private GameObject calculatingText;
 
+    private Player assignedPlayer;
+
     private bool orangeTeam = false;
     private short position = 0;
 
@@ -22,6 +24,7 @@ public class LobbyPlayerIcon : MonoBehaviour
     public Button KickButton => kickButton;
 
     public string PlayerName => playerNameText.text;
+    public string PlayerId => assignedPlayer?.Id;
 
     public void InitializeElement(bool orangeTeam, short position)
     {
@@ -31,6 +34,7 @@ public class LobbyPlayerIcon : MonoBehaviour
 
     public void ResetName()
     {
+        assignedPlayer = null;
         playerNameText.text = "No Player";
         playerHead.gameObject.SetActive(false);
         playerNameText.color = Color.white;
@@ -42,6 +46,7 @@ public class LobbyPlayerIcon : MonoBehaviour
 
     public void InitializePlayer(Player player)
     {
+        assignedPlayer = player;
         playerNameText.text = player.Data["PlayerName"].Value;
         playerHead.gameObject.SetActive(true);
         playerHead.InitializeHead(PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value));

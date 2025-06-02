@@ -160,17 +160,26 @@ public class PartyScreenUI : MonoBehaviour
 
         for (int i = 0; i < slotsPerTeam; i++)
         {
-            int index = i;
             var blueIcon = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
             blueIcon.InitializeElement(false, (short)i);
-            blueIcon.SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsBlueTeam[index]));
+            // L'evento sarà aggiunto dopo che la lista è completa
             playerIconsBlueTeam.Add(blueIcon);
-
+        }
+        for (int i = 0; i < slotsPerTeam; i++)
+        {
             var orangeIcon = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
             orangeIcon.InitializeElement(true, (short)i);
-            orangeIcon.SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsOrangeTeam[index]));
-            orangeIcon.KickButton.onClick.AddListener(() => LobbyController.Instance.KickPlayer(playerIconsOrangeTeam[index].PlayerName));
+            // L'evento sarà aggiunto dopo che la lista è completa
             playerIconsOrangeTeam.Add(orangeIcon);
+        }
+        // Ora che le liste sono popolate, aggiungi i listener
+        for (int i = 0; i < slotsPerTeam; i++)
+        {
+            int index = i;
+            playerIconsBlueTeam[index].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsBlueTeam[index]));
+            playerIconsBlueTeam[index].KickButton.onClick.AddListener(() => LobbyController.Instance.KickPlayer(playerIconsBlueTeam[index].PlayerId));
+            playerIconsOrangeTeam[index].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsOrangeTeam[index]));
+            playerIconsOrangeTeam[index].KickButton.onClick.AddListener(() => LobbyController.Instance.KickPlayer(playerIconsOrangeTeam[index].PlayerId));
         }
 
         UpdatePlayers(lobby);
