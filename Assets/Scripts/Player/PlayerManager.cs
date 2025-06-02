@@ -96,7 +96,7 @@ public class PlayerManager : NetworkBehaviour
     public event Action<int> onGoalScored;
     public event Action OnRespawn;
 
-    private Vector3 deathPosition = new Vector3(0, -50, 0);
+    private Vector3 deathPosition = new Vector3(0, -50, -50);
     private Coroutine stopMovementCoroutine;
 
     private AsyncOperationHandle<PokemonBase> pokemonLoadHandle;
