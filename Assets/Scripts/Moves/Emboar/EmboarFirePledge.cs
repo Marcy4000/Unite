@@ -102,8 +102,11 @@ public class EmboarFirePledge : MoveBase
     public override void ResetMove()
     {
         isFirePledgeActive = false;
-        basicAtk.SetCharge(0);
-        basicAtk.nextBoostedAttackKnocksUp = false;
+        if (basicAtk != null)
+        {
+            basicAtk.SetCharge(0);
+            basicAtk.nextBoostedAttackKnocksUp = false;
+        }
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Busy);
 
         if (firePledgeIndicator != null)

@@ -36,7 +36,7 @@ public class VolleyballManager : NetworkBehaviour
     public VolleyballState CurrentState => currentState.Value;
 
     private bool finalStretchTriggered = false;
-    private bool hasPlayedFirstRoundTransition = false; // aggiunta variabile
+    private bool hasPlayedFirstRoundTransition = false;
 
     private void Awake()
     {
@@ -75,7 +75,6 @@ public class VolleyballManager : NetworkBehaviour
         switch (newState)
         {
             case VolleyballState.RoundStarting:
-                // Check for final stretch condition
                 if (!finalStretchTriggered)
                 {
                     int bluePointsToWin = MAX_POINTS - GameManager.Instance.BlueTeamScore;
@@ -86,7 +85,6 @@ public class VolleyballManager : NetworkBehaviour
                         EnterFinalStretchRPC();
                     }
                 }
-                // Salta la prima animazione di transizione round
                 if (hasPlayedFirstRoundTransition)
                 {
                     PlayRoundTransitionAnimationRPC(finalStretchTriggered);
@@ -97,12 +95,10 @@ public class VolleyballManager : NetworkBehaviour
                 }
                 RespawnPlayersRPC();
                 ball.GetComponent<VolleyballElectrode>().ResetBall();
-                // Disabilita il movimento dei giocatori durante l'animazione di inizio round
                 SetPlayersCanMoveRPC(false);
                 break;
             case VolleyballState.Playing:
                 ball.GetComponent<VolleyballElectrode>().EnableInteractions();
-                // Abilita il movimento dei giocatori solo ora
                 SetPlayersCanMoveRPC(true);
                 break;
             case VolleyballState.RoundEnding:
