@@ -9,20 +9,19 @@ public class PsyduckRacePassive : PassiveBase
 
     private bool canMove = true;
 
-    // Movement properties
-    protected float acceleration = 7f;
-    protected float deceleration = 4f;
-    protected float maxSpeed = 10f;
-    protected float turnSpeed = 3.5f; // Slightly increased for snappier turning
-    protected float driftFactor = 0.7f; // Increased for more drifting
-    protected float rotationSpeed = 200f; // Increased rotation speed for snappier turns
+    protected float acceleration = 8f;
+    protected float deceleration = 5f;
+    protected float maxSpeed = 12f;
+    protected float turnSpeed = 3.5f;
+    protected float driftFactor = 0.7f;
+    protected float rotationSpeed = 200f;
 
     protected Vector3 currentVelocity;
     protected Vector3 currentFacingDirection;
 
     protected bool isFrozen = false;
 
-    private float animationUpdateRate = 0.1f; // Update rate for turnDirection
+    private float animationUpdateRate = 0.1f;
     private float lastAnimationUpdate;
 
     protected bool isDashing = false;
@@ -30,7 +29,7 @@ public class PsyduckRacePassive : PassiveBase
     protected float dashDuration = 0.3f;
     protected float dashCooldown = 1f;
 
-    protected float speedModifier = 1f; // Multiplier for maxSpeed
+    protected float speedModifier = 1f;
 
     public bool CanMove { get => canMove; set => canMove = value; }
     public Vector3 CurrentVelocity { get => currentVelocity; set => currentVelocity = value; }
@@ -48,8 +47,6 @@ public class PsyduckRacePassive : PassiveBase
 
         canMove = playerManager.PlayerMovement.CanMove;
 
-        playerManager.Pokemon.AddStatChange(new StatChange(4000, Stat.Speed, 0f, false, true, false, 0, false));
-
         playerManager.StartCoroutine(PlayAnimationDelayed());
 
         SnapPlayerToGround();
@@ -57,7 +54,8 @@ public class PsyduckRacePassive : PassiveBase
 
     private IEnumerator PlayAnimationDelayed()
     {
-        yield return new WaitForSeconds(0.1f);
+        yield return new WaitUntil(() => playerManager.Pokemon.CurrentEvolution != null);
+        yield return new WaitForSeconds(0.15f);
         playerManager.AnimationManager.PlayAnimation("ani_spell1bidle_bat_0054");
     }
 
@@ -89,16 +87,24 @@ public class PsyduckRacePassive : PassiveBase
     {
         if (isDashing)
         {
+            Vector2 dashInput = playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>();
+            if (dashInput.magnitude > 0.1f)
+            {
+                Vector3 dashInputDir = new Vector3(dashInput.x, 0, dashInput.y).normalized;
+                Quaternion dashTargetRot = Quaternion.LookRotation(dashInputDir, Vector3.up);
+                float dashTurnSpeed = rotationSpeed * 0.15f;
+                playerManager.transform.rotation = Quaternion.RotateTowards(
+                    playerManager.transform.rotation,
+                    dashTargetRot,
+                    dashTurnSpeed * Time.deltaTime
+                );
+                currentFacingDirection = playerManager.transform.forward;
+            }
             HandleDash();
         }
         else
         {
             HandleMovement(playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>());
-        }
-
-        if (UnityEngine.InputSystem.Keyboard.current.gKey.wasPressedThisFrame)
-        {
-            playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1.2f, true, 0));
         }
 
         UpdateAnimations();
@@ -120,73 +126,46 @@ public class PsyduckRacePassive : PassiveBase
             return;
         }
 
-        // Normalize input to determine desired direction
         Vector3 inputDirection = new Vector3(input.x, 0, input.y).normalized;
-
-        if (inputDirection.magnitude > 0.1f)
-        {
-            // Gradually rotate towards input direction
-            Quaternion targetRotation = Quaternion.LookRotation(inputDirection, Vector3.up);
-            playerManager.transform.rotation = Quaternion.RotateTowards(playerManager.transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-            currentFacingDirection = playerManager.transform.forward;
-        }
 
         float modifiedMaxSpeed = maxSpeed * speedModifier;
 
-        if (inputDirection.magnitude > 0)
+        if (inputDirection.magnitude > 0.1f)
         {
-            // Calcola la componente della velocità nella direzione desiderata
-            float forwardComponent = Vector3.Dot(currentVelocity, currentFacingDirection);
+            Quaternion targetRotation = Quaternion.LookRotation(inputDirection, Vector3.up);
+            playerManager.transform.rotation = Quaternion.RotateTowards(playerManager.transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            currentFacingDirection = playerManager.transform.forward;
 
-            // Se la componente è negativa (stai andando all'indietro rispetto alla direzione desiderata), annullala
-            if (forwardComponent < 0f)
-                forwardComponent = 0f;
+            Vector3 desiredVelocity = currentFacingDirection * modifiedMaxSpeed;
 
-            // Aggiorna la velocità solo nella direzione desiderata, mantenendo la magnitudo attuale se > 0
-            float targetSpeed = Mathf.Min(forwardComponent + acceleration * Time.deltaTime, modifiedMaxSpeed);
-            currentVelocity = currentFacingDirection * targetSpeed;
+            float driftLerp = driftFactor * Time.deltaTime * 2f;
+            currentVelocity = Vector3.Lerp(currentVelocity, desiredVelocity, driftLerp);
+
+            if (currentVelocity.magnitude > modifiedMaxSpeed)
+                currentVelocity = currentVelocity.normalized * modifiedMaxSpeed;
 
             SetWalking(true);
         }
         else
         {
-            // Decelerate when no input is provided
             currentVelocity = Vector3.Lerp(currentVelocity, Vector3.zero, deceleration * Time.deltaTime);
             SetWalking(false);
         }
 
-        // Clamp speed (già fatto sopra, ma per sicurezza)
-        if (currentVelocity.magnitude > modifiedMaxSpeed)
-        {
-            currentVelocity = currentVelocity.normalized * modifiedMaxSpeed;
-        }
-
-        // Apply drift effect
-        float speedFactor = currentVelocity.magnitude / modifiedMaxSpeed;
-        Vector3 lateralVelocity = Vector3.Cross(Vector3.up, currentFacingDirection) * Vector3.Dot(currentVelocity, Vector3.Cross(Vector3.up, currentFacingDirection));
-        Vector3 driftVelocity = currentVelocity - lateralVelocity * (1f - driftFactor * speedFactor);
-
-        // Combine drift and forward motion
-        Vector3 finalVelocity = Vector3.Lerp(driftVelocity, currentFacingDirection * currentVelocity.magnitude, driftFactor * speedFactor);
-
-        // Move the character
-        characterController.Move(finalVelocity * Time.deltaTime);
+        characterController.Move(currentVelocity * Time.deltaTime);
     }
 
     private void HandleDash()
     {
-        // Dash movement
         characterController.Move(currentFacingDirection * dashSpeed * Time.deltaTime);
 
-        // Maintain momentum after dash
-        currentVelocity = currentFacingDirection * dashSpeed * 0.8f; // Retain a portion of dash speed
+        currentVelocity = currentFacingDirection * dashSpeed * 0.8f;
 
-        // Decrease dash duration
         dashDuration -= Time.deltaTime;
         if (dashDuration <= 0)
         {
             isDashing = false;
-            dashDuration = 0.3f; // Reset for next dash
+            dashDuration = 0.3f;
         }
     }
 
@@ -211,7 +190,6 @@ public class PsyduckRacePassive : PassiveBase
     {
         if (Time.time - lastAnimationUpdate > animationUpdateRate)
         {
-            // Update turnDirection based on current velocity and facing direction
             Vector3 localVelocity = playerManager.transform.InverseTransformDirection(currentVelocity);
             float turnDirection = Mathf.Clamp(localVelocity.x / maxSpeed, -1f, 1f);
 

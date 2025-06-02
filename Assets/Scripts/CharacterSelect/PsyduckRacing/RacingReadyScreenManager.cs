@@ -10,6 +10,8 @@ public class RacingReadyScreenManager : NetworkBehaviour
     [SerializeField] private CharacterInfo initialCharacter;
     [SerializeField] private TrainerModel trainerModel;
 
+    private Dictionary<ulong, bool> playerReady = new Dictionary<ulong, bool>();
+
     private void OnEnable()
     {
         NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
@@ -31,6 +33,15 @@ public class RacingReadyScreenManager : NetworkBehaviour
 
     private IEnumerator Start()
     {
+        if (IsServer)
+        {
+            playerReady.Clear();
+            foreach (var player in NetworkManager.Singleton.ConnectedClientsList)
+            {
+                playerReady.TryAdd(player.ClientId, false);
+            }
+        }
+
         AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon, true);
 
@@ -44,22 +55,51 @@ public class RacingReadyScreenManager : NetworkBehaviour
 
     private IEnumerator PlaceholderStart()
     {
-        LobbyController.Instance.ChangePlayerCharacter(CharactersList.Instance.GetCharacterID(initialCharacter));
-        yield return new WaitForSeconds(1f);
-        LobbyController.Instance.ChangePlayerBattleItem("0");
-        yield return new WaitForSeconds(1f);
-        LobbyController.Instance.UpdatePlayerHeldItems(HeldItemDatabase.SerializeHeldItems(new byte[] { 0, 0, 0 }));
-        yield return new WaitForSeconds(1f);
+        LobbyController.Instance.UpdatePlayerItemsPokemonAndBattleItem(
+            HeldItemDatabase.SerializeHeldItems(new byte[] { 0, 0, 0 }),
+            CharactersList.Instance.GetCharacterID(initialCharacter),
+            "0"
+        );
 
-        if (!IsServer)
+        yield return new WaitForSeconds(2.5f);
+
+        NotifyPlayerReadyRpc(NetworkManager.Singleton.LocalClientId);
+
+        if (IsServer)
+        {
+            yield return StartCoroutine(WaitForAllPlayersReady());
+        }
+        else
         {
             yield break;
         }
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1.5f);
 
         ShowLoadingScreenRpc();
         LobbyController.Instance.LoadGameMap();
+    }
+
+    private IEnumerator WaitForAllPlayersReady()
+    {
+        while (playerReady.ContainsValue(false))
+        {
+            yield return null;
+        }
+    }
+
+    [Rpc(SendTo.Server)]
+    private void NotifyPlayerReadyRpc(ulong clientId)
+    {
+        if (!IsServer) return;
+        if (!playerReady.ContainsKey(clientId))
+        {
+            playerReady[clientId] = true;
+        }
+        else
+        {
+            playerReady[clientId] = true;
+        }
     }
 
     [Rpc(SendTo.ClientsAndHost)]
