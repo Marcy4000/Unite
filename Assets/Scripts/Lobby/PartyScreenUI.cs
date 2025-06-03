@@ -21,6 +21,8 @@ public class PartyScreenUI : MonoBehaviour
     [SerializeField] private GameObject standardsLobbyRoot; // UI alternativa per standards (assegnala da Inspector)
     [SerializeField] private GameObject customsLobbyRoot;   // Container per la UI custom (assegnala da Inspector)
 
+    [SerializeField] private PartyPlayerModel[] standardsLobbyPlayers;
+
     private List<LobbyPlayerIcon> playerIconsBlueTeam;
     private List<LobbyPlayerIcon> playerIconsOrangeTeam;
 
@@ -130,6 +132,31 @@ public class PartyScreenUI : MonoBehaviour
         customsLobbyRoot.SetActive(isCustom);
         standardsLobbyRoot.SetActive(!isCustom);
 
+        for (int i = 0; i < standardsLobbyPlayers.Length; i++)
+        {
+            if (i >= standardsLobbyPlayers.Length)
+            {
+                break;
+            }
+
+            if (isCustom)
+            {
+                standardsLobbyPlayers[i].gameObject.SetActive(false);
+            }
+            else
+            {
+                if (i < lobby.Players.Count)
+                {
+                    standardsLobbyPlayers[i].gameObject.SetActive(true);
+                    standardsLobbyPlayers[i].Initialize(lobby.Players[i]);
+                }
+                else
+                {
+                    standardsLobbyPlayers[i].gameObject.SetActive(false);
+                }
+            }
+        }
+
         if (!isCustom)
         {
             // Standards: non mostrare icone giocatori, UI alternativa (per ora vuota)
@@ -193,7 +220,30 @@ public class PartyScreenUI : MonoBehaviour
 
         if (!isCustom)
         {
-            // Standards: non aggiornare icone giocatori
+            for (int i = 0; i < standardsLobbyPlayers.Length; i++)
+            {
+                if (i >= standardsLobbyPlayers.Length)
+                {
+                    break;
+                }
+
+                if (isCustom)
+                {
+                    standardsLobbyPlayers[i].gameObject.SetActive(false);
+                }
+                else
+                {
+                    if (i < lobby.Players.Count)
+                    {
+                        standardsLobbyPlayers[i].gameObject.SetActive(true);
+                        standardsLobbyPlayers[i].Initialize(lobby.Players[i]);
+                    }
+                    else
+                    {
+                        standardsLobbyPlayers[i].gameObject.SetActive(false);
+                    }
+                }
+            }
             return;
         }
 

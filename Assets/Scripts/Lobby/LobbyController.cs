@@ -16,7 +16,6 @@ using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using JSAM;
 
 public class LobbyController : MonoBehaviour
 {
@@ -57,13 +56,15 @@ public class LobbyController : MonoBehaviour
     private bool isPartyLeader => partyLobby != null && partyLobby.HostId == localPlayer.Id;
     private string partyMatchmakerTicketId = null;
 
+    private string pendingMatchId = null; // aggiungi questo campo per i client
+
     public Lobby Lobby => partyLobby;
     public Player Player => localPlayer;
     public List<PlayerNetworkManager> PlayerNetworkManagers => playerNetworkManagers;
 
     public bool ShouldLoadResultsScreen { get => loadResultsScreen; set => loadResultsScreen = value; }
 
-    public GameResults GameResults { get => gameResults; set => gameResults = value;}
+    public GameResults GameResults { get => gameResults; set => gameResults = value; }
     public RaceGameResults RaceGameResults { get => raceGameResults; set => raceGameResults = value; }
 
     public ILobbyEvents LobbyEvents => lobbyEvents;
@@ -205,6 +206,7 @@ public class LobbyController : MonoBehaviour
         }
     }
 
+    // Do not remove these 2 methods
     private string RemoveInvalidCharacters(string profile)
     {
         string validCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
@@ -242,9 +244,39 @@ public class LobbyController : MonoBehaviour
             onLobbyUpdate?.Invoke(Lobby);
         };
 
-        lobbyEventCallbacks.DataChanged += (changes) =>
+        lobbyEventCallbacks.DataChanged += async (changes) =>
         {
             onLobbyUpdate?.Invoke(Lobby);
+
+            // Solo i client non leader ascoltano il campo PendingMatchId
+            if (!isPartyLeader && partyLobby != null && partyLobby.Data != null && partyLobby.Data.ContainsKey("PendingMatchId"))
+            {
+                string newMatchId = partyLobby.Data["PendingMatchId"].Value;
+                if (!string.IsNullOrEmpty(newMatchId) && newMatchId != pendingMatchId)
+                {
+                    pendingMatchId = newMatchId;
+                    // Lascia la lobby corrente e unisciti alla nuova
+                    NetworkManager.Singleton.Shutdown();
+                    TryCreateOrLobbyJoin(newMatchId, 10);
+                }
+            }
+
+            // Aggiorna il PlayerTeam solo se la lobby NON è custom
+            if (partyLobby != null && partyLobby.Data != null && partyLobby.Data.ContainsKey("RequestedTeam") && !IsCustomLobby())
+            {
+                string requestedTeam = partyLobby.Data["RequestedTeam"].Value;
+                if (!string.IsNullOrEmpty(requestedTeam) &&
+                    (!localPlayer.Data.ContainsKey("PlayerTeam") || localPlayer.Data["PlayerTeam"].Value != requestedTeam))
+                {
+                    UpdatePlayerOptions options = new UpdatePlayerOptions();
+                    options.Data = new Dictionary<string, PlayerDataObject>(localPlayer.Data);
+                    if (options.Data.ContainsKey("PlayerTeam"))
+                        options.Data["PlayerTeam"].Value = requestedTeam;
+                    else
+                        options.Data.Add("PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, requestedTeam));
+                    await LobbyService.Instance.UpdatePlayerAsync(partyLobby.Id, localPlayer.Id, options);
+                }
+            }
         };
 
         try
@@ -279,7 +311,7 @@ public class LobbyController : MonoBehaviour
                 await LobbyService.Instance.SendHeartbeatPingAsync(partyLobby.Id);
             }
         }
-    }   
+    }
 
     private async void HandleLobbyPollForUpdates()
     {
@@ -538,7 +570,7 @@ public class LobbyController : MonoBehaviour
                 break;
             case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.Failed:
                 createTicketResponse = null;
-                Debug.LogError("Failed");
+                Debug.LogError($"Failed to find a match: {matchIdAssignment.Message}");
                 isSearching = false;
                 break;
             case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.InProgress:
@@ -547,15 +579,22 @@ public class LobbyController : MonoBehaviour
                 isSearching = false;
                 Debug.Log("Found");
 
-                NetworkManager.Singleton.Shutdown();
+                // Scrivi il matchId nella lobby data per notificare tutti i membri
+                if (partyLobby != null && partyLobby.HostId == localPlayer.Id)
+                {
+                    var updateOptions = new UpdateLobbyOptions();
+                    updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
+                    updateOptions.Data["PendingMatchId"] = new DataObject(DataObject.VisibilityOptions.Member, matchIdAssignment.MatchId);
+                    await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, updateOptions);
+                }
 
+                // Il leader si sposta subito
+                NetworkManager.Singleton.Shutdown();
                 TryCreateOrLobbyJoin(matchIdAssignment.MatchId, 10);
                 break;
             default:
                 break;
         }
-
-        Debug.Log(ticketStatusResponse.Type);
     }
 
     public async void TryCreateOrLobbyJoin(string lobbyID, int maxPlayers)
@@ -673,7 +712,28 @@ public class LobbyController : MonoBehaviour
         originalLobbyCode = partyLobby?.LobbyCode;
         isInMatchmakingGame = false;
 
-        var matchmakerPlayers = GetMatchmakerPlayers();
+        // Il leader sceglie il team e lo scrive nella lobby data
+        string assignedTeam = UnityEngine.Random.value < 0.5f ? "Blue" : "Orange";
+        Debug.Log($"Assigned team: {assignedTeam}");
+
+        // Aggiorna il PlayerTeam del leader
+        UpdatePlayerOptions updatePlayerOptions = new UpdatePlayerOptions();
+        updatePlayerOptions.Data = new Dictionary<string, PlayerDataObject>(localPlayer.Data);
+        if (updatePlayerOptions.Data.ContainsKey("PlayerTeam"))
+            updatePlayerOptions.Data["PlayerTeam"].Value = assignedTeam;
+        else
+            updatePlayerOptions.Data.Add("PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, assignedTeam));
+        await LobbyService.Instance.UpdatePlayerAsync(partyLobby.Id, localPlayer.Id, updatePlayerOptions);
+
+        var updateOptions = new UpdateLobbyOptions();
+        updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
+        updateOptions.Data["RequestedTeam"] = new DataObject(DataObject.VisibilityOptions.Member, assignedTeam);
+        await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, updateOptions);
+
+        // Attendi che tutti i player abbiano aggiornato il proprio PlayerTeam
+        await WaitForAllPlayersToUpdateTeam(assignedTeam);
+
+        var matchmakerPlayers = GetMatchmakerPlayersWithTeam();
 
         createTicketResponse = await MatchmakerService.Instance.CreateTicketAsync(matchmakerPlayers, new CreateTicketOptions("StandardsQueue"));
         partyMatchmakerTicketId = createTicketResponse.Id;
@@ -685,15 +745,46 @@ public class LobbyController : MonoBehaviour
         StartCoroutine(PollMatchmakerTicketRoutine());
     }
 
-    public void CancelMatchmaking()
+    // Attende che tutti i player abbiano aggiornato il proprio PlayerTeam
+    private async Task WaitForAllPlayersToUpdateTeam(string assignedTeam)
     {
-        if (createTicketResponse == null)
+        bool allUpdated = false;
+        while (!allUpdated)
+        {
+            allUpdated = true;
+            foreach (var player in partyLobby.Players)
+            {
+                if (!player.Data.ContainsKey("PlayerTeam") || player.Data["PlayerTeam"].Value != assignedTeam)
+                {
+                    allUpdated = false;
+                    break;
+                }
+            }
+            if (!allUpdated)
+                await Task.Delay(100);
+        }
+    }
+
+    public async void CancelMatchmaking()
+    {
+        if (createTicketResponse == null || !isSearching || !isPartyLeader)
         {
             return;
         }
 
+        await MatchmakerService.Instance.DeleteTicketAsync(partyMatchmakerTicketId);
+
         isSearching = false;
         createTicketResponse = null;
+
+        // Solo il leader cancella il campo RequestedTeam
+        if (isPartyLeader && partyLobby != null && partyLobby.Data.ContainsKey("RequestedTeam"))
+        {
+            var updateOptions = new UpdateLobbyOptions();
+            updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
+            updateOptions.Data.Remove("RequestedTeam");
+            UpdateLobbyData(updateOptions);
+        }
 
         lobbyUI.HideMatchmakingBarUI();
     }
@@ -874,7 +965,7 @@ public class LobbyController : MonoBehaviour
 
         UpdatePlayerData(options);
     }
-    
+
     public void ChangePlayerCharacter(short characterID)
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();
@@ -968,7 +1059,7 @@ public class LobbyController : MonoBehaviour
 
         UpdateLobbyOptions options = new UpdateLobbyOptions();
         options.Data = partyLobby.Data;
-        options.MaxPlayers = map.maxTeamSize*2;
+        options.MaxPlayers = map.maxTeamSize * 2;
         options.HostId = partyLobby.HostId;
         options.Name = partyLobby.Name;
         options.IsPrivate = partyLobby.IsPrivate;
@@ -982,7 +1073,7 @@ public class LobbyController : MonoBehaviour
     {
         try
         {
-            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPartyMembers-1);
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPartyMembers - 1);
 
             return allocation;
         }
@@ -1116,6 +1207,24 @@ public class LobbyController : MonoBehaviour
 
         yield return new WaitForSeconds(0.1f);
 
+        if (isInMatchmakingGame && (!string.IsNullOrEmpty(originalLobbyId) || !string.IsNullOrEmpty(originalLobbyCode)))
+        {
+            isInMatchmakingGame = false;
+            if (!string.IsNullOrEmpty(originalLobbyId))
+            {
+                TryLobbyJoin(originalLobbyId, useID: true);
+            }
+            else if (!string.IsNullOrEmpty(originalLobbyCode))
+            {
+                TryLobbyJoin(originalLobbyCode, useID: false);
+            }
+            else
+            {
+                lobbyUI.ShowMainMenuUI();
+            }
+            yield break;
+        }
+
         lobbyUI.ShowLobbyUI();
 
         LoadingScreen.Instance.HideGenericLoadingScreen();
@@ -1211,12 +1320,17 @@ public class LobbyController : MonoBehaviour
         return false;
     }
 
-    public List<Unity.Services.Matchmaker.Models.Player> GetMatchmakerPlayers()
+    public List<Unity.Services.Matchmaker.Models.Player> GetMatchmakerPlayersWithTeam()
     {
         List<Unity.Services.Matchmaker.Models.Player> players = new List<Unity.Services.Matchmaker.Models.Player>();
         foreach (var player in partyLobby.Players)
         {
-            players.Add(new Unity.Services.Matchmaker.Models.Player(player.Id, new Dictionary<string, string>()));
+            string team = player.Data.ContainsKey("PlayerTeam") ? player.Data["PlayerTeam"].Value : "Blue";
+            var customData = new Dictionary<string, string>
+            {
+                { "Team", team }
+            };
+            players.Add(new Unity.Services.Matchmaker.Models.Player(player.Id, customData));
         }
         return players;
     }

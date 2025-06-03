@@ -12,7 +12,7 @@ public class RacingResultsPlayer : MonoBehaviour
 
     public TrainerModel TrainerModel => trainerModel;
 
-    public void Initialize(RacePlayerResult racePlayerResult)
+    public void Initialize(RacePlayerResult racePlayerResult, bool spawnPsyduck = true)
     {
         Unity.Services.Lobbies.Models.Player player = LobbyController.Instance.Lobby.Players.Find(p => p.Id == racePlayerResult.PlayerID);
 
@@ -20,6 +20,11 @@ public class RacingResultsPlayer : MonoBehaviour
         trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value));
 
         CharacterInfo currentPokemon = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value));
+
+        if (!spawnPsyduck || currentPokemon == null)
+        {
+            return;
+        }
 
         foreach (Transform child in psyduckPosition)
         {
