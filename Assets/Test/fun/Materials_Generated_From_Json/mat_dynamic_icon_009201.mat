@@ -8,12 +8,10 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: mat_dynamic_icon_009201
-  m_Shader: {fileID: 4800000, guid: 6c61a1f11e1375f42bdd9b59d8659299, type: 3}
+  m_Shader: {fileID: 4800000, guid: 94c78b83bb97f334bb9a88543852cdd0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - _MODEL2_ADD
-  - _MODEL3_ADD
+  m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -25,6 +23,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Layer1Tex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Layer2Tex:
         m_Texture: {fileID: 2800000, guid: a41d9f8177059dd43bd06358b5ac0b7d, type: 3}
         m_Scale: {x: 0.3, y: 1}
@@ -45,33 +47,23 @@ Material:
         m_Texture: {fileID: 2800000, guid: 79bfc73f89fc78749bdc2d43dae5f0bd, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _actorTex:
-        m_Texture: {fileID: 2800000, guid: e21bcf21183d5f541a1026d90529b60e, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: -0.025}
     m_Ints: []
     m_Floats:
-    - _ActorRotate: 0.07
-    - _ActorRotateSpeed: 2.5
-    - _ActorUSpeed: 0
-    - _ActorVSpeed: 5
     - _ColorMask: 15
-    - _CustomTime: 1.19
     - _Cutoff: 1
+    - _ExtraHeight: 0.01
     - _Layer1PulseClip: 3
     - _Layer1PulseIntensity: 2
     - _Layer1PulseRate: 0
+    - _Layer1Rotate: 0
     - _Layer2PulseClip: 1.8
     - _Layer2PulseIntensity: 1.8
     - _Layer2PulseRate: 2
     - _Layer2Rotate: 0
-    - _Layer2RotateSpeed: 0
     - _Layer3PulseClip: 10
     - _Layer3PulseIntensity: 10
     - _Layer3PulseRate: 0
     - _Layer3Rotate: 0
-    - _Loop1: 0
-    - _Loop2: 0
     - _MODEL2: 0
     - _MODEL3: 0
     - _Stencil: 0
@@ -79,15 +71,11 @@ Material:
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
-    - _TargetFPS: 30
     - _UseUIAlphaClip: 0
     m_Colors:
-    - _ActorRotateAxis: {r: 0, g: 0.64, b: 0, a: 0}
-    - _ActorVector: {r: 0, g: 0, b: 0.03, a: 0}
+    - _Layer1Vector: {r: 11, g: 11, b: 0, a: 0}
     - _Layer2Color: {r: 0.30588236, g: 0.9647059, b: 1.4980392, a: 1}
-    - _Layer2RotateAxis: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Layer2Vector: {r: -5, g: 0, b: 0, a: 0}
     - _Layer3Color: {r: 0.5767773, g: 3.5050313, b: 4.237095, a: 1}
-    - _Layer3RotateAxis: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Layer3Vector: {r: -1.5, g: -0.3, b: 0, a: 0}
   m_BuildTextureStacks: []

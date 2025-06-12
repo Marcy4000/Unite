@@ -65,7 +65,7 @@ public class MaterialFromJsonCreator
     private const string JsonFolderPath = "Assets/Test/fun/Material";
     private const string TextureBaseFolderPath = "Assets/Test/fun/Texture2D"; // Cartella base per le texture
     private const string OutputMaterialFolderPath = "Assets/Test/fun/Materials_Generated_From_Json";
-    // Rimuovere: private const string ShaderName = "UI/UI3D_goldcard"; 
+    private const string FallbackShaderName = "UI/UI3D_goldcard"; 
 
     [MenuItem("Tools/Create Materials from JSONs")]
     public static void CreateMaterials()
@@ -112,13 +112,17 @@ public class MaterialFromJsonCreator
                 continue;
             }
 
-            if (materialData.m_Shader == null || materialData.m_Shader.IsNull || string.IsNullOrEmpty(materialData.m_Shader.Name))
+            // Usa fallback shader se m_Shader è null, IsNull true, o Name vuoto
+            string shaderNameFromJson = FallbackShaderName;
+            if (materialData.m_Shader != null && !materialData.m_Shader.IsNull && !string.IsNullOrEmpty(materialData.m_Shader.Name))
             {
-                Debug.LogWarning($"Informazioni shader mancanti o non valide nel file JSON: {Path.GetFileName(filePath)}");
-                continue;
+                shaderNameFromJson = materialData.m_Shader.Name;
             }
-
-            string shaderNameFromJson = materialData.m_Shader.Name;
+            else
+            {
+                Debug.LogWarning($"Informazioni shader mancanti o non valide nel file JSON: {Path.GetFileName(filePath)}. Verrà usato lo shader di fallback '{FallbackShaderName}'.");
+            }
+            
             Shader shader = Shader.Find(shaderNameFromJson);
             if (shader == null)
             {

@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: mat_dynamic_icon_014320
-  m_Shader: {fileID: 4800000, guid: 6c61a1f11e1375f42bdd9b59d8659299, type: 3}
+  m_Shader: {fileID: 4800000, guid: 94c78b83bb97f334bb9a88543852cdd0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -23,6 +23,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Layer1Tex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _Layer2Tex:
         m_Texture: {fileID: 2800000, guid: f7ade62d655695941ac585bcfc854079, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -43,32 +47,23 @@ Material:
         m_Texture: {fileID: 2800000, guid: e1b685256e3b4cb4191e175f242bf2ed, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _actorTex:
-        m_Texture: {fileID: 2800000, guid: b0a843ed55294f2498a3a17a1c39d87b, type: 3}
-        m_Scale: {x: 0.625, y: 0.83}
-        m_Offset: {x: 0.2, y: 0.115}
     m_Ints: []
     m_Floats:
-    - _ActorRotate: 0.03
-    - _ActorRotateSpeed: 4
-    - _ActorUSpeed: 0
-    - _ActorVSpeed: 5
     - _ColorMask: 15
     - _Cutoff: 1
+    - _ExtraHeight: 0.01
     - _Layer1PulseClip: 3
     - _Layer1PulseIntensity: 2
     - _Layer1PulseRate: 0
+    - _Layer1Rotate: 0
     - _Layer2PulseClip: 1.8
     - _Layer2PulseIntensity: 1.8
     - _Layer2PulseRate: 2
     - _Layer2Rotate: 0
-    - _Layer2RotateSpeed: 0
     - _Layer3PulseClip: 10
     - _Layer3PulseIntensity: 10
     - _Layer3PulseRate: 0
     - _Layer3Rotate: 0
-    - _Loop1: 0
-    - _Loop2: 0
     - _MODEL2: 0
     - _MODEL3: 0
     - _Stencil: 0
@@ -78,12 +73,9 @@ Material:
     - _StencilWriteMask: 255
     - _UseUIAlphaClip: 0
     m_Colors:
-    - _ActorRotateAxis: {r: 0, g: 0.64, b: 0, a: 0}
-    - _ActorVector: {r: 0, g: 0, b: 0.03, a: 0}
+    - _Layer1Vector: {r: 11, g: 11, b: 0, a: 0}
     - _Layer2Color: {r: 2.9960785, g: 0.4862745, b: 2.7137256, a: 1}
-    - _Layer2RotateAxis: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Layer2Vector: {r: -10, g: 0, b: 0, a: 0}
     - _Layer3Color: {r: 0.20392157, g: 1.2392157, b: 1.4980392, a: 1}
-    - _Layer3RotateAxis: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Layer3Vector: {r: -1.5, g: -0.3, b: 0, a: 0}
   m_BuildTextureStacks: []

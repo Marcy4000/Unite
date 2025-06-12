@@ -11,10 +11,10 @@ Material:
   m_Shader: {fileID: 4800000, guid: 94c78b83bb97f334bb9a88543852cdd0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords:
+  m_ValidKeywords:
   - _MODEL2_BLEND
-  - _MODEL3_BLEND
+  - _MODEL3_ADD
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -38,9 +38,9 @@ Material:
         m_Scale: {x: 0.61, y: 0.62}
         m_Offset: {x: 0.09, y: -0.91}
     - _Layer3Tex:
-        m_Texture: {fileID: 2800000, guid: 1331187f7c947ba4185bbbfd4275b930, type: 3}
-        m_Scale: {x: 1.99, y: 1.45}
-        m_Offset: {x: 0, y: -2.07}
+        m_Texture: {fileID: 2800000, guid: 2afaa6a320f96a54eb50b297e739d201, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0.08}
     - _MainTexEX:
         m_Texture: {fileID: 2800000, guid: 9fbd51fe90ac648448b7387a5024efb9, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -53,6 +53,7 @@ Material:
     m_Floats:
     - _ColorMask: 15
     - _Cutoff: 1
+    - _ExtraHeight: 0.01
     - _Layer1PulseClip: 0.2
     - _Layer1PulseIntensity: 0.25
     - _Layer1PulseRate: 2.6
@@ -61,12 +62,12 @@ Material:
     - _Layer2PulseIntensity: 0.7
     - _Layer2PulseRate: 5.3
     - _Layer2Rotate: 1.92
-    - _Layer3PulseClip: 0.15
+    - _Layer3PulseClip: 1
     - _Layer3PulseIntensity: 1.39
     - _Layer3PulseRate: 0
     - _Layer3Rotate: 0.32
     - _MODEL2: 1
-    - _MODEL3: 1
+    - _MODEL3: 0
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
@@ -76,7 +77,7 @@ Material:
     m_Colors:
     - _Layer1Vector: {r: 20.88, g: 20, b: -0.02, a: -0.21}
     - _Layer2Color: {r: 1, g: 1, b: 1, a: 1}
-    - _Layer2Vector: {r: -4.46, g: -20, b: 0, a: 0}
-    - _Layer3Color: {r: 1.0318247, g: 1.8441123, b: 1.8367944, a: 1}
-    - _Layer3Vector: {r: 2, g: 0, b: 0, a: 0}
+    - _Layer2Vector: {r: -5, g: 20, b: 0, a: 0}
+    - _Layer3Color: {r: 1.4980392, g: 1.4980392, b: 1.4980392, a: 1}
+    - _Layer3Vector: {r: -8, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
