@@ -12,6 +12,8 @@ public class LoadingScreenPlayer : MonoBehaviour
     [SerializeField] private GameObject localPlayerImage;
 
     [SerializeField] private Image loadingBar;
+    [SerializeField] private Image rankedFrame;
+    [SerializeField] private Sprite[] rankedFrameSprites;
 
     private Player currentPlayer;
 
@@ -29,6 +31,19 @@ public class LoadingScreenPlayer : MonoBehaviour
         playerBar.sprite = orangeTeam ? orangeSprite : blueSprite;
         battleItem.sprite = CharactersList.Instance.GetBattleItemByID(int.Parse(player.Data["BattleItem"].Value)).icon;
         localPlayerImage.SetActive(player.Id == LobbyController.Instance.Player.Id);
+
+        if (TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value) != LobbyController.Instance.GetLocalPlayerTeam())
+        {
+            rankedFrame.gameObject.SetActive(false);
+        }
+        else
+        {
+            rankedFrame.gameObject.SetActive(true);
+        }
+
+        PlayerRankData rankData = RankedManager.Instance.GetPlayerRankFromLobby(player.Id);
+        
+        rankedFrame.sprite = rankedFrameSprites[Mathf.Clamp(rankData.currentRankIndex, 0, rankedFrameSprites.Length - 1)];
     }
 
     public void UpdateProgressBar(float prev, float progress)

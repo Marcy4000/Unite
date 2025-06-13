@@ -97,7 +97,39 @@ public class RacingResultsManager : MonoBehaviour
         yield return new WaitForSeconds(0.4f);
 
         RacePlayerResult localPlayerResult = LobbyController.Instance.RaceGameResults.PlayerResults.Where(p => p.PlayerID == LobbyController.Instance.Player.Id).First();
-        StartCoroutine(PlayResultSound(localPlayerResult.Position <= 3));
+        bool gameWon = localPlayerResult.Position <= 3;
+        
+        // Process ranked system if this was a matchmaking game
+        ProcessRankedResults(gameWon);
+        
+        StartCoroutine(PlayResultSound(gameWon));
+    }
+    
+    private void ProcessRankedResults(bool won)
+    {
+        if (RankedManager.Instance == null)
+        {
+            Debug.LogWarning("RankedManager not found, skipping rank processing");
+            return;
+        }
+        
+        // Check if this was a matchmaking game by looking for matchmaking lobby indicator
+        bool wasMatchmakingGame = false;
+        if (LobbyController.Instance.Lobby != null && 
+            LobbyController.Instance.Lobby.Data != null && 
+            LobbyController.Instance.Lobby.Data.ContainsKey("IsMatchmakingLobby"))
+        {
+            wasMatchmakingGame = LobbyController.Instance.Lobby.Data["IsMatchmakingLobby"].Value == "true";
+        }
+        
+        // Also check the LobbyController's internal matchmaking flag
+        if (!wasMatchmakingGame && LobbyController.Instance.CurrentLobbyType == LobbyController.LobbyType.Standards)
+        {
+            wasMatchmakingGame = true;
+        }
+        
+        Debug.Log($"Processing racing game result: Won={won}, WasMatchmaking={wasMatchmakingGame}");
+        RankedManager.Instance.ProcessMatchResult(won, wasMatchmakingGame);
     }
 
     private IEnumerator PlayResultSound(bool gameWon)

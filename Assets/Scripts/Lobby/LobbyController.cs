@@ -19,6 +19,12 @@ using UnityEngine.SceneManagement;
 
 public class LobbyController : MonoBehaviour
 {
+#if UNITY_EDITOR
+    [Header("Debug")]
+    [Tooltip("Se attivo, considera le custom games come matchmaking games.")]
+    public bool treatCustomAsMatchmaking = false;
+#endif
+
     public static LobbyController Instance { get; private set; }
 
     private MainMenuUI lobbyUI;
@@ -73,6 +79,12 @@ public class LobbyController : MonoBehaviour
     // Central error handling for matchmaking operations
     private void HandleMatchmakingError(string context, Exception ex = null)
     {
+        // Se è un rate limit, ignora e non fare nulla
+        if (ex is LobbyServiceException lobbyEx && lobbyEx.Reason == LobbyExceptionReason.RateLimited)
+        {
+            Debug.LogWarning($"Rate limited during matchmaking operation: {context}. Ignorato.");
+            return;
+        }
         // TODO: Show error message to user: "Matchmaking failed: {context}"
         Debug.LogError($"Matchmaking error in {context}: {ex?.Message ?? "Unknown error"}");
         
@@ -286,7 +298,8 @@ public class LobbyController : MonoBehaviour
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(-1))},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")},
                 {"HeldItems", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, HeldItemDatabase.SerializeHeldItems(new byte[] {0, 0, 0}))},
-                {"ClothingInfo", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, clothes.Serialize())}
+                {"ClothingInfo", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, clothes.Serialize())},
+                {"PlayerRank", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, RankedManager.Instance != null ? RankedManager.Instance.GetPlayerRankSerialized() : PlayerRankData.GetDefault().Serialize())}
             });
 
 #if UNITY_WEBGL
@@ -471,6 +484,13 @@ public class LobbyController : MonoBehaviour
                     {"LobbyType", new DataObject(DataObject.VisibilityOptions.Public, type.ToString())}
                 },
             };
+
+#if UNITY_EDITOR
+            if (treatCustomAsMatchmaking && type == LobbyType.Custom)
+            {
+                partyLobbyOptions.Data["IsMatchmakingLobby"] = new DataObject(DataObject.VisibilityOptions.Member, "true");
+            }
+#endif
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
             int maxPlayers = (type == LobbyType.Standards)
                 ? CharactersList.Instance.GetMapFromID(0).maxTeamSize
@@ -666,7 +686,7 @@ public class LobbyController : MonoBehaviour
         ReturnToOriginalLobbyAfterMatch();
     }
 
-    private async void RecreateOriginalParty()
+    private void RecreateOriginalParty()
     {
         if (originalPartyInfo == null)
             return;
@@ -1017,7 +1037,6 @@ public class LobbyController : MonoBehaviour
 
         try
         {
-            // Only the party leader can delete the actual matchmaker ticket
             if (isPartyLeader)
             {
                 if (!string.IsNullOrEmpty(partyMatchmakerTicketId))
@@ -1028,8 +1047,6 @@ public class LobbyController : MonoBehaviour
 
                 createTicketResponse = null;
                 partyMatchmakerTicketId = null;
-
-                // Reset matchmaking state but don't clear originalPartyInfo in case we need to recreate
                 isInMatchmakingGame = false;
 
                 // Remove RequestedTeam field
@@ -1042,11 +1059,14 @@ public class LobbyController : MonoBehaviour
                 }
             }
 
-            // Update lobby data to notify all players that matchmaking has stopped
-            var matchmakingUpdateOptions = new UpdateLobbyOptions();
-            matchmakingUpdateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
-            matchmakingUpdateOptions.Data["MatchmakingStatus"] = new DataObject(DataObject.VisibilityOptions.Member, "stopped");
-            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, matchmakingUpdateOptions);
+            // Tutti (leader e client) aggiornano lo stato della lobby per fermare il matchmaking
+            if (partyLobby != null)
+            {
+                var matchmakingUpdateOptions = new UpdateLobbyOptions();
+                matchmakingUpdateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
+                matchmakingUpdateOptions.Data["MatchmakingStatus"] = new DataObject(DataObject.VisibilityOptions.Member, "stopped");
+                await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, matchmakingUpdateOptions);
+            }
 
             isSearching = false;
             lobbyUI.HideMatchmakingBarUI();
@@ -1056,7 +1076,6 @@ public class LobbyController : MonoBehaviour
         {
             Debug.LogError($"Error cancelling matchmaking: {ex.Message}");
             
-            // Still clean up local state even if server calls fail
             isSearching = false;
             if (isPartyLeader)
             {
@@ -1225,6 +1244,22 @@ public class LobbyController : MonoBehaviour
         options.Data = localPlayer.Data;
         options.Data["HeldItems"].Value = heldItems;
         Debug.Log($"Changed held items to {options.Data["HeldItems"].Value}");
+
+        UpdatePlayerData(options);
+    }
+
+    public void UpdatePlayerRank()
+    {
+        if (RankedManager.Instance == null)
+        {
+            Debug.LogWarning("RankedManager instance not found, cannot update player rank");
+            return;
+        }
+
+        UpdatePlayerOptions options = new UpdatePlayerOptions();
+        options.Data = localPlayer.Data;
+        options.Data["PlayerRank"].Value = RankedManager.Instance.GetPlayerRankSerialized();
+        Debug.Log($"Updated player rank to {RankedManager.Instance.GetRankDisplayString()}");
 
         UpdatePlayerData(options);
     }
@@ -1636,6 +1671,12 @@ public class LobbyController : MonoBehaviour
         else
             options.Data.Add("LobbyType", new DataObject(DataObject.VisibilityOptions.Public, newType.ToString()));
 
+        // Se si passa a Custom, rimuovi MatchmakingStatus per evitare che la UI di matchmaking venga riattivata
+        if (newType == LobbyType.Custom && options.Data.ContainsKey("MatchmakingStatus"))
+        {
+            options.Data.Remove("MatchmakingStatus");
+        }
+
         UpdateLobbyData(options);
 
         Debug.Log($"Changed lobby type to {newType}");
@@ -1652,8 +1693,15 @@ public class LobbyController : MonoBehaviour
         }
     }
 
-    public bool IsCustomLobby() => currentLobbyType == LobbyType.Custom;
-    public bool IsStandardsLobby() => currentLobbyType == LobbyType.Standards;
+    public bool IsCustomLobby()
+    {
+        return currentLobbyType == LobbyType.Custom;
+    }
+
+    public bool IsStandardsLobby()
+    {
+        return currentLobbyType == LobbyType.Standards;
+    }
 
     public int GetMaxPartyMembers()
     {

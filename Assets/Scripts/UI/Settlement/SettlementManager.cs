@@ -33,6 +33,7 @@ public class SettlementManager : MonoBehaviour
 
     [SerializeField] private SettlementTeamModels settlementTeamModels;
     [SerializeField] private TeamPlayersMenu teamPlayersMenu;
+    [SerializeField] private RankedResultsMenu rankedResultsMenu;
 
     private AsyncOperationHandle<Sprite> blueScoreboardHandle;
     private AsyncOperationHandle<Sprite> orangeScoreboardHandle;
@@ -41,6 +42,8 @@ public class SettlementManager : MonoBehaviour
     private int orangeScoreValue;
 
     private bool gameWon;
+    private bool isRankedGame;
+    private PlayerRankData previousRankData;
 
     private IEnumerator Start()
     {
@@ -216,7 +219,50 @@ public class SettlementManager : MonoBehaviour
 
         Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
         gameWon = LobbyController.Instance.GameResults.WinningTeam == localPlayerTeam;
+        
+        ProcessRankedResults(gameWon);
+        
         StartCoroutine(PlayResultSound(gameWon));
+    }
+    
+    private void ProcessRankedResults(bool won)
+    {
+        if (RankedManager.Instance == null)
+        {
+            Debug.LogWarning("RankedManager not found, skipping rank processing");
+            isRankedGame = false;
+            return;
+        }
+        
+        bool wasMatchmakingGame = false;
+        if (LobbyController.Instance.Lobby != null && 
+            LobbyController.Instance.Lobby.Data != null && 
+            LobbyController.Instance.Lobby.Data.ContainsKey("IsMatchmakingLobby"))
+        {
+            wasMatchmakingGame = LobbyController.Instance.Lobby.Data["IsMatchmakingLobby"].Value == "true";
+        }
+        
+        if (!wasMatchmakingGame && LobbyController.Instance.CurrentLobbyType == LobbyController.LobbyType.Standards)
+        {
+            wasMatchmakingGame = true;
+        }
+        
+        isRankedGame = wasMatchmakingGame;
+        
+        if (isRankedGame)
+        {
+            previousRankData = RankedManager.Instance.GetPlayerRankData();
+            
+            RankedManager.Instance.ProcessMatchResult(won, wasMatchmakingGame);
+            
+            if (rankedResultsMenu != null)
+            {
+                var currentRankData = RankedManager.Instance.GetPlayerRankData();
+                rankedResultsMenu.Initialize(this, previousRankData, currentRankData);
+            }
+        }
+        
+        Debug.Log($"Processing game result: Won={won}, WasMatchmaking={wasMatchmakingGame}");
     }
 
     private IEnumerator ShowScoreAndVictoryTextsWithDelay()
@@ -328,6 +374,19 @@ public class SettlementManager : MonoBehaviour
     }
 
     public void GoToNextMenu()
+    {
+        if (isRankedGame && rankedResultsMenu != null)
+        {
+            mainUI.SetActive(false);
+            rankedResultsMenu.ShowMenu();
+        }
+        else
+        {
+            GoToTeamMenu();
+        }
+    }
+
+    public void GoToTeamMenu()
     {
         mainUI.SetActive(false);
         teamPlayersMenu.ShowMenu();
