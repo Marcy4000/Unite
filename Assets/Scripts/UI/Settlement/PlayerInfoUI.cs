@@ -23,6 +23,8 @@ public class PlayerInfoUI : MonoBehaviour
     [SerializeField] private Image playerAvatarImage;
     [SerializeField] private Image playerBGImage;
 
+    [SerializeField] private Image moveAIcon, moveBIcon, uniteMoveIcon;
+
     [SerializeField] private Sprite blueBG, orangeBG;
 
     private PlayerInfoType playerInfoType;
@@ -40,6 +42,7 @@ public class PlayerInfoUI : MonoBehaviour
                 SetPlayerInfoStats(player);
                 break;
             case PlayerInfoType.Moves:
+                SetPlayerInfoMoves(player);
                 break;
         }
     }
@@ -49,7 +52,7 @@ public class PlayerInfoUI : MonoBehaviour
         PlayerStats playerStats = LobbyController.Instance.GameResults.PlayerStats.FirstOrDefault(stats => stats.playerId == player.Id);
 
         playerNameText.text = player.Data["PlayerName"].Value;
-        
+
         float dmgPercentage, dmgTakenPercentage, healingPercentage;
 
         CalculateDamagePercentage(playerStats, TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value), out dmgPercentage, out dmgTakenPercentage, out healingPercentage);
@@ -98,6 +101,32 @@ public class PlayerInfoUI : MonoBehaviour
         playerKillsText.text = playerStats.kills.ToString();
         playerAssistsText.text = playerStats.assists.ToString();
         playerBattleScoreText.text = playerStats.CalculateBattleScore().ToString();
+        playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)).icon;
+
+        if (player.Data["PlayerTeam"].Value == "Blue")
+        {
+            playerBGImage.sprite = blueBG;
+        }
+        else
+        {
+            playerBGImage.sprite = orangeBG;
+        }
+
+        if (player.Id == LobbyController.Instance.Player.Id)
+        {
+            playerNameText.color = Color.yellow;
+        }
+    }
+    
+    public void SetPlayerInfoMoves(Player player)
+    {
+        PlayerStats playerStats = LobbyController.Instance.GameResults.PlayerStats.FirstOrDefault(stats => stats.playerId == player.Id);
+
+        playerNameText.text = player.Data["PlayerName"].Value;
+
+        moveAIcon.sprite = CharactersList.Instance.GetMoveAsset(playerStats.moveA).icon;
+        moveBIcon.sprite = CharactersList.Instance.GetMoveAsset(playerStats.moveB).icon;
+        uniteMoveIcon.sprite = CharactersList.Instance.GetMoveAsset(playerStats.uniteMove).icon;
         playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)).icon;
 
         if (player.Data["PlayerTeam"].Value == "Blue")

@@ -47,6 +47,7 @@ public class CharactersList : MonoBehaviour
     [SerializeField] private BattleItemAsset[] battleItems;
     [SerializeField] private HeldItemInfo[] heldItems;
     [SerializeField] private MapInfo[] maps;
+    [SerializeField] private MoveAssetRegistry moveRegistry;
 
     public CharacterInfo[] Characters => characters;
     public WildPokemonInfo[] WildPokemons => wildPokemons;
@@ -64,6 +65,20 @@ public class CharactersList : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        InitializeRegistries();
+    }
+
+    private void InitializeRegistries()
+    {
+        if (moveRegistry != null)
+        {
+            moveRegistry.Initialize();
+        }
+        else
+        {
+            Debug.LogWarning("MoveAssetRegistry is not assigned in CharactersList!");
+        }
     }
 
     public CharacterInfo GetCharacterFromID(short characterID)
@@ -166,5 +181,20 @@ public class CharactersList : MonoBehaviour
         }
 
         return maps[mapID];
+    }
+
+    public MoveAsset GetMoveAsset(AvailableMoves move)
+    {
+        if (moveRegistry == null)
+        {
+            Debug.LogError("MoveAssetRegistry is not assigned!");
+            return null;
+        }
+        return moveRegistry.GetMoveAsset(move);
+    }
+
+    public bool HasMoveAsset(AvailableMoves move)
+    {
+        return moveRegistry != null && moveRegistry.HasMoveAsset(move);
     }
 }

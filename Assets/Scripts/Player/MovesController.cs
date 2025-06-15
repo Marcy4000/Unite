@@ -52,6 +52,8 @@ public class MovesController : NetworkBehaviour
 
     public event Action<GameObject> onObjectSpawned;
 
+    public event Action<MoveAsset> OnMoveLearned; // Evento per notificare quando una mossa viene appresa
+
     private Vector3 objectSpawnPos = new Vector3(0, -20, 0);
 
     private AttackSpeedCooldown[] cooldownTable = new AttackSpeedCooldown[]
@@ -567,6 +569,8 @@ public class MovesController : NetworkBehaviour
         }
 
         BattleUIManager.instance.InitializeMoveUI(move);
+
+        OnMoveLearned?.Invoke(move);
     }
 
     private void SelectBattleItem()

@@ -15,6 +15,18 @@ public struct PlayerStats : INetworkSerializable
     public uint damageTaken;
     public uint healingDone;
 
+    // Selected moves tracking
+    public AvailableMoves moveA;
+    public AvailableMoves moveB;
+    public AvailableMoves uniteMove;
+    public FixedString32Bytes basicAttackName; // Pokemon name
+    public AvailableBattleItems battleItem;
+    
+    // Upgrade status
+    public bool moveAUpgraded;
+    public bool moveBUpgraded;
+    public bool uniteMoveUpgraded;
+
     public PlayerStats(string playerId, ushort kills, ushort deaths, ushort assists, ushort score, uint damageDealt, uint damageTaken, uint healingDone)
     {
         this.playerId = playerId;
@@ -25,6 +37,16 @@ public struct PlayerStats : INetworkSerializable
         this.damageDealt = damageDealt;
         this.damageTaken = damageTaken;
         this.healingDone = healingDone;
+        
+        // Initialize move tracking fields with default values
+        this.moveA = AvailableMoves.LockedMove;
+        this.moveB = AvailableMoves.LockedMove;
+        this.uniteMove = AvailableMoves.LockedMove;
+        this.basicAttackName = "";
+        this.battleItem = AvailableBattleItems.None;
+        this.moveAUpgraded = false;
+        this.moveBUpgraded = false;
+        this.uniteMoveUpgraded = false;
     }
 
     public PlayerStats(string playerId, int kills, int deaths, int assists, int score, int damageDealt, int damageTaken, int healingDone)
@@ -37,6 +59,42 @@ public struct PlayerStats : INetworkSerializable
         this.damageDealt = (uint)damageDealt;
         this.damageTaken = (uint)damageTaken;
         this.healingDone = (uint)healingDone;
+        
+        // Initialize move tracking fields with default values
+        this.moveA = AvailableMoves.LockedMove;
+        this.moveB = AvailableMoves.LockedMove;
+        this.uniteMove = AvailableMoves.LockedMove;
+        this.basicAttackName = "";
+        this.battleItem = AvailableBattleItems.None;
+        this.moveAUpgraded = false;
+        this.moveBUpgraded = false;
+        this.uniteMoveUpgraded = false;
+    }
+
+    // Constructor with move tracking parameters
+    public PlayerStats(string playerId, ushort kills, ushort deaths, ushort assists, ushort score, 
+                      uint damageDealt, uint damageTaken, uint healingDone,
+                      AvailableMoves moveA, AvailableMoves moveB, AvailableMoves uniteMove,
+                      string basicAttackName, AvailableBattleItems battleItem,
+                      bool moveAUpgraded, bool moveBUpgraded, bool uniteMoveUpgraded)
+    {
+        this.playerId = playerId;
+        this.kills = kills;
+        this.deaths = deaths;
+        this.assists = assists;
+        this.score = score;
+        this.damageDealt = damageDealt;
+        this.damageTaken = damageTaken;
+        this.healingDone = healingDone;
+        
+        this.moveA = moveA;
+        this.moveB = moveB;
+        this.uniteMove = uniteMove;
+        this.basicAttackName = basicAttackName;
+        this.battleItem = battleItem;
+        this.moveAUpgraded = moveAUpgraded;
+        this.moveBUpgraded = moveBUpgraded;
+        this.uniteMoveUpgraded = uniteMoveUpgraded;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -49,6 +107,16 @@ public struct PlayerStats : INetworkSerializable
         serializer.SerializeValue(ref damageDealt);
         serializer.SerializeValue(ref damageTaken);
         serializer.SerializeValue(ref healingDone);
+        
+        // Serialize move tracking fields
+        serializer.SerializeValue(ref moveA);
+        serializer.SerializeValue(ref moveB);
+        serializer.SerializeValue(ref uniteMove);
+        serializer.SerializeValue(ref basicAttackName);
+        serializer.SerializeValue(ref battleItem);
+        serializer.SerializeValue(ref moveAUpgraded);
+        serializer.SerializeValue(ref moveBUpgraded);
+        serializer.SerializeValue(ref uniteMoveUpgraded);
     }
 
     public int CalculateBattleScore()

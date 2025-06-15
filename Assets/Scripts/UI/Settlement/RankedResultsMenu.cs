@@ -29,7 +29,6 @@ public class RankedResultsMenu : MonoBehaviour
     [Header("Animation Settings")]
     [SerializeField] private float trophyPopDuration = 1.2f;
     [SerializeField] private float diamondAnimDuration = 0.8f;
-    [SerializeField] private float rankUpSoundDuration = 4.0f;
     [SerializeField] private float trophySwitchDelay = 1.0f;
     
     [Header("Debug")]
