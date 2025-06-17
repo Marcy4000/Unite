@@ -125,12 +125,12 @@ public class SmallJumpPad : NetworkBehaviour
     private IEnumerator PerformJump(PlayerManager player)
     {
         AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_SmallJump);
-        player.PlayerMovement.CanMove = false; // Lock movement before jump starts
+        player.PlayerMovement.AddMovementRestriction();
         player.transform.DOJump(landingPosition.position, jumpHeight, 1, jumpTime);
 
         yield return new WaitForSeconds(jumpTime); // Simulate jump duration
 
-        player.PlayerMovement.CanMove = true;
+        player.PlayerMovement.RemoveMovementRestriction();
     }
 
     private IEnumerator PerformJumpServer(PlayerManager player)

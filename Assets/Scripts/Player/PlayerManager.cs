@@ -223,13 +223,13 @@ public class PlayerManager : NetworkBehaviour
         {
             { StatusType.Immobilized, () =>
                 {
-                    playerMovement.CanMove = false;
+                    playerMovement.AddMovementRestriction();
                     animationManager.SetBool("Walking", false);
                 }
             },
             { StatusType.Frozen, () =>
                 {
-                    playerMovement.CanMove = false;
+                    playerMovement.AddMovementRestriction();
                     movesController.CancelAllMoves();
                     EndScoring();
                     movesController.AddMoveStatus(0, ActionStatusType.Stunned);
@@ -251,7 +251,7 @@ public class PlayerManager : NetworkBehaviour
 
         statusRemovedActions = new Dictionary<StatusType, Action>
         {
-            { StatusType.Immobilized, () => playerMovement.CanMove = true },
+            { StatusType.Immobilized, () => playerMovement.RemoveMovementRestriction() },
             { StatusType.Frozen, RemoveStun },
             { StatusType.Incapacitated, RemoveStun },
             { StatusType.Asleep, RemoveStun },
@@ -294,9 +294,9 @@ public class PlayerManager : NetworkBehaviour
 
     private IEnumerator StopMovementForTimeCoroutine(float time, bool setTrigger=true)
     {
-        playerMovement.CanMove = false;
+        playerMovement.AddMovementRestriction();
         yield return new WaitForSeconds(time);
-        playerMovement.CanMove = true;
+        playerMovement.RemoveMovementRestriction();
 
         if (setTrigger)
         {
@@ -736,7 +736,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void ApplyStun()
     {
-        playerMovement.CanMove = false;
+        playerMovement.AddMovementRestriction();
         animationManager.SetTrigger("Stun");
         movesController.CancelAllMoves();
         EndScoring();
@@ -750,7 +750,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void RemoveStun()
     {
-        playerMovement.CanMove = true;
+        playerMovement.RemoveMovementRestriction();
         animationManager.SetTrigger("Transition");
         movesController.RemoveMoveStatus(0, ActionStatusType.Stunned);
         movesController.RemoveMoveStatus(1, ActionStatusType.Stunned);

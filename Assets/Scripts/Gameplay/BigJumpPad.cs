@@ -260,12 +260,12 @@ public class BigJumpPad : NetworkBehaviour
     {
         isJumping = true;
         AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_BigJump_Fly);
-        player.PlayerMovement.CanMove = false;
+        player.PlayerMovement.AddMovementRestriction();
         player.transform.DOJump(targetPosition, jumpHeight, 1, jumpTime);
 
         yield return new WaitForSeconds(jumpTime);
 
-        player.PlayerMovement.CanMove = true;
+        player.PlayerMovement.RemoveMovementRestriction();
 
         AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_BigJump_Done);
 

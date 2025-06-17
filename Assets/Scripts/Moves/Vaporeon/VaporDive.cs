@@ -83,7 +83,7 @@ public class VaporDive : MoveBase
     {
         isUnderwater = true;
         playerManager.AnimationManager.PlayAnimation("Armature_pm0134_00_ba01_landA01_gfbanm");
-        playerManager.PlayerMovement.CanMove = false;
+        playerManager.PlayerMovement.AddMovementRestriction();
         playerManager.transform.DOJump(playerManager.transform.position + playerManager.transform.up * -2.6f, 3, 1, 0.8f);
 
         playerManager.MovesController.onObjectSpawned += (obj) =>
@@ -98,7 +98,7 @@ public class VaporDive : MoveBase
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
 
         yield return new WaitForSeconds(0.8f);
-        playerManager.PlayerMovement.CanMove = true;
+        playerManager.PlayerMovement.RemoveMovementRestriction();
         playerManager.AnimationManager.SetTrigger("Transition");
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
     }
@@ -106,7 +106,7 @@ public class VaporDive : MoveBase
     private IEnumerator JumpOutWater()
     {
         playerManager.AnimationManager.PlayAnimation("Armature_pm0134_00_ba01_landA01_gfbanm");
-        playerManager.PlayerMovement.CanMove = false;
+        playerManager.PlayerMovement.AddMovementRestriction();
         playerManager.transform.DOJump(playerManager.transform.position + playerManager.transform.up * 2.6f, 3, 1, 0.8f);
         yield return new WaitForSeconds(0.5f);
 
@@ -117,7 +117,7 @@ public class VaporDive : MoveBase
         }
 
         yield return new WaitForSeconds(0.3f);
-        playerManager.PlayerMovement.CanMove = true;
+        playerManager.PlayerMovement.RemoveMovementRestriction();
 
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
@@ -136,6 +136,7 @@ public class VaporDive : MoveBase
             diveWarning.DespawnRPC();
             diveWarning = null;
         }
+        playerManager.PlayerMovement.RemoveMovementRestriction();
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);

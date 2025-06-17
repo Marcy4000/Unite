@@ -47,7 +47,7 @@ public class VaporRainDance : MoveBase
 
     private void JumpToLocation()
     {
-        playerManager.PlayerMovement.CanMove = false;
+        playerManager.PlayerMovement.AddMovementRestriction();
         playerManager.AnimationManager.PlayAnimation($"Armature_pm0134_00_kw35_playA01_gfbanm");
         playerManager.transform.LookAt(destination);
         playerManager.transform.rotation = Quaternion.Euler(0, playerManager.transform.rotation.eulerAngles.y, 0);
@@ -62,7 +62,7 @@ public class VaporRainDance : MoveBase
         var jump = playerManager.transform.DOJump(destination, 1f, 1, 0.35f);
         jump.onComplete += () =>
         {
-            playerManager.PlayerMovement.CanMove = true;
+            playerManager.PlayerMovement.RemoveMovementRestriction();
             playerManager.AnimationManager.SetTrigger("Transition");
             playerManager.StartCoroutine(SummonRain());
         };
@@ -70,7 +70,7 @@ public class VaporRainDance : MoveBase
 
     private IEnumerator SummonRain()
     {
-        playerManager.PlayerMovement.CanMove = false;
+        playerManager.PlayerMovement.AddMovementRestriction();
         playerManager.AnimationManager.PlayAnimation("Armature_pm0134_00_kw33_moveC01_gfbanm");
 
         yield return new WaitForSeconds(0.35f);
@@ -87,7 +87,7 @@ public class VaporRainDance : MoveBase
 
         yield return new WaitForSeconds(0.85f);
 
-        playerManager.PlayerMovement.CanMove = true;
+        playerManager.PlayerMovement.RemoveMovementRestriction();
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
@@ -104,6 +104,7 @@ public class VaporRainDance : MoveBase
 
     override public void ResetMove()
     {
+        playerManager.PlayerMovement.RemoveMovementRestriction();
         playerManager.MovesController.UnlockEveryAction();
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
         playerManager.DOKill();

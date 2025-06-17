@@ -15,6 +15,7 @@ public class PlayerMovement : NetworkBehaviour
     private CharacterController characterController;
     private Pokemon pokemon;
     private bool canMove = true;
+    private int movementRestrictions = 0; // Reference counter for movement restrictions
     private bool isMoving = false;
     private bool isKnockedUp = false;
     private bool canBeKnockedBack = true;
@@ -23,7 +24,7 @@ public class PlayerMovement : NetworkBehaviour
     private bool isDashing = false;
     private Vector3 dashDirection;
 
-    public bool CanMove { get => canMove; set => SetCanMove(value); }
+    public bool CanMove { get => canMove && movementRestrictions == 0; set => SetCanMove(value); }
     public bool CanBeKnockedBack { get => canBeKnockedBack; set => canBeKnockedBack = value; }
     public bool SnapToGround { get => snapToGround; set => snapToGround = value; }
     public bool IsKnockedUp => isKnockedUp;
@@ -36,7 +37,29 @@ public class PlayerMovement : NetworkBehaviour
     private void SetCanMove(bool value)
     {
         canMove = value;
-        OnCanMoveChanged?.Invoke(canMove);
+        OnCanMoveChanged?.Invoke(CanMove);
+    }
+
+    /// <summary>
+    /// Adds a movement restriction. Each restriction must be paired with RemoveMovementRestriction().
+    /// Movement is only allowed when there are no active restrictions.
+    /// </summary>
+    public void AddMovementRestriction()
+    {
+        movementRestrictions++;
+        OnCanMoveChanged?.Invoke(CanMove);
+    }
+
+    /// <summary>
+    /// Removes a movement restriction. Should be called to pair with each AddMovementRestriction() call.
+    /// </summary>
+    public void RemoveMovementRestriction()
+    {
+        if (movementRestrictions > 0)
+        {
+            movementRestrictions--;
+            OnCanMoveChanged?.Invoke(CanMove);
+        }
     }
 
     public override void OnNetworkSpawn()
@@ -63,7 +86,7 @@ public class PlayerMovement : NetworkBehaviour
 
     void Update()
     {
-        if (!canMove || !IsOwner || isKnockedUp)
+        if (!CanMove || !IsOwner || isKnockedUp)
         {
             return;
         }
@@ -87,7 +110,7 @@ public class PlayerMovement : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!canMove || !IsOwner || isKnockedUp || !snapToGround)
+        if (!CanMove || !IsOwner || isKnockedUp || !snapToGround)
         {
             return;
         }

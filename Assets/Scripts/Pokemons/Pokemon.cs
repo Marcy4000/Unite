@@ -1044,7 +1044,7 @@ public class Pokemon : NetworkBehaviour
 
         if (Keyboard.current.zKey.wasPressedThisFrame)
         {
-            AddStatusEffect(new StatusEffect(StatusType.Burned, 3f, true, 0));
+            AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 3f, true, 0));
         }
 #endif
     }

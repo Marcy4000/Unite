@@ -51,7 +51,7 @@ public class VaporeonUnite : MoveBase
     private IEnumerator CastUnite()
     {
         playerManager.AnimationManager.PlayAnimation("Armature_pm0134_00_kw32_happyC01_gfbanm");
-        playerManager.PlayerMovement.CanMove = false;
+        playerManager.PlayerMovement.AddMovementRestriction();
         playerManager.MovesController.AddMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
@@ -71,7 +71,7 @@ public class VaporeonUnite : MoveBase
         area.DoExplosionRPC();
 
         yield return new WaitForSeconds(0.95f);
-        playerManager.PlayerMovement.CanMove = true;
+        playerManager.PlayerMovement.RemoveMovementRestriction();
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
@@ -85,6 +85,7 @@ public class VaporeonUnite : MoveBase
         {
             playerManager.StopCoroutine(uniteRoutine);
         }
+        playerManager.PlayerMovement.RemoveMovementRestriction();
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
