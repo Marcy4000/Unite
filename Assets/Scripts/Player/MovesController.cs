@@ -52,7 +52,7 @@ public class MovesController : NetworkBehaviour
 
     public event Action<GameObject> onObjectSpawned;
 
-    public event Action<MoveAsset> OnMoveLearned; // Evento per notificare quando una mossa viene appresa
+    public event Action<MoveAsset> OnMoveLearned;
 
     private Vector3 objectSpawnPos = new Vector3(0, -20, 0);
 
@@ -570,7 +570,16 @@ public class MovesController : NetworkBehaviour
 
         BattleUIManager.instance.InitializeMoveUI(move);
 
-        OnMoveLearned?.Invoke(move);
+        if (IsOwner)
+        {
+            OnMoveLearnedRPC(move.move);
+        }
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void OnMoveLearnedRPC(AvailableMoves moveType)
+    {
+        OnMoveLearned?.Invoke(CharactersList.Instance.GetMoveAsset(moveType));
     }
 
     private void SelectBattleItem()
@@ -797,6 +806,12 @@ public class MovesController : NetworkBehaviour
 
         // Default cooldown value if no threshold is matched
         return 1f;
+    }
+
+    public override void OnDestroy()
+    {
+        MoveLearnPanel.onSelectedMove -= OnMoveSelectedFromPanel;
+        base.OnDestroy();
     }
 }
 

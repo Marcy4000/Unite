@@ -393,9 +393,6 @@ public class PlayerNetworkManager : NetworkBehaviour
     private void InitializePlayerMoves()
     {
         if (playerManager?.MovesController == null) return;
-
-        // Get current moves from MovesController
-        var movesController = playerManager.MovesController;
         
         // Get pokemon name for basic attack
         string pokemonName = playerManager.Pokemon?.name ?? "";
