@@ -30,7 +30,7 @@ namespace UI.ThreeDimensional
             {
                 if (_timerComponent == null)
                 {
-                    _timerComponent = GameObject.FindObjectOfType<UIObject3DTimerComponent>();
+                    _timerComponent = GameObject.FindFirstObjectByType<UIObject3DTimerComponent>();
 
                     if (_timerComponent == null && !IsQuitting)
                     {

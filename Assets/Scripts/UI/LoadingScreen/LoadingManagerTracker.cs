@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Multiplayer.Samples.Utilities;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -136,7 +135,7 @@ public class LoadingManagerTracker : NetworkBehaviour
         if (!IsHost)
         {
             ProgressTrackers.Clear();
-            foreach (var tracker in FindObjectsOfType<NetworkedLoadingProgressTracker>())
+            foreach (var tracker in FindObjectsByType<NetworkedLoadingProgressTracker>(FindObjectsSortMode.None))
             {
                 // If a tracker is despawned but not destroyed yet, don't add it
                 if (tracker.IsSpawned)

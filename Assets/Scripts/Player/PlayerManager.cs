@@ -156,7 +156,7 @@ public class PlayerManager : NetworkBehaviour
 
         if (IsOwner)
         {
-            CameraController cameraController = FindObjectOfType<CameraController>();
+            CameraController cameraController = FindFirstObjectByType<CameraController>();
             cameraController.Initialize(transform);
 
             playerControls = InputManager.Instance.Controls;

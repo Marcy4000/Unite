@@ -87,7 +87,7 @@ public class LobbyController : MonoBehaviour
         }
         // TODO: Show error message to user: "Matchmaking failed: {context}"
         Debug.LogError($"Matchmaking error in {context}: {ex?.Message ?? "Unknown error"}");
-        
+
         // Clean up state and return to main menu
         CleanupMatchmakingState();
         LoadingScreen.Instance.HideGenericLoadingScreen();
@@ -103,7 +103,7 @@ public class LobbyController : MonoBehaviour
         originalPartyInfo = null;
         expectedMatchmakingPlayers = 0;
         pendingMatchId = null;
-        
+
         // Disconnect from any current lobby/network
         try
         {
@@ -113,10 +113,10 @@ public class LobbyController : MonoBehaviour
         {
             Debug.LogWarning($"Error during network shutdown: {e.Message}");
         }
-        
+
         partyLobby = null;
         playerNetworkManagers.Clear();
-        
+
         // Hide matchmaking UI if visible
         try
         {
@@ -130,34 +130,34 @@ public class LobbyController : MonoBehaviour
 
     private bool ValidateMatchmakingLobbyReady()
     {
-        if (partyLobby == null) 
+        if (partyLobby == null)
         {
             Debug.LogError("Party lobby is null during validation");
             return false;
         }
-        
-        if (expectedMatchmakingPlayers > 0 && partyLobby.Players.Count < expectedMatchmakingPlayers) 
+
+        if (expectedMatchmakingPlayers > 0 && partyLobby.Players.Count < expectedMatchmakingPlayers)
         {
             Debug.LogError($"Not enough players joined: {partyLobby.Players.Count}/{expectedMatchmakingPlayers}");
             return false;
         }
-        
-        if (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsHost) 
+
+        if (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsHost)
         {
             Debug.LogError("Network connection not established");
             return false;
         }
-        
+
         // Ensure all players have proper team assignments
         foreach (var player in partyLobby.Players)
         {
-            if (!player.Data.ContainsKey("PlayerTeam")) 
+            if (!player.Data.ContainsKey("PlayerTeam"))
             {
                 Debug.LogError($"Player {player.Id} missing team assignment");
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -194,7 +194,7 @@ public class LobbyController : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         localPlayerName = $"TestPlayer {UnityEngine.Random.Range(0, 1000)}";
-        lobbyUI = FindObjectOfType<MainMenuUI>();
+        lobbyUI = FindFirstObjectByType<MainMenuUI>();
 
         InitializeUnityAuthentication();
 
@@ -202,7 +202,7 @@ public class LobbyController : MonoBehaviour
         {
             if (scene.name == "LobbyScene")
             {
-                lobbyUI = FindObjectOfType<MainMenuUI>();
+                lobbyUI = FindFirstObjectByType<MainMenuUI>();
             }
         };
     }
@@ -344,7 +344,10 @@ public class LobbyController : MonoBehaviour
 
         lobbyEventCallbacks.LobbyChanged += (changes) =>
         {
-            changes.ApplyToLobby(partyLobby);
+            if (partyLobby != null)
+            {
+                changes.ApplyToLobby(partyLobby);
+            }
             onLobbyUpdate?.Invoke(Lobby);
         };
 
@@ -405,7 +408,7 @@ public class LobbyController : MonoBehaviour
 
         try
         {
-            lobbyEvents = await Lobbies.Instance.SubscribeToLobbyEventsAsync(lobbyID, lobbyEventCallbacks);
+            lobbyEvents = await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobbyID, lobbyEventCallbacks);
         }
         catch (LobbyServiceException ex)
         {
@@ -512,7 +515,7 @@ public class LobbyController : MonoBehaviour
 
             await SubscribeToLobbyEvents(partyLobby.Id);
 
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, connectionType));
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
 
             if (NetworkManager.Singleton.StartHost())
             {
@@ -559,13 +562,13 @@ public class LobbyController : MonoBehaviour
 
             JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
 
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, connectionType));
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(joinAllocation, connectionType));
             Debug.Log($"Joined lobby: {partyLobby.Name}");
 
             await SubscribeToLobbyEvents(partyLobby.Id);
 
             // Check if matchmaking is already in progress and show UI accordingly
-            if (partyLobby.Data != null && partyLobby.Data.ContainsKey("MatchmakingStatus") && 
+            if (partyLobby.Data != null && partyLobby.Data.ContainsKey("MatchmakingStatus") &&
                 partyLobby.Data["MatchmakingStatus"].Value == "searching")
             {
                 isSearching = true;
@@ -614,7 +617,7 @@ public class LobbyController : MonoBehaviour
 
             JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
 
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, connectionType));
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(joinAllocation, connectionType));
             Debug.Log($"Joined lobby: {partyLobby.Name}");
 
             await SubscribeToLobbyEvents(partyLobby.Id);
@@ -694,10 +697,10 @@ public class LobbyController : MonoBehaviour
         try
         {
             Debug.Log("Recreating original party lobby...");
-            
+
             // Create a new lobby with the original settings
             CreateLobby(originalPartyInfo.originalLobbyType);
-            
+
             // TODO: Implement party invitation system to invite original members
             // This would require a separate invitation mechanism since we can't rejoin the expired lobby
         }
@@ -802,12 +805,12 @@ public class LobbyController : MonoBehaviour
 
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
             partyLobby = await LobbyService.Instance.CreateOrJoinLobbyAsync(lobbyID, $"MATCH_{lobbyID}", maxPlayers, partyLobbyOptions);
-            
+
             if (partyLobby == null)
             {
                 throw new Exception("Failed to create or join matchmaking lobby - lobby is null");
             }
-            
+
             Debug.Log($"Joined matchmaking lobby: {partyLobby.Name}, code: {partyLobby.LobbyCode}");
 
             await SubscribeToLobbyEvents(partyLobby.Id);
@@ -834,7 +837,7 @@ public class LobbyController : MonoBehaviour
                     }
                 });
 
-                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, connectionType));
+                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
 
                 if (!NetworkManager.Singleton.StartHost())
                 {
@@ -849,7 +852,7 @@ public class LobbyController : MonoBehaviour
                 // Add timeout for waiting for relay join code
                 var timeout = 30f; // 30 second timeout
                 var startTime = Time.time;
-                
+
                 while (!partyLobby.Data.ContainsKey("RelayJoinCode"))
                 {
                     if (Time.time - startTime > timeout)
@@ -865,10 +868,10 @@ public class LobbyController : MonoBehaviour
                     throw new Exception("Failed to join relay server");
                 }
 
-                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, connectionType));
+                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(joinAllocation, connectionType));
 
                 CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
-                
+
                 if (!NetworkManager.Singleton.StartClient())
                 {
                     throw new Exception("Failed to start network client");
@@ -944,7 +947,7 @@ public class LobbyController : MonoBehaviour
                 };
                 expectedMatchmakingPlayers = partyLobby.Players.Count * 2; // Assuming we'll match against another team
             }
-            
+
             originalPartyLobby = partyLobby;
             isInMatchmakingGame = true; // Set to true when entering matchmaking
 
@@ -1003,14 +1006,14 @@ public class LobbyController : MonoBehaviour
         var timeout = 30f; // 30 second timeout
         var startTime = Time.time;
         bool allUpdated = false;
-        
+
         while (!allUpdated)
         {
             if (Time.time - startTime > timeout)
             {
                 throw new Exception($"Timeout waiting for all players to update team to {assignedTeam}");
             }
-            
+
             allUpdated = true;
             foreach (var player in partyLobby.Players)
             {
@@ -1020,11 +1023,11 @@ public class LobbyController : MonoBehaviour
                     break;
                 }
             }
-            
+
             if (!allUpdated)
                 await Task.Delay(100);
         }
-        
+
         Debug.Log($"All players successfully updated to team: {assignedTeam}");
     }
 
@@ -1075,7 +1078,7 @@ public class LobbyController : MonoBehaviour
         catch (Exception ex)
         {
             Debug.LogError($"Error cancelling matchmaking: {ex.Message}");
-            
+
             isSearching = false;
             if (isPartyLeader)
             {
@@ -1083,7 +1086,7 @@ public class LobbyController : MonoBehaviour
                 partyMatchmakerTicketId = null;
                 isInMatchmakingGame = false;
             }
-            
+
             try
             {
                 lobbyUI.HideMatchmakingBarUI();

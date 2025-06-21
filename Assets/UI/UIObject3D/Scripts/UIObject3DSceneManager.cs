@@ -48,7 +48,7 @@ namespace UI.ThreeDimensional
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
-                var components = FindObjectsOfType<UIObject3DScene>();
+                var components = Object.FindObjectsByType<UIObject3DScene>(FindObjectsSortMode.None);
                 var objectsToRemove = new List<GameObject>();
 
                 foreach (var component in components)

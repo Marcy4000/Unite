@@ -50,7 +50,7 @@ public class ChatManager : MonoBehaviour
         {
             if (chatMessageReciever == null)
             {
-                ChatMessageReciever messageReciever = FindObjectOfType<ChatMessageReciever>();
+                ChatMessageReciever messageReciever = FindFirstObjectByType<ChatMessageReciever>();
 
                 if (messageReciever != null)
                 {

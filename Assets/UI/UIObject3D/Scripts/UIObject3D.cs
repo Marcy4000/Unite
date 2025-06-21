@@ -476,7 +476,7 @@ namespace UI.ThreeDimensional
         private void ClearObjectLayerFromCameras()
         {
             // remove our object layer from any other cameras we find
-            var otherCameras = GameObject.FindObjectsOfType<Camera>();
+            var otherCameras = GameObject.FindObjectsByType<Camera>(FindObjectsSortMode.None);
             foreach (var c in otherCameras)
             {
                 // don't modify the culling mask for other UIObject3DCameras
@@ -490,7 +490,7 @@ namespace UI.ThreeDimensional
         private void ClearObjectLayerFromLights()
         {
             // remove object layer from any lights
-            var otherLights = GameObject.FindObjectsOfType<Light>();
+            var otherLights = GameObject.FindObjectsByType<Light>(FindObjectsSortMode.None);
             foreach (var l in otherLights)
             {
                 // ignore directional lights; the user may wish the object to be affected by directional lights. If they don't, then they can manually adjust the culling mask

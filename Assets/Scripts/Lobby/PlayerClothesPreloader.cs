@@ -25,6 +25,11 @@ public class PlayerClothesPreloader : MonoBehaviour
     private void OnLobbyUpdated(Lobby lobby)
     {
         currentLobby = lobby;
+        if (currentLobby == null)
+        {
+            ClearAllModels();
+            return;
+        }
         UpdateLoadedModels();
     }
 

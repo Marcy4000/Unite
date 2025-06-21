@@ -411,7 +411,7 @@ public class WildPokemon : NetworkBehaviour
         {
             return;
         }
-        rb.velocity = Vector3.zero;
+        rb.linearVelocity = Vector3.zero;
 
         transform.DOJump(transform.position, force, 1, duration);
     }

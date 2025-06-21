@@ -29,7 +29,7 @@ public class LaneManager : NetworkBehaviour
 
     private void GetTeamFluxZones()
     {
-        fluxZones = FindObjectsOfType<FluxZone>().ToList();
+        fluxZones = FindObjectsByType<FluxZone>(FindObjectsSortMode.None).ToList();
 
         for (int i = fluxZones.Count - 1; i >= 0; i--)
         {
@@ -42,7 +42,7 @@ public class LaneManager : NetworkBehaviour
 
     private void GetTeamGoalZones()
     {
-        goalZones = FindObjectsOfType<GoalZone>().ToList();
+        goalZones = FindObjectsByType<GoalZone>(FindObjectsSortMode.None).ToList();
 
         for (int i = goalZones.Count - 1; i >= 0; i--)
         {

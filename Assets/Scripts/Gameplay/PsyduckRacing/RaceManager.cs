@@ -46,7 +46,7 @@ public class RaceManager : NetworkBehaviour
     {
         GameManager.Instance.onGameStateChanged += OnGameStateChanged;
 
-        checkpointList.AddRange(FindObjectsOfType<RaceCheckpoint>());
+        checkpointList.AddRange(Object.FindObjectsByType<RaceCheckpoint>(FindObjectsSortMode.None));
 
         checkpointList.Sort((a, b) => a.CheckpointIndex.CompareTo(b.CheckpointIndex));
     }
@@ -134,7 +134,7 @@ public class RaceManager : NetworkBehaviour
 
     private bool AreAllLapCountersInitialized()
     {
-        RaceLapCounter[] raceLapCounters = FindObjectsOfType<RaceLapCounter>();
+        RaceLapCounter[] raceLapCounters = Object.FindObjectsByType<RaceLapCounter>(FindObjectsSortMode.None);
 
         if (raceLapCounters.Length != GameManager.Instance.Players.Count)
         {

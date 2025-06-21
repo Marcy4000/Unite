@@ -24,7 +24,7 @@ namespace UI.ThreeDimensional
         /*[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void OnAfterSceneLoadRuntimeMethod()
         {            
-            var containers = GameObject.FindObjectsOfType<UIObject3DContainer>().ToList();
+            var containers = GameObject.FindObjectsByType<UIObject3DContainer>(FindObjectsSortMode.None).ToList();
 
             // Error check - if, somehow, we have multiple scene containers,
             // cleanup and then continue
@@ -72,7 +72,7 @@ namespace UI.ThreeDimensional
 
                 if (previousMode != ePlayMode.Paused)
                 {
-                    var containers = GameObject.FindObjectsOfType<UIObject3DContainer>().ToList();
+                    var containers = GameObject.FindObjectsByType<UIObject3DContainer>(FindObjectsSortMode.None).ToList();
 
                     // Error check - if, somehow, we have multiple scene containers,
                     // cleanup and then continue
@@ -87,7 +87,7 @@ namespace UI.ThreeDimensional
 
         private static void CleanupAllObjects()
         {
-            var objects = GameObject.FindObjectsOfType<UIObject3D>().ToList();
+            var objects = GameObject.FindObjectsByType<UIObject3D>(FindObjectsSortMode.None).ToList();
 
             foreach (var o in objects)
             {
@@ -97,7 +97,7 @@ namespace UI.ThreeDimensional
 
         private static void DestroySceneContainers()
         {
-            var containers = GameObject.FindObjectsOfType<UIObject3DContainer>().ToList();
+            var containers = GameObject.FindObjectsByType<UIObject3DContainer>(FindObjectsSortMode.None).ToList();
             containers.ForEach(c => GameObject.DestroyImmediate(c.gameObject));            
         }
     }

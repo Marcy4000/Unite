@@ -165,7 +165,7 @@ public class GameManager : NetworkBehaviour
                 onFinalStretch?.Invoke();
             }
         };
-        lanes = FindObjectsOfType<LaneManager>();
+        lanes = FindObjectsByType<LaneManager>(FindObjectsSortMode.None);
 
         blueTeamScores = new List<ResultScoreInfo>();
         orangeTeamScores = new List<ResultScoreInfo>();
@@ -349,7 +349,7 @@ public class GameManager : NetworkBehaviour
     private GameResults GenerateGameResults()     
     {
         List<PlayerStats> stats = new List<PlayerStats>();
-        PlayerNetworkManager[] playerNetworkManagers = FindObjectsOfType<PlayerNetworkManager>();
+        PlayerNetworkManager[] playerNetworkManagers = FindObjectsByType<PlayerNetworkManager>(FindObjectsSortMode.None);
 
         foreach (var playerNetworkManager in playerNetworkManagers)
         {
@@ -506,7 +506,7 @@ public class GameManager : NetworkBehaviour
     public bool TryGetPlayerNetworkManager(ulong clientId, out PlayerNetworkManager playerNetworkManager)
     {
         playerNetworkManager = null;
-        PlayerNetworkManager[] players = FindObjectsOfType<PlayerNetworkManager>();
+        PlayerNetworkManager[] players = FindObjectsByType<PlayerNetworkManager>(FindObjectsSortMode.None);
         foreach (var player in players)
         {
             if (player.OwnerClientId == clientId)

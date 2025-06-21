@@ -16,7 +16,7 @@ public class ReplaceWithPrefab : MonoBehaviour
         }
 
         // Find all WildPokemonSpawner objects in the scene
-        WildPokemonSpawner[] spawners = FindObjectsOfType<WildPokemonSpawner>();
+        WildPokemonSpawner[] spawners = FindObjectsByType<WildPokemonSpawner>(FindObjectsSortMode.None);
         foreach (var spawner in spawners)
         {
             // Record the transform and assigned values

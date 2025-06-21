@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Unity.Services.Lobbies.Models;
-using Unity.Multiplayer.Samples.Utilities;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
@@ -41,7 +40,7 @@ public class LoadingScreen : MonoBehaviour
             return;
         }
 
-        NetworkedLoadingProgressTracker[] trackers = FindObjectsOfType<NetworkedLoadingProgressTracker>();
+        NetworkedLoadingProgressTracker[] trackers = FindObjectsByType<NetworkedLoadingProgressTracker>(FindObjectsSortMode.None);
         List<ulong> playerIds = new List<ulong>();
         foreach (var tracker in trackers)
         {

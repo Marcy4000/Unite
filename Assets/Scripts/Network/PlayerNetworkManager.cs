@@ -229,7 +229,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void OnPlayerSpawnedRpc(ulong networkID, Team team)
     {
-        PlayerManager[] players = FindObjectsOfType<PlayerManager>();
+        PlayerManager[] players = FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
         foreach (PlayerManager player in players)
         {
             NetworkObject playerNetworkObject = player.GetComponent<NetworkObject>();
