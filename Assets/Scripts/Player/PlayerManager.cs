@@ -288,6 +288,7 @@ public class PlayerManager : NetworkBehaviour
         if (stopMovementCoroutine != null)
         {
             StopCoroutine(stopMovementCoroutine);
+            playerMovement.RemoveMovementRestriction();
         }
         stopMovementCoroutine = StartCoroutine(StopMovementForTimeCoroutine(time, setTrigger));
     }

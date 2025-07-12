@@ -23,12 +23,18 @@ public class PartyScreenUI : MonoBehaviour
 
     [SerializeField] private PartyPlayerModel[] standardsLobbyPlayers;
 
+    [Header("Matchmaking UI Control")]
+    [SerializeField] private Button[] disableOnMatchmaking;
+    [SerializeField] private Toggle[] disableTogglesOnMatchmaking;
+    [SerializeField] private GameObject[] hideOnMatchmaking;
+
     private List<LobbyPlayerIcon> playerIconsBlueTeam;
     private List<LobbyPlayerIcon> playerIconsOrangeTeam;
 
     private MapInfo selectedMap;
 
     private LobbyController.LobbyType? lastLobbyType = null;
+    private bool lastMatchmakingState = false;
 
     private void Start()
     {
@@ -116,6 +122,62 @@ public class PartyScreenUI : MonoBehaviour
     private void Update()
     {
         startGameButton.interactable = !LobbyController.Instance.IsAnyPlayerInResultScreen();
+        UpdateMatchmakingUI();
+    }
+
+    private void UpdateMatchmakingUI()
+    {
+        bool isMatchmaking = LobbyController.Instance.IsMatchmaking;
+
+        // Only update UI if matchmaking state has changed
+        if (isMatchmaking != lastMatchmakingState)
+        {
+            lastMatchmakingState = isMatchmaking;
+
+            // Disable/enable buttons during matchmaking
+            if (disableOnMatchmaking != null)
+            {
+                foreach (var button in disableOnMatchmaking)
+                {
+                    if (button != null)
+                        button.interactable = !isMatchmaking;
+                }
+            }
+
+            // Disable/enable toggles during matchmaking
+            if (disableTogglesOnMatchmaking != null)
+            {
+                foreach (var toggle in disableTogglesOnMatchmaking)
+                {
+                    if (toggle != null)
+                        toggle.interactable = !isMatchmaking;
+                }
+            }
+
+            // Hide/show GameObjects during matchmaking
+            if (hideOnMatchmaking != null)
+            {
+                foreach (var gameObject in hideOnMatchmaking)
+                {
+                    if (gameObject != null)
+                        gameObject.SetActive(!isMatchmaking);
+                }
+            }
+
+            // Also disable lobby type toggles during matchmaking
+            if (isMatchmaking)
+            {
+                customLobbyToggle.interactable = false;
+                standardsLobbyToggle.interactable = false;
+                openLobbyToggle.interactable = false;
+            }
+            else
+            {
+                // Re-enable based on normal conditions when matchmaking stops
+                UpdateLobbyTypeToggles();
+                openLobbyToggle.interactable = IsLocalPlayerHost();
+            }
+        }
     }
 
     public void InitializeUI(Lobby lobby)
@@ -132,23 +194,33 @@ public class PartyScreenUI : MonoBehaviour
         customsLobbyRoot.SetActive(isCustom);
         standardsLobbyRoot.SetActive(!isCustom);
 
+        var localPlayerId = Unity.Services.Authentication.AuthenticationService.Instance.PlayerId;
+        int localPlayerIndex = lobby.Players.FindIndex(p => p.Id == localPlayerId);
+
+        List<Player> otherPlayers = new List<Player>();
+        for (int i = 0; i < lobby.Players.Count; i++)
+        {
+            if (i != localPlayerIndex)
+                otherPlayers.Add(lobby.Players[i]);
+        }
+
         for (int i = 0; i < standardsLobbyPlayers.Length; i++)
         {
-            if (i >= standardsLobbyPlayers.Length)
-            {
-                break;
-            }
-
             if (isCustom)
             {
                 standardsLobbyPlayers[i].gameObject.SetActive(false);
             }
             else
             {
-                if (i < lobby.Players.Count)
+                if (i == 0 && localPlayerIndex != -1)
                 {
                     standardsLobbyPlayers[i].gameObject.SetActive(true);
-                    standardsLobbyPlayers[i].Initialize(lobby.Players[i]);
+                    standardsLobbyPlayers[i].Initialize(lobby.Players[localPlayerIndex]);
+                }
+                else if (i - 1 < otherPlayers.Count)
+                {
+                    standardsLobbyPlayers[i].gameObject.SetActive(true);
+                    standardsLobbyPlayers[i].Initialize(otherPlayers[i - 1]);
                 }
                 else
                 {
@@ -220,23 +292,34 @@ public class PartyScreenUI : MonoBehaviour
 
         if (!isCustom)
         {
+            // Trova il giocatore locale
+            var localPlayerId = Unity.Services.Authentication.AuthenticationService.Instance.PlayerId;
+            int localPlayerIndex = lobby.Players.FindIndex(p => p.Id == localPlayerId);
+            // Prepara la lista degli altri giocatori
+            List<Player> otherPlayers = new List<Player>();
+            for (int i = 0; i < lobby.Players.Count; i++)
+            {
+                if (i != localPlayerIndex)
+                    otherPlayers.Add(lobby.Players[i]);
+            }
+
             for (int i = 0; i < standardsLobbyPlayers.Length; i++)
             {
-                if (i >= standardsLobbyPlayers.Length)
-                {
-                    break;
-                }
-
                 if (isCustom)
                 {
                     standardsLobbyPlayers[i].gameObject.SetActive(false);
                 }
                 else
                 {
-                    if (i < lobby.Players.Count)
+                    if (i == 0 && localPlayerIndex != -1)
                     {
                         standardsLobbyPlayers[i].gameObject.SetActive(true);
-                        standardsLobbyPlayers[i].Initialize(lobby.Players[i]);
+                        standardsLobbyPlayers[i].Initialize(lobby.Players[localPlayerIndex]);
+                    }
+                    else if (i - 1 < otherPlayers.Count)
+                    {
+                        standardsLobbyPlayers[i].gameObject.SetActive(true);
+                        standardsLobbyPlayers[i].Initialize(otherPlayers[i - 1]);
                     }
                     else
                     {

@@ -16,6 +16,7 @@ public class PlayerMovement : NetworkBehaviour
     private Pokemon pokemon;
     private bool canMove = true;
     private int movementRestrictions = 0; // Reference counter for movement restrictions
+    private int movementRestrictionCount = 0; // Internal counter for tracking restrictions
     private bool isMoving = false;
     private bool isKnockedUp = false;
     private bool canBeKnockedBack = true;
@@ -40,24 +41,27 @@ public class PlayerMovement : NetworkBehaviour
         OnCanMoveChanged?.Invoke(CanMove);
     }
 
-    /// <summary>
-    /// Adds a movement restriction. Each restriction must be paired with RemoveMovementRestriction().
-    /// Movement is only allowed when there are no active restrictions.
-    /// </summary>
     public void AddMovementRestriction()
     {
         movementRestrictions++;
+        movementRestrictionCount++;
+        if (movementRestrictionCount == 1)
+        {
+            CanMove = false;
+        }
         OnCanMoveChanged?.Invoke(CanMove);
     }
 
-    /// <summary>
-    /// Removes a movement restriction. Should be called to pair with each AddMovementRestriction() call.
-    /// </summary>
     public void RemoveMovementRestriction()
     {
         if (movementRestrictions > 0)
         {
             movementRestrictions--;
+            movementRestrictionCount = Mathf.Max(0, movementRestrictionCount - 1);
+            if (movementRestrictionCount == 0)
+            {
+                CanMove = true;
+            }
             OnCanMoveChanged?.Invoke(CanMove);
         }
     }

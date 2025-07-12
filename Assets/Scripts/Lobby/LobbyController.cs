@@ -77,7 +77,7 @@ public class LobbyController : MonoBehaviour
     private OriginalPartyInfo originalPartyInfo = null;
 
     // Central error handling for matchmaking operations
-    private void HandleMatchmakingError(string context, Exception ex = null)
+    private async void HandleMatchmakingError(string context, Exception ex = null)
     {
         // Se è un rate limit, ignora e non fare nulla
         if (ex is LobbyServiceException lobbyEx && lobbyEx.Reason == LobbyExceptionReason.RateLimited)
@@ -89,14 +89,22 @@ public class LobbyController : MonoBehaviour
         Debug.LogError($"Matchmaking error in {context}: {ex?.Message ?? "Unknown error"}");
 
         // Clean up state and return to main menu
-        CleanupMatchmakingState();
+        await CleanupMatchmakingStateAsync();
         LoadingScreen.Instance.HideGenericLoadingScreen();
         lobbyUI.ShowMainMenuUI();
     }
 
-    private void CleanupMatchmakingState()
+    private async Task CleanupMatchmakingStateAsync()
     {
+        Debug.Log("Starting cleanup of matchmaking state...");
+        
+        // Always reset the searching state first
         isSearching = false;
+        
+        // Delete matchmaking ticket if it exists
+        await DeleteMatchmakingTicket();
+        
+        // Reset all matchmaking-related state
         isInMatchmakingGame = false;
         createTicketResponse = null;
         partyMatchmakerTicketId = null;
@@ -104,28 +112,90 @@ public class LobbyController : MonoBehaviour
         expectedMatchmakingPlayers = 0;
         pendingMatchId = null;
 
+        // Update lobby data to stop matchmaking for all players
+        await UpdateLobbyMatchmakingStatus("stopped");
+
         // Disconnect from any current lobby/network
         try
         {
-            NetworkManager.Singleton.Shutdown();
+            if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsHost))
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
         }
         catch (Exception e)
         {
             Debug.LogWarning($"Error during network shutdown: {e.Message}");
         }
 
-        partyLobby = null;
+        // Clear player network managers
         playerNetworkManagers.Clear();
 
         // Hide matchmaking UI if visible
         try
         {
-            lobbyUI.HideMatchmakingBarUI();
+            lobbyUI?.HideMatchmakingBarUI();
         }
         catch (Exception e)
         {
             Debug.LogWarning($"Error hiding matchmaking UI: {e.Message}");
         }
+        
+        Debug.Log("Matchmaking state cleanup completed successfully.");
+    }
+
+    private async Task DeleteMatchmakingTicket()
+    {
+        if (string.IsNullOrEmpty(partyMatchmakerTicketId))
+        {
+            Debug.Log("No matchmaking ticket to delete (ticket ID is null or empty)");
+            return;
+        }
+
+        try
+        {
+            Debug.Log($"Attempting to delete matchmaking ticket: {partyMatchmakerTicketId}");
+            await MatchmakerService.Instance.DeleteTicketAsync(partyMatchmakerTicketId);
+            Debug.Log("Matchmaking ticket deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error deleting matchmaking ticket '{partyMatchmakerTicketId}': {ex.Message}");
+            // Don't re-throw - we want to continue with cleanup even if ticket deletion fails
+        }
+        finally
+        {
+            partyMatchmakerTicketId = null;
+        }
+    }
+
+    private async Task UpdateLobbyMatchmakingStatus(string status)
+    {
+        if (partyLobby == null)
+        {
+            Debug.Log("No lobby to update matchmaking status");
+            return;
+        }
+
+        try
+        {
+            var updateOptions = new UpdateLobbyOptions();
+            updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
+            updateOptions.Data["MatchmakingStatus"] = new DataObject(DataObject.VisibilityOptions.Member, status);
+            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, updateOptions);
+            Debug.Log($"Updated lobby matchmaking status to: {status}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"Error updating lobby matchmaking status to '{status}': {ex.Message}");
+            // Don't re-throw - this is a cleanup operation
+        }
+    }
+
+    private void CleanupMatchmakingState()
+    {
+        // Legacy method - redirect to async version
+        _ = CleanupMatchmakingStateAsync();
     }
 
     private bool ValidateMatchmakingLobbyReady()
@@ -171,6 +241,8 @@ public class LobbyController : MonoBehaviour
     public RaceGameResults RaceGameResults { get => raceGameResults; set => raceGameResults = value; }
 
     public ILobbyEvents LobbyEvents => lobbyEvents;
+
+    public bool IsMatchmaking => isSearching;
 
     public event Action<Lobby> onLobbyUpdate;
 
@@ -391,10 +463,10 @@ public class LobbyController : MonoBehaviour
                 string matchmakingStatus = partyLobby.Data["MatchmakingStatus"].Value;
                 if (matchmakingStatus == "searching" && !isSearching)
                 {
-                    // Show matchmaking UI for all players
+                    // Show matchmaking UI - only party leader can cancel
                     isSearching = true;
-                    lobbyUI.ShowMatchmakingBarUI(CancelMatchmaking);
-                    Debug.Log("Matchmaking UI shown to non-leader player");
+                    lobbyUI.ShowMatchmakingBarUI(isPartyLeader ? CancelMatchmaking : null);
+                    Debug.Log($"Matchmaking UI shown to {(isPartyLeader ? "party leader" : "party member")}");
                 }
                 else if (matchmakingStatus == "stopped" && isSearching)
                 {
@@ -572,8 +644,8 @@ public class LobbyController : MonoBehaviour
                 partyLobby.Data["MatchmakingStatus"].Value == "searching")
             {
                 isSearching = true;
-                lobbyUI.ShowMatchmakingBarUI(CancelMatchmaking);
-                Debug.Log("Joined lobby during active matchmaking - showing matchmaking UI");
+                lobbyUI.ShowMatchmakingBarUI(isPartyLeader ? CancelMatchmaking : null);
+                Debug.Log($"Joined lobby during active matchmaking - showing matchmaking UI to {(isPartyLeader ? "party leader" : "party member")}");
             }
 
             CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
@@ -718,6 +790,14 @@ public class LobbyController : MonoBehaviour
             return;
         }
 
+        // Validate that we have a valid ticket ID before polling
+        if (string.IsNullOrEmpty(partyMatchmakerTicketId))
+        {
+            Debug.LogError("Cannot poll matchmaker ticket - ticket ID is null or empty");
+            HandleMatchmakingError("PollMatchmakerTicket - invalid ticket ID", null);
+            return;
+        }
+
         try
         {
             Unity.Services.Matchmaker.Models.TicketStatusResponse ticketStatusResponse = await MatchmakerService.Instance.GetTicketAsync(partyMatchmakerTicketId);
@@ -729,7 +809,7 @@ public class LobbyController : MonoBehaviour
             }
 
             var matchIdAssignment = ticketStatusResponse.Value as Unity.Services.Matchmaker.Models.MatchIdAssignment;
-
+            
             if (matchIdAssignment == null)
             {
                 Debug.LogError("Match ID assignment is null");
@@ -921,6 +1001,7 @@ public class LobbyController : MonoBehaviour
     {
         if (isSearching)
         {
+            Debug.Log("Matchmaking already in progress");
             return;
         }
 
@@ -930,23 +1011,37 @@ public class LobbyController : MonoBehaviour
             return;
         }
 
+        if (partyLobby == null)
+        {
+            Debug.LogError("Cannot start matchmaking - no party lobby");
+            return;
+        }
+
+        if (partyLobby.Players == null || partyLobby.Players.Count == 0)
+        {
+            Debug.LogError("Cannot start matchmaking - no players in lobby");
+            return;
+        }
+
+        Debug.Log($"Starting matchmaking with {partyLobby.Players.Count} players");
+
         try
         {
+            // Set searching state early to prevent double-execution
+            isSearching = true;
+
             // Save original party information before matchmaking
-            if (partyLobby != null)
+            originalPartyInfo = new OriginalPartyInfo
             {
-                originalPartyInfo = new OriginalPartyInfo
-                {
-                    originalLeaderId = partyLobby.HostId,
-                    originalMemberIds = partyLobby.Players.Select(p => p.Id).ToList(),
-                    originalLobbyType = currentLobbyType,
-                    originalLobbyData = new Dictionary<string, DataObject>(partyLobby.Data),
-                    originalLobbyName = partyLobby.Name,
-                    originalIsPrivate = partyLobby.IsPrivate,
-                    originalMaxPlayers = partyLobby.MaxPlayers
-                };
-                expectedMatchmakingPlayers = partyLobby.Players.Count * 2; // Assuming we'll match against another team
-            }
+                originalLeaderId = partyLobby.HostId,
+                originalMemberIds = partyLobby.Players.Select(p => p.Id).ToList(),
+                originalLobbyType = currentLobbyType,
+                originalLobbyData = new Dictionary<string, DataObject>(partyLobby.Data),
+                originalLobbyName = partyLobby.Name,
+                originalIsPrivate = partyLobby.IsPrivate,
+                originalMaxPlayers = partyLobby.MaxPlayers
+            };
+            expectedMatchmakingPlayers = partyLobby.Players.Count * 2; // Assuming we'll match against another team
 
             originalPartyLobby = partyLobby;
             isInMatchmakingGame = true; // Set to true when entering matchmaking
@@ -979,10 +1074,16 @@ public class LobbyController : MonoBehaviour
                 throw new Exception("No players available for matchmaking");
             }
 
+            Debug.Log($"Creating matchmaking ticket with {matchmakerPlayers.Count} players");
             createTicketResponse = await MatchmakerService.Instance.CreateTicketAsync(matchmakerPlayers, new CreateTicketOptions("StandardsQueue"));
-            partyMatchmakerTicketId = createTicketResponse.Id;
+            
+            if (createTicketResponse == null || string.IsNullOrEmpty(createTicketResponse.Id))
+            {
+                throw new Exception("Failed to create matchmaking ticket - response is null or empty");
+            }
 
-            isSearching = true;
+            partyMatchmakerTicketId = createTicketResponse.Id;
+            Debug.Log($"Matchmaking ticket created successfully: {partyMatchmakerTicketId}");
 
             // Update lobby data to notify all players that matchmaking has started
             var matchmakingUpdateOptions = new UpdateLobbyOptions();
@@ -993,9 +1094,12 @@ public class LobbyController : MonoBehaviour
             lobbyUI.ShowMatchmakingBarUI(CancelMatchmaking);
 
             StartCoroutine(PollMatchmakerTicketRoutine());
+            
+            Debug.Log("Matchmaking initialization completed successfully");
         }
         catch (Exception ex)
         {
+            Debug.LogError($"Error in FindMatch: {ex.Message}");
             HandleMatchmakingError("FindMatch initialization", ex);
         }
     }
@@ -1038,62 +1142,77 @@ public class LobbyController : MonoBehaviour
             return;
         }
 
+        if (!isPartyLeader)
+        {
+            Debug.Log("Only the party leader can cancel matchmaking");
+            // TODO: Show user message: "Only the party leader can cancel matchmaking"
+            return;
+        }
+
+        Debug.Log("Cancelling matchmaking initiated by party leader");
+
         try
         {
-            if (isPartyLeader)
+            // Always reset searching state first to prevent UI issues
+            isSearching = false;
+
+            // Delete the matchmaking ticket
+            await DeleteMatchmakingTicket();
+
+            // Reset leader-specific state
+            createTicketResponse = null;
+            isInMatchmakingGame = false;
+
+            // Remove RequestedTeam field
+            if (partyLobby != null && partyLobby.Data.ContainsKey("RequestedTeam"))
             {
-                if (!string.IsNullOrEmpty(partyMatchmakerTicketId))
-                {
-                    await MatchmakerService.Instance.DeleteTicketAsync(partyMatchmakerTicketId);
-                    Debug.Log("Matchmaker ticket deleted successfully");
-                }
-
-                createTicketResponse = null;
-                partyMatchmakerTicketId = null;
-                isInMatchmakingGame = false;
-
-                // Remove RequestedTeam field
-                if (partyLobby != null && partyLobby.Data.ContainsKey("RequestedTeam"))
+                try
                 {
                     var updateOptions = new UpdateLobbyOptions();
                     updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
                     updateOptions.Data.Remove("RequestedTeam");
-                    UpdateLobbyData(updateOptions);
+                    await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, updateOptions);
+                    Debug.Log("Removed RequestedTeam from lobby data");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"Error removing RequestedTeam from lobby: {ex.Message}");
                 }
             }
 
-            // Tutti (leader e client) aggiornano lo stato della lobby per fermare il matchmaking
-            if (partyLobby != null)
+            // Update lobby status to stop matchmaking for all players
+            await UpdateLobbyMatchmakingStatus("stopped");
+
+            // Hide matchmaking UI
+            try
             {
-                var matchmakingUpdateOptions = new UpdateLobbyOptions();
-                matchmakingUpdateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
-                matchmakingUpdateOptions.Data["MatchmakingStatus"] = new DataObject(DataObject.VisibilityOptions.Member, "stopped");
-                await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, matchmakingUpdateOptions);
+                lobbyUI?.HideMatchmakingBarUI();
+            }
+            catch (Exception uiEx)
+            {
+                Debug.LogWarning($"Error hiding matchmaking UI: {uiEx.Message}");
             }
 
-            isSearching = false;
-            lobbyUI.HideMatchmakingBarUI();
-            Debug.Log($"Matchmaking cancelled successfully by {(isPartyLeader ? "leader" : "party member")}");
+            Debug.Log("Matchmaking cancelled successfully by party leader");
         }
         catch (Exception ex)
         {
             Debug.LogError($"Error cancelling matchmaking: {ex.Message}");
 
+            // Ensure state is reset even if cleanup fails
             isSearching = false;
-            if (isPartyLeader)
-            {
-                createTicketResponse = null;
-                partyMatchmakerTicketId = null;
-                isInMatchmakingGame = false;
-            }
+            createTicketResponse = null;
+            partyMatchmakerTicketId = null;
+            isInMatchmakingGame = false;
 
+            // Try to hide UI even if other operations failed
             try
             {
-                lobbyUI.HideMatchmakingBarUI();
+                lobbyUI?.HideMatchmakingBarUI();
             }
             catch (Exception uiEx)
             {
-                Debug.LogWarning($"Error hiding matchmaking UI: {uiEx.Message}");
+                Debug.LogWarning($"Error hiding matchmaking UI during error recovery: {uiEx.Message}");
             }
         }
     }
