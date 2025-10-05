@@ -12,6 +12,8 @@ public class HeldItemPicker : MonoBehaviour
     [SerializeField] private ToggleGroup toggleGroup;
     [SerializeField] private TMP_Dropdown categoryDropdown;
 
+    [SerializeField] private HeldItemsWarning heldItemsWarning;
+
     public System.Action<HeldItemInfo> OnItemPicked;
 
     public void InitializeIcons(HeldItemInfo selectedItem)
@@ -70,10 +72,31 @@ public class HeldItemPicker : MonoBehaviour
 
     public void OnConfirm()
     {
+        var selectedCharacter = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["SelectedCharacter"].Value));
         var activeToggle = toggleGroup.GetFirstActiveToggle();
         var itemIcon = activeToggle.GetComponent<HeldItemIcon>();
+        var selectedItem = itemIcon.ItemInfo;
 
-        OnItemPicked?.Invoke(itemIcon.ItemInfo);
+        if (selectedItem.damageType == selectedCharacter.DamageType || selectedItem.damageType == DamageType.True)
+        {
+            OnItemPicked?.Invoke(selectedItem);
+        }
+        else
+        {
+            heldItemsWarning.ShowWarning(selectedItem, selectedCharacter);
+            heldItemsWarning.OnDecisionMade += OnWarningDecision;
+        }
+    }
+
+    private void OnWarningDecision(bool confirmed)
+    {
+        heldItemsWarning.OnDecisionMade -= OnWarningDecision;
+        if (confirmed)
+        {
+            var activeToggle = toggleGroup.GetFirstActiveToggle();
+            var itemIcon = activeToggle.GetComponent<HeldItemIcon>();
+            OnItemPicked?.Invoke(itemIcon.ItemInfo);
+        }
     }
 
     public HeldItemInfo GetSelectedItem()

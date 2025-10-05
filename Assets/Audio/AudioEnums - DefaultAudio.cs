@@ -232,7 +232,8 @@
         snd_wanfa_KeDaYa19,
         snd_wanfa_KeDaYa20,
         snd_wanfa_KeDaYa21,
-        Final_Stretch_Begin
+        Final_Stretch_Begin,
+        TimesUp
     }
     public enum DefaultAudioMusic {
         RemoatStadium,

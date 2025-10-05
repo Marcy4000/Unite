@@ -44,6 +44,7 @@ public class CharacterSelectController : NetworkBehaviour
     private bool isLoading = false;
     private bool startTimer = false;
     private bool hasSelectedCharacter = false;
+    private bool skipPreviewPhase = false;
 
     private int lastValue = 0;
 
@@ -119,6 +120,9 @@ public class CharacterSelectController : NetworkBehaviour
         pokemonInfo.gameObject.SetActive(false);
 
         trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
+
+        skipPreviewPhase = CharactersList.Instance.GetCurrentLobbyMap().customProperties.Find(x => x.HasProperty("skipPreparationPhaseBlind")) != null;
+
         LoadingScreen.Instance.HideGameBeginScreen();
     }
 
@@ -192,6 +196,13 @@ public class CharacterSelectController : NetworkBehaviour
                     switch (currentPhase.Value)
                     {
                         case CharacterSelectPhase.Selection:
+                            if (skipPreviewPhase)
+                            {
+                                ShowLoadingScreenRpc();
+                                LobbyController.Instance.LoadGameMap();
+                                isLoading = true;
+                                break;
+                            }
                             currentPhase.Value = CharacterSelectPhase.Preview;
                             selectionTimer.Value = PREVIEW_TIME;
                             break;

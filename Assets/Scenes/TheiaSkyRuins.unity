@@ -14,7 +14,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -43,8 +43,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
-  m_GIWorkflowMode: 1
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -67,9 +67,6 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -808,6 +805,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 564e9b1c74238ea4e99eec2ef15664b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 2
   maxTier: 2
 --- !u!114 &21986129
@@ -824,6 +822,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3286534909
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -831,6 +831,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!4 &21986130
 Transform:
   m_ObjectHideFlags: 0
@@ -1975,27 +1977,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[0]
+      propertyPath: 'specificRespawnTimes.Array.data[0]'
       value: 440
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[1]
+      propertyPath: 'specificRespawnTimes.Array.data[1]'
       value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[2]
+      propertyPath: 'specificRespawnTimes.Array.data[2]'
       value: 260
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[3]
+      propertyPath: 'specificRespawnTimes.Array.data[3]'
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[4]
+      propertyPath: 'specificRespawnTimes.Array.data[4]'
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 6117068307995205873, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
@@ -2363,27 +2365,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[0]
+      propertyPath: 'specificRespawnTimes.Array.data[0]'
       value: 440
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[1]
+      propertyPath: 'specificRespawnTimes.Array.data[1]'
       value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[2]
+      propertyPath: 'specificRespawnTimes.Array.data[2]'
       value: 260
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[3]
+      propertyPath: 'specificRespawnTimes.Array.data[3]'
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[4]
+      propertyPath: 'specificRespawnTimes.Array.data[4]'
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 6117068307995205873, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
@@ -4160,6 +4162,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f0fc4a569957d44c9025f44a31f95a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   wallCollider: {fileID: 1730894321}
   team: 2
 --- !u!114 &481361119
@@ -4176,6 +4179,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3747553919
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -4183,6 +4188,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!135 &481361120
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -4404,27 +4411,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[0]
+      propertyPath: 'specificRespawnTimes.Array.data[0]'
       value: 440
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[1]
+      propertyPath: 'specificRespawnTimes.Array.data[1]'
       value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[2]
+      propertyPath: 'specificRespawnTimes.Array.data[2]'
       value: 260
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[3]
+      propertyPath: 'specificRespawnTimes.Array.data[3]'
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[4]
+      propertyPath: 'specificRespawnTimes.Array.data[4]'
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 6117068307995205873, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
@@ -4720,27 +4727,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[0]
+      propertyPath: 'specificRespawnTimes.Array.data[0]'
       value: 440
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[1]
+      propertyPath: 'specificRespawnTimes.Array.data[1]'
       value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[2]
+      propertyPath: 'specificRespawnTimes.Array.data[2]'
       value: 260
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[3]
+      propertyPath: 'specificRespawnTimes.Array.data[3]'
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[4]
+      propertyPath: 'specificRespawnTimes.Array.data[4]'
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 6117068307995205873, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
@@ -6161,6 +6168,11 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1759168526717159736, guid: 2706dd02067078547b84fbe105b7b406,
+        type: 3}
+      propertyPath: showFinalSeconds
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2052691080799001447, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -6364,22 +6376,22 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
-      propertyPath: notificationTimes.Array.data[0]
+      propertyPath: 'notificationTimes.Array.data[0]'
       value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
-      propertyPath: notificationTimes.Array.data[1]
+      propertyPath: 'notificationTimes.Array.data[1]'
       value: 420
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
-      propertyPath: notificationTimes.Array.data[2]
+      propertyPath: 'notificationTimes.Array.data[2]'
       value: 483
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
-      propertyPath: notificationTimes.Array.data[3]
+      propertyPath: 'notificationTimes.Array.data[3]'
       value: 540
       objectReference: {fileID: 0}
     - target: {fileID: 7597068249424976980, guid: 2706dd02067078547b84fbe105b7b406,
@@ -6829,6 +6841,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3188273281
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -6836,6 +6850,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &846775552 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1867253741642132604, guid: c4c8d82ad8847604ea151d60ccf73499,
@@ -6881,6 +6897,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 2
   laneID: 1
   tier: 2
@@ -7006,6 +7023,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 587153802
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -7013,6 +7032,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &859665456 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8004881405142623434, guid: e318c4cd213b8774fb6c958bfc38acb7,
@@ -7058,6 +7079,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 2
   laneID: 0
   tier: 2
@@ -7468,27 +7490,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[0]
+      propertyPath: 'specificRespawnTimes.Array.data[0]'
       value: 440
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[1]
+      propertyPath: 'specificRespawnTimes.Array.data[1]'
       value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[2]
+      propertyPath: 'specificRespawnTimes.Array.data[2]'
       value: 260
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[3]
+      propertyPath: 'specificRespawnTimes.Array.data[3]'
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[4]
+      propertyPath: 'specificRespawnTimes.Array.data[4]'
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 6117068307995205873, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
@@ -7678,6 +7700,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 918912416
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -7685,6 +7709,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &928465684 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -8350833982809667612, guid: 8be72a55f349a5340a599c8db6218abd,
@@ -7730,6 +7756,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 2
   laneID: 1
   tier: 1
@@ -10413,27 +10440,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[0]
+      propertyPath: 'specificRespawnTimes.Array.data[0]'
       value: 440
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[1]
+      propertyPath: 'specificRespawnTimes.Array.data[1]'
       value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[2]
+      propertyPath: 'specificRespawnTimes.Array.data[2]'
       value: 260
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[3]
+      propertyPath: 'specificRespawnTimes.Array.data[3]'
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[4]
+      propertyPath: 'specificRespawnTimes.Array.data[4]'
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 6117068307995205873, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
@@ -10980,27 +11007,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[0]
+      propertyPath: 'specificRespawnTimes.Array.data[0]'
       value: 440
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[1]
+      propertyPath: 'specificRespawnTimes.Array.data[1]'
       value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[2]
+      propertyPath: 'specificRespawnTimes.Array.data[2]'
       value: 260
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[3]
+      propertyPath: 'specificRespawnTimes.Array.data[3]'
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[4]
+      propertyPath: 'specificRespawnTimes.Array.data[4]'
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 6117068307995205873, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
@@ -11443,6 +11470,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3920225754
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -11450,6 +11479,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &1331736381 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -4604562303559515667, guid: 1f641968e270fb140b4f4414500b3dc4,
@@ -11495,6 +11526,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 1
   laneID: 1
   tier: 2
@@ -13025,17 +13057,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6319296174482197662, guid: f45e8ddd37f3ae94e93f52f39c370445,
         type: 3}
-      propertyPath: laneAnimations.Array.data[0]
+      propertyPath: 'laneAnimations.Array.data[0]'
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6319296174482197662, guid: f45e8ddd37f3ae94e93f52f39c370445,
         type: 3}
-      propertyPath: laneAnimations.Array.data[1]
+      propertyPath: 'laneAnimations.Array.data[1]'
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6319296174482197662, guid: f45e8ddd37f3ae94e93f52f39c370445,
         type: 3}
-      propertyPath: laneAnimations.Array.data[2]
+      propertyPath: 'laneAnimations.Array.data[2]'
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7850036001488567439, guid: f45e8ddd37f3ae94e93f52f39c370445,
@@ -14242,6 +14274,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f0fc4a569957d44c9025f44a31f95a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   wallCollider: {fileID: 1294974677}
   team: 1
 --- !u!114 &1624565906
@@ -14258,6 +14291,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 593400297
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -14265,6 +14300,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!135 &1624565907
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -14783,7 +14820,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -1644866990697475941, guid: 337422d41b129894ea000531c8e37812,
         type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: cf1204af2b2896f468115c7b845d71b8, type: 2}
     - target: {fileID: 919132149155446097, guid: 337422d41b129894ea000531c8e37812,
@@ -15403,6 +15440,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3507839331
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -15410,6 +15449,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &1786801774 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 621813543302890880, guid: 16f83aeeca2910a4fa5dd66a34416a6e,
@@ -15455,6 +15496,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 1
   laneID: 1
   tier: 1
@@ -15580,6 +15622,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1317162998
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -15587,6 +15631,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &1814476968 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1867253741642132604, guid: 3380879259edda548bb5b1772c8d158e,
@@ -15632,6 +15678,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 1
   laneID: 0
   tier: 2
@@ -15666,6 +15713,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 564e9b1c74238ea4e99eec2ef15664b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 1
   maxTier: 2
 --- !u!114 &1826637139
@@ -15682,6 +15730,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3719582370
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -15689,6 +15739,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!4 &1826637140
 Transform:
   m_ObjectHideFlags: 0
@@ -16042,27 +16094,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[0]
+      propertyPath: 'specificRespawnTimes.Array.data[0]'
       value: 440
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[1]
+      propertyPath: 'specificRespawnTimes.Array.data[1]'
       value: 350
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[2]
+      propertyPath: 'specificRespawnTimes.Array.data[2]'
       value: 260
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[3]
+      propertyPath: 'specificRespawnTimes.Array.data[3]'
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 2934861429025033875, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
         type: 3}
-      propertyPath: specificRespawnTimes.Array.data[4]
+      propertyPath: 'specificRespawnTimes.Array.data[4]'
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 6117068307995205873, guid: 5fb3c256d3a54884ca13c7bb548c61f6,
@@ -17125,6 +17177,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 4166143202
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -17132,6 +17186,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &1917291884
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17144,6 +17200,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 1
   laneID: 0
   tier: 1
@@ -17694,6 +17751,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1904781295
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -17701,6 +17760,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &2010738203 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -8350833982809667612, guid: dc8685def2cf1df4fb3a26ceb5425619,
@@ -17746,6 +17807,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea88bf5c7ba0b414eaa3575135cd51a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   team: 2
   laneID: 0
   tier: 1

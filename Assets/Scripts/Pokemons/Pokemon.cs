@@ -1062,7 +1062,7 @@ public class Pokemon : NetworkBehaviour
         Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
 
         int localHp = currentHp.Value;
-        List<ShieldInfo> localShields = GetShieldsAsList();
+        List<ShieldInfo> localShields = shields.AsNativeArray().ToList();
 
         if (damage.proprieties.HasFlag(DamageProprieties.CanCrit))
         {
@@ -1356,18 +1356,6 @@ public class Pokemon : NetworkBehaviour
         return null;
     }
 
-    private List<ShieldInfo> GetShieldsAsList()
-    {
-        List<ShieldInfo> shieldList = new List<ShieldInfo>();
-
-        foreach (ShieldInfo shield in shields)
-        {
-            shieldList.Add(shield);
-        }
-
-        return shieldList;
-    }
-
     private int GetShieldsAsInt()
     {
         int shieldAmount = 0;
@@ -1383,7 +1371,7 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void UpdateShieldListRPC(ShieldInfo[] newShields)
     {
-        List<ShieldInfo> oldShields = GetShieldsAsList();
+        List<ShieldInfo> oldShields = shields.AsNativeArray().ToList();
 
         List<ShieldInfo> filteredShields = new List<ShieldInfo>(newShields);
         filteredShields.RemoveAll(shield => shield.Amount == 0);

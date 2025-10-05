@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -34,6 +35,8 @@ public class MapInfo : ScriptableObject
     public float finalStretchTime;
     [Tooltip("Maximum score achievable.")]
     public ushort maxScore;
+    [Tooltip("Additional custom properties for the map.")]
+    public List<CustomMapProperties> customProperties = new List<CustomMapProperties>();
 
     [Space]
     [Header("Audio")]
@@ -102,4 +105,16 @@ public enum StartRestriction : byte
     None,
     SameTeamSizes,
     FullTeams
+}
+
+[System.Serializable]
+public class CustomMapProperties
+{
+    public string key;
+    public string value;
+
+    public bool HasProperty(string checkKey)
+    {
+        return key == checkKey;
+    }
 }
