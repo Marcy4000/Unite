@@ -176,16 +176,14 @@ public class WildPokemonSpawner : NetworkBehaviour
         // --- Despawning ---
         if (despawnTime != Mathf.Infinity && GameManager.Instance.GameTime >= despawnTime)
         {
-            // Check if pokemon exists before trying to despawn
             if (wildPokemon != null)
             {
-                DespawnPokemon(false); // Despawn permanently
+                DespawnPokemon(false);
             }
-            // Prevent further spawning attempts by setting time to infinity
             despawnTime = Mathf.Infinity;
             firstSpawnTime = Mathf.Infinity;
-            respawnType = RespawnType.NoRespawn; // Ensure no respawn
-            return; // Exit update after despawning
+            respawnType = RespawnType.NoRespawn;
+            return;
         }
 
         // --- Initial Spawning ---
@@ -193,12 +191,11 @@ public class WildPokemonSpawner : NetworkBehaviour
         {
             SpawnPokemon();
             spawnedFirstTime = true;
-            firstSpawnTime = Mathf.Infinity; // Prevent re-triggering initial spawn
+            firstSpawnTime = Mathf.Infinity;
         }
 
         // --- Respawning ---
-        // Only process respawn logic if the first spawn happened AND pokemon is not currently spawned
-        if (spawnedFirstTime && wildPokemon == null) // Use wildPokemon null check on server
+        if (spawnedFirstTime)
         {
             switch (respawnType)
             {
@@ -219,7 +216,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     private void HandleTimedRespawn()
     {
-        if (timer <= 0) return;
+        if (timer <= 0 || wildPokemon != null) return;
 
         timer -= Time.deltaTime;
         if (timer <= 0)

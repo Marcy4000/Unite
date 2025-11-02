@@ -32,7 +32,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 3000
   stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
@@ -107,6 +107,7 @@ Material:
     m_Floats:
     - _AddlightAttenuation: 1
     - _AddlightLerp: 0.5
+    - _AddlightScale: 1
     - _AlphaClip: 0
     - _AlphaToMask: 0
     - _AtVector: 0
@@ -124,30 +125,31 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _DstBlendFactor: 0
-    - _Emissive: 1
+    - _Emissive: 0.157
     - _EmisssionScale: 1
     - _EnvironmentReflections: 1
+    - _FresnelFactor: 0
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _MainlightAttenuation: 0.04
+    - _MainlightAttenuation: 3
     - _Mask: 1
     - _Metallic: 0
     - _MetallicOffset: 0
     - _NormalScale: 1
     - _OcclusionStrength: 1
     - _Offset: -5
-    - _OutlineWidth: 0.004629
+    - _OutlineWidth: 0.002
     - _Parallax: 0.005
-    - _Queue: 2000
+    - _Queue: 3000
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RimlightAttenuation: 0.04
     - _RimlightScale: 1
     - _RimlightScale2: 1.5
     - _RimlightShadowScale: 0.5
-    - _RoughNessOffset: 0
-    - _SHScale: 1
+    - _RoughNessOffset: 1
+    - _SHScale: 2.21
     - _SHType: 1
     - _ShadowOffset: 0
     - _ShadowPow: 1
@@ -175,18 +177,20 @@ Material:
     - _faceshadowScale: 0
     m_Colors:
     - _AddLightDir: {r: 0, g: 1, b: 0, a: 0}
-    - _AddlightColor: {r: 0, g: 0, b: 0, a: 1}
+    - _AddlightColor: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _FresnelColor: {r: 1, g: 1, b: 1, a: 1}
     - _OutlineColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _RimLightDir: {r: 0, g: 1, b: 0, a: 0}
-    - _RimlightColor: {r: 1, g: 1, b: 1, a: 1}
-    - _SHBotColor: {r: 2.5, g: 2.5, b: 2.5, a: 1}
+    - _RimlightColor: {r: 1, g: 0, b: 0, a: 1}
+    - _SHBotColor: {r: 0.42745098, g: 0.18039216, b: 0.18039216, a: 1}
     - _SHColorScale: {r: 1, g: 1, b: 1, a: 1}
-    - _SHTopColor: {r: 2.5, g: 2.5, b: 2.5, a: 1}
+    - _SHTopColor: {r: 0.48235294, g: 0.44313726, b: 0.39215687, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
-    - _colorSkin: {r: 1, g: 1, b: 1, a: 1}
+    - _SpecularColor: {r: 8, g: 8, b: 8, a: 1}
+    - _colorSkin: {r: 0.48235, g: 0.44314, b: 0.39216, a: 1}
     - _lightDir: {r: 9.48, g: 3.68, b: 0, a: 0}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

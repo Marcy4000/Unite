@@ -887,5 +887,4 @@ Shader "PGAME_URP/LobbyPlayer/m_lob_playerpbrSkin_lv3"
         }
     }
     FallBack "Universal Render Pipeline/Lit" // Fallback to standard URP Lit
-    CustomEditor "UnityEditor.CustomExtension.ShaderFixedPropGUI" // If this custom editor is still needed/compatible
 }

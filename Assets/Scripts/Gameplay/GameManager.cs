@@ -331,7 +331,7 @@ public class GameManager : NetworkBehaviour
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 if (Keyboard.current.oKey.wasPressedThisFrame)
                 {
-                    gameTime.Value = MAX_GAME_TIME - 15;
+                    gameTime.Value = MAX_GAME_TIME;
                 }
                 if (Keyboard.current.iKey.wasPressedThisFrame)
                 {
