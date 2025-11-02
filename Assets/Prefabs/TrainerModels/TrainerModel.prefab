@@ -78,16 +78,11 @@ MonoBehaviour:
   - {fileID: 8770728359771492413}
   - {fileID: 2433080820014963050}
   skinColors:
-  - serializedVersion: 2
-    rgba: 4290371581
-  - serializedVersion: 2
-    rgba: 4289652223
-  - serializedVersion: 2
-    rgba: 4285115616
-  - serializedVersion: 2
-    rgba: 4282549958
-  - serializedVersion: 2
-    rgba: 4281293193
+  - {r: 1.58039, g: 1.2, b: 0.94902, a: 0}
+  - {r: 1.58039, g: 1.19216, b: 1.10196, a: NaN}
+  - {r: 0.48235, g: 0.44314, b: 0.39216, a: NaN}
+  - {r: 0.2, g: 0.18039, b: 0.18039, a: NaN}
+  magicColor: {r: 0.42745098, g: 0.18039216, b: 0.18039216, a: 1}
 --- !u!1 &6518843607824900754
 GameObject:
   m_ObjectHideFlags: 0
@@ -143,6 +138,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -231,15 +229,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 0
   m_isCullingEnabled: 0
@@ -654,6 +654,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalRotation.z
       value: 0.051736873
+      objectReference: {fileID: 0}
+    - target: {fileID: -4901911504706558195, guid: a035e7126e07bcc4090de0a94b5496bc,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -4789621265221823208, guid: a035e7126e07bcc4090de0a94b5496bc,
         type: 3}
@@ -4155,6 +4160,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: pref_char_lob_9002_female
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: c437a457fb70ebd44b45b233065f0381,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 997671016606115008, guid: c437a457fb70ebd44b45b233065f0381,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -5141,7 +5151,7 @@ MonoBehaviour:
   - {fileID: 8032473845075135029}
 --- !u!95 &1624441507895225461
 Animator:
-  serializedVersion: 5
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -5155,6 +5165,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -12727,7 +12738,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
 --- !u!95 &6077322137928482364
 Animator:
-  serializedVersion: 5
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -12741,6 +12752,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1

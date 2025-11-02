@@ -20,7 +20,9 @@ public class TrainerModel : MonoBehaviour
     [SerializeField] private Transform[] clothingHoldersMale;
     [SerializeField] private Transform[] clothingHoldersFemale;
 
-    [SerializeField] private Color32[] skinColors; 
+    
+    [SerializeField][ColorUsage(false, true)] private Color[] skinColors;
+    [SerializeField][ColorUsage(false, true)] private Color magicColor;
 
     private Transform[] clothingHolders => isMale ? clothingHoldersMale : clothingHoldersFemale;
     private Animator activeAnimator => isMale ? maleAnimator : femaleAnimator;
@@ -346,23 +348,39 @@ public class TrainerModel : MonoBehaviour
 
                         if (matName.Contains("body") || matName.Contains("head") || matName.Contains("000hand"))
                         {
-                            material.SetColor("_BaseColor", skinColors[info.SkinColor % skinColors.Length]);
+                            material.SetColor("_colorSkin", skinColors[info.SkinColor % skinColors.Length]);
+                            material.SetColor("_SHTopColor", skinColors[info.SkinColor % skinColors.Length]);
+                            material.SetColor("_SHBotColor", magicColor);
+
+                            material.SetFloat("_AtVector", 0f);
+                            material.SetFloat("_SHScale", 2.21f);
+                            material.SetFloat("_Emissive", 0.157f);
                         }
                         else if (matName.Contains("hair") || matName.Contains("shadow"))
                         {
-                            material.SetColor("_BaseColor", info.HairColor);
+                            Color hairCol = ConvertColor32ToHDR(info.HairColor, 1f);
+                            material.SetColor("_colorSkin", hairCol);
+                            material.SetColor("_SHTopColor", hairCol);
+                            material.SetColor("_SHBotColor", hairCol);
                         }
                         else if (matName.Contains("eye0"))
                         {
                             material.SetColor("_BaseColor", info.EyeColor);
                         }
-
-                        material.SetFloat("_Metallic", 0.0f);
-                        material.SetFloat("_Smoothness", 0.1f);
                     }
                 }
             }
         }
+    }
+
+    private Color ConvertColor32ToHDR(Color32 c, float intensity = 1f)
+    {
+        float r = c.r / 255f;
+        float g = c.g / 255f;
+        float b = c.b / 255f;
+        float a = c.a / 255f;
+
+        return new Color(r * intensity, g * intensity, b * intensity, a);
     }
 
     public Transform GetChildToSync(Transform parent)
