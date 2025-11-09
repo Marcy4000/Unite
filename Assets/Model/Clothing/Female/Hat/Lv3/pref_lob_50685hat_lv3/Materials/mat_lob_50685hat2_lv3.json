@@ -1,12 +1,28 @@
 {
   "m_Shader": {
     "m_FileID": 4,
-    "m_PathID": -193782614478375301,
-    "Name": "==PGAME==/LobbyPlayer/m_lob_PlayerPBR_Fur_lv3",
+    "m_PathID": 6537265225368694256,
+    "Name": "==PGAME==/LobbyPlayer/m_lob_playerpbr_lv3",
     "IsNull": false
   },
   "m_SavedProperties": {
     "m_TexEnvs": {
+      "_BumpMap2": {
+        "m_Texture": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
+        },
+        "m_Scale": {
+          "X": 1.0,
+          "Y": 1.0
+        },
+        "m_Offset": {
+          "X": 0.0,
+          "Y": 0.0
+        }
+      },
       "_BumpMapNr": {
         "m_Texture": {
           "m_FileID": 3,
@@ -23,27 +39,11 @@
           "Y": 0.0
         }
       },
-      "_FurLengthTex": {
-        "m_Texture": {
-          "m_FileID": 0,
-          "m_PathID": 0,
-          "Name": "",
-          "IsNull": true
-        },
-        "m_Scale": {
-          "X": 1.0,
-          "Y": 1.0
-        },
-        "m_Offset": {
-          "X": 0.0,
-          "Y": 0.0
-        }
-      },
       "_MainTex": {
         "m_Texture": {
           "m_FileID": 3,
-          "m_PathID": 6879266405282671058,
-          "Name": "t_d_lob_50685hat_lv3",
+          "m_PathID": 7104423501765620808,
+          "Name": "t_i_lob_50685hat_lv3",
           "IsNull": false
         },
         "m_Scale": {
@@ -55,16 +55,48 @@
           "Y": 0.0
         }
       },
-      "_NoiseTex": {
+      "_MatTex": {
         "m_Texture": {
           "m_FileID": 3,
-          "m_PathID": 1237601171663022505,
-          "Name": "t_noise_50684a",
+          "m_PathID": -5705201955707213468,
+          "Name": "t_matcap_50684hat",
           "IsNull": false
         },
         "m_Scale": {
-          "X": 4.0,
-          "Y": 4.0
+          "X": 1.0,
+          "Y": 1.0
+        },
+        "m_Offset": {
+          "X": 0.0,
+          "Y": 0.0
+        }
+      },
+      "_MatcapTex": {
+        "m_Texture": {
+          "m_FileID": 5,
+          "m_PathID": 1041517653644219279,
+          "Name": "t_mipmap03",
+          "IsNull": false
+        },
+        "m_Scale": {
+          "X": 1.0,
+          "Y": 1.0
+        },
+        "m_Offset": {
+          "X": 0.0,
+          "Y": 0.0
+        }
+      },
+      "_MixMap": {
+        "m_Texture": {
+          "m_FileID": 3,
+          "m_PathID": -2815413781437623982,
+          "Name": "t_m_lob_50684hat_lv3",
+          "IsNull": false
+        },
+        "m_Scale": {
+          "X": 1.0,
+          "Y": 1.0
         },
         "m_Offset": {
           "X": 0.0,
@@ -77,6 +109,22 @@
           "m_PathID": 7104423501765620808,
           "Name": "t_i_lob_50685hat_lv3",
           "IsNull": false
+        },
+        "m_Scale": {
+          "X": 1.0,
+          "Y": 1.0
+        },
+        "m_Offset": {
+          "X": 0.0,
+          "Y": 0.0
+        }
+      },
+      "_RampTex": {
+        "m_Texture": {
+          "m_FileID": 0,
+          "m_PathID": 0,
+          "Name": "",
+          "IsNull": true
         },
         "m_Scale": {
           "X": 1.0,
@@ -115,11 +163,11 @@
       "_GlossMapScale": 0.0,
       "_Glossiness": 0.0,
       "_GlossyReflections": 0.0,
-      "_IFMAT": 0.0,
+      "_IFMAT": 1.0,
       "_IFRAMP": 0.0,
       "_IsBag": 0.0,
       "_MaskOn": 1.0,
-      "_Matcap": 0.0,
+      "_Matcap": 1.0,
       "_Metallic": 0.0,
       "_MetallicOffset": 0.0,
       "_NearWidth": 0.5,
@@ -197,15 +245,15 @@
         "a": 0.0
       },
       "_MatTexColor": {
-        "r": 2.0,
-        "g": 2.0,
-        "b": 2.0,
+        "r": 2.9960785,
+        "g": 2.1803923,
+        "b": 1.3019608,
         "a": 0.0
       },
       "_MatcapColor": {
-        "r": 4.84,
-        "g": 4.84,
-        "b": 4.84,
+        "r": 4.509837,
+        "g": 4.2028847,
+        "b": 3.211193,
         "a": 0.0
       },
       "_OutlineColor": {

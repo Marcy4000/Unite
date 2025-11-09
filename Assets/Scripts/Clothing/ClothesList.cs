@@ -36,7 +36,7 @@ public class ClothesList : MonoBehaviour
         return null;
     }
 
-    public byte GetClothingIndex(ClothingType clothingType, ClothingItem item, bool isMale)
+    public ushort GetClothingIndex(ClothingType clothingType, ClothingItem item, bool isMale)
     {
         List<ClothingTypeList> clothesList = isMale ? maleClothes : femaleClothes;
 
@@ -44,7 +44,7 @@ public class ClothesList : MonoBehaviour
         {
             if (list.clothingType == clothingType)
             {
-                return (byte)list.clothingItems.IndexOf(item);
+                return (ushort)list.clothingItems.IndexOf(item);
             }
         }
 

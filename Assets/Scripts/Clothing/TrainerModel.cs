@@ -359,13 +359,13 @@ public class TrainerModel : MonoBehaviour
                         else if (matName.Contains("hair") || matName.Contains("shadow"))
                         {
                             Color hairCol = ConvertColor32ToHDR(info.HairColor, 1f);
-                            material.SetColor("_colorSkin", hairCol);
-                            material.SetColor("_SHTopColor", hairCol);
-                            material.SetColor("_SHBotColor", hairCol);
+                            material.SetColor("_color1", hairCol);
+                            material.SetColor("_color2", hairCol);
                         }
                         else if (matName.Contains("eye0"))
                         {
-                            material.SetColor("_BaseColor", info.EyeColor);
+                            material.SetColor("_color1", info.EyeColor);
+                            material.SetColor("_color2", info.EyeColor);
                         }
                     }
                 }

@@ -118,7 +118,8 @@ public class SockFixerUI : MonoBehaviour
 
                 _handle.Completed += OnSpriteLoaded;
             }
-            else
+            
+            if (clothingItems[currentItemIndex].prefabs.Count > 0 && clothingItems[currentItemIndex].prefabs[0].RuntimeKeyIsValid())
             {
                 _modelHandle = Addressables.LoadAssetAsync<GameObject>(clothingItems[currentItemIndex].prefabs[0]);
 

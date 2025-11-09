@@ -8,14 +8,16 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: mat_lob_40310hair_lv3
-  m_Shader: {fileID: 4800000, guid: 11fed28517984fa47a387a6c59326663, type: 3}
+  m_Shader: {fileID: 4800000, guid: 5eab7b63d49249447a825d7f76586fb1, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _ATVECTOR_Y
+  - _ATVECTOR_X
   - _DEBUG_OFF
   - _SHTYPE_LERP
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _USE_OBJECT_SPACE
+  - _VTEX_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -36,7 +38,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMapNr:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 434229a7b6580d646857e99b11aefcc1, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -55,6 +57,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _HairMap:
+        m_Texture: {fileID: 2800000, guid: 429f12fb1265d4c4a9575be19d8364e0, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 59a416b3558590a41a910e8effa35747, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -64,7 +70,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MixMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 526b6b21f7e9a36478e4b73c211a3319, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -98,29 +104,29 @@ Material:
     - _AddlightLerp: 0.5
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _AtVector: 1
+    - _AtVector: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BlendOp: 0
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _Cull: 2
+    - _Cull: 0
     - _Cutoff: 0.5
     - _Debug: 0
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _DstBlendFactor: 0
-    - _Emissive: 1
-    - _EmisssionScale: 1
+    - _DstBlendFactor: 10
+    - _Emissive: 0
+    - _EmisssionScale: 0
     - _EnvironmentReflections: 1
     - _GlossMapScale: 1
     - _Glossiness: 0.4472136
     - _GlossyReflections: 1
-    - _MainlightAttenuation: 0.04
-    - _Mask: 1
+    - _MainlightAttenuation: 10
+    - _Mask: 0
     - _Metallic: 0
     - _MetallicOffset: 0
     - _Mode: 0
@@ -137,7 +143,7 @@ Material:
     - _RimlightScale2: 1.5
     - _RimlightShadowScale: 0.5
     - _RoughNessOffset: 0
-    - _SHScale: 1
+    - _SHScale: 2
     - _SHType: 1
     - _ShadowOffset: 0
     - _ShadowPow: 1
@@ -147,7 +153,7 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _SrcBlendFactor: 1
+    - _SrcBlendFactor: 5
     - _StencilComp: 8
     - _StencilData: 0
     - _StencilFailOp: 0
@@ -157,13 +163,18 @@ Material:
     - _StencilZFailOp: 0
     - _Surface: 0
     - _UVSec: 0
+    - _UseObjectSpace: 1
     - _VCOLOR2N: 0
-    - _VTEX: 0
+    - _VTEX: 1
     - _WorkflowMode: 1
     - _ZTest: 4
     - _ZWrite: 1
     - _actorscale: 1
     - _faceshadowScale: 0
+    - _glossiness_1X: 0.092
+    - _glossiness_1Y: 0.438
+    - _glossiness_2X: 0.929
+    - _glossiness_2Y: 0.506
     m_Colors:
     - _AddLightDir: {r: 0, g: 1, b: 0, a: 0}
     - _AddlightColor: {r: 0, g: 0, b: 0, a: 1}
@@ -178,8 +189,13 @@ Material:
     - _SHTopColor: {r: 2.5, g: 2.5, b: 2.5, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _color1: {r: 1, g: 1, b: 1, a: 1}
+    - _color2: {r: 1, g: 1, b: 1, a: 1}
+    - _color3: {r: 1, g: 1, b: 1, a: 1}
     - _colorSkin: {r: 1, g: 1, b: 1, a: 1}
     - _lightDir: {r: 9.48, g: 3.68, b: 0, a: 0}
+    - _specularColor1: {r: 0.59900004, g: 0.59900004, b: 0.59900004, a: 1}
+    - _specularColor2: {r: 0.21582416, g: 0.5481235, b: 0.9150943, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &3649456749033943183

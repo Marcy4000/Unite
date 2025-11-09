@@ -12,6 +12,7 @@ Shader "PGAME_URP/LobbyPlayer/m_lob_playerpbrSkin_lv3"
 
         [Header(Common)]
         _actorscale ("Actor Scale", Float) = 1
+        [Toggle(_USE_OBJECT_SPACE)] _UseObjectSpace ("Use Object Space for attenuation", Float) = 0
         [HDR] _colorSkin ("Skin Color", Color) = (1,1,1,1)
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
         _ShadowPow ("Shadow Power", Range(0.5, 10)) = 1
@@ -167,6 +168,7 @@ Shader "PGAME_URP/LobbyPlayer/m_lob_playerpbrSkin_lv3"
                 float4 _SHBotColor;
                 float4 _SHColorScale;
                 float _MainlightAttenuation;
+                float _UseObjectSpace;
                 float3 _AddLightDir;
                 float4 _AddlightColor; // alpha seems unused
                 float _AddlightLerp;
@@ -294,31 +296,36 @@ Shader "PGAME_URP/LobbyPlayer/m_lob_playerpbrSkin_lv3"
 
 
                 // Attenuation Factors based on world Y position (log/exp scaled)
-                // AttenuationVector logic (_ATVECTOR_X, _ATVECTOR_Y, _ATVECTOR_Z)
-                float heightComponent = output.positionWS.y;
-                #if defined(_ATVECTOR_X)
-                    heightComponent = output.positionWS.x;
-                #elif defined(_ATVECTOR_Z)
-                    heightComponent = output.positionWS.z;
-                #endif
-                // Ensure heightComponent is positive for log
-                float logHeight = log2(abs(heightComponent) + FLT_EPS); // Add epsilon to avoid log(0)
-
-                output.attenuationFactors.x = exp2(logHeight * _MainlightAttenuation); // Mainlight
-                output.attenuationFactors.z = exp2(logHeight * _RimlightAttenuation); // Rimlight
-
-                // Addlight Attenuation
-                // u_xlat16_4.x = _AddlightLerp * 2.0 + -1.0;
-                // u_xlat16_4.x = u_xlat16_4.x * 5.0 + u_xlat0.y; (where u_xlat0.y is worldPos.y)
-                // u_xlat16_4.x = u_xlat16_4.x * _AddlightAttenuation;
-                // u_xlat16_4.x = clamp(u_xlat16_4.x, 0.0, 1.0);
-                // vs_TEXCOORD8.y = u_xlat16_4.x * u_xlat16_4.x;
-                float addLightHeightFactor = (_AddlightLerp * 2.0 - 1.0) * 5.0 + heightComponent;
-                addLightHeightFactor = saturate(addLightHeightFactor * _AddlightAttenuation);
-                output.attenuationFactors.y = addLightHeightFactor * addLightHeightFactor; // Addlight
-
-                return output;
-            }
+                // Compensate for objects that are modeled at a different scale.
+                // Divide world-position by _actorscale so attenuation/rim/addlight behave as intended.
+                // Choose object-space or world-space for attenuation calculations.
+                float invActorScale = (abs(_actorscale) > FLT_EPS) ? (1.0 / _actorscale) : 1.0;
+                float3 posWorldScaled = output.positionWS * invActorScale;
+                float3 posForAtten = (_UseObjectSpace > 0.5) ? input.positionOS.xyz : posWorldScaled;
+                float heightComponent = posForAtten.y;
+                 #if defined(_ATVECTOR_X)
+                     heightComponent = posForAtten.x;
+                 #elif defined(_ATVECTOR_Z)
+                     heightComponent = posForAtten.z;
+                 #endif
+                 // Ensure heightComponent is positive for log
+                 float logHeight = log2(abs(heightComponent) + FLT_EPS); // Add epsilon to avoid log(0)
+ 
+                 output.attenuationFactors.x = exp2(logHeight * _MainlightAttenuation); // Mainlight
+                 output.attenuationFactors.z = exp2(logHeight * _RimlightAttenuation); // Rimlight
+ 
+                 // Addlight Attenuation
+                 // u_xlat16_4.x = _AddlightLerp * 2.0 + -1.0;
+                 // u_xlat16_4.x = u_xlat16_4.x * 5.0 + u_xlat0.y; (where u_xlat0.y is worldPos.y)
+                 // u_xlat16_4.x = u_xlat16_4.x * _AddlightAttenuation;
+                 // u_xlat16_4.x = clamp(u_xlat16_4.x, 0.0, 1.0);
+                 // vs_TEXCOORD8.y = u_xlat16_4.x * u_xlat16_4.x;
+                 float addLightHeightFactor = (_AddlightLerp * 2.0 - 1.0) * 5.0 + heightComponent;
+                 addLightHeightFactor = saturate(addLightHeightFactor * _AddlightAttenuation);
+                 output.attenuationFactors.y = addLightHeightFactor * addLightHeightFactor; // Addlight
+ 
+                 return output;
+             }
 
             // Helper for GGX D term
             float DistributionGGX(float3 N, float3 H, float roughness)

@@ -60,6 +60,17 @@ public class ShaderConversionPreset : ScriptableObject
     [Range(0, 1)] public float addlightLerp = 0.5f;
     [Range(0.04f, 32)] public float addlightAttenuation = 1.0f;
 
+    [Header("Hair Settings")]
+    [ColorUsage(true, true)] public Color color1 = Color.white;
+    [ColorUsage(true, true)] public Color color2 = Color.white;
+    [ColorUsage(true, true)] public Color color3 = new Color(0.5f, 0.5f, 0.5f, 1f);
+    [ColorUsage(true, true)] public Color specularColor1 = Color.white;
+    [ColorUsage(true, true)] public Color specularColor2 = Color.white;
+    [Range(-1, 1)] public float glossiness_1X = 0.13f;
+    [Range(0, 2)] public float glossiness_1Y = 0.55f;
+    [Range(-1, 1)] public float glossiness_2X = 0.4f;
+    [Range(0, 2)] public float glossiness_2Y = 1.0f;
+
     [Header("Render States")]
     public UnityEngine.Rendering.RenderQueue renderQueue = UnityEngine.Rendering.RenderQueue.Geometry;
     public UnityEngine.Rendering.CullMode cullMode = UnityEngine.Rendering.CullMode.Back;

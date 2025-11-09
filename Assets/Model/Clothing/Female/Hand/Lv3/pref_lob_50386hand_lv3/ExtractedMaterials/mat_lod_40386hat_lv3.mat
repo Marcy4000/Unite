@@ -25,10 +25,12 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _ATVECTOR_Y
+  - _ATVECTOR_X
   - _DEBUG_OFF
   - _SHTYPE_LERP
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _USE_OBJECT_SPACE
+  - _VTEX_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -49,7 +51,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMapNr:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 1816ead2e8241ec41baff3466fe01f56, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -68,6 +70,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _HairMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 97d573b71b9c28b4b8e03cc3332402a9, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -77,7 +83,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MixMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: cf90bf18067a8a14788c06ef50515866, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -107,11 +113,11 @@ Material:
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
-    - _AddlightAttenuation: 1
-    - _AddlightLerp: 0.5
+    - _AddlightAttenuation: 0.04
+    - _AddlightLerp: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _AtVector: 1
+    - _AtVector: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BlendOp: 0
@@ -125,15 +131,15 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _DstBlendFactor: 0
+    - _DstBlendFactor: 10
     - _Emissive: 1
-    - _EmisssionScale: 1
+    - _EmisssionScale: 0
     - _EnvironmentReflections: 1
     - _GlossMapScale: 1
     - _Glossiness: 0.4472136
     - _GlossyReflections: 1
-    - _MainlightAttenuation: 0.04
-    - _Mask: 1
+    - _MainlightAttenuation: 10
+    - _Mask: 0
     - _Metallic: 0
     - _MetallicOffset: 0
     - _Mode: 0
@@ -145,22 +151,22 @@ Material:
     - _Queue: 2000
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimlightAttenuation: 0.04
-    - _RimlightScale: 1
+    - _RimlightAttenuation: 4.5
+    - _RimlightScale: 10
     - _RimlightScale2: 1.5
-    - _RimlightShadowScale: 0.5
+    - _RimlightShadowScale: 0
     - _RoughNessOffset: 0
-    - _SHScale: 1
+    - _SHScale: 2.86
     - _SHType: 1
-    - _ShadowOffset: 0
-    - _ShadowPow: 1
-    - _ShadowScale: 0
+    - _ShadowOffset: 0.64
+    - _ShadowPow: 3.14
+    - _ShadowScale: 0.684
     - _Smoothness: 0.4472136
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _SrcBlendFactor: 1
+    - _SrcBlendFactor: 5
     - _StencilComp: 8
     - _StencilData: 0
     - _StencilFailOp: 0
@@ -170,28 +176,38 @@ Material:
     - _StencilZFailOp: 0
     - _Surface: 0
     - _UVSec: 0
+    - _UseObjectSpace: 1
     - _VCOLOR2N: 0
-    - _VTEX: 0
+    - _VTEX: 1
     - _WorkflowMode: 1
     - _ZTest: 4
     - _ZWrite: 1
     - _actorscale: 1
     - _faceshadowScale: 0
+    - _glossiness_1X: 0.18
+    - _glossiness_1Y: 1
+    - _glossiness_2X: 0.114
+    - _glossiness_2Y: 0.609
     m_Colors:
-    - _AddLightDir: {r: 0, g: 1, b: 0, a: 0}
-    - _AddlightColor: {r: 0, g: 0, b: 0, a: 1}
+    - _AddLightDir: {r: 0, g: 0.785, b: 0.785, a: 0}
+    - _AddlightColor: {r: 0, g: 0, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _OutlineColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    - _RimLightDir: {r: 0, g: 1, b: 0, a: 0}
-    - _RimlightColor: {r: 1, g: 1, b: 1, a: 1}
-    - _SHBotColor: {r: 2.5, g: 2.5, b: 2.5, a: 1}
+    - _OutlineColor: {r: 0.624, g: 0.624, b: 0.624, a: 1}
+    - _RimLightDir: {r: 2, g: 0, b: 4, a: 0}
+    - _RimlightColor: {r: 1024, g: 1024, b: 1024, a: 0}
+    - _SHBotColor: {r: 0.59099996, g: 0.18320999, b: 0.18320999, a: 1}
     - _SHColorScale: {r: 1, g: 1, b: 1, a: 1}
-    - _SHTopColor: {r: 2.5, g: 2.5, b: 2.5, a: 1}
+    - _SHTopColor: {r: 2, g: 1.31, b: 1.3445001, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _SpecularColor: {r: 1, g: 1, b: 1, a: 0}
+    - _color1: {r: 1.2811114, g: 0.5726568, b: 0.7244686, a: 1}
+    - _color2: {r: 1.1486983, g: 0.53873956, b: 0.5891493, a: 1}
+    - _color3: {r: 0.4245283, g: 0.28635636, b: 0.32089934, a: 0}
     - _colorSkin: {r: 1, g: 1, b: 1, a: 1}
-    - _lightDir: {r: 9.48, g: 3.68, b: 0, a: 0}
+    - _lightDir: {r: 2.76, g: -20.99, b: 49.77, a: 0}
+    - _specularColor1: {r: 4.237095, g: 2.6842327, b: 2.5511303, a: 1}
+    - _specularColor2: {r: 0.436, g: 0.1447589, b: 0.1447589, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

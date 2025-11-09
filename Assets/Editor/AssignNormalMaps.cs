@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 // Renamed the class for clarity
 public class ClothingMaterialConverter : EditorWindow
@@ -29,13 +30,56 @@ public class ClothingMaterialConverter : EditorWindow
             Debug.LogWarning("Multiple Shader Conversion Presets found. Using the first one.");
         }
 
-        string presetPath = AssetDatabase.GUIDToAssetPath(presetGuids[0]);
-        ShaderConversionPreset preset = AssetDatabase.LoadAssetAtPath<ShaderConversionPreset>(presetPath);
+        // Try to find presets by filename/path match. If not found, fall back to the first preset found.
+        string facePresetSearchName = "faceshaderpreset";
+        string hairPresetSearchName = "hairshaderpreset";
 
-        if (preset.targetShader == null)
+        ShaderConversionPreset facePreset = null;
+        ShaderConversionPreset hairPreset = null;
+
+        foreach (var g in presetGuids)
         {
-            Debug.LogError("The Target Shader in the preset is not set!");
+            string p = AssetDatabase.GUIDToAssetPath(g);
+            string pLower = p.ToLowerInvariant();
+            string fileNameNoExt = Path.GetFileNameWithoutExtension(p).ToLowerInvariant();
+
+            if (facePreset == null && (pLower.Contains(facePresetSearchName) || fileNameNoExt.Contains(facePresetSearchName)))
+            {
+            facePreset = AssetDatabase.LoadAssetAtPath<ShaderConversionPreset>(p);
+            }
+
+            if (hairPreset == null && (pLower.Contains(hairPresetSearchName) || fileNameNoExt.Contains(hairPresetSearchName)))
+            {
+            hairPreset = AssetDatabase.LoadAssetAtPath<ShaderConversionPreset>(p);
+            }
+
+            if (facePreset != null && hairPreset != null)
+            break;
+        }
+
+        // Fallback: if no named face preset found, use the first preset found
+        if (facePreset == null && presetGuids.Length > 0)
+        {
+            string facePresetPath = AssetDatabase.GUIDToAssetPath(presetGuids[0]);
+            facePreset = AssetDatabase.LoadAssetAtPath<ShaderConversionPreset>(facePresetPath);
+            Debug.LogWarning("Face shader preset not found by name; using the first Shader Conversion Preset found.");
+        }
+
+        if (facePreset == null)
+        {
+            Debug.LogError("Shader Conversion Preset not found! Please create one via Assets > Create > Clothing > Shader Conversion Preset.");
             return;
+        }
+        if (facePreset.targetShader == null)
+        {
+            Debug.LogError("The Target Shader in the face preset is not set!");
+            return;
+        }
+
+        if (hairPreset != null && hairPreset.targetShader == null)
+        {
+            Debug.LogWarning("Hair preset found but its Target Shader is not set. Hair preset will be ignored.");
+            hairPreset = null;
         }
         // -----------------------------
 
@@ -51,7 +95,7 @@ public class ClothingMaterialConverter : EditorWindow
                 string typeFolderPath = Path.Combine(genderPath, folderMapping.Key, LodLevel);
                 if (!Directory.Exists(typeFolderPath)) continue;
 
-                ProcessModelsInFolder(typeFolderPath, preset);
+                ProcessModelsInFolder(typeFolderPath, facePreset, hairPreset);
             }
         }
 
@@ -60,7 +104,7 @@ public class ClothingMaterialConverter : EditorWindow
         Debug.Log("Material conversion for URP completed.");
     }
 
-    private static void ProcessModelsInFolder(string folderPath, ShaderConversionPreset preset)
+    private static void ProcessModelsInFolder(string folderPath, ShaderConversionPreset facePreset, ShaderConversionPreset hairPreset)
     {
         string[] modelGuids = AssetDatabase.FindAssets("t:Model", new[] { folderPath });
 
@@ -83,13 +127,17 @@ public class ClothingMaterialConverter : EditorWindow
                 string matPath = AssetDatabase.GUIDToAssetPath(matGuid);
                 Material material = AssetDatabase.LoadAssetAtPath<Material>(matPath);
 
-                if (material != null)
-                {
-                    ConvertMaterialProperties(material, preset);
+                    if (material != null)
+                    {
+                        // Decide which preset to use based on material name.
+                        string matNameLower = (material.name ?? string.Empty).ToLower();
+                        bool isHair = matNameLower.Contains("hair") || matNameLower.Contains("shadow");
+                        ShaderConversionPreset selected = isHair && hairPreset != null ? hairPreset : facePreset;
+                        ConvertMaterialProperties(material, selected, isHair, matPath);
+                    }
                 }
             }
         }
-    }
 
     public static void ExtractMaterials(string assetPath, string destinationPath)
     {
@@ -117,9 +165,9 @@ public class ClothingMaterialConverter : EditorWindow
     }
 
     // This is the core new function that handles the conversion.
-    private static void ConvertMaterialProperties(Material material, ShaderConversionPreset preset)
+    private static void ConvertMaterialProperties(Material material, ShaderConversionPreset preset, bool isHair = false, string materialAssetPath = null)
     {
-        Debug.Log($"Converting Material: {material.name}");
+        Debug.Log($"Converting Material: {material.name} (isHair: {isHair})");
 
         // 1. Store textures and key properties from the old shader
         // We check for both Standard and URP Lit property names
@@ -142,8 +190,9 @@ public class ClothingMaterialConverter : EditorWindow
         material.SetColor("_SpecularColor", preset.specularColor);
         material.SetFloat("_MetallicOffset", preset.metallicOffset);
         material.SetFloat("_NormalScale", preset.normalScale);
-        material.SetFloat("_MainlightAttenuation", preset.mainlightAttenuation);
+        material.SetFloat("_MainlightAttenuation", 10f);
         material.SetFloat("_AtVector", (float)preset.attenuationVector);
+        material.SetFloat("_UseObjectSpace", 1f);
 
         material.SetFloat("_SHType", (float)preset.shType);
         material.SetFloat("_SHScale", preset.shScale);
@@ -164,7 +213,17 @@ public class ClothingMaterialConverter : EditorWindow
         material.SetFloat("_RimlightScale", preset.rimlightScale);
         material.SetFloat("_RimlightScale2", preset.rimlightScale2);
         material.SetFloat("_RimlightShadowScale", preset.rimlightShadowScale);
-        material.SetColor("_RimlightColor", preset.rimlightColor);
+        // Cap HDR intensity so the brightest RGB channel does not exceed 2
+        Color rim = preset.rimlightColor;
+        float maxChannel = Mathf.Max(rim.r, Mathf.Max(rim.g, rim.b));
+        if (maxChannel > 2f)
+        {
+            float scale = 2f / maxChannel;
+            rim.r *= scale;
+            rim.g *= scale;
+            rim.b *= scale;
+        }
+        material.SetColor("_RimlightColor", rim);
         material.SetFloat("_RimlightAttenuation", preset.rimlightAttenuation);
 
         material.SetVector("_AddLightDir", preset.addLightDirection);
@@ -189,15 +248,36 @@ public class ClothingMaterialConverter : EditorWindow
         SetKeyword(material, "_VCOLOR2N_ON", preset.useVColor2N);
         // ... add more keywords as needed ...
 
-        // 4. Re-apply the stored textures and properties to the new shader slots
-        if (oldMainTex != null) material.SetTexture("_MainTex", oldMainTex);
-        if (oldBumpMap != null) material.SetTexture("_BumpMapNr", oldBumpMap);
+        // Hair-specific properties (apply when material identified as hair and preset contains hair fields)
+        if (isHair)
+        {
+            // Safe-guard: only set if property exists on the material
+            if (material.HasProperty("_color1")) material.SetColor("_color1", preset.color1);
+            if (material.HasProperty("_color2")) material.SetColor("_color2", preset.color2);
+            if (material.HasProperty("_color3")) material.SetColor("_color3", preset.color3);
+            if (material.HasProperty("_specularColor1")) material.SetColor("_specularColor1", preset.specularColor1);
+            if (material.HasProperty("_specularColor2")) material.SetColor("_specularColor2", preset.specularColor2);
+            if (material.HasProperty("_glossiness_1X")) material.SetFloat("_glossiness_1X", preset.glossiness_1X);
+            if (material.HasProperty("_glossiness_1Y")) material.SetFloat("_glossiness_1Y", preset.glossiness_1Y);
+            if (material.HasProperty("_glossiness_2X")) material.SetFloat("_glossiness_2X", preset.glossiness_2X);
+            if (material.HasProperty("_glossiness_2Y")) material.SetFloat("_glossiness_2Y", preset.glossiness_2Y);
+        }
+
+        // Apply JSON overrides if a JSON exists for this material (overrides preset defaults)
+        if (!string.IsNullOrEmpty(materialAssetPath))
+        {
+            ApplyJsonOverrides(materialAssetPath, material);
+        }
+
+        // 4. Re-apply the stored textures and properties to the new shader slots (only if not set by JSON)
+        if (oldMainTex != null && material.GetTexture("_MainTex") == null) material.SetTexture("_MainTex", oldMainTex);
+        if (oldBumpMap != null && material.GetTexture("_BumpMapNr") == null) material.SetTexture("_BumpMapNr", oldBumpMap);
 
         // This is an assumption: We are putting the old emission map into the Green channel of the new _MixMap
         // This requires texture manipulation not possible here. A better approach is to assign it if the shader is simple.
         // For your complex shader, _MixMap is used for multiple things. We will assign the emission map here
         // as a placeholder. You may need a more advanced script to pack textures if that's your goal.
-        if (oldEmissionMap != null) material.SetTexture("_MixMap", oldEmissionMap);
+        if (oldEmissionMap != null && material.GetTexture("_MixMap") == null) material.SetTexture("_MixMap", oldEmissionMap);
 
         material.SetFloat("_Cutoff", oldCutoff); // Use the old cutoff value
 
@@ -214,6 +294,132 @@ public class ClothingMaterialConverter : EditorWindow
         else
         {
             mat.DisableKeyword(keyword);
+        }
+    }
+
+    private static void ApplyJsonOverrides(string materialAssetPath, Material mat)
+    {
+        try
+        {
+            string dir = Path.GetDirectoryName(materialAssetPath);
+            if (string.IsNullOrEmpty(dir)) return;
+            string parent = Path.GetDirectoryName(dir);
+            if (string.IsNullOrEmpty(parent)) return;
+            string jsonDir = Path.Combine(parent, "Materials");
+            string jsonFile = Path.Combine(jsonDir, mat.name + ".json");
+            if (!File.Exists(jsonFile)) return;
+
+            string jsonText = File.ReadAllText(jsonFile);
+            JObject root = JObject.Parse(jsonText);
+            var saved = root["m_SavedProperties"];
+            if (saved == null) return;
+
+            // Textures
+            var texEnvs = saved["m_TexEnvs"] as JObject;
+            if (texEnvs != null)
+            {
+                foreach (var prop in texEnvs.Properties())
+                {
+                    string propName = prop.Name;
+                    var texToken = prop.Value["m_Texture"]?["Name"];
+                    if (texToken != null)
+                    {
+                        string texName = texToken.Value<string>();
+                        if (!string.IsNullOrEmpty(texName))
+                        {
+                            // Try to find texture asset by name
+                            Texture found = null;
+                            string[] guids = AssetDatabase.FindAssets(texName);
+                            foreach (var g in guids)
+                            {
+                                string p = AssetDatabase.GUIDToAssetPath(g);
+                                var t = AssetDatabase.LoadAssetAtPath<Texture>(p);
+                                if (t != null && System.IO.Path.GetFileNameWithoutExtension(p).Equals(texName, System.StringComparison.OrdinalIgnoreCase))
+                                {
+                                    found = t;
+                                    break;
+                                }
+                            }
+                            if (found == null && guids.Length > 0)
+                            {
+                                found = AssetDatabase.LoadAssetAtPath<Texture>(AssetDatabase.GUIDToAssetPath(guids[0]));
+                            }
+
+                            if (found != null && mat.HasProperty(propName))
+                            {
+                                mat.SetTexture(propName, found);
+                            }
+                        }
+                    }
+
+                    // Scale / Offset
+                    var scaleToken = prop.Value["m_Scale"];
+                    if (scaleToken != null)
+                    {
+                        float sx = scaleToken["X"]?.Value<float>() ?? 1f;
+                        float sy = scaleToken["Y"]?.Value<float>() ?? 1f;
+                        if (mat.HasProperty(propName)) mat.SetTextureScale(propName, new Vector2(sx, sy));
+                    }
+                    var offsetToken = prop.Value["m_Offset"];
+                    if (offsetToken != null)
+                    {
+                        float ox = offsetToken["X"]?.Value<float>() ?? 0f;
+                        float oy = offsetToken["Y"]?.Value<float>() ?? 0f;
+                        if (mat.HasProperty(propName)) mat.SetTextureOffset(propName, new Vector2(ox, oy));
+                    }
+                }
+            }
+
+            // Floats
+            var floats = saved["m_Floats"] as JObject;
+            if (floats != null)
+            {
+                foreach (var f in floats.Properties())
+                {
+                    string key = f.Name;
+                    float val = f.Value.Value<float>();
+                    // Try both exact key and underscore-prefixed variant if needed
+                    if (mat.HasProperty(key))
+                    {
+                        mat.SetFloat(key, val);
+                    }
+                    else if (!key.StartsWith("_") && mat.HasProperty("_" + key))
+                    {
+                        mat.SetFloat("_" + key, val);
+                    }
+                }
+            }
+
+            // Colors
+            var colors = saved["m_Colors"] as JObject;
+            if (colors != null)
+            {
+                foreach (var c in colors.Properties())
+                {
+                    string key = c.Name;
+                    var tok = c.Value;
+                    if (tok != null && tok["r"] != null)
+                    {
+                        float r = tok["r"].Value<float>();
+                        float g = tok["g"].Value<float>();
+                        float b = tok["b"].Value<float>();
+                        float a = tok["a"]?.Value<float>() ?? 1f;
+                        Color col = new Color(r, g, b, a);
+                        if (mat.HasProperty(key))
+                        {
+                            mat.SetColor(key, col);
+                        }
+                        else if (!key.StartsWith("_") && mat.HasProperty("_" + key))
+                        {
+                            mat.SetColor("_" + key, col);
+                        }
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"ApplyJsonOverrides failed for {materialAssetPath}: {ex.Message}");
         }
     }
 

@@ -32,7 +32,32 @@ public class ClothingItemGenerator : MonoBehaviour
 
     private static int undefinedNameCounter = -1;
 
-    [MenuItem("Tools/Generate Clothing Items")]
+	// Aggiunte: preferenza persistente per sovrascrittura e menu toggle
+	private const string OverwritePrefKey = "ClothingGenerator_OverwriteExisting";
+	private static bool OverwriteExisting
+	{
+		get => EditorPrefs.GetBool(OverwritePrefKey, true); // default true (sovrascrivi)
+		set
+		{
+			EditorPrefs.SetBool(OverwritePrefKey, value);
+			Menu.SetChecked("Tools/Generate Clothing Items/Overwrite Existing", value);
+		}
+	}
+
+	[MenuItem("Tools/Generate Clothing Items/Overwrite Existing")]
+	private static void ToggleOverwriteExisting()
+	{
+		OverwriteExisting = !OverwriteExisting;
+	}
+
+	[InitializeOnLoadMethod]
+	private static void InitOverwriteMenuCheck()
+	{
+		// Assicura che la checkmark rifletta lo stato salvato all'avvio dell'Editor
+		Menu.SetChecked("Tools/Generate Clothing Items/Overwrite Existing", OverwriteExisting);
+	}
+
+    [MenuItem("Tools/Generate Clothing Items/Generate")]
     static void GenerateClothingItems()
     {
         undefinedNameCounter = -1;
@@ -168,6 +193,23 @@ public class ClothingItemGenerator : MonoBehaviour
                             string assetPath = $"Assets/ScriptableObjects/{gender}/{outputFolder}/{SanitizeFileName(clothingItem.itemName)}.asset";
                             Debug.Log($"Asset path: {assetPath}");
                             Directory.CreateDirectory(Path.GetDirectoryName(assetPath));
+
+							// Nuova logica: non sovrascrivere se esistente e toggle disattivato
+							var existing = AssetDatabase.LoadAssetAtPath<ClothingItem>(assetPath);
+							if (existing != null)
+							{
+								if (!OverwriteExisting)
+								{
+									Debug.Log($"Skipping existing ClothingItem (overwrite disabled): {assetPath}");
+									continue;
+								}
+								else
+								{
+									// Cancella l'asset esistente prima di crearne uno nuovo
+									AssetDatabase.DeleteAsset(assetPath);
+								}
+							}
+
                             AssetDatabase.CreateAsset(clothingItem, assetPath);
 
                             Debug.Log($"Created ClothingItem: {clothingItem.itemName}");

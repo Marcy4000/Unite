@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: New Material
-  m_Shader: {fileID: 4800000, guid: 11fed28517984fa47a387a6c59326663, type: 3}
+  m_Shader: {fileID: 4800000, guid: 5eab7b63d49249447a825d7f76586fb1, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -64,6 +64,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _HairMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -175,6 +179,10 @@ Material:
     - _ZWrite: 1
     - _actorscale: 1
     - _faceshadowScale: 0
+    - _glossiness_1X: 0.13
+    - _glossiness_1Y: 0.55
+    - _glossiness_2X: 0.4
+    - _glossiness_2Y: 1
     m_Colors:
     - _AddLightDir: {r: 0, g: 1, b: 0, a: 0}
     - _AddlightColor: {r: 1, g: 1, b: 1, a: 1}
@@ -190,7 +198,12 @@ Material:
     - _SHTopColor: {r: 0.48235294, g: 0.44313726, b: 0.39215687, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _SpecularColor: {r: 8, g: 8, b: 8, a: 1}
+    - _color1: {r: 1, g: 1, b: 1, a: 1}
+    - _color2: {r: 1, g: 1, b: 1, a: 1}
+    - _color3: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     - _colorSkin: {r: 0.48235, g: 0.44314, b: 0.39216, a: 1}
     - _lightDir: {r: 9.48, g: 3.68, b: 0, a: 0}
+    - _specularColor1: {r: 1, g: 1, b: 1, a: 1}
+    - _specularColor2: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
