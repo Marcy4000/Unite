@@ -1,0 +1,280 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "RenderFeatures/FakeShadow" {
+Properties {
+_WorldPos ("Character Position", Vector) = (0,0.05,0,1)
+}
+SubShader {
+ LOD 200
+ Pass {
+  Name "FakeShadow"
+  LOD 200
+  Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha OneMinusSrcAlpha
+  ZWrite Off
+  Cull Front
+  Offset -1, -1
+  Stencil {
+   Ref 234
+   Comp NotEqual
+   Pass Replace
+   Fail Keep
+   ZFail Keep
+  }
+  Fog {
+   Mode Off
+  }
+  GpuProgramID 60780
+Program "vp" {
+SubProgram "gles " {
+"// hash: c02c6537a6b67600
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 _MainLightPosition;
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _WorldPos;
+uniform 	vec4 _ShadowPlane;
+uniform 	vec4 _ShadowRotate;
+attribute highp vec4 in_POSITION0;
+varying mediump vec3 vs_TEXCOORD1;
+varying mediump vec3 vs_TEXCOORD2;
+varying mediump vec3 vs_TEXCOORD3;
+vec3 u_xlat0;
+vec4 u_xlat1;
+float u_xlat6;
+float u_xlat7;
+void main()
+{
+    u_xlat0.xyz = _MainLightPosition.xyz + _ShadowPlane.xyz;
+    u_xlat6 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat6 = inversesqrt(u_xlat6);
+    u_xlat0.xyz = vec3(u_xlat6) * u_xlat0.xyz;
+    u_xlat6 = dot(_ShadowRotate.xyz, u_xlat0.xyz);
+    u_xlat1.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat1.xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat1.xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[3].xyz * in_POSITION0.www + u_xlat1.xyz;
+    u_xlat7 = dot(_ShadowRotate.xyz, u_xlat1.xyz);
+    u_xlat7 = u_xlat7 + (-_ShadowPlane.w);
+    u_xlat6 = u_xlat7 / u_xlat6;
+    u_xlat0.xyz = (-vec3(u_xlat6)) * u_xlat0.xyz + u_xlat1.xyz;
+    vs_TEXCOORD2.xyz = u_xlat1.yyy;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    vs_TEXCOORD1.xyz = u_xlat0.xyz;
+    gl_Position = u_xlat1 + hlslcc_mtx4x4unity_MatrixVP[3];
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[3].xyz + _WorldPos.xyz;
+    vs_TEXCOORD3.xyz = u_xlat0.xyz;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	vec4 _ShadowPlane;
+uniform 	mediump vec4 _ShadowColor;
+uniform 	mediump vec3 _ShadowFadeParams;
+uniform 	mediump float _ShadowInvLen;
+varying mediump vec3 vs_TEXCOORD1;
+varying mediump vec3 vs_TEXCOORD2;
+varying mediump vec3 vs_TEXCOORD3;
+#define SV_Target0 gl_FragData[0]
+vec3 u_xlat0;
+float u_xlat1;
+bool u_xlatb1;
+void main()
+{
+    u_xlat0.xyz = (-vs_TEXCOORD1.xyz) + vs_TEXCOORD3.xyz;
+    u_xlat0.x = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat0.x = sqrt(u_xlat0.x);
+    u_xlat0.x = u_xlat0.x * _ShadowInvLen + (-_ShadowFadeParams.x);
+    u_xlat0.x = clamp(u_xlat0.x, 0.0, 1.0);
+    u_xlat0.x = (-u_xlat0.x) + 1.0;
+    u_xlat0.x = log2(u_xlat0.x);
+    u_xlat0.x = u_xlat0.x * _ShadowFadeParams.y;
+    u_xlat0.x = exp2(u_xlat0.x);
+    u_xlat0.x = u_xlat0.x * _ShadowFadeParams.z;
+    u_xlatb1 = vs_TEXCOORD2.x>=_ShadowPlane.w;
+    u_xlat1 = u_xlatb1 ? 1.0 : float(0.0);
+    u_xlat0.x = u_xlat1 * u_xlat0.x;
+    SV_Target0.w = u_xlat0.x;
+    SV_Target0.xyz = _ShadowColor.xyz;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+"// hash: 1c91e07387e05b0d
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _MainLightPosition;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _ShadowPlane;
+uniform 	vec4 _ShadowRotate;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(1) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM vec4 _WorldPos;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+out mediump vec3 vs_TEXCOORD1;
+out mediump vec3 vs_TEXCOORD2;
+out mediump vec3 vs_TEXCOORD3;
+vec3 u_xlat0;
+vec4 u_xlat1;
+float u_xlat6;
+float u_xlat7;
+void main()
+{
+    u_xlat0.xyz = _MainLightPosition.xyz + _ShadowPlane.xyz;
+    u_xlat6 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat6 = inversesqrt(u_xlat6);
+    u_xlat0.xyz = vec3(u_xlat6) * u_xlat0.xyz;
+    u_xlat6 = dot(_ShadowRotate.xyz, u_xlat0.xyz);
+    u_xlat1.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat1.xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat1.xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[3].xyz * in_POSITION0.www + u_xlat1.xyz;
+    u_xlat7 = dot(_ShadowRotate.xyz, u_xlat1.xyz);
+    u_xlat7 = u_xlat7 + (-_ShadowPlane.w);
+    u_xlat6 = u_xlat7 / u_xlat6;
+    u_xlat0.xyz = (-vec3(u_xlat6)) * u_xlat0.xyz + u_xlat1.xyz;
+    vs_TEXCOORD2.xyz = u_xlat1.yyy;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    vs_TEXCOORD1.xyz = u_xlat0.xyz;
+    gl_Position = u_xlat1 + hlslcc_mtx4x4unity_MatrixVP[3];
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[3].xyz + _WorldPos.xyz;
+    vs_TEXCOORD3.xyz = u_xlat0.xyz;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _ShadowPlane;
+uniform 	mediump vec4 _ShadowColor;
+uniform 	mediump vec3 _ShadowFadeParams;
+uniform 	mediump float _ShadowInvLen;
+in mediump vec3 vs_TEXCOORD1;
+in mediump vec3 vs_TEXCOORD2;
+in mediump vec3 vs_TEXCOORD3;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec3 u_xlat0;
+float u_xlat1;
+bool u_xlatb1;
+void main()
+{
+    u_xlat0.xyz = (-vs_TEXCOORD1.xyz) + vs_TEXCOORD3.xyz;
+    u_xlat0.x = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat0.x = sqrt(u_xlat0.x);
+    u_xlat0.x = u_xlat0.x * _ShadowInvLen + (-_ShadowFadeParams.x);
+#ifdef UNITY_ADRENO_ES3
+    u_xlat0.x = min(max(u_xlat0.x, 0.0), 1.0);
+#else
+    u_xlat0.x = clamp(u_xlat0.x, 0.0, 1.0);
+#endif
+    u_xlat0.x = (-u_xlat0.x) + 1.0;
+    u_xlat0.x = log2(u_xlat0.x);
+    u_xlat0.x = u_xlat0.x * _ShadowFadeParams.y;
+    u_xlat0.x = exp2(u_xlat0.x);
+    u_xlat0.x = u_xlat0.x * _ShadowFadeParams.z;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb1 = !!(vs_TEXCOORD2.x>=_ShadowPlane.w);
+#else
+    u_xlatb1 = vs_TEXCOORD2.x>=_ShadowPlane.w;
+#endif
+    u_xlat1 = u_xlatb1 ? 1.0 : float(0.0);
+    u_xlat0.x = u_xlat1 * u_xlat0.x;
+    SV_Target0.w = u_xlat0.x;
+    SV_Target0.xyz = _ShadowColor.xyz;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+}

@@ -1,458 +1,390 @@
-﻿Shader "PGAME_URP/LobbyPlayer/m_lob_PlayerPBRHairColor_lv3"
-{
-    Properties
-    {
-        [Header(Tex)]
-        _MainTex ("Diffiuse(RGB)Roughness(A)", 2D) = "white" {}
-        _BumpMapNr ("Normal Map(RGB)Matelness(A)", 2D) = "bump" {}
-        _MixMap ("MixMap (R:CutoutMask, G:EmissiveMask, A:SkinTintLerp)", 2D) = "white" {}
-        _HairMap ("Hair Map (unused)", 2D) = "white" {}
+﻿//////////////////////////////////////////
+//
+// NOTE: This is a valid URP shader file
+// Converted from the original legacy shader.
+//
+///////////////////////////////////////////
+Shader "==PGAME==/LOBBYPLAYER/m_lob_PlayerPBRHairColor_lv3_URP" {
+    Properties {
+        [Header(Tex)] [MainTexture] _MainTex ("Diffiuse(RGB)Roughness(A)", 2D) = "white" { }
+        [HDR] _colorSkin ("_colorSkin(皮肤颜色)", Color) = (1,1,1,1)
+        _BumpMapNr ("Normal Map(RGB)Matelness(A)", 2D) = "bump" { }
+        _MixMap ("Alpha(R)Mask(G)Emiss(B)Color(A)", 2D) = "black" { }
+        [Toggle] _Mask ("If Mask(打开遮罩)", Float) = 0
+        [Toggle] _Emissive ("If Emissive(打开自发光)", Float) = 0
+        [KeywordEnum(UV0, UV1)] _SLUV ("贴图采样UV选择", Float) = 0
+        [Header(Common)] _actorscale ("actor Scale(角色衰减缩放)", Float) = 1
+        [HideInInspector] _ActorScaleAttribute ("_ActorScaleAttribute", Float) = 1
+        _ShadowOffset ("_ShadowOffset(阴影偏移)", Range(-1, 1)) = 0
+        _ShadowPow ("_ShadowPow(阴影过渡)", Range(0.5, 10)) = 1
+        _ShadowScale ("阴影减弱", Range(0, 1)) = 0
+        _RoughNessOffset ("RoughNessOffset(粗糙度偏移)", Range(-1, 1)) = 0
+        [HDR] _SpecularColor ("SpecularColor(高光颜色)", Color) = (1,1,1,1)
+        _MetallicOffset ("MetallicOffset(金属度偏移)", Range(-1, 1)) = 0
+        _NormalScale ("NormalScale(法线强度)", Range(-8, 8)) = 1
+        _EmisssionScale ("EmisssionScale(自发光强度)", Range(0, 10)) = 0
+        _MainlightAttenuation ("MainlightAttenuation(主光源衰减)", Range(0.04, 32)) = 0.04
+        [KeywordEnum(X, Y, Z)] _AtVector ("AttenuationVector(衰减方向)", Float) = 0
+        [Header(HairHighlight)] _HairMap ("HairShape(R)Mask(G)", 2D) = "black" { }
+        _shapeST ("shapeST", Vector) = (1,1,0,0)
+        _SunShiftOffuse1 ("SunShiftOffuse1", Range(-1, 1)) = 0
+        _SunShiftOffuse2 ("SunShiftOffuse2", Range(-1, 1)) = 0
+        _SunShift ("SunShift", Range(-1, 1)) = 0
+        [HDR] _specularColor1 ("Specular1 Color", Color) = (0.2,0.2,0.2,1)
+        _glossiness_1X ("Specular1 X Axis", Range(0, 1)) = 0.1
+        _glossiness_1Y ("Specular1 Y Axis", Range(0, 1)) = 0.8
+        [HDR] _specularColor2 ("Specular2 Color", Color) = (0.3,0.2,0.1,1)
+        _glossiness_2X ("Specular2 X Axis", Range(0, 1)) = 0.4
+        _glossiness_2Y ("Specular2 Y Axis", Range(0, 1)) = 1
+        [Header(SH)] [KeywordEnum(Cla, Lerp)] _SHType ("SH Type(SH类型)", Float) = 1
+        _SHScale ("SHScale(SH强弱)", Range(0, 10)) = 1
+        [HDR] _SHTopColor ("SHTopColor(亮部颜色)", Color) = (2.5,2.5,2.5,1)
+        [HDR] _SHBotColor ("SHBotColor(暗部颜色)", Color) = (2.5,2.5,2.5,1)
+        [Header(OutLine)] [KeywordEnum(OFF, ON)] _VTEX ("是否使用贴图控制定点色", Float) = 0
+        [KeywordEnum(OFF, ON)] _VCOLOR2N ("是否使用顶点色勾边优化", Float) = 0
+        _OutlineMap ("OutlineMap(勾边贴图)", 2D) = "white" { }
+        _OutlineColor ("OutlineColor(勾边颜色)", Color) = (0.5,0.5,0.5,1)
+        _Offset ("Z Offset(深度偏移)", Float) = -5
+        _lightDir ("lightDirtion(勾边光源方向)", Vector) = (9.48,3.68,0,0)
+        [Header(MaskColor)] [HDR] _color1 ("_color1", Color) = (1,1,1,1)
+        [HDR] _color2 ("_color2", Color) = (1,1,1,1)
+        [HDR] _color3 ("_color3", Color) = (1,1,1,1)
+        [HDR] _color4 ("_color4", Color) = (1,1,1,1)
+        _metalv4 ("_metalv4", Vector) = (0,0,0,0)
+        _roughv4 ("_roughv4", Vector) = (1,1,1,1)
+        [KeywordEnum(OFF, Deffiuse, Normal, Metal, Roughness, AO, Emiss, SH)] _Debug ("textureDebug", Float) = 0
+        _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
+        _OutlineWidth("Outline Width", Float) = 1.0
 
-        [Header(Hair)]
-        [HDR] _color1("Hair Tint Color", Color) = (1,1,1,1)
-        [HDR] _color2("Hair Mid Color", Color) = (1,1,1,1)
-        [HDR] _color3("Hair Shadow Color", Color) = (0.5,0.5,0.5,1)
-        [HDR] _specularColor1("Specular Color 1", Color) = (1,1,1,1)
-        [HDR] _specularColor2("Specular Color 2", Color) = (1,1,1,1)
-        _glossiness_1X("Specular Shift 1", Range(-1, 1)) = 0.13
-        _glossiness_1Y("Specular Exponent 1", Range(0, 2)) = 0.55
-        _glossiness_2X("Specular Shift 2", Range(-1, 1)) = 0.4
-        _glossiness_2Y("Specular Exponent 2", Range(0, 2)) = 1.0
-
-
-        [Header(Common)]
-        _actorscale ("Actor Scale", Float) = 1
-        [Toggle(_USE_OBJECT_SPACE)] _UseObjectSpace ("Use Object Space for attenuation", Float) = 0
-        // _colorSkin ("Skin Color", Color) = (1,1,1,1) // Removed, replaced by Hair colors
-        _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
-        _ShadowPow ("Shadow Power", Range(0.5, 10)) = 1
-        _ShadowScale ("Shadow Scale", Range(0, 1)) = 0
-        [Toggle(_FACESHDW_SCALE_ON)] _faceshadowScale ("Face Shadow Scale", Float) = 0
-        _RoughNessOffset ("Roughness Offset", Range(-1, 1)) = 0
-        _MetallicOffset ("Metallic Offset", Range(-1, 1)) = 0
-        _NormalScale ("Normal Scale", Range(-8, 8)) = 1
-        _MainlightAttenuation ("Mainlight Attenuation", Range(0.04, 32)) = 0.04
-        [KeywordEnum(X, Y, Z)] _AtVector ("Attenuation Vector", Float) = 0
-
-        [Header(SH)]
-        [KeywordEnum(Cla, Lerp)] _SHType ("SH Type", Float) = 1
-        _SHScale ("SH Scale", Range(0, 10)) = 1
-        [HDR] _SHTopColor ("SH Top Color", Color) = (2.5,2.5,2.5,1)
-        [HDR] _SHBotColor ("SH Bottom Color", Color) = (2.5,2.5,2.5,1)
-        _SHColorScale ("SH Color Scale", Color) = (1,1,1,1)
-
-        [Header(OutLine)]
-        [Toggle(_VTEX_ON)] _VTEX ("是否使用贴图控制定点色 (VTEX_ON)", Float) = 0
-        [Toggle(_VCOLOR2N_ON)] _VCOLOR2N ("是否使用顶点色勾边优化 (VCOLOR2N_ON)", Float) = 0
-        _OutlineColor("OutlineColor(勾边颜色)", Color) = (0.5,0.5,0.5,1)
-        _OutlineWidth("Outline Width", Float) = 0.004629
-        _Offset("Z Offset(深度偏移)", Float) = -5
-        _lightDir("lightDirtion(勾边光源方向)", Vector) = (9.48,3.68,0,0)
-
-        [Header(PBR Additional Params)]
-        _Emissive("Emissive Factor from MixMap.g", Range(0,1)) = 1.0
-        _EmisssionScale("Emissive Scale", Float) = 1.0
-        _Mask("Mask for Alpha Cutoff (Internal)", Float) = 1.0
-
-        [Header(Rim Light)]
-        _RimLightDir("Rim Light Direction", Vector) = (0,1,0,0)
-        _RimlightScale("RimlightScale", Range(0,5)) = 1.0
-        _RimlightScale2("RimlightScale2", Range(0,5)) = 1.5
-        _RimlightShadowScale("RimlightShadowScale", Range(0,1)) = 0.5
-        [HDR]_RimlightColor("RimlightColor", Color) = (1,1,1,1)
-        _RimlightAttenuation("RimlightAttenuation", Range(0.04, 32)) = 0.04
-
-        [Header(Add Light)]
-        _AddLightDir("Add Light Direction", Vector) = (0,1,0,0)
-        [HDR]_AddlightColor("AddlightColor", Color) = (0,0,0,1)
-        _AddlightLerp("AddlightLerp (Height)", Range(0,1)) = 0.5
-        _AddlightAttenuation("AddlightAttenuation", Range(0.04, 32)) = 1.0
-
-        [Header(Debugging)]
-        [KeywordEnum(OFF, Diffiuse, Normal, Metal, Roughness, AO, Emiss, SH, Specular)] _Debug("textureDebug", Float) = 0
-
-        [Header(Render States)]
-        [Enum(UnityEngine.Rendering.RenderQueue)] _Queue("Render Queue", Float) = 2000
-        _Cutoff("Alpha Cutoff", Range(0, 1)) = 0.5
-        [Enum(Off,0,Front,1,Back,2)] _Cull ("Cull Mode", Float) = 2
-        [Enum(Off,0,On,1)] _ZWrite ("ZWrite", Float) = 1
-        [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("ZTest", Float) = 4
-        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendFactor ("SrcBlend", Float) = 1
-        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendFactor ("DstBlend", Float) = 0
-        [Enum(UnityEngine.Rendering.BlendOp)] _BlendOp("Blend Op", Float) = 0
-
-        [HideInInspector] _StencilData ("Stencil Ref", Float) = 0
-        [HideInInspector] _StencilReadMask ("Stencil Read Mask", Float) = 255
-        [HideInInspector] _StencilWriteMask ("Stencil Write Mask", Float) = 255
-        [Enum(UnityEngine.Rendering.CompareFunction)] _StencilComp ("Stencil Comp", Float) = 8
-        [Enum(UnityEngine.Rendering.StencilOp)] _StencilPassOp ("Stencil Pass Op", Float) = 0
-        [Enum(UnityEngine.Rendering.StencilOp)] _StencilFailOp ("Stencil Fail Op", Float) = 0
-        [Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("Stencil ZFail Op", Float) = 0
+        // Original hidden properties for render state
+        [HideInInspector] _RenderType ("Vector1 ", Float) = 0
+        [HideInInspector] _Cull ("Cull Mode", Float) = 2 // 2 is Back
+        [HideInInspector] _ZWrite ("ZWrite", Float) = 1 // On
+        [HideInInspector] _ZTest ("ZTest", Float) = 4 // LEqual
+        [HideInInspector] _SrcBlendFactor ("SrcBlend", Float) = 5 // SrcAlpha
+        [HideInInspector] _DstBlendFactor ("DstBlend", Float) = 10 // OneMinusSrcAlpha
     }
-
-    SubShader
-    {
-        Tags
-        {
+    SubShader {
+        Tags {
+            "IGNOREPROJECTOR" = "true"
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Opaque"
-            "Queue" = "Geometry"
+            "RenderType" = "Transparent"
+            "Queue" = "Transparent"
         }
         LOD 300
 
-        Pass
-        {
-            Name "UniversalForward"
+        Pass {
+            Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
+            // Render states from original shader
             Blend [_SrcBlendFactor] [_DstBlendFactor]
             ZWrite [_ZWrite]
-            ZTest [_ZTest]
             Cull [_Cull]
-
-            Stencil
-            {
-                Ref [_StencilData]
-                Comp [_StencilComp]
-                Pass [_StencilPassOp]
-                Fail [_StencilFailOp]
-                ZFail [_StencilZFailOp]
-                ReadMask [_StencilReadMask]
-                WriteMask [_StencilWriteMask]
-            }
+            ZTest [_ZTest]
 
             HLSLPROGRAM
-            #pragma vertex Vertex
-            #pragma fragment Fragment
+            #pragma exclude_renderers gles
+            #pragma target 3.0
 
-            #pragma shader_feature_local _SHTYPE_CLA _SHTYPE_LERP
-            #pragma shader_feature_local _ATVECTOR_X _ATVECTOR_Y _ATVECTOR_Z
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma vertex vert
+            #pragma fragment frag
+
+            // URP Keywords
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
-            #pragma multi_compile_fog
-            #pragma multi_compile_fragment _ ENABLE_POST_TONE
-            #pragma shader_feature_local _FACESHDW_SCALE_ON
-            #pragma shader_feature_local _DEBUG_OFF _DEBUG_DIFFIUSE _DEBUG_NORMAL _DEBUG_METAL _DEBUG_ROUGHNESS _DEBUG_AO _DEBUG_EMISS _DEBUG_SH _DEBUG_SPECULAR
 
+            // Custom Keywords from original shader
+            #pragma multi_compile _SHTYPE_CLA _SHTYPE_LERP
+            #pragma multi_compile _SLUV_UV0 _SLUV_UV1
+            #pragma multi_compile _ATVECTOR_X _ATVECTOR_Y _ATVECTOR_Z
+            #pragma multi_compile _VTEX_OFF _VTEX_ON
+            #pragma multi_compile _VCOLOR2N_OFF _VCOLOR2N_ON
+            
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
+                float4 _HairMap_ST;
+                float4 _shapeST;
+                float4 _colorSkin;
+                float4 _SpecularColor;
+                float4 _specularColor1;
+                float4 _specularColor2;
+                float4 _SHTopColor;
+                float4 _SHBotColor;
+                float4 _OutlineColor;
+                float4 _lightDir;
+                float4 _color1;
+                float4 _color2;
+                float4 _color3;
+                float4 _color4;
+                float4 _metalv4;
+                float4 _roughv4;
+                float4 _AddlightColor;
+                float4 _AddlightDarkcolor;
+                float4 _RimlightColor;
+                float4 _RimLightDir;
+                float4 _FresnelColor;
+                
+                float _Mask;
+                float _Emissive;
+                float _actorscale;
+                float _ActorScaleAttribute;
+                float _ShadowOffset;
+                float _ShadowPow;
+                float _ShadowScale;
                 float _RoughNessOffset;
                 float _MetallicOffset;
                 float _NormalScale;
-                float _SHScale;
-                float4 _SHTopColor;
-                float4 _SHBotColor;
-                float4 _SHColorScale;
+                float _EmisssionScale;
                 float _MainlightAttenuation;
-                float _UseObjectSpace;
+                float _SunShiftOffuse1;
+                float _SunShiftOffuse2;
+                float _SunShift;
+                float _glossiness_1X;
+                float _glossiness_1Y;
+                float _glossiness_2X;
+                float _glossiness_2Y;
+                float _SHScale;
+                float _InvRim;
                 float3 _AddLightDir;
-                float4 _AddlightColor;
-                float _AddlightLerp;
+                float _AddlightScale;
                 float _AddlightAttenuation;
+                float _AddlightLerp;
+                float _AddlightShadowScale;
                 float _RimlightScale;
                 float _RimlightScale2;
                 float _RimlightShadowScale;
-                float4 _RimlightColor;
                 float _RimlightAttenuation;
-                float _actorscale;
                 float _Cutoff;
-                float _Mask;
-                float _ShadowOffset;
-                float _ShadowPow;
-                float _EmisssionScale;
-                float _Emissive;
-                float _ShadowScale;
-                float4 _RimLightDir;
+                float _BumpScale;
+                float _FresnelFactor;
                 float _faceshadowScale;
-                // Hair Specific
-                float4 _color1, _color2, _color3;
-                float4 _specularColor1, _specularColor2;
-                float _glossiness_1X, _glossiness_1Y;
-                float _glossiness_2X, _glossiness_2Y;
             CBUFFER_END
-
+            
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
             TEXTURE2D(_BumpMapNr); SAMPLER(sampler_BumpMapNr);
             TEXTURE2D(_MixMap); SAMPLER(sampler_MixMap);
             TEXTURE2D(_HairMap); SAMPLER(sampler_HairMap);
 
-            struct Attributes
-            {
+
+            struct Attributes_ForwardLit {
                 float4 positionOS   : POSITION;
                 float3 normalOS     : NORMAL;
                 float4 tangentOS    : TANGENT;
+                float2 uv0          : TEXCOORD0;
+                float2 uv1          : TEXCOORD1;
+            };
+
+            struct Varyings_ForwardLit {
+                float4 positionCS   : SV_POSITION;
                 float2 uv           : TEXCOORD0;
-                float4 color        : COLOR;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                float4 sh           : TEXCOORD1;
+                float3 positionWS   : TEXCOORD2;
+                float3 normalWS     : TEXCOORD3;
+                float3 tangentWS    : TEXCOORD4;
+                float3 bitangentWS  : TEXCOORD5;
+                float4 shadowCoord  : TEXCOORD7;
+                float4 attenuation  : TEXCOORD8; // x: main light, y: add light, z: rim light
             };
 
-            struct Varyings
-            {
-                float4 positionCS               : SV_POSITION;
-                float2 uv                       : TEXCOORD0;
-                float3 positionWS               : TEXCOORD1;
-                float3 normalWS                 : TEXCOORD2;
-                float3 tangentWS                : TEXCOORD3;
-                float3 bitangentWS              : TEXCOORD4;
-                float4 shadowCoord              : TEXCOORD5;
-                half4 shAmbient                 : TEXCOORD6;
-                float3 attenuationFactors       : TEXCOORD7;
-                half3 viewDirWS                 : TEXCOORD8;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-                UNITY_VERTEX_OUTPUT_STEREO
-            };
+            Varyings_ForwardLit vert(Attributes_ForwardLit input) {
+                Varyings_ForwardLit output = (Varyings_ForwardLit)0;
 
-            Varyings Vertex(Attributes input)
-            {
-                Varyings output = (Varyings)0;
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_TRANSFER_INSTANCE_ID(input, output);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+                VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
 
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
-                output.positionCS = vertexInput.positionCS;
-                output.positionWS = vertexInput.positionWS;
+                output.positionCS = positionInputs.positionCS;
+                output.positionWS = positionInputs.positionWS;
+                output.normalWS = normalInputs.normalWS;
+                output.tangentWS = normalInputs.tangentWS;
+                output.bitangentWS = normalInputs.bitangentWS;
 
-                VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS, input.tangentOS);
-                output.normalWS = normalInput.normalWS;
-                output.tangentWS = normalInput.tangentWS;
-                output.bitangentWS = normalInput.bitangentWS;
-                output.viewDirWS = GetWorldSpaceViewDir(output.positionWS);
-
-                #if defined(_SHTYPE_LERP)
-                    float3 normalWSForSH = output.normalWS;
-                    float normalYsq = normalWSForSH.y * normalWSForSH.y;
-                    float normalYterm = normalWSForSH.y * 0.25;
-                    float topFactor = normalYsq * 0.125 + normalYterm + 0.125;
-                    float botFactor = normalYsq * 0.125 - normalYterm + 0.125;
-                    float2 shFactors = max(float2(topFactor, botFactor), 0.0) * _SHScale;
-                    output.shAmbient.rgb = (shFactors.x * _SHTopColor.rgb + shFactors.y * _SHBotColor.rgb) * _SHColorScale.rgb;
-                    output.shAmbient.a = 1.0;
-                #elif defined(_SHTYPE_CLA)
-                     output.shAmbient.rgb = SampleSH(output.normalWS);
+                #if _SLUV_UV1
+                    output.uv = input.uv1 * _MainTex_ST.xy + _MainTex_ST.zw;
                 #else
-                     output.shAmbient.rgb = SampleSH(output.normalWS);
+                    output.uv = input.uv0 * _MainTex_ST.xy + _MainTex_ST.zw;
                 #endif
-                output.shAmbient.rgb *= _SHScale;
 
-                output.shadowCoord = GetShadowCoord(vertexInput);
+                // Custom SH calculation from original shader
+                float3 normalWS = output.normalWS;
+                float normalY2 = normalWS.y * normalWS.y;
+                float normalY_25 = normalWS.y * 0.25;
+                float sh_x = normalY2 * 0.125 + normalY_25 + 0.125;
+                float sh_y = normalY2 * 0.125 - normalY_25 + 0.125;
+                float2 sh_final = max(float2(sh_x, sh_y), 0.0) * _SHScale;
+                output.sh = sh_final.xxxx * _SHTopColor + sh_final.yyyy * _SHBotColor;
 
-                // Attenuation factors based on world position (height)
-                // Compensate for models that are scaled up in world space.
-                // Use _actorscale to bring world-position-derived height back to expected range.
-                float invActorScale = (abs(_actorscale) > FLT_EPS) ? (1.0 / _actorscale) : 1.0;
-                float3 posWorldScaled = output.positionWS * invActorScale;
-                float3 posForAtten = (_UseObjectSpace > 0.5) ? input.positionOS.xyz : posWorldScaled;
-                float heightComponent = posForAtten.y;
-                 #if defined(_ATVECTOR_X)
-                    heightComponent = posForAtten.x;
-                 #elif defined(_ATVECTOR_Z)
-                    heightComponent = posForAtten.z;
-                 #endif
-                // Ensure we use the scaled height in subsequent attenuation computations.
-                float logHeight = log2(abs(heightComponent) + FLT_EPS);
-                output.attenuationFactors.x = exp2(logHeight * _MainlightAttenuation);
-                output.attenuationFactors.z = exp2(logHeight * _RimlightAttenuation);
-                float addLightHeightFactor = (_AddlightLerp * 2.0 - 1.0) * 5.0 + heightComponent;
-                addLightHeightFactor = saturate(addLightHeightFactor * _AddlightAttenuation);
-                output.attenuationFactors.y = addLightHeightFactor * addLightHeightFactor;
+                // Attenuation factors based on world position
+                float pos_y_log = log2(output.positionWS.y);
+                float mainLightAtten = exp2(pos_y_log * _MainlightAttenuation);
+                float rimLightAtten = exp2(pos_y_log * _RimlightAttenuation);
+                
+                float addLightPosFactor = (_AddlightLerp * 2.0 - 1.0) * 5.0 + output.positionWS.y;
+                float addLightAtten = saturate(addLightPosFactor * _AddlightAttenuation);
+                addLightAtten *= addLightAtten;
+
+                output.attenuation = float4(mainLightAtten, addLightAtten, rimLightAtten, 1.0);
+
+                #if defined(_MAIN_LIGHT_SHADOWS) && !defined(_RECEIVE_SHADOWS_OFF)
+                    output.shadowCoord = GetShadowCoord(positionInputs);
+                #else
+                    output.shadowCoord = float4(0,0,0,0);
+                #endif
 
                 return output;
             }
 
-            // Kajiya-Kay anisotropic specular term for hair
-            float AnisoSpecular(float3 T, float3 N, float3 V, float3 L, float shift, float exponent)
-            {
-                float3 H = normalize(L + V);
-                // Shift the tangent along the normal to simulate light passing through hair fiber
-                float3 T_shifted = normalize(T + N * shift);
-                float dotTH = dot(T_shifted, H);
+            half4 frag(Varyings_ForwardLit input) : SV_Target {
+                half4 mixMap = SAMPLE_TEXTURE2D(_MixMap, sampler_MixMap, input.uv);
                 
-                // Use sin(T,H) for the highlight calculation
-                float sinTH = sqrt(1.0 - dotTH * dotTH);
+                half maskValue = _Mask * (mixMap.r - 1.0) + 1.0;
+                clip(maskValue - _Cutoff);
+
+                Light mainLight = GetMainLight(input.shadowCoord);
+                half shadow = mainLight.shadowAttenuation;
                 
-                float NdotL = saturate(dot(N, L));
+                half3 lightColor = mainLight.color * mainLight.distanceAttenuation;
+                lightColor *= input.attenuation.x;
+                lightColor = min(lightColor, mainLight.color);
                 
-                // Raise to a high power for a tight highlight
-                float spec = pow(sinTH, exponent);
+                half3 finalShadowColor = max(lightColor * shadow, _ShadowScale);
 
-                return NdotL * spec;
-            }
+                // Color Masking
+                half4 colorSteps = mixMap.a + half4(0.0, -0.3333, -0.6667, -1.0);
+                colorSteps = -abs(colorSteps * 3.191489);
+                colorSteps = saturate(colorSteps + 1.031915);
 
-            static const float MIN_ROUGHNESS = 0.04;
-            
-            half4 Fragment(Varyings input) : SV_Target
-            {
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                half3 colorMasked = colorSteps.xxx * _color1.rgb + colorSteps.yyy * _color2.rgb + colorSteps.zzz * _color3.rgb + colorSteps.www * _color4.rgb;
+                colorMasked = lerp(colorMasked, 1.0 - colorMasked, mixMap.g);
 
-                float4 mainTexSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
-                float4 bumpMapSample = SAMPLE_TEXTURE2D(_BumpMapNr, sampler_BumpMapNr, input.uv);
-                float4 mixMapSample = SAMPLE_TEXTURE2D(_MixMap, sampler_MixMap, input.uv);
-                float4 hairMapSample = SAMPLE_TEXTURE2D(_HairMap, sampler_HairMap, input.uv);
+                half4 mainTex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                half3 albedo = lerp(_colorSkin.rgb, mainTex.rgb * colorMasked, maskValue);
 
-                // Alpha Cutoff
-                float alphaMask = mixMapSample.r;
-                float calculatedAlpha = lerp(1.0, alphaMask, _Mask);
-                clip(calculatedAlpha - _Cutoff);
-                float outputAlpha = 1.0;
+                half metalMask = dot(colorSteps, _metalv4);
+                half roughMask = dot(colorSteps, _roughv4);
 
-                // --- NEW HAIR ALBEDO CALCULATION ---
-                float3 baseTexture = mainTexSample.rgb;
-                // Use the texture's red channel to lerp between shadow and mid colors
-                float3 gradientTint = lerp(_color3.rgb, _color2.rgb, baseTexture.r);
-                // Apply base tint and gradient tint
-                float3 albedo = baseTexture * gradientTint * _color1.rgb;
-                
-                // Normal
-                float3 normalTS = UnpackNormalScale(bumpMapSample, _NormalScale);
-                float3x3 TBN = float3x3(input.tangentWS, input.bitangentWS, input.normalWS);
-                float3 normalWS = normalize(TransformTangentToWorld(normalTS, TBN));
-                
-                // View Direction
-                float3 viewDirWS = normalize(input.viewDirWS);
-                float NdotV = saturate(dot(normalWS, viewDirWS));
-
-                // Roughness & Metallic (used for IBL and diffuse)
-                float roughness = mainTexSample.a * mainTexSample.a + _RoughNessOffset;
-                roughness = saturate(max(roughness, MIN_ROUGHNESS));
-                float metallic = bumpMapSample.a + _MetallicOffset; // Set to 0 for hair
+                half4 bumpMap = SAMPLE_TEXTURE2D(_BumpMapNr, sampler_BumpMapNr, input.uv);
+                half roughness = roughMask + mainTex.a;
+                half metallic = metalMask + bumpMap.a;
+                metallic = lerp(metallic, bumpMap.a, 1.0 - mixMap.g);
                 metallic = saturate(metallic);
-                float perceptualRoughness = roughness;
-                float oneMinusReflectivity = OneMinusReflectivityMetallic(metallic);
+
+                half3 normalTS = UnpackNormal(bumpMap);
+                float3 normalWS = TransformTangentToWorld(normalTS, float3x3(input.tangentWS, input.bitangentWS, input.normalWS));
+                
+                half3 diffuseColor = albedo * (1.0 - metallic);
+                half3 specularColor = _specularColor1.rgb * albedo;
+
+                // Hair Highlight (custom anisotropic-like shading)
+                half hairShape = SAMPLE_TEXTURE2D(_HairMap, sampler_HairMap, input.uv * _shapeST.xy + _shapeST.zw).r;
+                float shift1 = hairShape * _SunShift + _SunShiftOffuse1;
+                float shift2 = hairShape * _SunShift * 0.5 + _SunShiftOffuse2;
+
+                half3 tangent1 = normalize(input.tangentWS + normalWS * shift1);
+                half3 tangent2 = normalize(input.tangentWS + normalWS * shift2);
+
+                half3 viewDir = SafeNormalize(GetCameraPositionWS() - input.positionWS);
+                half3 lightDir = mainLight.direction;
+                half3 halfDir = SafeNormalize(lightDir + viewDir);
+
+                float dot_lh1 = dot(halfDir, tangent1);
+                float dot_lh2 = dot(halfDir, tangent2);
+                float dot_nh = dot(normalWS, halfDir);
+                float dot_nv = dot(normalWS, viewDir);
+                float dot_lt = dot(lightDir, input.tangentWS);
+
+                roughness = lerp(roughness, mainTex.a, 1.0 - mixMap.y);
+                roughness = max(roughness, 0.04);
+                roughness = min(roughness, 1.0);
+
+                float2 gloss1 = roughness * float2(_glossiness_1X, _glossiness_1Y);
+                float2 gloss2 = roughness * float2(_glossiness_2X, _glossiness_2Y);
+                
+                float spec1 = pow(dot_lh1, 2) / (gloss1.x * gloss1.x) + pow(dot_lt, 2) / (gloss1.y * gloss1.y) + pow(dot_nh, 2);
+                spec1 = 1.0 / (3.14159 * gloss1.x * gloss1.y * pow(spec1, 2));
+                
+                float spec2 = pow(dot_lh2, 2) / (gloss2.x * gloss2.x) + pow(dot_lt, 2) / (gloss2.y * gloss2.y) + pow(dot_nh, 2);
+                spec2 = 1.0 / (3.14159 * gloss2.x * gloss2.y * pow(spec2, 2));
+                
+                half3 hairSpecular = max(0, spec1 * specularColor) + max(0, spec2 * _specularColor2.rgb * albedo);
+                half hairMask = SAMPLE_TEXTURE2D(_HairMap, sampler_HairMap, input.uv * _HairMap_ST.xy + _HairMap_ST.zw).g;
+                hairSpecular *= hairMask;
+
+                half NdotL = saturate(dot(normalWS, lightDir));
+                half shadowTerm = pow(NdotL, _ShadowPow) + _ShadowOffset;
+                shadowTerm = saturate(shadowTerm);
+
+                half3 lighting = finalShadowColor * shadowTerm;
+                lighting = max(lighting, _ShadowScale);
+                
+                half3 finalColor = lighting * diffuseColor + hairSpecular * lighting;
+
+                // Reflection
+                half3 reflection = reflect(-viewDir, normalWS);
+                half roughnessPixels = roughness * (1.7 - 0.7 * roughness);
+                roughnessPixels *= 6.0;
+                half4 envSample = SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflection, roughnessPixels);
+                half3 envColor = DecodeHDREnvironment(envSample, unity_SpecCube0_HDR);
+
+                half smoothness = 1.0 - roughness;
+                half oneMinusReflectivity = 1.0 - (0.04 * (1 - metallic));
+                half3 fresnel = oneMinusReflectivity * pow(1.0 - saturate(dot_nv), 5) + (0.04 * (1-metallic));
+
+                finalColor += envColor * fresnel;
+                finalColor += input.sh.rgb * albedo;
+                
+                // Additional Light (Custom)
+                half3 addLightDir = normalize(_AddLightDir);
+                half addNdotL = saturate(dot(normalWS, addLightDir));
+                half3 addLightColor = input.attenuation.y * _AddlightColor.rgb * addNdotL;
+                finalColor += finalColor * addLightColor;
+
+                // Rim Light (Custom)
+                half3 rimDir = normalize(_RimLightDir.xyz);
+                half rimDot = saturate(dot(rimDir, normalWS));
+                half rimFresnel = pow(1.0 - saturate(dot_nv), 2);
+                half rimTerm = saturate((rimFresnel * rimDot - _RimlightScale) / (_RimlightScale2 - _RimlightScale));
+                rimTerm = rimTerm * rimTerm * (3.0 - 2.0 * rimTerm); // Smoothstep
+                rimTerm *= shadow;
+                half3 rimColor = lerp(_RimlightColor.rgb * albedo, _RimlightColor.rgb, _RimlightColor.a);
+                finalColor += rimColor * rimTerm;
 
                 // Emissive
-                float emissiveMask = mixMapSample.g;
-                float3 emissiveColor = albedo * _Emissive * emissiveMask * _EmisssionScale;
+                half emissiveMask = mixMap.b * _Emissive;
+                finalColor += mainTex.rgb * emissiveMask * _EmisssionScale;
 
-                // Ambient / SH / IBL
-                float3 indirectDiffuse = input.shAmbient.rgb * albedo;
-                float3 indirectSpecular = float3(0,0,0);
-                float3 reflectionVector = reflect(-viewDirWS, normalWS);
-                float mipRoughness = perceptualRoughness * (1.7 - 0.7 * perceptualRoughness) * 6.0;
-                half4 envSample = SAMPLE_TEXTURECUBE_LOD(unity_SpecCube0, samplerunity_SpecCube0, reflectionVector, mipRoughness);
-                float3 decodedEnvColor = DecodeHDREnvironment(envSample, unity_SpecCube0_HDR);
-                float roughness2 = perceptualRoughness * perceptualRoughness;
-                float roughness4 = roughness2 * roughness2;
-                float iblFresnelFactor = (pow(1.0 - NdotV, 4.0) * (1.0 - perceptualRoughness) + MIN_ROUGHNESS);
-                indirectSpecular = decodedEnvColor * (1.0 / (roughness4 + 1.0)) * iblFresnelFactor;
+                // Final Tonemapping-like adjustment from original shader
+                half3 filmic = finalColor * 1.1295 + 0.03;
+                half3 filmic_denom = (finalColor * 0.45) * (finalColor * 1.0935 + 0.59) + 0.08;
+                finalColor = (filmic * (finalColor * 0.45)) / filmic_denom;
+                finalColor = min(finalColor, 100.0);
 
-                // Main Light
-                Light mainLight = GetMainLight(input.shadowCoord);
-                float shadowAttenuation = mainLight.shadowAttenuation;
-
-                #if defined(_FACESHDW_SCALE_ON)
-                    shadowAttenuation = saturate(shadowAttenuation + _faceshadowScale * 0.4);
-                #endif
-
-                float3 lightColor = mainLight.color * input.attenuationFactors.x;
-                float3 L = mainLight.direction;
-                float NdotL = saturate(dot(normalWS, L));
-                float diffuseShadow = pow(NdotL, _ShadowPow);
-                diffuseShadow = saturate(diffuseShadow + _ShadowOffset);
-                float finalShadow = max(shadowAttenuation * diffuseShadow, _ShadowScale);
-                
-                float3 directDiffuse = lightColor * albedo * finalShadow * (oneMinusReflectivity / PI);
-                
-                // --- NEW HAIR SPECULAR CALCULATION ---
-                float3 directSpecular = float3(0,0,0);
-                
-                // First specular lobe
-                // Scale exponent from material property (0-2 range) to a usable range (e.g., 1-200)
-                float exponent1 = _glossiness_1Y * 100.0 + 1.0;
-                float spec1 = AnisoSpecular(input.tangentWS, normalWS, viewDirWS, L, _glossiness_1X, exponent1);
-                directSpecular += spec1 * _specularColor1.rgb * lightColor;
-
-                // Second specular lobe
-                float exponent2 = _glossiness_2Y * 100.0 + 1.0;
-                float spec2 = AnisoSpecular(input.tangentWS, normalWS, viewDirWS, L, _glossiness_2X, exponent2);
-                directSpecular += spec2 * _specularColor2.rgb * lightColor;
-
-                // Apply shadow to specular highlights
-                directSpecular *= finalShadow;
-
-                // Additional Lights (remains PBR, hair specular only for main light for performance)
-                #ifdef _ADDITIONAL_LIGHTS
-                    // ... (additional lights code) ...
-                #endif
-                
-                // Custom "AddLight"
-                float3 normalizedAddLightDir = normalize(_AddLightDir);
-                float addLightNdotL = saturate(dot(normalWS, normalizedAddLightDir));
-                float3 addLightFinalColor = _AddlightColor.rgb * input.attenuationFactors.y;
-                float3 addLightEffect = addLightFinalColor * addLightNdotL;
-                directDiffuse *= (1.0 + addLightEffect);
-                directSpecular *= (1.0 + addLightEffect);
-
-                // Rim Light
-                float3 normalizedRimDir = normalize(_RimLightDir.xyz); 
-                float rimNdotS = saturate(dot(normalWS, normalizedRimDir)); 
-                float rimFresnelTerm = (1.0 - NdotV);
-                float onePlusRough = 1.0 + perceptualRoughness;
-                float rimDenTerm = (1.0 - onePlusRough * onePlusRough * 0.125);
-                rimDenTerm = rimFresnelTerm * rimDenTerm + (onePlusRough * onePlusRough * 0.125);
-                rimFresnelTerm = rimFresnelTerm / max(rimDenTerm, FLT_EPS);
-                float rimIntensity = saturate((rimFresnelTerm * rimNdotS - _RimlightScale) / max(_RimlightScale2 - _RimlightScale, FLT_EPS));
-                rimIntensity = rimIntensity * rimIntensity * (3.0 - 2.0 * rimIntensity); 
-                float rimShadowFactor = shadowAttenuation * (1.0 - _RimlightShadowScale) + _RimlightShadowScale;
-                rimIntensity *= rimShadowFactor;
-                float3 rimBaseColor = lerp(albedo * _RimlightColor.rgb, _RimlightColor.rgb, _RimlightColor.a);
-                float3 rimLightColor = rimBaseColor * rimIntensity * input.attenuationFactors.z;
-
-                // Final Color Composition
-                float3 finalColor = indirectDiffuse + directDiffuse + indirectSpecular + directSpecular + rimLightColor + emissiveColor;
-
-                // Debug Views
-                #if defined(_DEBUG_DIFFIUSE)
-                    finalColor = albedo;
-                #elif defined(_DEBUG_NORMAL)
-                    finalColor = normalWS * 0.5 + 0.5;
-                #elif defined(_DEBUG_METAL)
-                    finalColor = metallic.xxx;
-                #elif defined(_DEBUG_ROUGHNESS)
-                    finalColor = perceptualRoughness.xxx;
-                #elif defined(_DEBUG_AO) 
-                    finalColor = shadowAttenuation.xxx;
-                #elif defined(_DEBUG_EMISS)
-                     finalColor = mixMapSample.ggg * _Emissive * _EmisssionScale;
-                #elif defined(_DEBUG_SH)
-                    finalColor = input.shAmbient.rgb;
-                #elif defined(_DEBUG_SPECULAR)
-                    finalColor = directSpecular;
-                #endif
-                
-                finalColor = MixFog(finalColor, input.positionCS.z);
-                return float4(finalColor, outputAlpha);
+                return half4(finalColor, maskValue);
             }
             ENDHLSL
         }
-
-        // Outline, ShadowCaster, DepthOnly, and Universal2D Passes remain unchanged...
-        // ... (Paste the original Outline, ShadowCaster, DepthOnly, and Universal2D Pass blocks here) ...
-        Pass
-        {
+        
+        // Outline Pass
+        Pass {
             Name "Outline"
-            Tags { "LightMode" = "SRPDefaultUnlit" }
+            Tags { "LightMode" = "SRPDefaultUnlit" } 
 
             Cull Front
             ZWrite On
-            ZTest LEqual
-            Blend Off
-
+            
             HLSLPROGRAM
-            #pragma vertex OutlineVertex
-            #pragma fragment OutlineFragment
-            #pragma shader_feature_local _VCOLOR2N_ON
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile _VCOLOR2N_OFF _VCOLOR2N_ON
+            #pragma multi_compile _VTEX_OFF _VTEX_ON
+
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -460,78 +392,94 @@
                 float _OutlineWidth;
                 float _Offset;
                 float4 _lightDir;
+                float4 _color1;
             CBUFFER_END
+            
+            TEXTURE2D(_OutlineMap); SAMPLER(sampler_OutlineMap);
 
-            struct OutlineAttributes
-            {
+            struct Attributes_Outline {
                 float4 positionOS   : POSITION;
                 float3 normalOS     : NORMAL;
+                float4 tangentOS    : TANGENT;
                 float4 color        : COLOR;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                float2 uv0          : TEXCOORD0;
             };
 
-            struct OutlineVaryings
-            {
-                float4 positionCS   : SV_POSITION;
-                half4 color         : COLOR;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-                UNITY_VERTEX_OUTPUT_STEREO
+            struct Varyings_Outline {
+                float4 positionCS : SV_POSITION;
+                half4 color : COLOR;
             };
 
-            OutlineVaryings OutlineVertex(OutlineAttributes input)
+            Varyings_Outline vert(Attributes_Outline v)
             {
-                OutlineVaryings output = (OutlineVaryings)0;
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_TRANSFER_INSTANCE_ID(input, output);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                Varyings_Outline o;
+                
+                float3 normal = v.normalOS;
+                #if _VCOLOR2N_ON
+                    float3 bitangent = cross(v.normalOS, v.tangentOS.xyz) * v.tangentOS.w * GetOddNegativeScale();
+                    float3x3 tbn = float3x3(v.tangentOS.xyz, bitangent, v.normalOS);
+                    normal = mul(tbn, v.color.xyz * 2 - 1);
+                #endif
+                
+                VertexPositionInputs positionInputs = GetVertexPositionInputs(v.positionOS.xyz);
+                float4 posCS = positionInputs.positionCS;
 
-                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
-                float3 normalizedLightDir = normalize(_lightDir.xyz);
-                float NdotL_outline = saturate(dot(normalWS, normalizedLightDir)) * 0.5 + 0.5;
-                output.color.rgb = NdotL_outline * _OutlineColor.rgb;
-                output.color.a = _OutlineColor.a;
-
-                float4 positionCS = TransformObjectToHClip(input.positionOS.xyz);
-                float3 normalCS = mul((float3x3)UNITY_MATRIX_VP, normalWS);
-                normalCS.z = 0;
-                normalCS = normalize(normalCS);
-
-                float outlineWidth = _OutlineWidth;
-                #if defined(_VCOLOR2N_ON)
-                    outlineWidth *= input.color.a;
+                float3 normalWS = TransformObjectToWorldNormal(normal);
+                float4 normalCS = mul(GetWorldToHClipMatrix(), float4(normalWS, 0.0));
+                
+                float outlineWidth = 0.00463 * _OutlineWidth;
+                
+                #if _VTEX_ON
+                    outlineWidth *= SAMPLE_TEXTURE2D_LOD(_OutlineMap, sampler_OutlineMap, v.uv0, 0).w;
                 #endif
 
-                float2 clipOffset = normalCS.xy * outlineWidth * positionCS.w * _ScreenParams.zw * 2.0;
-                positionCS.xy += clipOffset;
-                positionCS.z += _Offset * 0.0001 * positionCS.w;
+                posCS.xy += normalize(normalCS.xy) * outlineWidth * posCS.w;
+                posCS.z += _Offset * 0.00001;
 
-                output.positionCS = positionCS;
-                return output;
+                o.positionCS = posCS;
+
+                float lightFactor = 1.0;
+                #if _VTEX_OFF
+                    float3 worldNormal = normalize(mul((float3x3)GetObjectToWorldMatrix(), normal));
+                    lightFactor = saturate(dot(worldNormal, normalize(_lightDir.xyz)));
+                #endif
+                
+                half3 outlineColor = lerp(_OutlineColor.rgb, float3(1,1,1), 1.0 - lightFactor);
+                outlineColor *= v.color.rgb;
+
+                #if _VTEX_ON
+                    outlineColor *= SAMPLE_TEXTURE2D_LOD(_OutlineMap, sampler_OutlineMap, v.uv0, 0).rgb;
+                #endif
+
+                o.color.rgb = outlineColor * _color1.rgb;
+                o.color.a = 1.0;
+
+                return o;
             }
 
-            half4 OutlineFragment(OutlineVaryings input) : SV_TARGET
+            half4 frag(Varyings_Outline i) : SV_Target
             {
-                UNITY_SETUP_INSTANCE_ID(input);
-                return input.color;
+                return i.color;
             }
             ENDHLSL
         }
-        
-        Pass
-        {
+
+        // Shadow Caster Pass
+        Pass {
             Name "ShadowCaster"
             Tags { "LightMode" = "ShadowCaster" }
 
             ZWrite On
             ZTest LEqual
-            ColorMask 0
             Cull [_Cull]
 
             HLSLPROGRAM
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
+
             #pragma multi_compile_instancing
-            #pragma multi_compile _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS_CASCADE
+
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
@@ -542,69 +490,60 @@
                 float _Mask;
             CBUFFER_END
 
-            TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
             TEXTURE2D(_MixMap); SAMPLER(sampler_MixMap);
+            TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 
-            struct ShadowAttributes
+            struct Attributes_Shadow
             {
                 float4 positionOS   : POSITION;
                 float3 normalOS     : NORMAL;
-                float2 uv           : TEXCOORD0;
+                float2 uv0          : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            struct ShadowVaryings
+            struct Varyings_Shadow
             {
                 float4 positionCS   : SV_POSITION;
                 float2 uv           : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-                UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            ShadowVaryings ShadowPassVertex(ShadowAttributes input)
+            Varyings_Shadow ShadowPassVertex(Attributes_Shadow input)
             {
-                ShadowVaryings output = (ShadowVaryings)0;
+                Varyings_Shadow output;
                 UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_TRANSFER_INSTANCE_ID(input, output);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                
+                Light mainLight = GetMainLight();
+                float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, mainLight.direction));
 
-                #if !_CASTING_PUNCTUAL_LIGHT_SHADOW
-                    float3 lightDir = normalize(_MainLightPosition.xyz); 
-                    float shadowBias = _ShadowBias.x;
-                    float NdotL = dot(normalWS, lightDir);
-                    float slopeScaleBias = (1.0 - saturate(NdotL)) * _ShadowBias.y;
-                    positionWS += normalWS * slopeScaleBias;
-                    positionWS += lightDir * shadowBias;
-                #endif
-
-                output.positionCS = TransformWorldToHClip(positionWS);
                 #if UNITY_REVERSED_Z
-                    output.positionCS.z = min(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
+                    positionCS.z = min(positionCS.z, positionCS.w * UNITY_NEAR_CLIP_VALUE);
                 #else
-                    output.positionCS.z = max(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
+                    positionCS.z = max(positionCS.z, positionCS.w * UNITY_NEAR_CLIP_VALUE);
                 #endif
+                
+                output.positionCS = positionCS;
+                output.uv = input.uv0 * _MainTex_ST.xy + _MainTex_ST.zw;
                 return output;
             }
 
-            half4 ShadowPassFragment(ShadowVaryings input) : SV_TARGET
+            half4 ShadowPassFragment(Varyings_Shadow input) : SV_TARGET
             {
-                UNITY_SETUP_INSTANCE_ID(input);
-                float4 mixMapSample = SAMPLE_TEXTURE2D(_MixMap, sampler_MixMap, input.uv);
-                float alpha = lerp(1.0, mixMapSample.r, _Mask);
-                clip(alpha - _Cutoff);
+                half4 mixMap = SAMPLE_TEXTURE2D(_MixMap, sampler_MixMap, input.uv);
+                half maskValue = _Mask * (mixMap.r - 1.0) + 1.0;
+                clip(maskValue - _Cutoff);
                 return 0;
             }
             ENDHLSL
         }
-
+        
+        // Depth Only Pass
         Pass
         {
             Name "DepthOnly"
-            Tags { "LightMode" = "DepthOnly" }
+            Tags{"LightMode" = "DepthOnly"}
 
             ZWrite On
             ColorMask 0
@@ -613,99 +552,119 @@
             HLSLPROGRAM
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
-            #pragma multi_compile_instancing
+
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float _Cutoff;
                 float _Mask;
             CBUFFER_END
-            
-            TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+
             TEXTURE2D(_MixMap); SAMPLER(sampler_MixMap);
 
-            struct DepthOnlyAttributes
+            struct Attributes_Depth
             {
                 float4 positionOS   : POSITION;
-                float2 uv           : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                float2 uv0          : TEXCOORD0;
             };
 
-            struct DepthOnlyVaryings
+            struct Varyings_Depth
             {
                 float4 positionCS   : SV_POSITION;
                 float2 uv           : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
-                UNITY_VERTEX_OUTPUT_STEREO
             };
-            
-            DepthOnlyVaryings DepthOnlyVertex(DepthOnlyAttributes input)
+
+            Varyings_Depth DepthOnlyVertex(Attributes_Depth input)
             {
-                DepthOnlyVaryings output = (DepthOnlyVaryings)0;
-                UNITY_SETUP_INSTANCE_ID(input);
-                UNITY_TRANSFER_INSTANCE_ID(input, output);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                Varyings_Depth output = (Varyings_Depth)0;
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
-                output.uv = TRANSFORM_TEX(input.uv, _MainTex);
+                output.uv = input.uv0 * _MainTex_ST.xy + _MainTex_ST.zw;
                 return output;
             }
 
-            half4 DepthOnlyFragment(DepthOnlyVaryings input) : SV_TARGET
+            half4 DepthOnlyFragment(Varyings_Depth input) : SV_TARGET
             {
-                UNITY_SETUP_INSTANCE_ID(input);
-                float4 mixMapSample = SAMPLE_TEXTURE2D(_MixMap, sampler_MixMap, input.uv);
-                float alpha = lerp(1.0, mixMapSample.r, _Mask);
-                clip(alpha - _Cutoff);
+                half4 mixMap = SAMPLE_TEXTURE2D(_MixMap, sampler_MixMap, input.uv);
+                half maskValue = _Mask * (mixMap.r - 1.0) + 1.0;
+                clip(maskValue - _Cutoff);
                 return 0;
             }
             ENDHLSL
         }
         
+        // Meta Pass for Light Baking
         Pass
         {
-            Name "Universal2D"
-            Tags { "LightMode" = "Universal2D" }
+            Name "Meta"
+            Tags { "LightMode" = "Meta" }
 
-            Blend [_SrcBlendFactor] [_DstBlendFactor]
-            ZWrite [_ZWrite]
-            ZTest [_ZTest]
             Cull Off
 
             HLSLPROGRAM
-            #pragma vertex Vert2D
-            #pragma fragment Frag2D
+            #pragma vertex UniversalVertexMeta
+            #pragma fragment UniversalFragmentMeta
+            
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
-                float4 _OutlineColor;
+                float4 _colorSkin;
+                float4 _color1, _color2, _color3, _color4;
+                float _Cutoff;
+                float _Mask;
             CBUFFER_END
 
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+            TEXTURE2D(_MixMap); SAMPLER(sampler_MixMap);
 
-            struct Attributes2D { float4 p: POSITION; float2 uv: TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
-            struct Varyings2D { float4 p: SV_POSITION; float2 uv: TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID UNITY_VERTEX_OUTPUT_STEREO };
-
-            Varyings2D Vert2D(Attributes2D i)
+            struct Attributes_Meta
             {
-                Varyings2D o = (Varyings2D)0;
-                UNITY_SETUP_INSTANCE_ID(i);
-                UNITY_TRANSFER_INSTANCE_ID(i, o);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-                o.p = TransformObjectToHClip(i.p.xyz);
-                o.uv = TRANSFORM_TEX(i.uv, _MainTex);
+                float4 positionOS       : POSITION;
+                float2 uv0              : TEXCOORD0;
+                float2 lightmapUV       : TEXCOORD1;
+                float2 dynamicLightmapUV: TEXCOORD2;
+            };
+
+            struct Varyings_Meta
+            {
+                float4 positionCS   : SV_POSITION;
+                float2 uv           : TEXCOORD0;
+            };
+
+            Varyings_Meta UniversalVertexMeta(Attributes_Meta input)
+            {
+                Varyings_Meta o;
+                o.positionCS = UnityMetaVertexPosition(input.positionOS, input.lightmapUV, input.dynamicLightmapUV);
+                o.uv = input.uv0 * _MainTex_ST.xy + _MainTex_ST.zw;
                 return o;
             }
 
-            half4 Frag2D(Varyings2D i) : SV_TARGET
+            half4 UniversalFragmentMeta(Varyings_Meta i) : SV_Target
             {
-                UNITY_SETUP_INSTANCE_ID(i);
-                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv) * _OutlineColor;
+                half4 mixMap = SAMPLE_TEXTURE2D(_MixMap, sampler_MixMap, i.uv);
+                half maskValue = _Mask * (mixMap.r - 1.0) + 1.0;
+                clip(maskValue - _Cutoff);
+
+                half4 colorSteps = mixMap.a + half4(0.0, -0.3333, -0.6667, -1.0);
+                colorSteps = -abs(colorSteps * 3.191489);
+                colorSteps = saturate(colorSteps + 1.031915);
+
+                half3 colorMasked = colorSteps.xxx * _color1.rgb + colorSteps.yyy * _color2.rgb + colorSteps.zzz * _color3.rgb + colorSteps.www * _color4.rgb;
+                colorMasked = lerp(colorMasked, 1.0 - colorMasked, mixMap.g);
+
+                half4 mainTex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                half3 albedo = lerp(_colorSkin.rgb, mainTex.rgb * colorMasked, maskValue);
+                
+                MetaInput metaInput;
+                metaInput.Albedo = albedo;
+                metaInput.Emission = float3(0,0,0);
+
+                return UnityMetaFragment(metaInput);
             }
             ENDHLSL
         }
     }
-    FallBack "Universal Render Pipeline/Lit"
+    Fallback "Hidden/InternalErrorShader"
 }

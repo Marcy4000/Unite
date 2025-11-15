@@ -26,9 +26,14 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _ATVECTOR_X
-  - _DEBUG_OFF
   - _SHTYPE_LERP
-  m_InvalidKeywords: []
+  - _SLUV_UV0
+  - _VCOLOR2N_OFF
+  - _VTEX_OFF
+  m_InvalidKeywords:
+  - _DEBUG_OFF
+  - _EMISSIVE_ON
+  - _MASK_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -87,6 +92,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _OutlineMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -109,6 +118,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _ActorScaleAttribute: 1
     - _AddlightAttenuation: 1
     - _AddlightLerp: 0.5
     - _AddlightScale: 1
@@ -148,6 +158,7 @@ Material:
     - _Queue: 3000
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _RenderType: 0
     - _RimlightAttenuation: 0.04
     - _RimlightScale: 1
     - _RimlightScale2: 1.5
@@ -155,6 +166,7 @@ Material:
     - _RoughNessOffset: 1
     - _SHScale: 2.21
     - _SHType: 1
+    - _SLUV: 0
     - _ShadowOffset: 0
     - _ShadowPow: 1
     - _ShadowScale: 0
@@ -171,6 +183,9 @@ Material:
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
     - _StencilZFailOp: 0
+    - _SunShift: 0
+    - _SunShiftOffuse1: 0
+    - _SunShiftOffuse2: 0
     - _Surface: 0
     - _VCOLOR2N: 0
     - _VTEX: 0
@@ -201,8 +216,12 @@ Material:
     - _color1: {r: 1, g: 1, b: 1, a: 1}
     - _color2: {r: 1, g: 1, b: 1, a: 1}
     - _color3: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _color4: {r: 1, g: 1, b: 1, a: 1}
     - _colorSkin: {r: 0.48235, g: 0.44314, b: 0.39216, a: 1}
     - _lightDir: {r: 9.48, g: 3.68, b: 0, a: 0}
+    - _metalv4: {r: 0, g: 0, b: 0, a: 0}
+    - _roughv4: {r: 1, g: 1, b: 1, a: 1}
+    - _shapeST: {r: 1, g: 1, b: 0, a: 0}
     - _specularColor1: {r: 1, g: 1, b: 1, a: 1}
     - _specularColor2: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

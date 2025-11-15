@@ -1,0 +1,308 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "==PGAME==/Lobby/m_lob_ValentineWater" {
+Properties {
+[NoScaleOffset] _RiverTex ("Texture", 2D) = "white" { }
+[NoScaleOffset] _RampTex ("Ramp", 2D) = "white" { }
+_RiverWidth ("河水宽度", Range(0.5, 1.5)) = 1
+_RiverPosi ("河水平移", Range(0.4, 0.6)) = 0.5
+_HeightScale ("水位缩放", Range(0, 3)) = 0.5
+_NoiseSpeed ("noise流动速度&强度", Vector) = (0.1,0.1,0.1,0.1)
+_NoiseScale ("noise Tilling", Range(0, 10)) = 1
+[Space(20)] _RipplePosi ("涟漪位置", Range(-10, 0)) = -4.19
+_RippleRange ("涟漪范围", Range(0, 5)) = 1.2
+_RippleScale ("涟漪比例", Range(0, 2)) = 1
+_ShadowLightPosi ("光照阴影范围", Vector) = (0.6,0.4,0.2,0)
+[HDR] _ColorLight ("涟漪亮部颜色", Color) = (0,0,0,0)
+_ColorShadow ("涟漪阴影颜色", Color) = (1,1,1,1)
+_SpecPosi ("涟漪高光范围", Vector) = (0.9,0.8,0.2,0)
+[HDR] _ColorSpec ("涟漪高光颜色", Color) = (0,0,0,0)
+_RandomDegree ("涟漪随机度", Float) = 0.7
+[Space(20)] _ReflectIntensity ("反射强度", Range(0, 1)) = 1
+_ReflectScater ("反射扭曲", Range(0, 1)) = 1
+_ReflectAdjust ("反射调整", Float) = 2.03
+}
+SubShader {
+ LOD 300
+ Tags { "IGNOREPROJECTOR" = "true" "QUEUE" = "Geometry" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Opaque" }
+ Pass {
+  Name "ForwardLit"
+  LOD 300
+  Tags { "IGNOREPROJECTOR" = "true" "LIGHTMODE" = "LightweightForward" "QUEUE" = "Geometry" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Opaque" }
+  ZWrite Off
+  GpuProgramID 33659
+Program "vp" {
+SubProgram "gles3 " {
+"// hash: 18fa9d4085a8811f
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _ProjectionParams;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in mediump vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+out mediump vec4 vs_TEXCOORD1;
+out mediump vec3 vs_TEXCOORD2;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat0.xyz;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    vs_TEXCOORD2.xyz = u_xlat0.xyz;
+    u_xlat0 = u_xlat1 + hlslcc_mtx4x4unity_MatrixVP[3];
+    gl_Position = u_xlat0;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    u_xlat1.x = u_xlat0.y * _ProjectionParams.x;
+    u_xlat1.w = u_xlat1.x * 0.5;
+    u_xlat1.xz = u_xlat0.xw * vec2(0.5, 0.5);
+    u_xlat0.xy = u_xlat1.zz + u_xlat1.xw;
+    vs_TEXCOORD1 = u_xlat0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _MainLightPosition;
+uniform 	vec4 _Time;
+uniform 	vec4 _NoiseSpeed;
+uniform 	float _NoiseScale;
+uniform 	mediump float _RippleRange;
+uniform 	mediump float _RippleScale;
+uniform 	mediump vec3 _ColorShadow;
+uniform 	mediump vec3 _ColorLight;
+uniform 	mediump float _HeightScale;
+uniform 	vec4 _ShadowLightPosi;
+uniform 	mediump float _ReflectScater;
+uniform 	mediump float _ReflectIntensity;
+uniform 	mediump vec3 _ColorSpec;
+uniform 	vec4 _SpecPosi;
+uniform 	mediump float _RiverWidth;
+uniform 	mediump float _RiverPosi;
+uniform 	mediump float _ReflectAdjust;
+uniform 	float _RandomDegree;
+uniform 	float _RipplePosi;
+UNITY_LOCATION(0) uniform mediump sampler2D _ReflectionTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _RiverTex;
+UNITY_LOCATION(2) uniform mediump sampler2D _RampTex;
+in highp vec2 vs_TEXCOORD0;
+in mediump vec4 vs_TEXCOORD1;
+in mediump vec3 vs_TEXCOORD2;
+layout(location = 0) out mediump vec4 SV_Target0;
+mediump vec3 u_xlat16_0;
+vec4 u_xlat1;
+mediump vec3 u_xlat16_1;
+vec4 u_xlat2;
+vec3 u_xlat3;
+vec2 u_xlat4;
+mediump vec4 u_xlat16_4;
+vec2 u_xlat5;
+mediump vec2 u_xlat16_5;
+mediump vec3 u_xlat16_6;
+mediump vec3 u_xlat16_7;
+mediump vec3 u_xlat16_8;
+mediump vec2 u_xlat16_9;
+float u_xlat10;
+bool u_xlatb10;
+float u_xlat19;
+bool u_xlatb19;
+vec2 u_xlat20;
+mediump float u_xlat16_27;
+float u_xlat28;
+mediump float u_xlat16_28;
+void main()
+{
+    u_xlat16_0.x = vs_TEXCOORD2.x;
+    u_xlat1.x = vs_TEXCOORD2.z + _RipplePosi;
+    u_xlat16_0.y = u_xlat1.x * _RippleScale;
+    u_xlat16_0.x = dot(u_xlat16_0.xy, u_xlat16_0.xy);
+    u_xlat16_0.x = sqrt(u_xlat16_0.x);
+    u_xlat1.x = u_xlat16_0.x * 20.0 + (-_Time.y);
+    u_xlat1.x = u_xlat1.x * 0.10663382;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb10 = !!(u_xlat1.x>=(-u_xlat1.x));
+#else
+    u_xlatb10 = u_xlat1.x>=(-u_xlat1.x);
+#endif
+    u_xlat1.x = fract(abs(u_xlat1.x));
+    u_xlat1.x = (u_xlatb10) ? u_xlat1.x : (-u_xlat1.x);
+    u_xlat1.x = u_xlat1.x * 6.28318501;
+    u_xlat1.x = sin(u_xlat1.x);
+    u_xlat10 = _Time.y * 0.159154952;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb19 = !!(u_xlat10>=(-u_xlat10));
+#else
+    u_xlatb19 = u_xlat10>=(-u_xlat10);
+#endif
+    u_xlat10 = fract(abs(u_xlat10));
+    u_xlat10 = (u_xlatb19) ? u_xlat10 : (-u_xlat10);
+    u_xlat19 = u_xlat16_0.x * 20.0;
+    u_xlat10 = (-u_xlat10) * 6.28318501 + u_xlat19;
+    u_xlat1.x = u_xlat1.x * _RandomDegree + u_xlat10;
+    u_xlat1.x = cos(u_xlat1.x);
+    u_xlat1.x = u_xlat1.x / u_xlat16_0.x;
+    u_xlat10 = u_xlat16_0.x + (-_RippleRange);
+    u_xlat2.z = u_xlat16_0.y * u_xlat1.x;
+    u_xlat2.x = u_xlat1.x * vs_TEXCOORD2.x;
+    u_xlat2.y = 1.0;
+    u_xlat1.x = dot(u_xlat2.xyz, u_xlat2.xyz);
+    u_xlat1.x = inversesqrt(u_xlat1.x);
+    u_xlat1.xzw = u_xlat2.xyz * u_xlat1.xxx + vec3(-0.0, -1.0, -0.0);
+    u_xlat2.x = float(1.0) / (-_RippleRange);
+    u_xlat10 = u_xlat10 * u_xlat2.x;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat10 = min(max(u_xlat10, 0.0), 1.0);
+#else
+    u_xlat10 = clamp(u_xlat10, 0.0, 1.0);
+#endif
+    u_xlat2.x = u_xlat10 * -2.0 + 3.0;
+    u_xlat10 = u_xlat10 * u_xlat10;
+    u_xlat10 = u_xlat10 * u_xlat2.x;
+    u_xlat1.xyz = vec3(u_xlat10) * u_xlat1.xzw + vec3(0.0, 1.0, 0.0);
+    u_xlat10 = dot(_MainLightPosition.xyz, u_xlat1.xyz);
+    u_xlat2.xy = vec2(u_xlat10) + (-_ShadowLightPosi.zx);
+    u_xlat10 = u_xlat10 + (-_SpecPosi.x);
+    u_xlat20.xy = (-_ShadowLightPosi.zx) + _ShadowLightPosi.wy;
+    u_xlat20.xy = vec2(1.0, 1.0) / u_xlat20.xy;
+    u_xlat2.xy = u_xlat20.xy * u_xlat2.xy;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat2.xy = min(max(u_xlat2.xy, 0.0), 1.0);
+#else
+    u_xlat2.xy = clamp(u_xlat2.xy, 0.0, 1.0);
+#endif
+    u_xlat20.xy = u_xlat2.xy * vec2(-2.0, -2.0) + vec2(3.0, 3.0);
+    u_xlat2.xy = u_xlat2.xy * u_xlat2.xy;
+    u_xlat2.xy = u_xlat2.xy * u_xlat20.xy;
+    u_xlat3.xyz = _ColorShadow.xyz + vec3(-1.0, -1.0, -1.0);
+    u_xlat2.xzw = u_xlat2.xxx * u_xlat3.xyz + vec3(1.0, 1.0, 1.0);
+    u_xlat3.xyz = u_xlat2.yyy * _ColorLight.xyz;
+    u_xlat4.xy = _Time.yy * _NoiseSpeed.xy;
+    u_xlat4.xy = vs_TEXCOORD0.xy * vec2(_NoiseScale) + u_xlat4.xy;
+    u_xlat16_28 = texture(_RiverTex, u_xlat4.xy).z;
+    u_xlat16_0.x = u_xlat16_28 * 2.0 + -1.0;
+    u_xlat16_9.xy = vs_TEXCOORD1.yx / vs_TEXCOORD1.ww;
+    u_xlat16_9.xy = u_xlat16_9.xy + vec2(0.00999999978, -0.5);
+    u_xlat16_4.x = u_xlat16_9.y * _RiverWidth + _RiverPosi;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_4.x = min(max(u_xlat16_4.x, 0.0), 1.0);
+#else
+    u_xlat16_4.x = clamp(u_xlat16_4.x, 0.0, 1.0);
+#endif
+    u_xlat16_4.y = u_xlat16_9.x * _HeightScale;
+    u_xlat5.xy = u_xlat16_0.xx * _NoiseSpeed.zw + u_xlat16_4.xy;
+    u_xlat16_5.xy = texture(_RiverTex, u_xlat5.xy).xy;
+    u_xlat16_4.z = float(0.5);
+    u_xlat16_4.w = float(0.100000001);
+    u_xlat16_6.xyz = texture(_RampTex, u_xlat16_4.yw).xyz;
+    u_xlat16_7.xyz = texture(_RampTex, u_xlat16_4.yz).xyz;
+    u_xlat16_0.xyz = u_xlat16_6.xyz * vec3(1.20000005, 1.20000005, 1.20000005) + u_xlat16_5.yyy;
+    u_xlat16_0.xyz = (-u_xlat16_7.xyz) + u_xlat16_0.xyz;
+    u_xlat16_0.xyz = u_xlat16_5.xxx * u_xlat16_0.xyz + u_xlat16_7.xyz;
+    u_xlat16_27 = (-u_xlat16_5.x) + 1.0;
+    u_xlat16_8.y = _ReflectAdjust * u_xlat16_27 + vs_TEXCOORD1.y;
+    u_xlat2.xyz = u_xlat16_0.xyz * u_xlat2.xzw + u_xlat3.xyz;
+    u_xlat28 = (-_SpecPosi.x) + _SpecPosi.y;
+    u_xlat28 = float(1.0) / u_xlat28;
+    u_xlat10 = u_xlat28 * u_xlat10;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat10 = min(max(u_xlat10, 0.0), 1.0);
+#else
+    u_xlat10 = clamp(u_xlat10, 0.0, 1.0);
+#endif
+    u_xlat28 = u_xlat10 * -2.0 + 3.0;
+    u_xlat10 = u_xlat10 * u_xlat10;
+    u_xlat10 = u_xlat10 * u_xlat28;
+    u_xlat2.xyz = _ColorSpec.xyz * vec3(u_xlat10) + u_xlat2.xyz;
+    u_xlat16_8.xz = vs_TEXCOORD1.xw;
+    u_xlat1.xyz = u_xlat1.xzz * vec3(_ReflectScater) + u_xlat16_8.xyz;
+    u_xlat1.xy = u_xlat1.xy / u_xlat1.zz;
+    u_xlat16_1.xyz = texture(_ReflectionTex, u_xlat1.xy).xyz;
+    SV_Target0.xyz = u_xlat16_1.xyz * vec3(vec3(_ReflectIntensity, _ReflectIntensity, _ReflectIntensity)) + u_xlat2.xyz;
+#ifdef UNITY_ADRENO_ES3
+    SV_Target0.xyz = min(max(SV_Target0.xyz, 0.0), 1.0);
+#else
+    SV_Target0.xyz = clamp(SV_Target0.xyz, 0.0, 1.0);
+#endif
+    SV_Target0.w = 1.0;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+}

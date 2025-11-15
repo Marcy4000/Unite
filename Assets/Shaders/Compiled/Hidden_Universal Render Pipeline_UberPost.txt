@@ -1,0 +1,2234 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "Hidden/Universal Render Pipeline/UberPost" {
+Properties {
+}
+SubShader {
+ LOD 100
+ Tags { "RenderPipeline" = "UniversalPipeline" "RenderType" = "Opaque" }
+ Pass {
+  Name "UberPost"
+  LOD 100
+  Tags { "RenderPipeline" = "UniversalPipeline" "RenderType" = "Opaque" }
+  ZTest Always
+  ZWrite Off
+  Cull Off
+  GpuProgramID 60077
+Program "vp" {
+SubProgram "gles " {
+"// hash: 32c9c8f37ad6e9f3
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+attribute highp vec4 in_POSITION0;
+attribute highp vec2 in_TEXCOORD0;
+varying highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+uniform lowp sampler2D _BlitTex;
+uniform lowp sampler2D _UserLut;
+uniform lowp sampler2D _InternalLut;
+varying highp vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+vec3 u_xlat0;
+lowp vec4 u_xlat10_0;
+bvec3 u_xlatb0;
+vec3 u_xlat1;
+mediump vec3 u_xlat16_1;
+mediump vec3 u_xlat16_2;
+vec3 u_xlat3;
+lowp vec3 u_xlat10_3;
+mediump vec3 u_xlat16_4;
+lowp vec3 u_xlat10_5;
+vec2 u_xlat6;
+vec2 u_xlat7;
+void main()
+{
+    u_xlat10_0 = texture2D(_BlitTex, vs_TEXCOORD0.xy);
+    u_xlat16_1.xyz = u_xlat10_0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+    u_xlat16_2.xyz = u_xlat10_0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+    u_xlat16_2.xyz = log2(abs(u_xlat16_2.xyz));
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+    u_xlat16_2.xyz = exp2(u_xlat16_2.xyz);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat10_0.xyzx).xyz;
+    {
+        vec3 hlslcc_movcTemp = u_xlat16_1;
+        hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_1.x : u_xlat16_2.x;
+        hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_1.y : u_xlat16_2.y;
+        hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_1.z : u_xlat16_2.z;
+        u_xlat16_1 = hlslcc_movcTemp;
+    }
+    u_xlatb0.x = 0.0<_Vignette_Params2.z;
+    if(u_xlatb0.x){
+        u_xlat0.xy = vs_TEXCOORD0.xy + (-_Vignette_Params2.xy);
+        u_xlat0.yz = abs(u_xlat0.xy) * _Vignette_Params2.zz;
+        u_xlat0.x = u_xlat0.y * _Vignette_Params1.w;
+        u_xlat0.x = dot(u_xlat0.xz, u_xlat0.xz);
+        u_xlat0.x = (-u_xlat0.x) + 1.0;
+        u_xlat0.x = max(u_xlat0.x, 0.0);
+        u_xlat0.x = log2(u_xlat0.x);
+        u_xlat0.x = u_xlat0.x * _Vignette_Params2.w;
+        u_xlat0.x = exp2(u_xlat0.x);
+        u_xlat3.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat3.xyz + _Vignette_Params1.xyz;
+        u_xlat1.xyz = u_xlat0.xyz * u_xlat16_1.xyz;
+        u_xlat16_1.xyz = u_xlat1.xyz;
+    }
+    u_xlat16_1.xyz = u_xlat16_1.xyz * _Lut_Params.www;
+    u_xlat16_1.xyz = clamp(u_xlat16_1.xyz, 0.0, 1.0);
+    u_xlatb0.x = 0.0<_UserLut_Params.w;
+    if(u_xlatb0.x){
+        u_xlat16_2.xyz = u_xlat16_1.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_4.xyz = log2(u_xlat16_1.xyz);
+        u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_4.xyz = exp2(u_xlat16_4.xyz);
+        u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_1.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_2;
+            hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_2.x : u_xlat16_4.x;
+            hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_2.y : u_xlat16_4.y;
+            hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_2.z : u_xlat16_4.z;
+            u_xlat16_2 = hlslcc_movcTemp;
+        }
+        u_xlat0.xyz = u_xlat16_2.zxy * _UserLut_Params.zzz;
+        u_xlat0.x = floor(u_xlat0.x);
+        u_xlat3.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat3.yz = u_xlat0.yz * _UserLut_Params.xy + u_xlat3.xy;
+        u_xlat3.x = u_xlat0.x * _UserLut_Params.y + u_xlat3.y;
+        u_xlat10_5.xyz = texture2D(_UserLut, u_xlat3.xz, 0.0).xyz;
+        u_xlat6.x = _UserLut_Params.y;
+        u_xlat6.y = 0.0;
+        u_xlat7.xy = u_xlat3.xz + u_xlat6.xy;
+        u_xlat10_3.xyz = texture2D(_UserLut, u_xlat7.xy, 0.0).xyz;
+        u_xlat0.x = u_xlat16_2.z * _UserLut_Params.z + (-u_xlat0.x);
+        u_xlat3.xyz = (-u_xlat10_5.xyz) + u_xlat10_3.xyz;
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat3.xyz + u_xlat10_5.xyz;
+        u_xlat0.xyz = (-u_xlat16_2.xyz) + u_xlat0.xyz;
+        u_xlat0.xyz = _UserLut_Params.www * u_xlat0.xyz + u_xlat16_2.xyz;
+        u_xlat16_2.xyz = u_xlat0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_4.xyz = u_xlat0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_4.xyz = log2(abs(u_xlat16_4.xyz));
+        u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_4.xyz = exp2(u_xlat16_4.xyz);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat0.xyzx).xyz;
+        u_xlat16_1.x = (u_xlatb0.x) ? u_xlat16_2.x : u_xlat16_4.x;
+        u_xlat16_1.y = (u_xlatb0.y) ? u_xlat16_2.y : u_xlat16_4.y;
+        u_xlat16_1.z = (u_xlatb0.z) ? u_xlat16_2.z : u_xlat16_4.z;
+    }
+    u_xlat0.xyz = u_xlat16_1.zxy * _Lut_Params.zzz;
+    u_xlat0.x = floor(u_xlat0.x);
+    u_xlat3.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat3.yz = u_xlat0.yz * _Lut_Params.xy + u_xlat3.xy;
+    u_xlat3.x = u_xlat0.x * _Lut_Params.y + u_xlat3.y;
+    u_xlat10_5.xyz = texture2D(_InternalLut, u_xlat3.xz, 0.0).xyz;
+    u_xlat6.x = _Lut_Params.y;
+    u_xlat6.y = 0.0;
+    u_xlat7.xy = u_xlat3.xz + u_xlat6.xy;
+    u_xlat10_3.xyz = texture2D(_InternalLut, u_xlat7.xy, 0.0).xyz;
+    u_xlat0.x = u_xlat16_1.z * _Lut_Params.z + (-u_xlat0.x);
+    u_xlat3.xyz = (-u_xlat10_5.xyz) + u_xlat10_3.xyz;
+    u_xlat0.xyz = u_xlat0.xxx * u_xlat3.xyz + u_xlat10_5.xyz;
+    u_xlat16_1.xyz = u_xlat0.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+    u_xlat16_2.xyz = log2(abs(u_xlat0.xyz));
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+    u_xlat16_2.xyz = exp2(u_xlat16_2.xyz);
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat0.xyzx).xyz;
+    SV_Target0.x = (u_xlatb0.x) ? u_xlat16_1.x : u_xlat16_2.x;
+    SV_Target0.y = (u_xlatb0.y) ? u_xlat16_1.y : u_xlat16_2.y;
+    SV_Target0.z = (u_xlatb0.z) ? u_xlat16_1.z : u_xlat16_2.z;
+    SV_Target0.w = u_xlat10_0.w;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+"// hash: 59b9d604c3c13a16
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+#ifdef GL_EXT_shader_texture_lod
+#extension GL_EXT_shader_texture_lod : enable
+#endif
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+UNITY_LOCATION(0) uniform mediump sampler2D _BlitTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _InternalLut;
+UNITY_LOCATION(2) uniform mediump sampler2D _UserLut;
+in highp vec2 vs_TEXCOORD0;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec4 u_xlat0;
+vec3 u_xlat1;
+mediump vec3 u_xlat16_1;
+bool u_xlatb1;
+mediump vec3 u_xlat16_2;
+vec3 u_xlat3;
+bvec3 u_xlatb3;
+mediump vec3 u_xlat16_4;
+mediump vec3 u_xlat16_5;
+vec3 u_xlat6;
+mediump vec3 u_xlat10_6;
+vec2 u_xlat7;
+vec3 u_xlat9;
+mediump vec3 u_xlat10_11;
+void main()
+{
+    u_xlat0 = texture(_BlitTex, vs_TEXCOORD0.xy);
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb1 = !!(0.0<_Vignette_Params2.z);
+#else
+    u_xlatb1 = 0.0<_Vignette_Params2.z;
+#endif
+    if(u_xlatb1){
+        u_xlat1.xy = vs_TEXCOORD0.xy + (-_Vignette_Params2.xy);
+        u_xlat1.yz = abs(u_xlat1.xy) * _Vignette_Params2.zz;
+        u_xlat1.x = u_xlat1.y * _Vignette_Params1.w;
+        u_xlat1.x = dot(u_xlat1.xz, u_xlat1.xz);
+        u_xlat1.x = (-u_xlat1.x) + 1.0;
+        u_xlat1.x = max(u_xlat1.x, 0.0);
+        u_xlat1.x = log2(u_xlat1.x);
+        u_xlat1.x = u_xlat1.x * _Vignette_Params2.w;
+        u_xlat1.x = exp2(u_xlat1.x);
+        u_xlat9.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat1.xyz = u_xlat1.xxx * u_xlat9.xyz + _Vignette_Params1.xyz;
+        u_xlat1.xyz = u_xlat0.xyz * u_xlat1.xyz;
+        u_xlat16_1.xyz = u_xlat1.xyz;
+    } else {
+        u_xlat16_1.xyz = u_xlat0.xyz;
+    }
+    u_xlat16_2.xyz = u_xlat16_1.xyz * _Lut_Params.www;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_2.xyz = min(max(u_xlat16_2.xyz, 0.0), 1.0);
+#else
+    u_xlat16_2.xyz = clamp(u_xlat16_2.xyz, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb3.x = !!(0.0<_UserLut_Params.w);
+#else
+    u_xlatb3.x = 0.0<_UserLut_Params.w;
+#endif
+    if(u_xlatb3.x){
+        u_xlat16_4.xyz = u_xlat16_2.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_5.xyz = log2(u_xlat16_2.xyz);
+        u_xlat16_5.xyz = u_xlat16_5.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_5.xyz = exp2(u_xlat16_5.xyz);
+        u_xlat16_5.xyz = u_xlat16_5.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb3.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_2.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_4;
+            hlslcc_movcTemp.x = (u_xlatb3.x) ? u_xlat16_4.x : u_xlat16_5.x;
+            hlslcc_movcTemp.y = (u_xlatb3.y) ? u_xlat16_4.y : u_xlat16_5.y;
+            hlslcc_movcTemp.z = (u_xlatb3.z) ? u_xlat16_4.z : u_xlat16_5.z;
+            u_xlat16_4 = hlslcc_movcTemp;
+        }
+        u_xlat3.xyz = u_xlat16_4.zxy * _UserLut_Params.zzz;
+        u_xlat3.x = floor(u_xlat3.x);
+        u_xlat6.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat6.yz = u_xlat3.yz * _UserLut_Params.xy + u_xlat6.xy;
+        u_xlat6.x = u_xlat3.x * _UserLut_Params.y + u_xlat6.y;
+        u_xlat10_11.xyz = textureLod(_UserLut, u_xlat6.xz, 0.0).xyz;
+        u_xlat7.x = _UserLut_Params.y;
+        u_xlat7.y = 0.0;
+        u_xlat6.xy = u_xlat6.xz + u_xlat7.xy;
+        u_xlat10_6.xyz = textureLod(_UserLut, u_xlat6.xy, 0.0).xyz;
+        u_xlat3.x = u_xlat16_4.z * _UserLut_Params.z + (-u_xlat3.x);
+        u_xlat6.xyz = (-u_xlat10_11.xyz) + u_xlat10_6.xyz;
+        u_xlat3.xyz = u_xlat3.xxx * u_xlat6.xyz + u_xlat10_11.xyz;
+        u_xlat3.xyz = (-u_xlat16_4.xyz) + u_xlat3.xyz;
+        u_xlat3.xyz = _UserLut_Params.www * u_xlat3.xyz + u_xlat16_4.xyz;
+        u_xlat16_4.xyz = u_xlat3.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_5.xyz = u_xlat3.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_5.xyz = u_xlat16_5.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_5.xyz = log2(abs(u_xlat16_5.xyz));
+        u_xlat16_5.xyz = u_xlat16_5.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_5.xyz = exp2(u_xlat16_5.xyz);
+        u_xlatb3.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat3.xyzx).xyz;
+        u_xlat16_2.x = (u_xlatb3.x) ? u_xlat16_4.x : u_xlat16_5.x;
+        u_xlat16_2.y = (u_xlatb3.y) ? u_xlat16_4.y : u_xlat16_5.y;
+        u_xlat16_2.z = (u_xlatb3.z) ? u_xlat16_4.z : u_xlat16_5.z;
+    }
+    u_xlat3.xyz = u_xlat16_2.zxy * _Lut_Params.zzz;
+    u_xlat3.x = floor(u_xlat3.x);
+    u_xlat6.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat6.yz = u_xlat3.yz * _Lut_Params.xy + u_xlat6.xy;
+    u_xlat6.x = u_xlat3.x * _Lut_Params.y + u_xlat6.y;
+    u_xlat10_11.xyz = textureLod(_InternalLut, u_xlat6.xz, 0.0).xyz;
+    u_xlat7.x = _Lut_Params.y;
+    u_xlat7.y = 0.0;
+    u_xlat6.xy = u_xlat6.xz + u_xlat7.xy;
+    u_xlat10_6.xyz = textureLod(_InternalLut, u_xlat6.xy, 0.0).xyz;
+    u_xlat3.x = u_xlat16_2.z * _Lut_Params.z + (-u_xlat3.x);
+    u_xlat6.xyz = (-u_xlat10_11.xyz) + u_xlat10_6.xyz;
+    u_xlat0.xyz = u_xlat3.xxx * u_xlat6.xyz + u_xlat10_11.xyz;
+    SV_Target0 = u_xlat0;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles " {
+Local Keywords { "_BLOOM_LQ" }
+"// hash: 8486a0d240371996
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+attribute highp vec4 in_POSITION0;
+attribute highp vec2 in_TEXCOORD0;
+varying highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	vec4 _Bloom_Params;
+uniform 	float _Bloom_RGBM;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+uniform lowp sampler2D _BlitTex;
+uniform lowp sampler2D _Bloom_Texture;
+uniform lowp sampler2D _UserLut;
+uniform lowp sampler2D _InternalLut;
+varying highp vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+vec3 u_xlat0;
+lowp vec4 u_xlat10_0;
+bvec3 u_xlatb0;
+mediump vec3 u_xlat16_1;
+mediump vec3 u_xlat16_2;
+lowp vec4 u_xlat10_2;
+vec3 u_xlat3;
+mediump vec3 u_xlat16_3;
+mediump vec3 u_xlat16_4;
+vec3 u_xlat5;
+lowp vec3 u_xlat10_5;
+mediump vec3 u_xlat16_6;
+vec2 u_xlat7;
+vec3 u_xlat8;
+lowp vec3 u_xlat10_8;
+mediump float u_xlat16_27;
+void main()
+{
+    u_xlat10_0 = texture2D(_BlitTex, vs_TEXCOORD0.xy);
+    u_xlat16_1.xyz = u_xlat10_0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+    u_xlat16_2.xyz = u_xlat10_0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+    u_xlat16_2.xyz = log2(abs(u_xlat16_2.xyz));
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+    u_xlat16_2.xyz = exp2(u_xlat16_2.xyz);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat10_0.xyzx).xyz;
+    {
+        vec3 hlslcc_movcTemp = u_xlat16_1;
+        hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_1.x : u_xlat16_2.x;
+        hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_1.y : u_xlat16_2.y;
+        hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_1.z : u_xlat16_2.z;
+        u_xlat16_1 = hlslcc_movcTemp;
+    }
+    u_xlat10_2 = texture2D(_Bloom_Texture, vs_TEXCOORD0.xy);
+    u_xlat16_3.xyz = u_xlat10_2.xyz * u_xlat10_2.xyz;
+    u_xlatb0.x = 0.0<_Bloom_RGBM;
+    if(u_xlatb0.x){
+        u_xlat16_4.xyz = u_xlat10_2.www * u_xlat16_3.xyz;
+        u_xlat3.xyz = u_xlat16_4.xyz * vec3(8.0, 8.0, 8.0);
+        u_xlat16_3.xyz = u_xlat3.xyz;
+    }
+    u_xlat0.xyz = u_xlat16_3.xyz * _Bloom_Params.xxx;
+    u_xlat5.xyz = u_xlat0.xyz * _Bloom_Params.yzw;
+    u_xlat16_3.xyz = u_xlat0.xyz * _Bloom_Params.yzw + u_xlat16_1.xyz;
+    u_xlat16_27 = max(u_xlat5.y, u_xlat5.x);
+    u_xlat16_27 = max(u_xlat5.z, u_xlat16_27);
+    SV_Target0.w = u_xlat10_0.w + u_xlat16_27;
+    SV_Target0.w = clamp(SV_Target0.w, 0.0, 1.0);
+    u_xlatb0.x = 0.0<_Vignette_Params2.z;
+    if(u_xlatb0.x){
+        u_xlat0.xy = vs_TEXCOORD0.xy + (-_Vignette_Params2.xy);
+        u_xlat0.yz = abs(u_xlat0.xy) * _Vignette_Params2.zz;
+        u_xlat0.x = u_xlat0.y * _Vignette_Params1.w;
+        u_xlat0.x = dot(u_xlat0.xz, u_xlat0.xz);
+        u_xlat0.x = (-u_xlat0.x) + 1.0;
+        u_xlat0.x = max(u_xlat0.x, 0.0);
+        u_xlat0.x = log2(u_xlat0.x);
+        u_xlat0.x = u_xlat0.x * _Vignette_Params2.w;
+        u_xlat0.x = exp2(u_xlat0.x);
+        u_xlat8.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat8.xyz + _Vignette_Params1.xyz;
+        u_xlat3.xyz = u_xlat0.xyz * u_xlat16_3.xyz;
+        u_xlat16_3.xyz = u_xlat3.xyz;
+    }
+    u_xlat16_3.xyz = u_xlat16_3.xyz * _Lut_Params.www;
+    u_xlat16_3.xyz = clamp(u_xlat16_3.xyz, 0.0, 1.0);
+    u_xlatb0.x = 0.0<_UserLut_Params.w;
+    if(u_xlatb0.x){
+        u_xlat16_4.xyz = u_xlat16_3.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_6.xyz = log2(u_xlat16_3.xyz);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_6.xyz = exp2(u_xlat16_6.xyz);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_3.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_4;
+            hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_4.x : u_xlat16_6.x;
+            hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_4.y : u_xlat16_6.y;
+            hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_4.z : u_xlat16_6.z;
+            u_xlat16_4 = hlslcc_movcTemp;
+        }
+        u_xlat0.xyz = u_xlat16_4.zxy * _UserLut_Params.zzz;
+        u_xlat0.x = floor(u_xlat0.x);
+        u_xlat5.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat5.yz = u_xlat0.yz * _UserLut_Params.xy + u_xlat5.xy;
+        u_xlat5.x = u_xlat0.x * _UserLut_Params.y + u_xlat5.y;
+        u_xlat10_8.xyz = texture2D(_UserLut, u_xlat5.xz, 0.0).xyz;
+        u_xlat7.x = _UserLut_Params.y;
+        u_xlat7.y = 0.0;
+        u_xlat5.xy = u_xlat5.xz + u_xlat7.xy;
+        u_xlat10_5.xyz = texture2D(_UserLut, u_xlat5.xy, 0.0).xyz;
+        u_xlat0.x = u_xlat16_4.z * _UserLut_Params.z + (-u_xlat0.x);
+        u_xlat5.xyz = (-u_xlat10_8.xyz) + u_xlat10_5.xyz;
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat5.xyz + u_xlat10_8.xyz;
+        u_xlat0.xyz = (-u_xlat16_4.xyz) + u_xlat0.xyz;
+        u_xlat0.xyz = _UserLut_Params.www * u_xlat0.xyz + u_xlat16_4.xyz;
+        u_xlat16_4.xyz = u_xlat0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_6.xyz = u_xlat0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_6.xyz = log2(abs(u_xlat16_6.xyz));
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_6.xyz = exp2(u_xlat16_6.xyz);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat0.xyzx).xyz;
+        u_xlat16_3.x = (u_xlatb0.x) ? u_xlat16_4.x : u_xlat16_6.x;
+        u_xlat16_3.y = (u_xlatb0.y) ? u_xlat16_4.y : u_xlat16_6.y;
+        u_xlat16_3.z = (u_xlatb0.z) ? u_xlat16_4.z : u_xlat16_6.z;
+    }
+    u_xlat0.xyz = u_xlat16_3.zxy * _Lut_Params.zzz;
+    u_xlat0.x = floor(u_xlat0.x);
+    u_xlat5.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat5.yz = u_xlat0.yz * _Lut_Params.xy + u_xlat5.xy;
+    u_xlat5.x = u_xlat0.x * _Lut_Params.y + u_xlat5.y;
+    u_xlat10_8.xyz = texture2D(_InternalLut, u_xlat5.xz, 0.0).xyz;
+    u_xlat7.x = _Lut_Params.y;
+    u_xlat7.y = 0.0;
+    u_xlat5.xy = u_xlat5.xz + u_xlat7.xy;
+    u_xlat10_5.xyz = texture2D(_InternalLut, u_xlat5.xy, 0.0).xyz;
+    u_xlat0.x = u_xlat16_3.z * _Lut_Params.z + (-u_xlat0.x);
+    u_xlat5.xyz = (-u_xlat10_8.xyz) + u_xlat10_5.xyz;
+    u_xlat0.xyz = u_xlat0.xxx * u_xlat5.xyz + u_xlat10_8.xyz;
+    u_xlat16_3.xyz = u_xlat0.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+    u_xlat16_4.xyz = log2(abs(u_xlat0.xyz));
+    u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+    u_xlat16_4.xyz = exp2(u_xlat16_4.xyz);
+    u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat0.xyzx).xyz;
+    SV_Target0.x = (u_xlatb0.x) ? u_xlat16_3.x : u_xlat16_4.x;
+    SV_Target0.y = (u_xlatb0.y) ? u_xlat16_3.y : u_xlat16_4.y;
+    SV_Target0.z = (u_xlatb0.z) ? u_xlat16_3.z : u_xlat16_4.z;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+Local Keywords { "_BLOOM_LQ" }
+"// hash: cac74dc3eab4c112
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+#ifdef GL_EXT_shader_texture_lod
+#extension GL_EXT_shader_texture_lod : enable
+#endif
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	vec4 _Bloom_Params;
+uniform 	float _Bloom_RGBM;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+UNITY_LOCATION(0) uniform mediump sampler2D _BlitTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _Bloom_Texture;
+UNITY_LOCATION(2) uniform mediump sampler2D _InternalLut;
+UNITY_LOCATION(3) uniform mediump sampler2D _UserLut;
+in highp vec2 vs_TEXCOORD0;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec3 u_xlat0;
+mediump vec4 u_xlat10_0;
+bvec3 u_xlatb0;
+vec3 u_xlat1;
+mediump vec4 u_xlat10_1;
+vec3 u_xlat2;
+mediump vec3 u_xlat16_2;
+bool u_xlatb2;
+vec3 u_xlat3;
+mediump vec3 u_xlat16_3;
+vec3 u_xlat4;
+mediump vec3 u_xlat16_5;
+mediump vec3 u_xlat16_6;
+vec3 u_xlat7;
+mediump vec3 u_xlat10_7;
+mediump float u_xlat16_24;
+void main()
+{
+    u_xlat10_0 = texture(_BlitTex, vs_TEXCOORD0.xy);
+    u_xlat10_1 = texture(_Bloom_Texture, vs_TEXCOORD0.xy);
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb2 = !!(0.0<_Bloom_RGBM);
+#else
+    u_xlatb2 = 0.0<_Bloom_RGBM;
+#endif
+    if(u_xlatb2){
+        u_xlat16_3.xyz = u_xlat10_1.www * u_xlat10_1.xyz;
+        u_xlat2.xyz = u_xlat16_3.xyz * vec3(8.0, 8.0, 8.0);
+        u_xlat16_2.xyz = u_xlat2.xyz;
+    } else {
+        u_xlat16_2.xyz = u_xlat10_1.xyz;
+    }
+    u_xlat1.xyz = u_xlat16_2.xyz * _Bloom_Params.xxx;
+    u_xlat4.xyz = u_xlat1.xyz * _Bloom_Params.yzw;
+    u_xlat16_3.xyz = u_xlat1.xyz * _Bloom_Params.yzw + u_xlat10_0.xyz;
+    u_xlat16_24 = max(u_xlat4.y, u_xlat4.x);
+    u_xlat16_24 = max(u_xlat4.z, u_xlat16_24);
+    SV_Target0.w = u_xlat10_0.w + u_xlat16_24;
+#ifdef UNITY_ADRENO_ES3
+    SV_Target0.w = min(max(SV_Target0.w, 0.0), 1.0);
+#else
+    SV_Target0.w = clamp(SV_Target0.w, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb0.x = !!(0.0<_Vignette_Params2.z);
+#else
+    u_xlatb0.x = 0.0<_Vignette_Params2.z;
+#endif
+    if(u_xlatb0.x){
+        u_xlat0.xy = vs_TEXCOORD0.xy + (-_Vignette_Params2.xy);
+        u_xlat0.yz = abs(u_xlat0.xy) * _Vignette_Params2.zz;
+        u_xlat0.x = u_xlat0.y * _Vignette_Params1.w;
+        u_xlat0.x = dot(u_xlat0.xz, u_xlat0.xz);
+        u_xlat0.x = (-u_xlat0.x) + 1.0;
+        u_xlat0.x = max(u_xlat0.x, 0.0);
+        u_xlat0.x = log2(u_xlat0.x);
+        u_xlat0.x = u_xlat0.x * _Vignette_Params2.w;
+        u_xlat0.x = exp2(u_xlat0.x);
+        u_xlat7.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat7.xyz + _Vignette_Params1.xyz;
+        u_xlat3.xyz = u_xlat0.xyz * u_xlat16_3.xyz;
+        u_xlat16_3.xyz = u_xlat3.xyz;
+    }
+    u_xlat16_3.xyz = u_xlat16_3.xyz * _Lut_Params.www;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_3.xyz = min(max(u_xlat16_3.xyz, 0.0), 1.0);
+#else
+    u_xlat16_3.xyz = clamp(u_xlat16_3.xyz, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb0.x = !!(0.0<_UserLut_Params.w);
+#else
+    u_xlatb0.x = 0.0<_UserLut_Params.w;
+#endif
+    if(u_xlatb0.x){
+        u_xlat16_5.xyz = u_xlat16_3.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_6.xyz = log2(u_xlat16_3.xyz);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_6.xyz = exp2(u_xlat16_6.xyz);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_3.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_5;
+            hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_5.x : u_xlat16_6.x;
+            hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_5.y : u_xlat16_6.y;
+            hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_5.z : u_xlat16_6.z;
+            u_xlat16_5 = hlslcc_movcTemp;
+        }
+        u_xlat0.xyz = u_xlat16_5.zxy * _UserLut_Params.zzz;
+        u_xlat0.x = floor(u_xlat0.x);
+        u_xlat1.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat1.yz = u_xlat0.yz * _UserLut_Params.xy + u_xlat1.xy;
+        u_xlat1.x = u_xlat0.x * _UserLut_Params.y + u_xlat1.y;
+        u_xlat10_7.xyz = textureLod(_UserLut, u_xlat1.xz, 0.0).xyz;
+        u_xlat4.x = _UserLut_Params.y;
+        u_xlat4.y = 0.0;
+        u_xlat1.xy = u_xlat1.xz + u_xlat4.xy;
+        u_xlat10_1.xyz = textureLod(_UserLut, u_xlat1.xy, 0.0).xyz;
+        u_xlat0.x = u_xlat16_5.z * _UserLut_Params.z + (-u_xlat0.x);
+        u_xlat1.xyz = (-u_xlat10_7.xyz) + u_xlat10_1.xyz;
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat1.xyz + u_xlat10_7.xyz;
+        u_xlat0.xyz = (-u_xlat16_5.xyz) + u_xlat0.xyz;
+        u_xlat0.xyz = _UserLut_Params.www * u_xlat0.xyz + u_xlat16_5.xyz;
+        u_xlat16_5.xyz = u_xlat0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_6.xyz = u_xlat0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_6.xyz = log2(abs(u_xlat16_6.xyz));
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_6.xyz = exp2(u_xlat16_6.xyz);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat0.xyzx).xyz;
+        u_xlat16_3.x = (u_xlatb0.x) ? u_xlat16_5.x : u_xlat16_6.x;
+        u_xlat16_3.y = (u_xlatb0.y) ? u_xlat16_5.y : u_xlat16_6.y;
+        u_xlat16_3.z = (u_xlatb0.z) ? u_xlat16_5.z : u_xlat16_6.z;
+    }
+    u_xlat0.xyz = u_xlat16_3.zxy * _Lut_Params.zzz;
+    u_xlat0.x = floor(u_xlat0.x);
+    u_xlat1.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat1.yz = u_xlat0.yz * _Lut_Params.xy + u_xlat1.xy;
+    u_xlat1.x = u_xlat0.x * _Lut_Params.y + u_xlat1.y;
+    u_xlat10_7.xyz = textureLod(_InternalLut, u_xlat1.xz, 0.0).xyz;
+    u_xlat4.x = _Lut_Params.y;
+    u_xlat4.y = 0.0;
+    u_xlat1.xy = u_xlat1.xz + u_xlat4.xy;
+    u_xlat10_1.xyz = textureLod(_InternalLut, u_xlat1.xy, 0.0).xyz;
+    u_xlat0.x = u_xlat16_3.z * _Lut_Params.z + (-u_xlat0.x);
+    u_xlat1.xyz = (-u_xlat10_7.xyz) + u_xlat10_1.xyz;
+    u_xlat0.xyz = u_xlat0.xxx * u_xlat1.xyz + u_xlat10_7.xyz;
+    SV_Target0.xyz = u_xlat0.xyz;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles " {
+Local Keywords { "_BLOOM_HQ" }
+"// hash: 8486a0d240371996
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+attribute highp vec4 in_POSITION0;
+attribute highp vec2 in_TEXCOORD0;
+varying highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	vec4 _Bloom_Params;
+uniform 	float _Bloom_RGBM;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+uniform lowp sampler2D _BlitTex;
+uniform lowp sampler2D _Bloom_Texture;
+uniform lowp sampler2D _UserLut;
+uniform lowp sampler2D _InternalLut;
+varying highp vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+vec3 u_xlat0;
+lowp vec4 u_xlat10_0;
+bvec3 u_xlatb0;
+mediump vec3 u_xlat16_1;
+mediump vec3 u_xlat16_2;
+lowp vec4 u_xlat10_2;
+vec3 u_xlat3;
+mediump vec3 u_xlat16_3;
+mediump vec3 u_xlat16_4;
+vec3 u_xlat5;
+lowp vec3 u_xlat10_5;
+mediump vec3 u_xlat16_6;
+vec2 u_xlat7;
+vec3 u_xlat8;
+lowp vec3 u_xlat10_8;
+mediump float u_xlat16_27;
+void main()
+{
+    u_xlat10_0 = texture2D(_BlitTex, vs_TEXCOORD0.xy);
+    u_xlat16_1.xyz = u_xlat10_0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+    u_xlat16_2.xyz = u_xlat10_0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+    u_xlat16_2.xyz = log2(abs(u_xlat16_2.xyz));
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+    u_xlat16_2.xyz = exp2(u_xlat16_2.xyz);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat10_0.xyzx).xyz;
+    {
+        vec3 hlslcc_movcTemp = u_xlat16_1;
+        hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_1.x : u_xlat16_2.x;
+        hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_1.y : u_xlat16_2.y;
+        hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_1.z : u_xlat16_2.z;
+        u_xlat16_1 = hlslcc_movcTemp;
+    }
+    u_xlat10_2 = texture2D(_Bloom_Texture, vs_TEXCOORD0.xy);
+    u_xlat16_3.xyz = u_xlat10_2.xyz * u_xlat10_2.xyz;
+    u_xlatb0.x = 0.0<_Bloom_RGBM;
+    if(u_xlatb0.x){
+        u_xlat16_4.xyz = u_xlat10_2.www * u_xlat16_3.xyz;
+        u_xlat3.xyz = u_xlat16_4.xyz * vec3(8.0, 8.0, 8.0);
+        u_xlat16_3.xyz = u_xlat3.xyz;
+    }
+    u_xlat0.xyz = u_xlat16_3.xyz * _Bloom_Params.xxx;
+    u_xlat5.xyz = u_xlat0.xyz * _Bloom_Params.yzw;
+    u_xlat16_3.xyz = u_xlat0.xyz * _Bloom_Params.yzw + u_xlat16_1.xyz;
+    u_xlat16_27 = max(u_xlat5.y, u_xlat5.x);
+    u_xlat16_27 = max(u_xlat5.z, u_xlat16_27);
+    SV_Target0.w = u_xlat10_0.w + u_xlat16_27;
+    SV_Target0.w = clamp(SV_Target0.w, 0.0, 1.0);
+    u_xlatb0.x = 0.0<_Vignette_Params2.z;
+    if(u_xlatb0.x){
+        u_xlat0.xy = vs_TEXCOORD0.xy + (-_Vignette_Params2.xy);
+        u_xlat0.yz = abs(u_xlat0.xy) * _Vignette_Params2.zz;
+        u_xlat0.x = u_xlat0.y * _Vignette_Params1.w;
+        u_xlat0.x = dot(u_xlat0.xz, u_xlat0.xz);
+        u_xlat0.x = (-u_xlat0.x) + 1.0;
+        u_xlat0.x = max(u_xlat0.x, 0.0);
+        u_xlat0.x = log2(u_xlat0.x);
+        u_xlat0.x = u_xlat0.x * _Vignette_Params2.w;
+        u_xlat0.x = exp2(u_xlat0.x);
+        u_xlat8.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat8.xyz + _Vignette_Params1.xyz;
+        u_xlat3.xyz = u_xlat0.xyz * u_xlat16_3.xyz;
+        u_xlat16_3.xyz = u_xlat3.xyz;
+    }
+    u_xlat16_3.xyz = u_xlat16_3.xyz * _Lut_Params.www;
+    u_xlat16_3.xyz = clamp(u_xlat16_3.xyz, 0.0, 1.0);
+    u_xlatb0.x = 0.0<_UserLut_Params.w;
+    if(u_xlatb0.x){
+        u_xlat16_4.xyz = u_xlat16_3.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_6.xyz = log2(u_xlat16_3.xyz);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_6.xyz = exp2(u_xlat16_6.xyz);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_3.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_4;
+            hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_4.x : u_xlat16_6.x;
+            hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_4.y : u_xlat16_6.y;
+            hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_4.z : u_xlat16_6.z;
+            u_xlat16_4 = hlslcc_movcTemp;
+        }
+        u_xlat0.xyz = u_xlat16_4.zxy * _UserLut_Params.zzz;
+        u_xlat0.x = floor(u_xlat0.x);
+        u_xlat5.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat5.yz = u_xlat0.yz * _UserLut_Params.xy + u_xlat5.xy;
+        u_xlat5.x = u_xlat0.x * _UserLut_Params.y + u_xlat5.y;
+        u_xlat10_8.xyz = texture2D(_UserLut, u_xlat5.xz, 0.0).xyz;
+        u_xlat7.x = _UserLut_Params.y;
+        u_xlat7.y = 0.0;
+        u_xlat5.xy = u_xlat5.xz + u_xlat7.xy;
+        u_xlat10_5.xyz = texture2D(_UserLut, u_xlat5.xy, 0.0).xyz;
+        u_xlat0.x = u_xlat16_4.z * _UserLut_Params.z + (-u_xlat0.x);
+        u_xlat5.xyz = (-u_xlat10_8.xyz) + u_xlat10_5.xyz;
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat5.xyz + u_xlat10_8.xyz;
+        u_xlat0.xyz = (-u_xlat16_4.xyz) + u_xlat0.xyz;
+        u_xlat0.xyz = _UserLut_Params.www * u_xlat0.xyz + u_xlat16_4.xyz;
+        u_xlat16_4.xyz = u_xlat0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_6.xyz = u_xlat0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_6.xyz = log2(abs(u_xlat16_6.xyz));
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_6.xyz = exp2(u_xlat16_6.xyz);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat0.xyzx).xyz;
+        u_xlat16_3.x = (u_xlatb0.x) ? u_xlat16_4.x : u_xlat16_6.x;
+        u_xlat16_3.y = (u_xlatb0.y) ? u_xlat16_4.y : u_xlat16_6.y;
+        u_xlat16_3.z = (u_xlatb0.z) ? u_xlat16_4.z : u_xlat16_6.z;
+    }
+    u_xlat0.xyz = u_xlat16_3.zxy * _Lut_Params.zzz;
+    u_xlat0.x = floor(u_xlat0.x);
+    u_xlat5.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat5.yz = u_xlat0.yz * _Lut_Params.xy + u_xlat5.xy;
+    u_xlat5.x = u_xlat0.x * _Lut_Params.y + u_xlat5.y;
+    u_xlat10_8.xyz = texture2D(_InternalLut, u_xlat5.xz, 0.0).xyz;
+    u_xlat7.x = _Lut_Params.y;
+    u_xlat7.y = 0.0;
+    u_xlat5.xy = u_xlat5.xz + u_xlat7.xy;
+    u_xlat10_5.xyz = texture2D(_InternalLut, u_xlat5.xy, 0.0).xyz;
+    u_xlat0.x = u_xlat16_3.z * _Lut_Params.z + (-u_xlat0.x);
+    u_xlat5.xyz = (-u_xlat10_8.xyz) + u_xlat10_5.xyz;
+    u_xlat0.xyz = u_xlat0.xxx * u_xlat5.xyz + u_xlat10_8.xyz;
+    u_xlat16_3.xyz = u_xlat0.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+    u_xlat16_4.xyz = log2(abs(u_xlat0.xyz));
+    u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+    u_xlat16_4.xyz = exp2(u_xlat16_4.xyz);
+    u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat0.xyzx).xyz;
+    SV_Target0.x = (u_xlatb0.x) ? u_xlat16_3.x : u_xlat16_4.x;
+    SV_Target0.y = (u_xlatb0.y) ? u_xlat16_3.y : u_xlat16_4.y;
+    SV_Target0.z = (u_xlatb0.z) ? u_xlat16_3.z : u_xlat16_4.z;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+Local Keywords { "_BLOOM_HQ" }
+"// hash: d45d809a3cc68df9
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+#ifdef GL_EXT_shader_texture_lod
+#extension GL_EXT_shader_texture_lod : enable
+#endif
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	vec4 _Bloom_Params;
+uniform 	float _Bloom_RGBM;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+uniform 	vec4 _Bloom_Texture_TexelSize;
+UNITY_LOCATION(0) uniform mediump sampler2D _BlitTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _Bloom_Texture;
+UNITY_LOCATION(2) uniform mediump sampler2D _InternalLut;
+UNITY_LOCATION(3) uniform mediump sampler2D _UserLut;
+in highp vec2 vs_TEXCOORD0;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec3 u_xlat0;
+mediump vec4 u_xlat10_0;
+bvec3 u_xlatb0;
+vec4 u_xlat1;
+mediump vec4 u_xlat10_1;
+vec4 u_xlat2;
+mediump vec4 u_xlat16_2;
+mediump vec4 u_xlat10_2;
+vec4 u_xlat3;
+mediump vec2 u_xlat16_3;
+mediump vec4 u_xlat10_3;
+vec3 u_xlat4;
+mediump vec3 u_xlat16_4;
+bool u_xlatb4;
+vec3 u_xlat5;
+mediump vec4 u_xlat10_5;
+vec3 u_xlat6;
+mediump vec3 u_xlat16_6;
+mediump vec3 u_xlat16_7;
+mediump vec3 u_xlat16_8;
+vec3 u_xlat9;
+mediump vec3 u_xlat10_9;
+vec2 u_xlat19;
+vec2 u_xlat22;
+mediump float u_xlat16_33;
+void main()
+{
+    u_xlat10_0 = texture(_BlitTex, vs_TEXCOORD0.xy);
+    u_xlat1.xy = vs_TEXCOORD0.xy * _Bloom_Texture_TexelSize.zw + vec2(0.5, 0.5);
+    u_xlat19.xy = floor(u_xlat1.xy);
+    u_xlat1.xy = fract(u_xlat1.xy);
+    u_xlat16_2 = (-u_xlat1.xyxy) * vec4(0.5, 0.5, 0.166666672, 0.166666672) + vec4(0.5, 0.5, 0.5, 0.5);
+    u_xlat16_2 = u_xlat1.xyxy * u_xlat16_2 + vec4(0.5, 0.5, -0.5, -0.5);
+    u_xlat16_3.xy = u_xlat1.xy * vec2(0.5, 0.5) + vec2(-1.0, -1.0);
+    u_xlat16_3.xy = u_xlat1.xy * u_xlat16_3.xy;
+    u_xlat16_3.xy = u_xlat16_3.xy * u_xlat1.xy + vec2(0.666666687, 0.666666687);
+    u_xlat16_2 = u_xlat1.xyxy * u_xlat16_2 + vec4(0.166666672, 0.166666672, 0.166666672, 0.166666672);
+    u_xlat1.xy = (-u_xlat16_3.xy) + vec2(1.0, 1.0);
+    u_xlat1.xy = (-u_xlat16_2.xy) + u_xlat1.xy;
+    u_xlat1.xy = (-u_xlat16_2.zw) + u_xlat1.xy;
+    u_xlat4.xy = u_xlat16_3.xy + u_xlat16_2.zw;
+    u_xlat22.xy = u_xlat1.xy + u_xlat16_2.xy;
+    u_xlat5.xy = vec2(1.0) / vec2(u_xlat4.xy);
+    u_xlat2.zw = u_xlat16_3.xy * u_xlat5.xy + vec2(-1.0, -1.0);
+    u_xlat5.xy = vec2(1.0) / vec2(u_xlat22.xy);
+    u_xlat2.xy = u_xlat1.xy * u_xlat5.xy + vec2(1.0, 1.0);
+    u_xlat3 = u_xlat19.xyxy + u_xlat2.zwxw;
+    u_xlat3 = u_xlat3 + vec4(-0.5, -0.5, -0.5, -0.5);
+    u_xlat3 = u_xlat3 * _Bloom_Texture_TexelSize.xyxy;
+    u_xlat3 = min(u_xlat3, vec4(1.0, 1.0, 1.0, 1.0));
+    u_xlat10_5 = textureLod(_Bloom_Texture, u_xlat3.xy, 0.0);
+    u_xlat10_3 = textureLod(_Bloom_Texture, u_xlat3.zw, 0.0);
+    u_xlat3 = u_xlat10_3 * u_xlat22.xxxx;
+    u_xlat3 = u_xlat4.xxxx * u_xlat10_5 + u_xlat3;
+    u_xlat1 = u_xlat19.xyxy + u_xlat2.zyxy;
+    u_xlat1 = u_xlat1 + vec4(-0.5, -0.5, -0.5, -0.5);
+    u_xlat1 = u_xlat1 * _Bloom_Texture_TexelSize.xyxy;
+    u_xlat1 = min(u_xlat1, vec4(1.0, 1.0, 1.0, 1.0));
+    u_xlat10_2 = textureLod(_Bloom_Texture, u_xlat1.xy, 0.0);
+    u_xlat10_1 = textureLod(_Bloom_Texture, u_xlat1.zw, 0.0);
+    u_xlat1 = u_xlat10_1 * u_xlat22.xxxx;
+    u_xlat1 = u_xlat4.xxxx * u_xlat10_2 + u_xlat1;
+    u_xlat1 = u_xlat1 * u_xlat22.yyyy;
+    u_xlat1 = u_xlat4.yyyy * u_xlat3 + u_xlat1;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb4 = !!(0.0<_Bloom_RGBM);
+#else
+    u_xlatb4 = 0.0<_Bloom_RGBM;
+#endif
+    if(u_xlatb4){
+        u_xlat16_6.xyz = u_xlat1.www * u_xlat1.xyz;
+        u_xlat4.xyz = u_xlat16_6.xyz * vec3(8.0, 8.0, 8.0);
+        u_xlat16_4.xyz = u_xlat4.xyz;
+    } else {
+        u_xlat16_4.xyz = u_xlat1.xyz;
+    }
+    u_xlat1.xyz = u_xlat16_4.xyz * _Bloom_Params.xxx;
+    u_xlat5.xyz = u_xlat1.xyz * _Bloom_Params.yzw;
+    u_xlat16_6.xyz = u_xlat1.xyz * _Bloom_Params.yzw + u_xlat10_0.xyz;
+    u_xlat16_33 = max(u_xlat5.y, u_xlat5.x);
+    u_xlat16_33 = max(u_xlat5.z, u_xlat16_33);
+    SV_Target0.w = u_xlat10_0.w + u_xlat16_33;
+#ifdef UNITY_ADRENO_ES3
+    SV_Target0.w = min(max(SV_Target0.w, 0.0), 1.0);
+#else
+    SV_Target0.w = clamp(SV_Target0.w, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb0.x = !!(0.0<_Vignette_Params2.z);
+#else
+    u_xlatb0.x = 0.0<_Vignette_Params2.z;
+#endif
+    if(u_xlatb0.x){
+        u_xlat0.xy = vs_TEXCOORD0.xy + (-_Vignette_Params2.xy);
+        u_xlat0.yz = abs(u_xlat0.xy) * _Vignette_Params2.zz;
+        u_xlat0.x = u_xlat0.y * _Vignette_Params1.w;
+        u_xlat0.x = dot(u_xlat0.xz, u_xlat0.xz);
+        u_xlat0.x = (-u_xlat0.x) + 1.0;
+        u_xlat0.x = max(u_xlat0.x, 0.0);
+        u_xlat0.x = log2(u_xlat0.x);
+        u_xlat0.x = u_xlat0.x * _Vignette_Params2.w;
+        u_xlat0.x = exp2(u_xlat0.x);
+        u_xlat9.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat9.xyz + _Vignette_Params1.xyz;
+        u_xlat6.xyz = u_xlat0.xyz * u_xlat16_6.xyz;
+        u_xlat16_6.xyz = u_xlat6.xyz;
+    }
+    u_xlat16_6.xyz = u_xlat16_6.xyz * _Lut_Params.www;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_6.xyz = min(max(u_xlat16_6.xyz, 0.0), 1.0);
+#else
+    u_xlat16_6.xyz = clamp(u_xlat16_6.xyz, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb0.x = !!(0.0<_UserLut_Params.w);
+#else
+    u_xlatb0.x = 0.0<_UserLut_Params.w;
+#endif
+    if(u_xlatb0.x){
+        u_xlat16_7.xyz = u_xlat16_6.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_8.xyz = log2(u_xlat16_6.xyz);
+        u_xlat16_8.xyz = u_xlat16_8.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_8.xyz = exp2(u_xlat16_8.xyz);
+        u_xlat16_8.xyz = u_xlat16_8.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_6.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_7;
+            hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_7.x : u_xlat16_8.x;
+            hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_7.y : u_xlat16_8.y;
+            hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_7.z : u_xlat16_8.z;
+            u_xlat16_7 = hlslcc_movcTemp;
+        }
+        u_xlat0.xyz = u_xlat16_7.zxy * _UserLut_Params.zzz;
+        u_xlat0.x = floor(u_xlat0.x);
+        u_xlat1.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat1.yz = u_xlat0.yz * _UserLut_Params.xy + u_xlat1.xy;
+        u_xlat1.x = u_xlat0.x * _UserLut_Params.y + u_xlat1.y;
+        u_xlat10_9.xyz = textureLod(_UserLut, u_xlat1.xz, 0.0).xyz;
+        u_xlat5.x = _UserLut_Params.y;
+        u_xlat5.y = 0.0;
+        u_xlat1.xy = u_xlat1.xz + u_xlat5.xy;
+        u_xlat10_1.xyz = textureLod(_UserLut, u_xlat1.xy, 0.0).xyz;
+        u_xlat0.x = u_xlat16_7.z * _UserLut_Params.z + (-u_xlat0.x);
+        u_xlat1.xyz = (-u_xlat10_9.xyz) + u_xlat10_1.xyz;
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat1.xyz + u_xlat10_9.xyz;
+        u_xlat0.xyz = (-u_xlat16_7.xyz) + u_xlat0.xyz;
+        u_xlat0.xyz = _UserLut_Params.www * u_xlat0.xyz + u_xlat16_7.xyz;
+        u_xlat16_7.xyz = u_xlat0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_8.xyz = u_xlat0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_8.xyz = u_xlat16_8.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_8.xyz = log2(abs(u_xlat16_8.xyz));
+        u_xlat16_8.xyz = u_xlat16_8.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_8.xyz = exp2(u_xlat16_8.xyz);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat0.xyzx).xyz;
+        u_xlat16_6.x = (u_xlatb0.x) ? u_xlat16_7.x : u_xlat16_8.x;
+        u_xlat16_6.y = (u_xlatb0.y) ? u_xlat16_7.y : u_xlat16_8.y;
+        u_xlat16_6.z = (u_xlatb0.z) ? u_xlat16_7.z : u_xlat16_8.z;
+    }
+    u_xlat0.xyz = u_xlat16_6.zxy * _Lut_Params.zzz;
+    u_xlat0.x = floor(u_xlat0.x);
+    u_xlat1.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat1.yz = u_xlat0.yz * _Lut_Params.xy + u_xlat1.xy;
+    u_xlat1.x = u_xlat0.x * _Lut_Params.y + u_xlat1.y;
+    u_xlat10_9.xyz = textureLod(_InternalLut, u_xlat1.xz, 0.0).xyz;
+    u_xlat5.x = _Lut_Params.y;
+    u_xlat5.y = 0.0;
+    u_xlat1.xy = u_xlat1.xz + u_xlat5.xy;
+    u_xlat10_1.xyz = textureLod(_InternalLut, u_xlat1.xy, 0.0).xyz;
+    u_xlat0.x = u_xlat16_6.z * _Lut_Params.z + (-u_xlat0.x);
+    u_xlat1.xyz = (-u_xlat10_9.xyz) + u_xlat10_1.xyz;
+    u_xlat0.xyz = u_xlat0.xxx * u_xlat1.xyz + u_xlat10_9.xyz;
+    SV_Target0.xyz = u_xlat0.xyz;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles " {
+Local Keywords { "_BW_FILTER" }
+"// hash: efbe15484a208aa8
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+attribute highp vec4 in_POSITION0;
+attribute highp vec2 in_TEXCOORD0;
+varying highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+uniform 	mediump vec3 _BWFilter_Params;
+uniform 	mediump vec3 _BWFilter_Lighten;
+uniform 	mediump vec3 _BWFilter_Darken;
+uniform lowp sampler2D _BlitTex;
+uniform lowp sampler2D _UserLut;
+uniform lowp sampler2D _InternalLut;
+varying highp vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+vec3 u_xlat0;
+lowp vec4 u_xlat10_0;
+bvec3 u_xlatb0;
+vec3 u_xlat1;
+mediump vec3 u_xlat16_1;
+mediump vec3 u_xlat16_2;
+mediump vec3 u_xlat16_3;
+vec3 u_xlat4;
+lowp vec3 u_xlat10_4;
+lowp vec3 u_xlat10_5;
+vec2 u_xlat6;
+vec2 u_xlat7;
+mediump vec3 u_xlat16_8;
+void main()
+{
+    u_xlat10_0 = texture2D(_BlitTex, vs_TEXCOORD0.xy);
+    u_xlat16_1.x = dot(u_xlat10_0.xyz, vec3(0.212672904, 0.715152204, 0.0721750036));
+    u_xlat16_8.x = (-_BWFilter_Params.y) + _BWFilter_Params.z;
+    u_xlat16_1.x = u_xlat16_1.x + (-_BWFilter_Params.y);
+    u_xlat16_8.x = float(1.0) / u_xlat16_8.x;
+    u_xlat16_1.x = u_xlat16_8.x * u_xlat16_1.x;
+    u_xlat16_1.x = clamp(u_xlat16_1.x, 0.0, 1.0);
+    u_xlat16_8.x = u_xlat16_1.x * -2.0 + 3.0;
+    u_xlat16_1.x = u_xlat16_1.x * u_xlat16_1.x;
+    u_xlat16_1.x = u_xlat16_1.x * u_xlat16_8.x;
+    u_xlat16_8.xyz = _BWFilter_Lighten.xyz + (-_BWFilter_Darken.xyz);
+    u_xlat16_1.xyz = u_xlat16_1.xxx * u_xlat16_8.xyz + _BWFilter_Darken.xyz;
+    u_xlat16_1.xyz = (-u_xlat10_0.xyz) + u_xlat16_1.xyz;
+    u_xlat16_1.xyz = _BWFilter_Params.xxx * u_xlat16_1.xyz + u_xlat10_0.xyz;
+    u_xlat16_2.xyz = u_xlat16_1.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+    u_xlat16_3.xyz = u_xlat16_1.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+    u_xlat16_3.xyz = u_xlat16_3.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+    u_xlat16_3.xyz = log2(abs(u_xlat16_3.xyz));
+    u_xlat16_3.xyz = u_xlat16_3.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+    u_xlat16_3.xyz = exp2(u_xlat16_3.xyz);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat16_1.xyzx).xyz;
+    u_xlat16_1.x = (u_xlatb0.x) ? u_xlat16_2.x : u_xlat16_3.x;
+    u_xlat16_1.y = (u_xlatb0.y) ? u_xlat16_2.y : u_xlat16_3.y;
+    u_xlat16_1.z = (u_xlatb0.z) ? u_xlat16_2.z : u_xlat16_3.z;
+    u_xlatb0.x = 0.0<_Vignette_Params2.z;
+    if(u_xlatb0.x){
+        u_xlat0.xy = vs_TEXCOORD0.xy + (-_Vignette_Params2.xy);
+        u_xlat0.yz = abs(u_xlat0.xy) * _Vignette_Params2.zz;
+        u_xlat0.x = u_xlat0.y * _Vignette_Params1.w;
+        u_xlat0.x = dot(u_xlat0.xz, u_xlat0.xz);
+        u_xlat0.x = (-u_xlat0.x) + 1.0;
+        u_xlat0.x = max(u_xlat0.x, 0.0);
+        u_xlat0.x = log2(u_xlat0.x);
+        u_xlat0.x = u_xlat0.x * _Vignette_Params2.w;
+        u_xlat0.x = exp2(u_xlat0.x);
+        u_xlat4.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat4.xyz + _Vignette_Params1.xyz;
+        u_xlat1.xyz = u_xlat0.xyz * u_xlat16_1.xyz;
+        u_xlat16_1.xyz = u_xlat1.xyz;
+    }
+    u_xlat16_1.xyz = u_xlat16_1.xyz * _Lut_Params.www;
+    u_xlat16_1.xyz = clamp(u_xlat16_1.xyz, 0.0, 1.0);
+    u_xlatb0.x = 0.0<_UserLut_Params.w;
+    if(u_xlatb0.x){
+        u_xlat16_2.xyz = u_xlat16_1.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_3.xyz = log2(u_xlat16_1.xyz);
+        u_xlat16_3.xyz = u_xlat16_3.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_3.xyz = exp2(u_xlat16_3.xyz);
+        u_xlat16_3.xyz = u_xlat16_3.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_1.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_2;
+            hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_2.x : u_xlat16_3.x;
+            hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_2.y : u_xlat16_3.y;
+            hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_2.z : u_xlat16_3.z;
+            u_xlat16_2 = hlslcc_movcTemp;
+        }
+        u_xlat0.xyz = u_xlat16_2.zxy * _UserLut_Params.zzz;
+        u_xlat0.x = floor(u_xlat0.x);
+        u_xlat4.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat4.yz = u_xlat0.yz * _UserLut_Params.xy + u_xlat4.xy;
+        u_xlat4.x = u_xlat0.x * _UserLut_Params.y + u_xlat4.y;
+        u_xlat10_5.xyz = texture2D(_UserLut, u_xlat4.xz, 0.0).xyz;
+        u_xlat6.x = _UserLut_Params.y;
+        u_xlat6.y = 0.0;
+        u_xlat7.xy = u_xlat4.xz + u_xlat6.xy;
+        u_xlat10_4.xyz = texture2D(_UserLut, u_xlat7.xy, 0.0).xyz;
+        u_xlat0.x = u_xlat16_2.z * _UserLut_Params.z + (-u_xlat0.x);
+        u_xlat4.xyz = (-u_xlat10_5.xyz) + u_xlat10_4.xyz;
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat4.xyz + u_xlat10_5.xyz;
+        u_xlat0.xyz = (-u_xlat16_2.xyz) + u_xlat0.xyz;
+        u_xlat0.xyz = _UserLut_Params.www * u_xlat0.xyz + u_xlat16_2.xyz;
+        u_xlat16_2.xyz = u_xlat0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_3.xyz = u_xlat0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_3.xyz = u_xlat16_3.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_3.xyz = log2(abs(u_xlat16_3.xyz));
+        u_xlat16_3.xyz = u_xlat16_3.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_3.xyz = exp2(u_xlat16_3.xyz);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat0.xyzx).xyz;
+        u_xlat16_1.x = (u_xlatb0.x) ? u_xlat16_2.x : u_xlat16_3.x;
+        u_xlat16_1.y = (u_xlatb0.y) ? u_xlat16_2.y : u_xlat16_3.y;
+        u_xlat16_1.z = (u_xlatb0.z) ? u_xlat16_2.z : u_xlat16_3.z;
+    }
+    u_xlat0.xyz = u_xlat16_1.zxy * _Lut_Params.zzz;
+    u_xlat0.x = floor(u_xlat0.x);
+    u_xlat4.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat4.yz = u_xlat0.yz * _Lut_Params.xy + u_xlat4.xy;
+    u_xlat4.x = u_xlat0.x * _Lut_Params.y + u_xlat4.y;
+    u_xlat10_5.xyz = texture2D(_InternalLut, u_xlat4.xz, 0.0).xyz;
+    u_xlat6.x = _Lut_Params.y;
+    u_xlat6.y = 0.0;
+    u_xlat7.xy = u_xlat4.xz + u_xlat6.xy;
+    u_xlat10_4.xyz = texture2D(_InternalLut, u_xlat7.xy, 0.0).xyz;
+    u_xlat0.x = u_xlat16_1.z * _Lut_Params.z + (-u_xlat0.x);
+    u_xlat4.xyz = (-u_xlat10_5.xyz) + u_xlat10_4.xyz;
+    u_xlat0.xyz = u_xlat0.xxx * u_xlat4.xyz + u_xlat10_5.xyz;
+    u_xlat16_1.xyz = u_xlat0.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+    u_xlat16_2.xyz = log2(abs(u_xlat0.xyz));
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+    u_xlat16_2.xyz = exp2(u_xlat16_2.xyz);
+    u_xlat16_2.xyz = u_xlat16_2.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat0.xyzx).xyz;
+    SV_Target0.x = (u_xlatb0.x) ? u_xlat16_1.x : u_xlat16_2.x;
+    SV_Target0.y = (u_xlatb0.y) ? u_xlat16_1.y : u_xlat16_2.y;
+    SV_Target0.z = (u_xlatb0.z) ? u_xlat16_1.z : u_xlat16_2.z;
+    SV_Target0.w = u_xlat10_0.w;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+Local Keywords { "_BW_FILTER" }
+"// hash: a19a9d19ce3be3ad
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+#ifdef GL_EXT_shader_texture_lod
+#extension GL_EXT_shader_texture_lod : enable
+#endif
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+uniform 	mediump vec3 _BWFilter_Params;
+uniform 	mediump vec3 _BWFilter_Lighten;
+uniform 	mediump vec3 _BWFilter_Darken;
+UNITY_LOCATION(0) uniform mediump sampler2D _BlitTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _InternalLut;
+UNITY_LOCATION(2) uniform mediump sampler2D _UserLut;
+in highp vec2 vs_TEXCOORD0;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec4 u_xlat0;
+vec3 u_xlat1;
+mediump vec3 u_xlat16_1;
+vec3 u_xlat2;
+bvec3 u_xlatb2;
+mediump vec3 u_xlat16_3;
+mediump vec3 u_xlat16_4;
+vec3 u_xlat5;
+mediump vec3 u_xlat10_5;
+vec2 u_xlat6;
+mediump vec3 u_xlat16_8;
+vec3 u_xlat9;
+mediump vec3 u_xlat10_9;
+void main()
+{
+    u_xlat0 = texture(_BlitTex, vs_TEXCOORD0.xy);
+    u_xlat16_1.x = dot(u_xlat0.xyz, vec3(0.212672904, 0.715152204, 0.0721750036));
+    u_xlat16_8.x = (-_BWFilter_Params.y) + _BWFilter_Params.z;
+    u_xlat16_1.x = u_xlat16_1.x + (-_BWFilter_Params.y);
+    u_xlat16_8.x = float(1.0) / u_xlat16_8.x;
+    u_xlat16_1.x = u_xlat16_8.x * u_xlat16_1.x;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_1.x = min(max(u_xlat16_1.x, 0.0), 1.0);
+#else
+    u_xlat16_1.x = clamp(u_xlat16_1.x, 0.0, 1.0);
+#endif
+    u_xlat16_8.x = u_xlat16_1.x * -2.0 + 3.0;
+    u_xlat16_1.x = u_xlat16_1.x * u_xlat16_1.x;
+    u_xlat16_1.x = u_xlat16_1.x * u_xlat16_8.x;
+    u_xlat16_8.xyz = _BWFilter_Lighten.xyz + (-_BWFilter_Darken.xyz);
+    u_xlat16_1.xyz = u_xlat16_1.xxx * u_xlat16_8.xyz + _BWFilter_Darken.xyz;
+    u_xlat16_1.xyz = (-u_xlat0.xyz) + u_xlat16_1.xyz;
+    u_xlat16_1.xyz = _BWFilter_Params.xxx * u_xlat16_1.xyz + u_xlat0.xyz;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb2.x = !!(0.0<_Vignette_Params2.z);
+#else
+    u_xlatb2.x = 0.0<_Vignette_Params2.z;
+#endif
+    if(u_xlatb2.x){
+        u_xlat2.xy = vs_TEXCOORD0.xy + (-_Vignette_Params2.xy);
+        u_xlat2.yz = abs(u_xlat2.xy) * _Vignette_Params2.zz;
+        u_xlat2.x = u_xlat2.y * _Vignette_Params1.w;
+        u_xlat2.x = dot(u_xlat2.xz, u_xlat2.xz);
+        u_xlat2.x = (-u_xlat2.x) + 1.0;
+        u_xlat2.x = max(u_xlat2.x, 0.0);
+        u_xlat2.x = log2(u_xlat2.x);
+        u_xlat2.x = u_xlat2.x * _Vignette_Params2.w;
+        u_xlat2.x = exp2(u_xlat2.x);
+        u_xlat9.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat2.xyz = u_xlat2.xxx * u_xlat9.xyz + _Vignette_Params1.xyz;
+        u_xlat1.xyz = u_xlat16_1.xyz * u_xlat2.xyz;
+        u_xlat16_1.xyz = u_xlat1.xyz;
+    }
+    u_xlat16_1.xyz = u_xlat16_1.xyz * _Lut_Params.www;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_1.xyz = min(max(u_xlat16_1.xyz, 0.0), 1.0);
+#else
+    u_xlat16_1.xyz = clamp(u_xlat16_1.xyz, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb2.x = !!(0.0<_UserLut_Params.w);
+#else
+    u_xlatb2.x = 0.0<_UserLut_Params.w;
+#endif
+    if(u_xlatb2.x){
+        u_xlat16_3.xyz = u_xlat16_1.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_4.xyz = log2(u_xlat16_1.xyz);
+        u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_4.xyz = exp2(u_xlat16_4.xyz);
+        u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb2.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_1.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_3;
+            hlslcc_movcTemp.x = (u_xlatb2.x) ? u_xlat16_3.x : u_xlat16_4.x;
+            hlslcc_movcTemp.y = (u_xlatb2.y) ? u_xlat16_3.y : u_xlat16_4.y;
+            hlslcc_movcTemp.z = (u_xlatb2.z) ? u_xlat16_3.z : u_xlat16_4.z;
+            u_xlat16_3 = hlslcc_movcTemp;
+        }
+        u_xlat2.xyz = u_xlat16_3.zxy * _UserLut_Params.zzz;
+        u_xlat2.x = floor(u_xlat2.x);
+        u_xlat5.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat5.yz = u_xlat2.yz * _UserLut_Params.xy + u_xlat5.xy;
+        u_xlat5.x = u_xlat2.x * _UserLut_Params.y + u_xlat5.y;
+        u_xlat10_9.xyz = textureLod(_UserLut, u_xlat5.xz, 0.0).xyz;
+        u_xlat6.x = _UserLut_Params.y;
+        u_xlat6.y = 0.0;
+        u_xlat5.xy = u_xlat5.xz + u_xlat6.xy;
+        u_xlat10_5.xyz = textureLod(_UserLut, u_xlat5.xy, 0.0).xyz;
+        u_xlat2.x = u_xlat16_3.z * _UserLut_Params.z + (-u_xlat2.x);
+        u_xlat5.xyz = (-u_xlat10_9.xyz) + u_xlat10_5.xyz;
+        u_xlat2.xyz = u_xlat2.xxx * u_xlat5.xyz + u_xlat10_9.xyz;
+        u_xlat2.xyz = (-u_xlat16_3.xyz) + u_xlat2.xyz;
+        u_xlat2.xyz = _UserLut_Params.www * u_xlat2.xyz + u_xlat16_3.xyz;
+        u_xlat16_3.xyz = u_xlat2.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_4.xyz = u_xlat2.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_4.xyz = log2(abs(u_xlat16_4.xyz));
+        u_xlat16_4.xyz = u_xlat16_4.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_4.xyz = exp2(u_xlat16_4.xyz);
+        u_xlatb2.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat2.xyzx).xyz;
+        u_xlat16_1.x = (u_xlatb2.x) ? u_xlat16_3.x : u_xlat16_4.x;
+        u_xlat16_1.y = (u_xlatb2.y) ? u_xlat16_3.y : u_xlat16_4.y;
+        u_xlat16_1.z = (u_xlatb2.z) ? u_xlat16_3.z : u_xlat16_4.z;
+    }
+    u_xlat2.xyz = u_xlat16_1.zxy * _Lut_Params.zzz;
+    u_xlat2.x = floor(u_xlat2.x);
+    u_xlat5.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat5.yz = u_xlat2.yz * _Lut_Params.xy + u_xlat5.xy;
+    u_xlat5.x = u_xlat2.x * _Lut_Params.y + u_xlat5.y;
+    u_xlat10_9.xyz = textureLod(_InternalLut, u_xlat5.xz, 0.0).xyz;
+    u_xlat6.x = _Lut_Params.y;
+    u_xlat6.y = 0.0;
+    u_xlat5.xy = u_xlat5.xz + u_xlat6.xy;
+    u_xlat10_5.xyz = textureLod(_InternalLut, u_xlat5.xy, 0.0).xyz;
+    u_xlat2.x = u_xlat16_1.z * _Lut_Params.z + (-u_xlat2.x);
+    u_xlat5.xyz = (-u_xlat10_9.xyz) + u_xlat10_5.xyz;
+    u_xlat0.xyz = u_xlat2.xxx * u_xlat5.xyz + u_xlat10_9.xyz;
+    SV_Target0 = u_xlat0;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles " {
+Local Keywords { "_BLOOM_LQ" "_DISTORTION" }
+"// hash: 2a77755fafbfbc4
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+attribute highp vec4 in_POSITION0;
+attribute highp vec2 in_TEXCOORD0;
+varying highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	vec4 _Bloom_Params;
+uniform 	float _Bloom_RGBM;
+uniform 	vec4 _Distortion_Params1;
+uniform 	vec4 _Distortion_Params2;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+uniform lowp sampler2D _BlitTex;
+uniform lowp sampler2D _Bloom_Texture;
+uniform lowp sampler2D _UserLut;
+uniform lowp sampler2D _InternalLut;
+varying highp vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+vec3 u_xlat0;
+lowp vec4 u_xlat10_0;
+bvec3 u_xlatb0;
+vec3 u_xlat1;
+lowp vec3 u_xlat10_1;
+bool u_xlatb1;
+vec3 u_xlat2;
+lowp vec4 u_xlat10_2;
+float u_xlat3;
+vec3 u_xlat4;
+mediump vec3 u_xlat16_4;
+vec3 u_xlat5;
+mediump vec3 u_xlat16_5;
+mediump vec3 u_xlat16_6;
+vec3 u_xlat7;
+lowp vec3 u_xlat10_7;
+vec2 u_xlat8;
+bool u_xlatb8;
+float u_xlat9;
+vec2 u_xlat14;
+float u_xlat15;
+float u_xlat16;
+float u_xlat22;
+bool u_xlatb23;
+mediump float u_xlat16_25;
+void main()
+{
+    u_xlat0.xy = vs_TEXCOORD0.xy + vec2(-0.5, -0.5);
+    u_xlat14.xy = u_xlat0.xy * _Distortion_Params2.zz + vec2(0.5, 0.5);
+    u_xlat0.xy = u_xlat0.xy * _Distortion_Params2.zz + (-_Distortion_Params1.xy);
+    u_xlat0.xy = u_xlat0.xy * _Distortion_Params1.zw;
+    u_xlat1.x = dot(u_xlat0.xy, u_xlat0.xy);
+    u_xlat1.x = sqrt(u_xlat1.x);
+    u_xlatb8 = 0.0<_Distortion_Params2.w;
+    if(u_xlatb8){
+        u_xlat8.xy = u_xlat1.xx * _Distortion_Params2.xy;
+        u_xlat2.x = sin(u_xlat8.x);
+        u_xlat3 = cos(u_xlat8.x);
+        u_xlat8.x = u_xlat2.x / u_xlat3;
+        u_xlat15 = float(1.0) / u_xlat8.y;
+        u_xlat8.x = u_xlat8.x * u_xlat15 + -1.0;
+        u_xlat8.xy = u_xlat0.xy * u_xlat8.xx + u_xlat14.xy;
+    } else {
+        u_xlat22 = float(1.0) / u_xlat1.x;
+        u_xlat22 = u_xlat22 * _Distortion_Params2.x;
+        u_xlat1.x = u_xlat1.x * _Distortion_Params2.y;
+        u_xlat2.x = min(abs(u_xlat1.x), 1.0);
+        u_xlat9 = max(abs(u_xlat1.x), 1.0);
+        u_xlat9 = float(1.0) / u_xlat9;
+        u_xlat2.x = u_xlat9 * u_xlat2.x;
+        u_xlat9 = u_xlat2.x * u_xlat2.x;
+        u_xlat16 = u_xlat9 * 0.0208350997 + -0.0851330012;
+        u_xlat16 = u_xlat9 * u_xlat16 + 0.180141002;
+        u_xlat16 = u_xlat9 * u_xlat16 + -0.330299497;
+        u_xlat9 = u_xlat9 * u_xlat16 + 0.999866009;
+        u_xlat16 = u_xlat9 * u_xlat2.x;
+        u_xlatb23 = 1.0<abs(u_xlat1.x);
+        u_xlat16 = u_xlat16 * -2.0 + 1.57079637;
+        u_xlat16 = u_xlatb23 ? u_xlat16 : float(0.0);
+        u_xlat2.x = u_xlat2.x * u_xlat9 + u_xlat16;
+        u_xlat1.x = min(u_xlat1.x, 1.0);
+        u_xlatb1 = u_xlat1.x<(-u_xlat1.x);
+        u_xlat1.x = (u_xlatb1) ? (-u_xlat2.x) : u_xlat2.x;
+        u_xlat1.x = u_xlat22 * u_xlat1.x + -1.0;
+        u_xlat8.xy = u_xlat0.xy * u_xlat1.xx + u_xlat14.xy;
+    }
+    u_xlat10_0 = texture2D(_BlitTex, u_xlat8.xy);
+    u_xlat16_4.xyz = u_xlat10_0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+    u_xlat16_5.xyz = u_xlat10_0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+    u_xlat16_5.xyz = u_xlat16_5.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+    u_xlat16_5.xyz = log2(abs(u_xlat16_5.xyz));
+    u_xlat16_5.xyz = u_xlat16_5.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+    u_xlat16_5.xyz = exp2(u_xlat16_5.xyz);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat10_0.xyzx).xyz;
+    {
+        vec3 hlslcc_movcTemp = u_xlat16_4;
+        hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_4.x : u_xlat16_5.x;
+        hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_4.y : u_xlat16_5.y;
+        hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_4.z : u_xlat16_5.z;
+        u_xlat16_4 = hlslcc_movcTemp;
+    }
+    u_xlat10_2 = texture2D(_Bloom_Texture, u_xlat8.xy);
+    u_xlat16_5.xyz = u_xlat10_2.xyz * u_xlat10_2.xyz;
+    u_xlatb0.x = 0.0<_Bloom_RGBM;
+    if(u_xlatb0.x){
+        u_xlat16_6.xyz = u_xlat10_2.www * u_xlat16_5.xyz;
+        u_xlat5.xyz = u_xlat16_6.xyz * vec3(8.0, 8.0, 8.0);
+        u_xlat16_5.xyz = u_xlat5.xyz;
+    }
+    u_xlat0.xyz = u_xlat16_5.xyz * _Bloom_Params.xxx;
+    u_xlat2.xyz = u_xlat0.xyz * _Bloom_Params.yzw;
+    u_xlat16_4.xyz = u_xlat0.xyz * _Bloom_Params.yzw + u_xlat16_4.xyz;
+    u_xlat16_25 = max(u_xlat2.y, u_xlat2.x);
+    u_xlat16_25 = max(u_xlat2.z, u_xlat16_25);
+    SV_Target0.w = u_xlat10_0.w + u_xlat16_25;
+    SV_Target0.w = clamp(SV_Target0.w, 0.0, 1.0);
+    u_xlatb0.x = 0.0<_Vignette_Params2.z;
+    if(u_xlatb0.x){
+        u_xlat0.xy = u_xlat8.xy + (-_Vignette_Params2.xy);
+        u_xlat0.yz = abs(u_xlat0.xy) * _Vignette_Params2.zz;
+        u_xlat0.x = u_xlat0.y * _Vignette_Params1.w;
+        u_xlat0.x = dot(u_xlat0.xz, u_xlat0.xz);
+        u_xlat0.x = (-u_xlat0.x) + 1.0;
+        u_xlat0.x = max(u_xlat0.x, 0.0);
+        u_xlat0.x = log2(u_xlat0.x);
+        u_xlat0.x = u_xlat0.x * _Vignette_Params2.w;
+        u_xlat0.x = exp2(u_xlat0.x);
+        u_xlat7.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat7.xyz + _Vignette_Params1.xyz;
+        u_xlat4.xyz = u_xlat0.xyz * u_xlat16_4.xyz;
+        u_xlat16_4.xyz = u_xlat4.xyz;
+    }
+    u_xlat16_4.xyz = u_xlat16_4.xyz * _Lut_Params.www;
+    u_xlat16_4.xyz = clamp(u_xlat16_4.xyz, 0.0, 1.0);
+    u_xlatb0.x = 0.0<_UserLut_Params.w;
+    if(u_xlatb0.x){
+        u_xlat16_5.xyz = u_xlat16_4.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_6.xyz = log2(u_xlat16_4.xyz);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_6.xyz = exp2(u_xlat16_6.xyz);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_4.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_5;
+            hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_5.x : u_xlat16_6.x;
+            hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_5.y : u_xlat16_6.y;
+            hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_5.z : u_xlat16_6.z;
+            u_xlat16_5 = hlslcc_movcTemp;
+        }
+        u_xlat0.xyz = u_xlat16_5.zxy * _UserLut_Params.zzz;
+        u_xlat0.x = floor(u_xlat0.x);
+        u_xlat1.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat1.yz = u_xlat0.yz * _UserLut_Params.xy + u_xlat1.xy;
+        u_xlat1.x = u_xlat0.x * _UserLut_Params.y + u_xlat1.y;
+        u_xlat10_7.xyz = texture2D(_UserLut, u_xlat1.xz, 0.0).xyz;
+        u_xlat2.x = _UserLut_Params.y;
+        u_xlat2.y = 0.0;
+        u_xlat1.xy = u_xlat1.xz + u_xlat2.xy;
+        u_xlat10_1.xyz = texture2D(_UserLut, u_xlat1.xy, 0.0).xyz;
+        u_xlat0.x = u_xlat16_5.z * _UserLut_Params.z + (-u_xlat0.x);
+        u_xlat1.xyz = (-u_xlat10_7.xyz) + u_xlat10_1.xyz;
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat1.xyz + u_xlat10_7.xyz;
+        u_xlat0.xyz = (-u_xlat16_5.xyz) + u_xlat0.xyz;
+        u_xlat0.xyz = _UserLut_Params.www * u_xlat0.xyz + u_xlat16_5.xyz;
+        u_xlat16_5.xyz = u_xlat0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_6.xyz = u_xlat0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_6.xyz = log2(abs(u_xlat16_6.xyz));
+        u_xlat16_6.xyz = u_xlat16_6.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_6.xyz = exp2(u_xlat16_6.xyz);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat0.xyzx).xyz;
+        u_xlat16_4.x = (u_xlatb0.x) ? u_xlat16_5.x : u_xlat16_6.x;
+        u_xlat16_4.y = (u_xlatb0.y) ? u_xlat16_5.y : u_xlat16_6.y;
+        u_xlat16_4.z = (u_xlatb0.z) ? u_xlat16_5.z : u_xlat16_6.z;
+    }
+    u_xlat0.xyz = u_xlat16_4.zxy * _Lut_Params.zzz;
+    u_xlat0.x = floor(u_xlat0.x);
+    u_xlat1.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat1.yz = u_xlat0.yz * _Lut_Params.xy + u_xlat1.xy;
+    u_xlat1.x = u_xlat0.x * _Lut_Params.y + u_xlat1.y;
+    u_xlat10_7.xyz = texture2D(_InternalLut, u_xlat1.xz, 0.0).xyz;
+    u_xlat2.x = _Lut_Params.y;
+    u_xlat2.y = 0.0;
+    u_xlat1.xy = u_xlat1.xz + u_xlat2.xy;
+    u_xlat10_1.xyz = texture2D(_InternalLut, u_xlat1.xy, 0.0).xyz;
+    u_xlat0.x = u_xlat16_4.z * _Lut_Params.z + (-u_xlat0.x);
+    u_xlat1.xyz = (-u_xlat10_7.xyz) + u_xlat10_1.xyz;
+    u_xlat0.xyz = u_xlat0.xxx * u_xlat1.xyz + u_xlat10_7.xyz;
+    u_xlat16_4.xyz = u_xlat0.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+    u_xlat16_5.xyz = log2(abs(u_xlat0.xyz));
+    u_xlat16_5.xyz = u_xlat16_5.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+    u_xlat16_5.xyz = exp2(u_xlat16_5.xyz);
+    u_xlat16_5.xyz = u_xlat16_5.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+    u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat0.xyzx).xyz;
+    SV_Target0.x = (u_xlatb0.x) ? u_xlat16_4.x : u_xlat16_5.x;
+    SV_Target0.y = (u_xlatb0.y) ? u_xlat16_4.y : u_xlat16_5.y;
+    SV_Target0.z = (u_xlatb0.z) ? u_xlat16_4.z : u_xlat16_5.z;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+Local Keywords { "_BLOOM_LQ" "_DISTORTION" }
+"// hash: 5e804a29f293c55d
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+#ifdef GL_EXT_shader_texture_lod
+#extension GL_EXT_shader_texture_lod : enable
+#endif
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Lut_Params;
+uniform 	vec4 _UserLut_Params;
+uniform 	vec4 _Bloom_Params;
+uniform 	float _Bloom_RGBM;
+uniform 	vec4 _Distortion_Params1;
+uniform 	vec4 _Distortion_Params2;
+uniform 	mediump vec4 _Vignette_Params1;
+uniform 	vec4 _Vignette_Params2;
+UNITY_LOCATION(0) uniform mediump sampler2D _BlitTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _Bloom_Texture;
+UNITY_LOCATION(2) uniform mediump sampler2D _InternalLut;
+UNITY_LOCATION(3) uniform mediump sampler2D _UserLut;
+in highp vec2 vs_TEXCOORD0;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec3 u_xlat0;
+mediump vec4 u_xlat10_0;
+bvec3 u_xlatb0;
+vec3 u_xlat1;
+mediump vec3 u_xlat10_1;
+bool u_xlatb1;
+vec3 u_xlat2;
+mediump vec4 u_xlat10_2;
+vec3 u_xlat3;
+mediump vec3 u_xlat16_3;
+vec3 u_xlat4;
+mediump vec3 u_xlat16_4;
+vec3 u_xlat5;
+mediump vec3 u_xlat16_6;
+mediump vec3 u_xlat16_7;
+vec3 u_xlat8;
+mediump vec3 u_xlat10_8;
+vec2 u_xlat9;
+bool u_xlatb9;
+float u_xlat10;
+vec2 u_xlat16;
+float u_xlat17;
+float u_xlat18;
+float u_xlat25;
+bool u_xlatb26;
+mediump float u_xlat16_28;
+void main()
+{
+    u_xlat0.xy = vs_TEXCOORD0.xy + vec2(-0.5, -0.5);
+    u_xlat16.xy = u_xlat0.xy * _Distortion_Params2.zz + vec2(0.5, 0.5);
+    u_xlat0.xy = u_xlat0.xy * _Distortion_Params2.zz + (-_Distortion_Params1.xy);
+    u_xlat0.xy = u_xlat0.xy * _Distortion_Params1.zw;
+    u_xlat1.x = dot(u_xlat0.xy, u_xlat0.xy);
+    u_xlat1.x = sqrt(u_xlat1.x);
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb9 = !!(0.0<_Distortion_Params2.w);
+#else
+    u_xlatb9 = 0.0<_Distortion_Params2.w;
+#endif
+    if(u_xlatb9){
+        u_xlat9.xy = u_xlat1.xx * _Distortion_Params2.xy;
+        u_xlat2.x = sin(u_xlat9.x);
+        u_xlat3.x = cos(u_xlat9.x);
+        u_xlat9.x = u_xlat2.x / u_xlat3.x;
+        u_xlat17 = float(1.0) / float(u_xlat9.y);
+        u_xlat9.x = u_xlat9.x * u_xlat17 + -1.0;
+        u_xlat9.xy = u_xlat0.xy * u_xlat9.xx + u_xlat16.xy;
+    } else {
+        u_xlat25 = float(1.0) / float(u_xlat1.x);
+        u_xlat25 = u_xlat25 * _Distortion_Params2.x;
+        u_xlat1.x = u_xlat1.x * _Distortion_Params2.y;
+        u_xlat2.x = min(abs(u_xlat1.x), 1.0);
+        u_xlat10 = max(abs(u_xlat1.x), 1.0);
+        u_xlat10 = float(1.0) / u_xlat10;
+        u_xlat2.x = u_xlat10 * u_xlat2.x;
+        u_xlat10 = u_xlat2.x * u_xlat2.x;
+        u_xlat18 = u_xlat10 * 0.0208350997 + -0.0851330012;
+        u_xlat18 = u_xlat10 * u_xlat18 + 0.180141002;
+        u_xlat18 = u_xlat10 * u_xlat18 + -0.330299497;
+        u_xlat10 = u_xlat10 * u_xlat18 + 0.999866009;
+        u_xlat18 = u_xlat10 * u_xlat2.x;
+#ifdef UNITY_ADRENO_ES3
+        u_xlatb26 = !!(1.0<abs(u_xlat1.x));
+#else
+        u_xlatb26 = 1.0<abs(u_xlat1.x);
+#endif
+        u_xlat18 = u_xlat18 * -2.0 + 1.57079637;
+        u_xlat18 = u_xlatb26 ? u_xlat18 : float(0.0);
+        u_xlat2.x = u_xlat2.x * u_xlat10 + u_xlat18;
+        u_xlat1.x = min(u_xlat1.x, 1.0);
+#ifdef UNITY_ADRENO_ES3
+        u_xlatb1 = !!(u_xlat1.x<(-u_xlat1.x));
+#else
+        u_xlatb1 = u_xlat1.x<(-u_xlat1.x);
+#endif
+        u_xlat1.x = (u_xlatb1) ? (-u_xlat2.x) : u_xlat2.x;
+        u_xlat1.x = u_xlat25 * u_xlat1.x + -1.0;
+        u_xlat9.xy = u_xlat0.xy * u_xlat1.xx + u_xlat16.xy;
+    }
+    u_xlat10_0 = texture(_BlitTex, u_xlat9.xy);
+    u_xlat10_2 = texture(_Bloom_Texture, u_xlat9.xy);
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb1 = !!(0.0<_Bloom_RGBM);
+#else
+    u_xlatb1 = 0.0<_Bloom_RGBM;
+#endif
+    if(u_xlatb1){
+        u_xlat16_4.xyz = u_xlat10_2.www * u_xlat10_2.xyz;
+        u_xlat3.xyz = u_xlat16_4.xyz * vec3(8.0, 8.0, 8.0);
+        u_xlat16_3.xyz = u_xlat3.xyz;
+    } else {
+        u_xlat16_3.xyz = u_xlat10_2.xyz;
+    }
+    u_xlat2.xyz = u_xlat16_3.xyz * _Bloom_Params.xxx;
+    u_xlat5.xyz = u_xlat2.xyz * _Bloom_Params.yzw;
+    u_xlat16_4.xyz = u_xlat2.xyz * _Bloom_Params.yzw + u_xlat10_0.xyz;
+    u_xlat16_28 = max(u_xlat5.y, u_xlat5.x);
+    u_xlat16_28 = max(u_xlat5.z, u_xlat16_28);
+    SV_Target0.w = u_xlat10_0.w + u_xlat16_28;
+#ifdef UNITY_ADRENO_ES3
+    SV_Target0.w = min(max(SV_Target0.w, 0.0), 1.0);
+#else
+    SV_Target0.w = clamp(SV_Target0.w, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb0.x = !!(0.0<_Vignette_Params2.z);
+#else
+    u_xlatb0.x = 0.0<_Vignette_Params2.z;
+#endif
+    if(u_xlatb0.x){
+        u_xlat0.xy = u_xlat9.xy + (-_Vignette_Params2.xy);
+        u_xlat0.yz = abs(u_xlat0.xy) * _Vignette_Params2.zz;
+        u_xlat0.x = u_xlat0.y * _Vignette_Params1.w;
+        u_xlat0.x = dot(u_xlat0.xz, u_xlat0.xz);
+        u_xlat0.x = (-u_xlat0.x) + 1.0;
+        u_xlat0.x = max(u_xlat0.x, 0.0);
+        u_xlat0.x = log2(u_xlat0.x);
+        u_xlat0.x = u_xlat0.x * _Vignette_Params2.w;
+        u_xlat0.x = exp2(u_xlat0.x);
+        u_xlat8.xyz = (-_Vignette_Params1.xyz) + vec3(1.0, 1.0, 1.0);
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat8.xyz + _Vignette_Params1.xyz;
+        u_xlat4.xyz = u_xlat0.xyz * u_xlat16_4.xyz;
+        u_xlat16_4.xyz = u_xlat4.xyz;
+    }
+    u_xlat16_4.xyz = u_xlat16_4.xyz * _Lut_Params.www;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_4.xyz = min(max(u_xlat16_4.xyz, 0.0), 1.0);
+#else
+    u_xlat16_4.xyz = clamp(u_xlat16_4.xyz, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb0.x = !!(0.0<_UserLut_Params.w);
+#else
+    u_xlatb0.x = 0.0<_UserLut_Params.w;
+#endif
+    if(u_xlatb0.x){
+        u_xlat16_6.xyz = u_xlat16_4.xyz * vec3(12.9200001, 12.9200001, 12.9200001);
+        u_xlat16_7.xyz = log2(u_xlat16_4.xyz);
+        u_xlat16_7.xyz = u_xlat16_7.xyz * vec3(0.416666657, 0.416666657, 0.416666657);
+        u_xlat16_7.xyz = exp2(u_xlat16_7.xyz);
+        u_xlat16_7.xyz = u_xlat16_7.xyz * vec3(1.05499995, 1.05499995, 1.05499995) + vec3(-0.0549999997, -0.0549999997, -0.0549999997);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.00313080009, 0.00313080009, 0.00313080009, 0.0), u_xlat16_4.xyzx).xyz;
+        {
+            vec3 hlslcc_movcTemp = u_xlat16_6;
+            hlslcc_movcTemp.x = (u_xlatb0.x) ? u_xlat16_6.x : u_xlat16_7.x;
+            hlslcc_movcTemp.y = (u_xlatb0.y) ? u_xlat16_6.y : u_xlat16_7.y;
+            hlslcc_movcTemp.z = (u_xlatb0.z) ? u_xlat16_6.z : u_xlat16_7.z;
+            u_xlat16_6 = hlslcc_movcTemp;
+        }
+        u_xlat0.xyz = u_xlat16_6.zxy * _UserLut_Params.zzz;
+        u_xlat0.x = floor(u_xlat0.x);
+        u_xlat1.xy = _UserLut_Params.xy * vec2(0.5, 0.5);
+        u_xlat1.yz = u_xlat0.yz * _UserLut_Params.xy + u_xlat1.xy;
+        u_xlat1.x = u_xlat0.x * _UserLut_Params.y + u_xlat1.y;
+        u_xlat10_8.xyz = textureLod(_UserLut, u_xlat1.xz, 0.0).xyz;
+        u_xlat2.x = _UserLut_Params.y;
+        u_xlat2.y = 0.0;
+        u_xlat1.xy = u_xlat1.xz + u_xlat2.xy;
+        u_xlat10_1.xyz = textureLod(_UserLut, u_xlat1.xy, 0.0).xyz;
+        u_xlat0.x = u_xlat16_6.z * _UserLut_Params.z + (-u_xlat0.x);
+        u_xlat1.xyz = (-u_xlat10_8.xyz) + u_xlat10_1.xyz;
+        u_xlat0.xyz = u_xlat0.xxx * u_xlat1.xyz + u_xlat10_8.xyz;
+        u_xlat0.xyz = (-u_xlat16_6.xyz) + u_xlat0.xyz;
+        u_xlat0.xyz = _UserLut_Params.www * u_xlat0.xyz + u_xlat16_6.xyz;
+        u_xlat16_6.xyz = u_xlat0.xyz * vec3(0.0773993805, 0.0773993805, 0.0773993805);
+        u_xlat16_7.xyz = u_xlat0.xyz + vec3(0.0549999997, 0.0549999997, 0.0549999997);
+        u_xlat16_7.xyz = u_xlat16_7.xyz * vec3(0.947867334, 0.947867334, 0.947867334);
+        u_xlat16_7.xyz = log2(abs(u_xlat16_7.xyz));
+        u_xlat16_7.xyz = u_xlat16_7.xyz * vec3(2.4000001, 2.4000001, 2.4000001);
+        u_xlat16_7.xyz = exp2(u_xlat16_7.xyz);
+        u_xlatb0.xyz = greaterThanEqual(vec4(0.0404499993, 0.0404499993, 0.0404499993, 0.0), u_xlat0.xyzx).xyz;
+        u_xlat16_4.x = (u_xlatb0.x) ? u_xlat16_6.x : u_xlat16_7.x;
+        u_xlat16_4.y = (u_xlatb0.y) ? u_xlat16_6.y : u_xlat16_7.y;
+        u_xlat16_4.z = (u_xlatb0.z) ? u_xlat16_6.z : u_xlat16_7.z;
+    }
+    u_xlat0.xyz = u_xlat16_4.zxy * _Lut_Params.zzz;
+    u_xlat0.x = floor(u_xlat0.x);
+    u_xlat1.xy = _Lut_Params.xy * vec2(0.5, 0.5);
+    u_xlat1.yz = u_xlat0.yz * _Lut_Params.xy + u_xlat1.xy;
+    u_xlat1.x = u_xlat0.x * _Lut_Params.y + u_xlat1.y;
+    u_xlat10_8.xyz = textureLod(_InternalLut, u_xlat1.xz, 0.0).xyz;
+    u_xlat2.x = _Lut_Params.y;
+    u_xlat2.y = 0.0;
+    u_xlat1.xy = u_xlat1.xz + u_xlat2.xy;
+    u_xlat10_1.xyz = textureLod(_InternalLut, u_xlat1.xy, 0.0).xyz;
+    u_xlat0.x = u_xlat16_4.z * _Lut_Params.z + (-u_xlat0.x);
+    u_xlat1.xyz = (-u_xlat10_8.xyz) + u_xlat10_1.xyz;
+    u_xlat0.xyz = u_xlat0.xxx * u_xlat1.xyz + u_xlat10_8.xyz;
+    SV_Target0.xyz = u_xlat0.xyz;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+SubProgram "gles " {
+Local Keywords { "_BLOOM_LQ" }
+""
+}
+SubProgram "gles3 " {
+Local Keywords { "_BLOOM_LQ" }
+""
+}
+SubProgram "gles " {
+Local Keywords { "_BLOOM_HQ" }
+""
+}
+SubProgram "gles3 " {
+Local Keywords { "_BLOOM_HQ" }
+""
+}
+SubProgram "gles " {
+Local Keywords { "_BW_FILTER" }
+""
+}
+SubProgram "gles3 " {
+Local Keywords { "_BW_FILTER" }
+""
+}
+SubProgram "gles " {
+Local Keywords { "_BLOOM_LQ" "_DISTORTION" }
+""
+}
+SubProgram "gles3 " {
+Local Keywords { "_BLOOM_LQ" "_DISTORTION" }
+""
+}
+}
+}
+}
+}

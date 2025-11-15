@@ -1,0 +1,991 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "==PGAME==/Fx/m_3P_vertexdisturb_noise" {
+Properties {
+[ToggleUI] _IF_ADD_MODE ("ADD 模式", Float) = 0
+[ToggleUI] _IF_SpecialUV_MODE ("使用特殊UV", Float) = 0
+[ToggleUI] _IF_ViewUV_MODE ("使用屏幕采样（否则世界坐标）", Float) = 0
+[NoScaleOffset] _Tex1 ("MainTex", 2D) = "white" { }
+_tex1_st ("MainTex_ST", Vector) = (1,1,0,0)
+_Tex1_Speed ("MainTex Speed", Vector) = (-1,-2,0,0)
+[NoScaleOffset] _Tex2 ("NoiseTex", 2D) = "white" { }
+_tex2_st ("NoiseTex_ST", Vector) = (1,1,0,0)
+_Tex2_Speed ("NoiseTex Speed", Vector) = (1,1,0,0)
+[HDR] _Color1 ("Color", Color) = (1,1,1,0)
+_Emission1 ("Emission", Float) = 1
+_Aplha1 ("Alpha", Float) = 1
+_Noise1 ("Noise", Float) = 0.2
+_FresnelPower1 ("Fresnel Power", Float) = 2
+[HDR] _FresnelColor1 ("Fresnel Color", Color) = (0,0,0,0)
+_FresnelEmission1 ("Fresnel Emission", Float) = 2
+[ToggleUI] _IF_Distorb_MODE ("使用顶点变形", Float) = 0
+[NoScaleOffset] _DistorbTex ("DistorbTex", 2D) = "white" { }
+_Distorb_ST ("Distorb_ST", Vector) = (1,1,0,0)
+_DistorbVector ("DistorbVector", Vector) = (0,0,0,0)
+[ToggleUI] _IF_FresnelMask_MODE ("使用Fresnel遮罩", Float) = 0
+_FresnelPower ("Fresnel Power(mask)", Float) = 1
+_FresnelMaskPower ("Fresnel Mask Power", Float) = 1
+_FresnelMaskAlpha ("Fresnel Mask Alpha", Float) = 1
+_Zoffset ("Zoffset", Range(-3, 3)) = 0
+[HideInInspector] _RenderType ("Vector1", Float) = 0
+[HideInInspector] _Cull ("Vector1", Float) = 0
+[HideInInspector] _ZWrite ("Vector1", Float) = 1
+[HideInInspector] _ZTest ("Vector1", Float) = 4
+[HideInInspector] _StencilData ("Vector1", Float) = 0
+[HideInInspector] _StencilReadMask ("Vector1", Float) = 255
+[HideInInspector] _StencilWriteMask ("Vector1", Float) = 255
+[HideInInspector] _StencilComp ("Vector1", Float) = 8
+[HideInInspector] _StencilPassOp ("Vector1", Float) = 0
+[HideInInspector] _StencilFailOp ("Vector1", Float) = 0
+[HideInInspector] _StencilZFailOp ("Vector1", Float) = 0
+[HideInInspector] _AlphaToMask ("Vector1", Float) = 0
+[HideInInspector] _SrcBlendFactor ("Vector1", Float) = 5
+[HideInInspector] _DstBlendFactor ("Vector1", Float) = 10
+[HideInInspector] _SrcBlendFactorAlpha ("Vector1", Float) = 5
+[HideInInspector] _DstBlendFactorAlpha ("Vector1", Float) = 10
+[HideInInspector] _BlendOp ("Vector1", Float) = 0
+[HideInInspector] _BlendOpAlpha ("Vector1", Float) = 0
+[HideInInspector] _BlendMode ("Vector1", Float) = 0
+}
+SubShader {
+ Tags { "QUEUE" = "Transparent+0" "RenderPipeline" = "UniversalPipeline" "RenderType" = "Opaque" }
+ Pass {
+  Name "Universal Forward"
+  Tags { "LIGHTMODE" = "UniversalForward" "QUEUE" = "Transparent+0" "RenderPipeline" = "UniversalPipeline" "RenderType" = "Opaque" }
+  Blend Zero Zero, Zero Zero
+  ZTest Off
+  ZWrite Off
+  Cull Off
+  Stencil {
+   ReadMask 0
+   WriteMask 0
+   Comp Disabled
+   Pass Keep
+   Fail Keep
+   ZFail Keep
+  }
+  GpuProgramID 54650
+Program "vp" {
+SubProgram "gles3 " {
+"// hash: 4ea2d52d03c6181f
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _TimeParameters;
+uniform 	vec3 _WorldSpaceCameraPos;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(1) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM mediump vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM float _IF_ADD_MODE;
+	UNITY_UNIFORM float _IF_SpecialUV_MODE;
+	UNITY_UNIFORM float _IF_ViewUV_MODE;
+	UNITY_UNIFORM vec4 _tex1_st;
+	UNITY_UNIFORM vec2 _Tex1_Speed;
+	UNITY_UNIFORM vec4 _tex2_st;
+	UNITY_UNIFORM vec2 _Tex2_Speed;
+	UNITY_UNIFORM vec4 _Color1;
+	UNITY_UNIFORM float _Emission1;
+	UNITY_UNIFORM float _Aplha1;
+	UNITY_UNIFORM float _Noise1;
+	UNITY_UNIFORM float _FresnelPower1;
+	UNITY_UNIFORM vec4 _FresnelColor1;
+	UNITY_UNIFORM float _FresnelEmission1;
+	UNITY_UNIFORM float _IF_Distorb_MODE;
+	UNITY_UNIFORM vec4 _Distorb_ST;
+	UNITY_UNIFORM vec3 _DistorbVector;
+	UNITY_UNIFORM float _IF_FresnelMask_MODE;
+	UNITY_UNIFORM float _FresnelPower;
+	UNITY_UNIFORM float _FresnelMaskPower;
+	UNITY_UNIFORM float _FresnelMaskAlpha;
+	UNITY_UNIFORM float _Zoffset;
+	UNITY_UNIFORM float _RenderType;
+	UNITY_UNIFORM float _Cull;
+	UNITY_UNIFORM float _ZWrite;
+	UNITY_UNIFORM float _ZTest;
+	UNITY_UNIFORM float _StencilData;
+	UNITY_UNIFORM float _StencilReadMask;
+	UNITY_UNIFORM float _StencilWriteMask;
+	UNITY_UNIFORM float _StencilComp;
+	UNITY_UNIFORM float _StencilPassOp;
+	UNITY_UNIFORM float _StencilFailOp;
+	UNITY_UNIFORM float _StencilZFailOp;
+	UNITY_UNIFORM float _AlphaToMask;
+	UNITY_UNIFORM float _SrcBlendFactor;
+	UNITY_UNIFORM float _DstBlendFactor;
+	UNITY_UNIFORM float _SrcBlendFactorAlpha;
+	UNITY_UNIFORM float _DstBlendFactorAlpha;
+	UNITY_UNIFORM float _BlendOp;
+	UNITY_UNIFORM float _BlendOpAlpha;
+	UNITY_UNIFORM float _BlendMode;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+UNITY_LOCATION(2) uniform mediump sampler2D _DistorbTex;
+in highp vec3 in_POSITION0;
+in highp vec3 in_NORMAL0;
+in highp vec4 in_TANGENT0;
+in highp vec4 in_TEXCOORD0;
+in highp vec4 in_COLOR0;
+out highp vec3 vs_TEXCOORD0;
+out highp vec3 vs_TEXCOORD1;
+out highp vec4 vs_TEXCOORD2;
+out highp vec4 vs_TEXCOORD3;
+out highp vec4 vs_TEXCOORD4;
+out highp vec4 vs_TEXCOORD5;
+out highp vec4 vs_TEXCOORD6;
+out highp vec3 vs_TEXCOORD7;
+out highp vec2 vs_TEXCOORD8;
+out highp vec3 vs_TEXCOORD9;
+out highp vec4 vs_TEXCOORD10;
+out highp vec4 vs_TEXCOORD11;
+vec4 u_xlat0;
+vec4 u_xlat1;
+float u_xlat6;
+bool u_xlatb6;
+void main()
+{
+    u_xlat0.xy = _TimeParameters.xx * _Distorb_ST.zw;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = in_TEXCOORD0.xy * _Distorb_ST.xy + u_xlat0.xy;
+    u_xlat0.xyz = textureLod(_DistorbTex, u_xlat0.xy, 0.0).xyz;
+    u_xlat0.xyz = sqrt(u_xlat0.xyz);
+    u_xlat0.xyz = u_xlat0.xyz * vec3(2.0, 2.0, 2.0) + vec3(-1.0, -1.0, -1.0);
+    u_xlat1.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat1.xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat1.xyz;
+    u_xlat1.xyz = u_xlat1.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat0.xyz = u_xlat0.xyz * _DistorbVector.xyz + u_xlat1.xyz;
+    u_xlat1.xyz = u_xlat0.yyy * hlslcc_mtx4x4unity_WorldToObject[1].xyz;
+    u_xlat0.xyw = hlslcc_mtx4x4unity_WorldToObject[0].xyz * u_xlat0.xxx + u_xlat1.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_WorldToObject[2].xyz * u_xlat0.zzz + u_xlat0.xyw;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_WorldToObject[3].xyz;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb6 = !!(vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_Distorb_MODE));
+#else
+    u_xlatb6 = vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_Distorb_MODE);
+#endif
+    u_xlat0.xyz = (bool(u_xlatb6)) ? u_xlat0.xyz : in_POSITION0.xyz;
+    u_xlat1.xyz = u_xlat0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyw = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * u_xlat0.xxx + u_xlat1.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * u_xlat0.zzz + u_xlat0.xyw;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    u_xlat1 = u_xlat1 + hlslcc_mtx4x4unity_MatrixVP[3];
+    u_xlat6 = _Zoffset / u_xlat1.w;
+    gl_Position.z = (-u_xlat6) + u_xlat1.z;
+    gl_Position.xyw = u_xlat1.xyw;
+    vs_TEXCOORD0.xyz = u_xlat0.xyz;
+    vs_TEXCOORD7.xyz = (-u_xlat0.xyz) + _WorldSpaceCameraPos.xyz;
+    u_xlat0.x = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[0].xyz);
+    u_xlat0.y = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[1].xyz);
+    u_xlat0.z = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[2].xyz);
+    u_xlat6 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat6 = max(u_xlat6, 1.17549435e-38);
+    u_xlat6 = inversesqrt(u_xlat6);
+    vs_TEXCOORD1.xyz = vec3(u_xlat6) * u_xlat0.xyz;
+    u_xlat0.xyz = in_TANGENT0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_TANGENT0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_TANGENT0.zzz + u_xlat0.xyz;
+    u_xlat6 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat6 = max(u_xlat6, 1.17549435e-38);
+    u_xlat6 = inversesqrt(u_xlat6);
+    vs_TEXCOORD2.xyz = vec3(u_xlat6) * u_xlat0.xyz;
+    vs_TEXCOORD2.w = in_TANGENT0.w;
+    vs_TEXCOORD3 = in_TEXCOORD0;
+    u_xlat0.xy = _TimeParameters.xx * _Tex2_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _tex2_st.zw;
+    vs_TEXCOORD4.xy = in_TEXCOORD0.xy * _tex2_st.xy + u_xlat0.xy;
+    vs_TEXCOORD4.zw = vec2(0.0, 0.0);
+    vs_TEXCOORD5 = vec4(0.0, 0.0, 0.0, 0.0);
+    vs_TEXCOORD6 = in_COLOR0;
+    vs_TEXCOORD8.xy = vec2(0.0, 0.0);
+    vs_TEXCOORD9.xyz = vec3(0.0, 0.0, 0.0);
+    vs_TEXCOORD10 = vec4(0.0, 0.0, 0.0, 0.0);
+    vs_TEXCOORD11 = vec4(0.0, 0.0, 0.0, 0.0);
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _TimeParameters;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixV[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM float _IF_ADD_MODE;
+	UNITY_UNIFORM float _IF_SpecialUV_MODE;
+	UNITY_UNIFORM float _IF_ViewUV_MODE;
+	UNITY_UNIFORM vec4 _tex1_st;
+	UNITY_UNIFORM vec2 _Tex1_Speed;
+	UNITY_UNIFORM vec4 _tex2_st;
+	UNITY_UNIFORM vec2 _Tex2_Speed;
+	UNITY_UNIFORM vec4 _Color1;
+	UNITY_UNIFORM float _Emission1;
+	UNITY_UNIFORM float _Aplha1;
+	UNITY_UNIFORM float _Noise1;
+	UNITY_UNIFORM float _FresnelPower1;
+	UNITY_UNIFORM vec4 _FresnelColor1;
+	UNITY_UNIFORM float _FresnelEmission1;
+	UNITY_UNIFORM float _IF_Distorb_MODE;
+	UNITY_UNIFORM vec4 _Distorb_ST;
+	UNITY_UNIFORM vec3 _DistorbVector;
+	UNITY_UNIFORM float _IF_FresnelMask_MODE;
+	UNITY_UNIFORM float _FresnelPower;
+	UNITY_UNIFORM float _FresnelMaskPower;
+	UNITY_UNIFORM float _FresnelMaskAlpha;
+	UNITY_UNIFORM float _Zoffset;
+	UNITY_UNIFORM float _RenderType;
+	UNITY_UNIFORM float _Cull;
+	UNITY_UNIFORM float _ZWrite;
+	UNITY_UNIFORM float _ZTest;
+	UNITY_UNIFORM float _StencilData;
+	UNITY_UNIFORM float _StencilReadMask;
+	UNITY_UNIFORM float _StencilWriteMask;
+	UNITY_UNIFORM float _StencilComp;
+	UNITY_UNIFORM float _StencilPassOp;
+	UNITY_UNIFORM float _StencilFailOp;
+	UNITY_UNIFORM float _StencilZFailOp;
+	UNITY_UNIFORM float _AlphaToMask;
+	UNITY_UNIFORM float _SrcBlendFactor;
+	UNITY_UNIFORM float _DstBlendFactor;
+	UNITY_UNIFORM float _SrcBlendFactorAlpha;
+	UNITY_UNIFORM float _DstBlendFactorAlpha;
+	UNITY_UNIFORM float _BlendOp;
+	UNITY_UNIFORM float _BlendOpAlpha;
+	UNITY_UNIFORM float _BlendMode;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+UNITY_LOCATION(0) uniform mediump sampler2D _Tex1;
+UNITY_LOCATION(1) uniform mediump sampler2D _Tex2;
+in highp vec3 vs_TEXCOORD1;
+in highp vec4 vs_TEXCOORD3;
+in highp vec4 vs_TEXCOORD4;
+in highp vec4 vs_TEXCOORD6;
+in highp vec3 vs_TEXCOORD7;
+layout(location = 0) out mediump vec4 SV_TARGET0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+mediump vec2 u_xlat16_1;
+bvec3 u_xlatb1;
+vec4 u_xlat2;
+mediump vec4 u_xlat16_2;
+float u_xlat3;
+vec2 u_xlat6;
+bool u_xlatb6;
+float u_xlat9;
+void main()
+{
+    u_xlat0.x = dot(vs_TEXCOORD1.xyz, vs_TEXCOORD1.xyz);
+    u_xlat0.x = sqrt(u_xlat0.x);
+    u_xlat0.x = float(1.0) / u_xlat0.x;
+    u_xlat0.xyz = u_xlat0.xxx * vs_TEXCOORD1.xyz;
+    u_xlat9 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat9 = inversesqrt(u_xlat9);
+    u_xlat0.xyz = vec3(u_xlat9) * u_xlat0.xyz;
+    u_xlat9 = dot(vs_TEXCOORD7.xyz, vs_TEXCOORD7.xyz);
+    u_xlat9 = inversesqrt(u_xlat9);
+    u_xlat1.xyz = vec3(u_xlat9) * vs_TEXCOORD7.xyz;
+    u_xlat0.x = dot(u_xlat0.xyz, u_xlat1.xyz);
+#ifdef UNITY_ADRENO_ES3
+    u_xlat0.x = min(max(u_xlat0.x, 0.0), 1.0);
+#else
+    u_xlat0.x = clamp(u_xlat0.x, 0.0, 1.0);
+#endif
+    u_xlat0.x = (-u_xlat0.x) + 1.0;
+    u_xlat0.x = log2(u_xlat0.x);
+    u_xlat3 = u_xlat0.x * _FresnelPower;
+    u_xlat3 = exp2(u_xlat3);
+    u_xlat3 = (-u_xlat3) + 1.0;
+    u_xlat3 = log2(u_xlat3);
+    u_xlat3 = u_xlat3 * _FresnelMaskPower;
+    u_xlat3 = exp2(u_xlat3);
+    u_xlat3 = u_xlat3 * _FresnelMaskAlpha;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat3 = min(max(u_xlat3, 0.0), 1.0);
+#else
+    u_xlat3 = clamp(u_xlat3, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb6 = !!(vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_FresnelMask_MODE));
+#else
+    u_xlatb6 = vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_FresnelMask_MODE);
+#endif
+    u_xlat3 = (u_xlatb6) ? u_xlat3 : 1.0;
+    u_xlat1.x = hlslcc_mtx4x4unity_MatrixV[0].x;
+    u_xlat1.y = hlslcc_mtx4x4unity_MatrixV[1].x;
+    u_xlat1.z = hlslcc_mtx4x4unity_MatrixV[2].x;
+    u_xlat16_2.x = dot(u_xlat1.xyz, vs_TEXCOORD7.xyz);
+    u_xlat1.x = hlslcc_mtx4x4unity_MatrixV[0].y;
+    u_xlat1.y = hlslcc_mtx4x4unity_MatrixV[1].y;
+    u_xlat1.z = hlslcc_mtx4x4unity_MatrixV[2].y;
+    u_xlat16_2.y = dot(u_xlat1.xyz, vs_TEXCOORD7.xyz);
+    u_xlatb1.xyz = notEqual(vec4(0.0, 0.0, 0.0, 0.0), vec4(_IF_ViewUV_MODE, _IF_SpecialUV_MODE, _IF_ADD_MODE, _IF_ViewUV_MODE)).xyz;
+    u_xlat6.xy = (u_xlatb1.x) ? u_xlat16_2.xy : vs_TEXCOORD7.xy;
+    u_xlat6.xy = (u_xlatb1.y) ? u_xlat6.xy : vs_TEXCOORD3.xy;
+    u_xlat1.xy = _TimeParameters.xx * _Tex1_Speed.xy;
+    u_xlat1.xy = fract(u_xlat1.xy);
+    u_xlat1.xy = u_xlat1.xy + _tex1_st.zw;
+    u_xlat6.xy = u_xlat6.xy * _tex1_st.xy + u_xlat1.xy;
+    u_xlat16_1.xy = texture(_Tex2, vs_TEXCOORD4.xy).xy;
+    u_xlat1.xy = u_xlat16_1.xy * vec2(1.0, -1.0) + vec2(0.0, 1.0);
+    u_xlat6.xy = vec2(vec2(_Noise1, _Noise1)) * u_xlat1.xy + u_xlat6.xy;
+    u_xlat16_2 = texture(_Tex1, u_xlat6.xy);
+    u_xlat2 = u_xlat16_2 * vs_TEXCOORD6;
+    u_xlat3 = u_xlat3 * u_xlat2.w;
+    u_xlat1.xyw = u_xlat2.xyz * vec3(_Emission1);
+    u_xlat6.x = (u_xlatb1.z) ? u_xlat3 : 1.0;
+    u_xlat2.w = u_xlat3 * _Aplha1;
+    u_xlat3 = max(_FresnelPower1, 0.0399999991);
+    u_xlat0.x = u_xlat0.x * u_xlat3;
+    u_xlat0.x = exp2(u_xlat0.x);
+    u_xlat0.x = u_xlat0.x * _FresnelEmission1;
+    u_xlat0.xyw = u_xlat0.xxx * _FresnelColor1.xyz;
+    u_xlat0.xyw = _Color1.xyz * u_xlat1.xyw + u_xlat0.xyw;
+    u_xlat2.xyz = u_xlat6.xxx * u_xlat0.xyw;
+    SV_TARGET0 = u_xlat2;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+Keywords { "FOG_LINEAR" }
+"// hash: 4ea2d52d03c6181f
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _TimeParameters;
+uniform 	vec3 _WorldSpaceCameraPos;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(1) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM mediump vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM float _IF_ADD_MODE;
+	UNITY_UNIFORM float _IF_SpecialUV_MODE;
+	UNITY_UNIFORM float _IF_ViewUV_MODE;
+	UNITY_UNIFORM vec4 _tex1_st;
+	UNITY_UNIFORM vec2 _Tex1_Speed;
+	UNITY_UNIFORM vec4 _tex2_st;
+	UNITY_UNIFORM vec2 _Tex2_Speed;
+	UNITY_UNIFORM vec4 _Color1;
+	UNITY_UNIFORM float _Emission1;
+	UNITY_UNIFORM float _Aplha1;
+	UNITY_UNIFORM float _Noise1;
+	UNITY_UNIFORM float _FresnelPower1;
+	UNITY_UNIFORM vec4 _FresnelColor1;
+	UNITY_UNIFORM float _FresnelEmission1;
+	UNITY_UNIFORM float _IF_Distorb_MODE;
+	UNITY_UNIFORM vec4 _Distorb_ST;
+	UNITY_UNIFORM vec3 _DistorbVector;
+	UNITY_UNIFORM float _IF_FresnelMask_MODE;
+	UNITY_UNIFORM float _FresnelPower;
+	UNITY_UNIFORM float _FresnelMaskPower;
+	UNITY_UNIFORM float _FresnelMaskAlpha;
+	UNITY_UNIFORM float _Zoffset;
+	UNITY_UNIFORM float _RenderType;
+	UNITY_UNIFORM float _Cull;
+	UNITY_UNIFORM float _ZWrite;
+	UNITY_UNIFORM float _ZTest;
+	UNITY_UNIFORM float _StencilData;
+	UNITY_UNIFORM float _StencilReadMask;
+	UNITY_UNIFORM float _StencilWriteMask;
+	UNITY_UNIFORM float _StencilComp;
+	UNITY_UNIFORM float _StencilPassOp;
+	UNITY_UNIFORM float _StencilFailOp;
+	UNITY_UNIFORM float _StencilZFailOp;
+	UNITY_UNIFORM float _AlphaToMask;
+	UNITY_UNIFORM float _SrcBlendFactor;
+	UNITY_UNIFORM float _DstBlendFactor;
+	UNITY_UNIFORM float _SrcBlendFactorAlpha;
+	UNITY_UNIFORM float _DstBlendFactorAlpha;
+	UNITY_UNIFORM float _BlendOp;
+	UNITY_UNIFORM float _BlendOpAlpha;
+	UNITY_UNIFORM float _BlendMode;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+UNITY_LOCATION(2) uniform mediump sampler2D _DistorbTex;
+in highp vec3 in_POSITION0;
+in highp vec3 in_NORMAL0;
+in highp vec4 in_TANGENT0;
+in highp vec4 in_TEXCOORD0;
+in highp vec4 in_COLOR0;
+out highp vec3 vs_TEXCOORD0;
+out highp vec3 vs_TEXCOORD1;
+out highp vec4 vs_TEXCOORD2;
+out highp vec4 vs_TEXCOORD3;
+out highp vec4 vs_TEXCOORD4;
+out highp vec4 vs_TEXCOORD5;
+out highp vec4 vs_TEXCOORD6;
+out highp vec3 vs_TEXCOORD7;
+out highp vec2 vs_TEXCOORD8;
+out highp vec3 vs_TEXCOORD9;
+out highp vec4 vs_TEXCOORD10;
+out highp vec4 vs_TEXCOORD11;
+vec4 u_xlat0;
+vec4 u_xlat1;
+float u_xlat6;
+bool u_xlatb6;
+void main()
+{
+    u_xlat0.xy = _TimeParameters.xx * _Distorb_ST.zw;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = in_TEXCOORD0.xy * _Distorb_ST.xy + u_xlat0.xy;
+    u_xlat0.xyz = textureLod(_DistorbTex, u_xlat0.xy, 0.0).xyz;
+    u_xlat0.xyz = sqrt(u_xlat0.xyz);
+    u_xlat0.xyz = u_xlat0.xyz * vec3(2.0, 2.0, 2.0) + vec3(-1.0, -1.0, -1.0);
+    u_xlat1.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat1.xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat1.xyz;
+    u_xlat1.xyz = u_xlat1.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat0.xyz = u_xlat0.xyz * _DistorbVector.xyz + u_xlat1.xyz;
+    u_xlat1.xyz = u_xlat0.yyy * hlslcc_mtx4x4unity_WorldToObject[1].xyz;
+    u_xlat0.xyw = hlslcc_mtx4x4unity_WorldToObject[0].xyz * u_xlat0.xxx + u_xlat1.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_WorldToObject[2].xyz * u_xlat0.zzz + u_xlat0.xyw;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_WorldToObject[3].xyz;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb6 = !!(vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_Distorb_MODE));
+#else
+    u_xlatb6 = vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_Distorb_MODE);
+#endif
+    u_xlat0.xyz = (bool(u_xlatb6)) ? u_xlat0.xyz : in_POSITION0.xyz;
+    u_xlat1.xyz = u_xlat0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyw = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * u_xlat0.xxx + u_xlat1.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * u_xlat0.zzz + u_xlat0.xyw;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    u_xlat1 = u_xlat1 + hlslcc_mtx4x4unity_MatrixVP[3];
+    u_xlat6 = _Zoffset / u_xlat1.w;
+    gl_Position.z = (-u_xlat6) + u_xlat1.z;
+    gl_Position.xyw = u_xlat1.xyw;
+    vs_TEXCOORD0.xyz = u_xlat0.xyz;
+    vs_TEXCOORD7.xyz = (-u_xlat0.xyz) + _WorldSpaceCameraPos.xyz;
+    u_xlat0.x = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[0].xyz);
+    u_xlat0.y = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[1].xyz);
+    u_xlat0.z = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[2].xyz);
+    u_xlat6 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat6 = max(u_xlat6, 1.17549435e-38);
+    u_xlat6 = inversesqrt(u_xlat6);
+    vs_TEXCOORD1.xyz = vec3(u_xlat6) * u_xlat0.xyz;
+    u_xlat0.xyz = in_TANGENT0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_TANGENT0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_TANGENT0.zzz + u_xlat0.xyz;
+    u_xlat6 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat6 = max(u_xlat6, 1.17549435e-38);
+    u_xlat6 = inversesqrt(u_xlat6);
+    vs_TEXCOORD2.xyz = vec3(u_xlat6) * u_xlat0.xyz;
+    vs_TEXCOORD2.w = in_TANGENT0.w;
+    vs_TEXCOORD3 = in_TEXCOORD0;
+    u_xlat0.xy = _TimeParameters.xx * _Tex2_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _tex2_st.zw;
+    vs_TEXCOORD4.xy = in_TEXCOORD0.xy * _tex2_st.xy + u_xlat0.xy;
+    vs_TEXCOORD4.zw = vec2(0.0, 0.0);
+    vs_TEXCOORD5 = vec4(0.0, 0.0, 0.0, 0.0);
+    vs_TEXCOORD6 = in_COLOR0;
+    vs_TEXCOORD8.xy = vec2(0.0, 0.0);
+    vs_TEXCOORD9.xyz = vec3(0.0, 0.0, 0.0);
+    vs_TEXCOORD10 = vec4(0.0, 0.0, 0.0, 0.0);
+    vs_TEXCOORD11 = vec4(0.0, 0.0, 0.0, 0.0);
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _TimeParameters;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixV[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM float _IF_ADD_MODE;
+	UNITY_UNIFORM float _IF_SpecialUV_MODE;
+	UNITY_UNIFORM float _IF_ViewUV_MODE;
+	UNITY_UNIFORM vec4 _tex1_st;
+	UNITY_UNIFORM vec2 _Tex1_Speed;
+	UNITY_UNIFORM vec4 _tex2_st;
+	UNITY_UNIFORM vec2 _Tex2_Speed;
+	UNITY_UNIFORM vec4 _Color1;
+	UNITY_UNIFORM float _Emission1;
+	UNITY_UNIFORM float _Aplha1;
+	UNITY_UNIFORM float _Noise1;
+	UNITY_UNIFORM float _FresnelPower1;
+	UNITY_UNIFORM vec4 _FresnelColor1;
+	UNITY_UNIFORM float _FresnelEmission1;
+	UNITY_UNIFORM float _IF_Distorb_MODE;
+	UNITY_UNIFORM vec4 _Distorb_ST;
+	UNITY_UNIFORM vec3 _DistorbVector;
+	UNITY_UNIFORM float _IF_FresnelMask_MODE;
+	UNITY_UNIFORM float _FresnelPower;
+	UNITY_UNIFORM float _FresnelMaskPower;
+	UNITY_UNIFORM float _FresnelMaskAlpha;
+	UNITY_UNIFORM float _Zoffset;
+	UNITY_UNIFORM float _RenderType;
+	UNITY_UNIFORM float _Cull;
+	UNITY_UNIFORM float _ZWrite;
+	UNITY_UNIFORM float _ZTest;
+	UNITY_UNIFORM float _StencilData;
+	UNITY_UNIFORM float _StencilReadMask;
+	UNITY_UNIFORM float _StencilWriteMask;
+	UNITY_UNIFORM float _StencilComp;
+	UNITY_UNIFORM float _StencilPassOp;
+	UNITY_UNIFORM float _StencilFailOp;
+	UNITY_UNIFORM float _StencilZFailOp;
+	UNITY_UNIFORM float _AlphaToMask;
+	UNITY_UNIFORM float _SrcBlendFactor;
+	UNITY_UNIFORM float _DstBlendFactor;
+	UNITY_UNIFORM float _SrcBlendFactorAlpha;
+	UNITY_UNIFORM float _DstBlendFactorAlpha;
+	UNITY_UNIFORM float _BlendOp;
+	UNITY_UNIFORM float _BlendOpAlpha;
+	UNITY_UNIFORM float _BlendMode;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+UNITY_LOCATION(0) uniform mediump sampler2D _Tex1;
+UNITY_LOCATION(1) uniform mediump sampler2D _Tex2;
+in highp vec3 vs_TEXCOORD1;
+in highp vec4 vs_TEXCOORD3;
+in highp vec4 vs_TEXCOORD4;
+in highp vec4 vs_TEXCOORD6;
+in highp vec3 vs_TEXCOORD7;
+layout(location = 0) out mediump vec4 SV_TARGET0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+mediump vec2 u_xlat16_1;
+bvec3 u_xlatb1;
+vec4 u_xlat2;
+mediump vec4 u_xlat16_2;
+float u_xlat3;
+vec2 u_xlat6;
+bool u_xlatb6;
+float u_xlat9;
+void main()
+{
+    u_xlat0.x = dot(vs_TEXCOORD1.xyz, vs_TEXCOORD1.xyz);
+    u_xlat0.x = sqrt(u_xlat0.x);
+    u_xlat0.x = float(1.0) / u_xlat0.x;
+    u_xlat0.xyz = u_xlat0.xxx * vs_TEXCOORD1.xyz;
+    u_xlat9 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat9 = inversesqrt(u_xlat9);
+    u_xlat0.xyz = vec3(u_xlat9) * u_xlat0.xyz;
+    u_xlat9 = dot(vs_TEXCOORD7.xyz, vs_TEXCOORD7.xyz);
+    u_xlat9 = inversesqrt(u_xlat9);
+    u_xlat1.xyz = vec3(u_xlat9) * vs_TEXCOORD7.xyz;
+    u_xlat0.x = dot(u_xlat0.xyz, u_xlat1.xyz);
+#ifdef UNITY_ADRENO_ES3
+    u_xlat0.x = min(max(u_xlat0.x, 0.0), 1.0);
+#else
+    u_xlat0.x = clamp(u_xlat0.x, 0.0, 1.0);
+#endif
+    u_xlat0.x = (-u_xlat0.x) + 1.0;
+    u_xlat0.x = log2(u_xlat0.x);
+    u_xlat3 = u_xlat0.x * _FresnelPower;
+    u_xlat3 = exp2(u_xlat3);
+    u_xlat3 = (-u_xlat3) + 1.0;
+    u_xlat3 = log2(u_xlat3);
+    u_xlat3 = u_xlat3 * _FresnelMaskPower;
+    u_xlat3 = exp2(u_xlat3);
+    u_xlat3 = u_xlat3 * _FresnelMaskAlpha;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat3 = min(max(u_xlat3, 0.0), 1.0);
+#else
+    u_xlat3 = clamp(u_xlat3, 0.0, 1.0);
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb6 = !!(vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_FresnelMask_MODE));
+#else
+    u_xlatb6 = vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_FresnelMask_MODE);
+#endif
+    u_xlat3 = (u_xlatb6) ? u_xlat3 : 1.0;
+    u_xlat1.x = hlslcc_mtx4x4unity_MatrixV[0].x;
+    u_xlat1.y = hlslcc_mtx4x4unity_MatrixV[1].x;
+    u_xlat1.z = hlslcc_mtx4x4unity_MatrixV[2].x;
+    u_xlat16_2.x = dot(u_xlat1.xyz, vs_TEXCOORD7.xyz);
+    u_xlat1.x = hlslcc_mtx4x4unity_MatrixV[0].y;
+    u_xlat1.y = hlslcc_mtx4x4unity_MatrixV[1].y;
+    u_xlat1.z = hlslcc_mtx4x4unity_MatrixV[2].y;
+    u_xlat16_2.y = dot(u_xlat1.xyz, vs_TEXCOORD7.xyz);
+    u_xlatb1.xyz = notEqual(vec4(0.0, 0.0, 0.0, 0.0), vec4(_IF_ViewUV_MODE, _IF_SpecialUV_MODE, _IF_ADD_MODE, _IF_ViewUV_MODE)).xyz;
+    u_xlat6.xy = (u_xlatb1.x) ? u_xlat16_2.xy : vs_TEXCOORD7.xy;
+    u_xlat6.xy = (u_xlatb1.y) ? u_xlat6.xy : vs_TEXCOORD3.xy;
+    u_xlat1.xy = _TimeParameters.xx * _Tex1_Speed.xy;
+    u_xlat1.xy = fract(u_xlat1.xy);
+    u_xlat1.xy = u_xlat1.xy + _tex1_st.zw;
+    u_xlat6.xy = u_xlat6.xy * _tex1_st.xy + u_xlat1.xy;
+    u_xlat16_1.xy = texture(_Tex2, vs_TEXCOORD4.xy).xy;
+    u_xlat1.xy = u_xlat16_1.xy * vec2(1.0, -1.0) + vec2(0.0, 1.0);
+    u_xlat6.xy = vec2(vec2(_Noise1, _Noise1)) * u_xlat1.xy + u_xlat6.xy;
+    u_xlat16_2 = texture(_Tex1, u_xlat6.xy);
+    u_xlat2 = u_xlat16_2 * vs_TEXCOORD6;
+    u_xlat3 = u_xlat3 * u_xlat2.w;
+    u_xlat1.xyw = u_xlat2.xyz * vec3(_Emission1);
+    u_xlat6.x = (u_xlatb1.z) ? u_xlat3 : 1.0;
+    u_xlat2.w = u_xlat3 * _Aplha1;
+    u_xlat3 = max(_FresnelPower1, 0.0399999991);
+    u_xlat0.x = u_xlat0.x * u_xlat3;
+    u_xlat0.x = exp2(u_xlat0.x);
+    u_xlat0.x = u_xlat0.x * _FresnelEmission1;
+    u_xlat0.xyw = u_xlat0.xxx * _FresnelColor1.xyz;
+    u_xlat0.xyw = _Color1.xyz * u_xlat1.xyw + u_xlat0.xyw;
+    u_xlat2.xyz = u_xlat6.xxx * u_xlat0.xyw;
+    SV_TARGET0 = u_xlat2;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+SubProgram "gles " {
+Keywords { "FOG_LINEAR" }
+""
+}
+SubProgram "gles3 " {
+Keywords { "FOG_LINEAR" }
+""
+}
+}
+}
+ Pass {
+  Name "ShadowCaster"
+  Tags { "LIGHTMODE" = "SHADOWCASTER" "QUEUE" = "Transparent+0" "RenderPipeline" = "UniversalPipeline" "RenderType" = "Opaque" }
+  Blend Zero Zero, Zero Zero
+  Cull Off
+  Stencil {
+   ReadMask 0
+   WriteMask 0
+   Comp Disabled
+   Pass Keep
+   Fail Keep
+   ZFail Keep
+  }
+  GpuProgramID 115527
+Program "vp" {
+SubProgram "gles3 " {
+"// hash: cc624e6d9f630418
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _TimeParameters;
+uniform 	vec3 _WorldSpaceCameraPos;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _ShadowBias;
+uniform 	vec3 _LightDirection;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(1) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM float _IF_ADD_MODE;
+	UNITY_UNIFORM float _IF_SpecialUV_MODE;
+	UNITY_UNIFORM float _IF_ViewUV_MODE;
+	UNITY_UNIFORM vec4 _tex1_st;
+	UNITY_UNIFORM vec2 _Tex1_Speed;
+	UNITY_UNIFORM vec4 _tex2_st;
+	UNITY_UNIFORM vec2 _Tex2_Speed;
+	UNITY_UNIFORM vec4 _Color1;
+	UNITY_UNIFORM float _Emission1;
+	UNITY_UNIFORM float _Aplha1;
+	UNITY_UNIFORM float _Noise1;
+	UNITY_UNIFORM float _FresnelPower1;
+	UNITY_UNIFORM vec4 _FresnelColor1;
+	UNITY_UNIFORM float _FresnelEmission1;
+	UNITY_UNIFORM float _IF_Distorb_MODE;
+	UNITY_UNIFORM vec4 _Distorb_ST;
+	UNITY_UNIFORM vec3 _DistorbVector;
+	UNITY_UNIFORM float _IF_FresnelMask_MODE;
+	UNITY_UNIFORM float _FresnelPower;
+	UNITY_UNIFORM float _FresnelMaskPower;
+	UNITY_UNIFORM float _FresnelMaskAlpha;
+	UNITY_UNIFORM float _Zoffset;
+	UNITY_UNIFORM float _RenderType;
+	UNITY_UNIFORM float _Cull;
+	UNITY_UNIFORM float _ZWrite;
+	UNITY_UNIFORM float _ZTest;
+	UNITY_UNIFORM float _StencilData;
+	UNITY_UNIFORM float _StencilReadMask;
+	UNITY_UNIFORM float _StencilWriteMask;
+	UNITY_UNIFORM float _StencilComp;
+	UNITY_UNIFORM float _StencilPassOp;
+	UNITY_UNIFORM float _StencilFailOp;
+	UNITY_UNIFORM float _StencilZFailOp;
+	UNITY_UNIFORM float _AlphaToMask;
+	UNITY_UNIFORM float _SrcBlendFactor;
+	UNITY_UNIFORM float _DstBlendFactor;
+	UNITY_UNIFORM float _SrcBlendFactorAlpha;
+	UNITY_UNIFORM float _DstBlendFactorAlpha;
+	UNITY_UNIFORM float _BlendOp;
+	UNITY_UNIFORM float _BlendOpAlpha;
+	UNITY_UNIFORM float _BlendMode;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+UNITY_LOCATION(0) uniform mediump sampler2D _DistorbTex;
+in highp vec3 in_POSITION0;
+in highp vec3 in_NORMAL0;
+in highp vec4 in_TEXCOORD0;
+in highp vec4 in_COLOR0;
+out highp vec3 vs_TEXCOORD0;
+out highp vec4 vs_TEXCOORD1;
+out highp vec4 vs_TEXCOORD2;
+out highp vec4 vs_TEXCOORD3;
+out highp vec3 vs_TEXCOORD4;
+vec4 u_xlat0;
+vec3 u_xlat1;
+float u_xlat6;
+bool u_xlatb6;
+void main()
+{
+    u_xlat0.xy = _TimeParameters.xx * _Distorb_ST.zw;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = in_TEXCOORD0.xy * _Distorb_ST.xy + u_xlat0.xy;
+    u_xlat0.xyz = textureLod(_DistorbTex, u_xlat0.xy, 0.0).xyz;
+    u_xlat0.xyz = sqrt(u_xlat0.xyz);
+    u_xlat0.xyz = u_xlat0.xyz * vec3(2.0, 2.0, 2.0) + vec3(-1.0, -1.0, -1.0);
+    u_xlat1.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat1.xyz;
+    u_xlat1.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat1.xyz;
+    u_xlat1.xyz = u_xlat1.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat0.xyz = u_xlat0.xyz * _DistorbVector.xyz + u_xlat1.xyz;
+    u_xlat1.xyz = u_xlat0.yyy * hlslcc_mtx4x4unity_WorldToObject[1].xyz;
+    u_xlat0.xyw = hlslcc_mtx4x4unity_WorldToObject[0].xyz * u_xlat0.xxx + u_xlat1.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_WorldToObject[2].xyz * u_xlat0.zzz + u_xlat0.xyw;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_WorldToObject[3].xyz;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb6 = !!(vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_Distorb_MODE));
+#else
+    u_xlatb6 = vec4(0.0, 0.0, 0.0, 0.0)!=vec4(_IF_Distorb_MODE);
+#endif
+    u_xlat0.xyz = (bool(u_xlatb6)) ? u_xlat0.xyz : in_POSITION0.xyz;
+    u_xlat1.xyz = u_xlat0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyw = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * u_xlat0.xxx + u_xlat1.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * u_xlat0.zzz + u_xlat0.xyw;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1.xyz = _LightDirection.xyz * _ShadowBias.xxx + u_xlat0.xyz;
+    vs_TEXCOORD4.xyz = (-u_xlat0.xyz) + _WorldSpaceCameraPos.xyz;
+    u_xlat0.x = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[0].xyz);
+    u_xlat0.y = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[1].xyz);
+    u_xlat0.z = dot(in_NORMAL0.xyz, hlslcc_mtx4x4unity_WorldToObject[2].xyz);
+    u_xlat6 = dot(u_xlat0.xyz, u_xlat0.xyz);
+    u_xlat6 = max(u_xlat6, 1.17549435e-38);
+    u_xlat6 = inversesqrt(u_xlat6);
+    u_xlat0.xyz = vec3(u_xlat6) * u_xlat0.xyz;
+    u_xlat6 = dot(_LightDirection.xyz, u_xlat0.xyz);
+#ifdef UNITY_ADRENO_ES3
+    u_xlat6 = min(max(u_xlat6, 0.0), 1.0);
+#else
+    u_xlat6 = clamp(u_xlat6, 0.0, 1.0);
+#endif
+    u_xlat6 = (-u_xlat6) + 1.0;
+    u_xlat6 = u_xlat6 * _ShadowBias.y;
+    u_xlat1.xyz = u_xlat0.xyz * vec3(u_xlat6) + u_xlat1.xyz;
+    vs_TEXCOORD0.xyz = u_xlat0.xyz;
+    u_xlat0 = u_xlat1.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat0 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat1.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat1.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_MatrixVP[3];
+    gl_Position.z = max((-u_xlat0.w), u_xlat0.z);
+    gl_Position.xyw = u_xlat0.xyw;
+    vs_TEXCOORD1 = in_TEXCOORD0;
+    u_xlat0.xy = _TimeParameters.xx * _Tex2_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _tex2_st.zw;
+    vs_TEXCOORD2.xy = in_TEXCOORD0.xy * _tex2_st.xy + u_xlat0.xy;
+    vs_TEXCOORD2.zw = vec2(0.0, 0.0);
+    vs_TEXCOORD3 = in_COLOR0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+layout(location = 0) out mediump vec4 SV_TARGET0;
+void main()
+{
+    SV_TARGET0 = vec4(0.0, 0.0, 0.0, 0.0);
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+Fallback "Hidden/Shader Graph/FallbackError"
+CustomEditor "UnityEditor.CustomExtension.ShaderFixedPropGUI"
+}

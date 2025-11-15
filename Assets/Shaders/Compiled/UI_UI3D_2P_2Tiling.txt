@@ -1,0 +1,308 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "UI/UI3D_2P_2Tiling" {
+Properties {
+[Header(Tex)] [ToggleUI] _IF_ADD_MODE ("ADD 模式", Float) = 0
+[MainTexture] _MainTex ("Diffiuse", 2D) = "white" { }
+[HDR] _Color1 ("Color1", Color) = (1,1,1,1)
+_Tex1_Speed ("MainTex Speed", Vector) = (0,0,0,0)
+_Tex2 ("Tes2", 2D) = "white" { }
+[HDR] _Color2 ("Color2", Color) = (1,1,1,1)
+_Tex2_Speed ("Tex2_Speed", Vector) = (0,0,0,0)
+_Alpha1 ("Alpha", Range(0, 1)) = 1
+[HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
+[HideInInspector] _Stencil ("Stencil ID", Float) = 0
+[HideInInspector] _StencilOp ("Stencil Operation", Float) = 0
+[HideInInspector] _StencilWriteMask ("Stencil Write Mask", Float) = 255
+[HideInInspector] _StencilReadMask ("Stencil Read Mask", Float) = 255
+[HideInInspector] _ColorMask ("Color Mask", Float) = 15
+[HideInInspector] _RenderType ("Vector1", Float) = 0
+[HideInInspector] _Cull ("Vector1", Float) = 0
+[HideInInspector] _ZWrite ("Vector1", Float) = 1
+[HideInInspector] _ZTest ("Vector1", Float) = 4
+[HideInInspector] _AlphaToMask ("Vector1", Float) = 0
+[HideInInspector] _SrcBlendFactor ("Vector1", Float) = 5
+[HideInInspector] _DstBlendFactor ("Vector1", Float) = 10
+[HideInInspector] _SrcBlendFactorAlpha ("Vector1", Float) = 5
+[HideInInspector] _DstBlendFactorAlpha ("Vector1", Float) = 10
+[HideInInspector] _BlendOp ("Vector1", Float) = 0
+[HideInInspector] _BlendOpAlpha ("Vector1", Float) = 0
+[HideInInspector] _BlendMode ("Vector1", Float) = 0
+[Toggle(UNITY_UI_ALPHACLIP)] [HideInInspector] _UseUIAlphaClip ("Use Alpha Clip", Float) = 0
+_Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
+}
+SubShader {
+ LOD 300
+ Tags { "IGNOREPROJECTOR" = "true" "QUEUE" = "Transparent" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Transparent" }
+ Pass {
+  Name "ForwardLit"
+  LOD 300
+  Tags { "CanUseSpriteAtlas" = "true" "IGNOREPROJECTOR" = "true" "PreviewType" = "Plane" "QUEUE" = "Transparent" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Transparent" }
+  Blend Zero Zero, Zero Zero
+  ZTest Off
+  ZWrite Off
+  Cull Off
+  Stencil {
+   ReadMask 0
+   WriteMask 0
+   Comp Disabled
+   Pass Keep
+   Fail Keep
+   ZFail Keep
+  }
+  GpuProgramID 20444
+Program "vp" {
+SubProgram "gles " {
+"// hash: 4983d50b72ff0102
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 _Time;
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	mediump vec4 _MainTex_ST;
+uniform 	mediump vec4 _Tex2_ST;
+uniform 	mediump vec4 _Tex1_Speed;
+uniform 	mediump vec4 _Tex2_Speed;
+attribute highp vec4 in_POSITION0;
+attribute mediump vec4 in_COLOR0;
+attribute highp vec2 in_TEXCOORD0;
+varying highp vec4 vs_TEXCOORD0;
+varying mediump vec4 vs_COLOR0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+vec2 u_xlat4;
+void main()
+{
+    u_xlat0.xy = _Time.xx * _Tex1_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat4.xy = in_TEXCOORD0.xy * _MainTex_ST.xy + _MainTex_ST.zw;
+    vs_TEXCOORD0.xy = u_xlat0.xy + u_xlat4.xy;
+    u_xlat0.xy = _Time.xx * _Tex2_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat4.xy = in_TEXCOORD0.xy * _Tex2_ST.xy + _Tex2_ST.zw;
+    vs_TEXCOORD0.zw = u_xlat0.xy + u_xlat4.xy;
+    u_xlat0.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat0.xyz;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat0 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = u_xlat0 + hlslcc_mtx4x4unity_MatrixVP[3];
+    vs_COLOR0 = in_COLOR0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	mediump float _IF_ADD_MODE;
+uniform 	mediump vec4 _Color1;
+uniform 	mediump vec4 _Color2;
+uniform 	mediump float _Alpha1;
+uniform lowp sampler2D _MainTex;
+uniform lowp sampler2D _Tex2;
+varying highp vec4 vs_TEXCOORD0;
+varying mediump vec4 vs_COLOR0;
+#define SV_Target0 gl_FragData[0]
+mediump vec4 u_xlat16_0;
+lowp vec4 u_xlat10_0;
+lowp vec4 u_xlat10_1;
+mediump float u_xlat16_2;
+void main()
+{
+    u_xlat10_0 = texture2D(_Tex2, vs_TEXCOORD0.zw);
+    u_xlat16_0 = u_xlat10_0 * _Color2;
+    u_xlat10_1 = texture2D(_MainTex, vs_TEXCOORD0.xy);
+    u_xlat16_0 = u_xlat10_1 * _Color1 + u_xlat16_0;
+    u_xlat16_0 = u_xlat16_0 * vs_COLOR0;
+    u_xlat16_2 = u_xlat16_0.w * _Alpha1 + -1.0;
+    u_xlat16_2 = _IF_ADD_MODE * u_xlat16_2 + 1.0;
+    SV_Target0.xyz = u_xlat16_0.xyz * vec3(u_xlat16_2);
+    u_xlat16_2 = u_xlat16_0.w * _Alpha1;
+    SV_Target0.w = u_xlat16_2;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+"// hash: 5e0fec984a2a035c
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Time;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(1) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM mediump vec4 _MainTex_ST;
+	UNITY_UNIFORM mediump vec4 _Tex2_ST;
+	UNITY_UNIFORM mediump float _Emissive;
+	UNITY_UNIFORM mediump vec4 _Colorcla;
+	UNITY_UNIFORM mediump float _Lightclamp;
+	UNITY_UNIFORM mediump vec4 _Tex1_Speed;
+	UNITY_UNIFORM mediump float _IF_ADD_MODE;
+	UNITY_UNIFORM mediump vec4 _Color1;
+	UNITY_UNIFORM mediump vec4 _Color2;
+	UNITY_UNIFORM mediump vec4 _Tex2_Speed;
+	UNITY_UNIFORM mediump float _Alpha1;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+in mediump vec4 in_COLOR0;
+in highp vec2 in_TEXCOORD0;
+out highp vec4 vs_TEXCOORD0;
+out mediump vec4 vs_COLOR0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+vec2 u_xlat4;
+void main()
+{
+    u_xlat0.xy = _Time.xx * _Tex1_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat4.xy = in_TEXCOORD0.xy * _MainTex_ST.xy + _MainTex_ST.zw;
+    vs_TEXCOORD0.xy = u_xlat0.xy + u_xlat4.xy;
+    u_xlat0.xy = _Time.xx * _Tex2_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat4.xy = in_TEXCOORD0.xy * _Tex2_ST.xy + _Tex2_ST.zw;
+    vs_TEXCOORD0.zw = u_xlat0.xy + u_xlat4.xy;
+    u_xlat0.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat0.xyz;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat0 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = u_xlat0 + hlslcc_mtx4x4unity_MatrixVP[3];
+    vs_COLOR0 = in_COLOR0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM mediump vec4 _MainTex_ST;
+	UNITY_UNIFORM mediump vec4 _Tex2_ST;
+	UNITY_UNIFORM mediump float _Emissive;
+	UNITY_UNIFORM mediump vec4 _Colorcla;
+	UNITY_UNIFORM mediump float _Lightclamp;
+	UNITY_UNIFORM mediump vec4 _Tex1_Speed;
+	UNITY_UNIFORM mediump float _IF_ADD_MODE;
+	UNITY_UNIFORM mediump vec4 _Color1;
+	UNITY_UNIFORM mediump vec4 _Color2;
+	UNITY_UNIFORM mediump vec4 _Tex2_Speed;
+	UNITY_UNIFORM mediump float _Alpha1;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+UNITY_LOCATION(0) uniform mediump sampler2D _MainTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _Tex2;
+in highp vec4 vs_TEXCOORD0;
+in mediump vec4 vs_COLOR0;
+layout(location = 0) out mediump vec4 SV_Target0;
+mediump vec4 u_xlat16_0;
+mediump vec4 u_xlat16_1;
+mediump float u_xlat16_2;
+void main()
+{
+    u_xlat16_0 = texture(_Tex2, vs_TEXCOORD0.zw);
+    u_xlat16_0 = u_xlat16_0 * _Color2;
+    u_xlat16_1 = texture(_MainTex, vs_TEXCOORD0.xy);
+    u_xlat16_0 = u_xlat16_1 * _Color1 + u_xlat16_0;
+    u_xlat16_0 = u_xlat16_0 * vs_COLOR0;
+    u_xlat16_2 = u_xlat16_0.w * _Alpha1 + -1.0;
+    u_xlat16_2 = _IF_ADD_MODE * u_xlat16_2 + 1.0;
+    SV_Target0.xyz = u_xlat16_0.xyz * vec3(u_xlat16_2);
+    u_xlat16_2 = u_xlat16_0.w * _Alpha1;
+    SV_Target0.w = u_xlat16_2;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+Fallback "Hidden/InternalErrorShader"
+CustomEditor "UnityEditor.CustomExtension.ShaderFixedPropGUI"
+}

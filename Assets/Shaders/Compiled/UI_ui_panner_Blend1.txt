@@ -1,0 +1,377 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "UI/ui_panner_Blend1" {
+Properties {
+[NoScaleOffset] _Tex1 ("MainTex1", 2D) = "white" { }
+_tex1_st ("MainTex1_ST", Vector) = (1,1,0,0)
+_Tex1_Speed ("MainTex1_Speed", Vector) = (1,0,0,0)
+[HDR] _Color1 ("Color", Color) = (1,1,1,0)
+_Emission1 ("Emission ", Float) = 1
+_ColorMask ("Color Mask", Float) = 15
+[Toggle(UNITY_UI_ALPHACLIP)] _UseUIAlphaClip ("Use Alpha Clip", Float) = 0
+_ClipRect ("Clip Rect", Vector) = (-32767,-32767,32767,32767)
+_StencilComp ("Stencil Comparison", Float) = 8
+_Stencil ("Stencil ID", Float) = 0
+_StencilOp ("Stencil Operation", Float) = 0
+_StencilWriteMask ("Stencil Write Mask", Float) = 255
+_StencilReadMask ("Stencil Read Mask", Float) = 255
+}
+SubShader {
+ Tags { "CanUseSpriteAtlas" = "true" "IGNOREPROJECTOR" = "true" "PreviewType" = "Plane" "QUEUE" = "Transparent" "RenderType" = "Transparent" }
+ Pass {
+  Tags { "CanUseSpriteAtlas" = "true" "IGNOREPROJECTOR" = "true" "PreviewType" = "Plane" "QUEUE" = "Transparent" "RenderType" = "Transparent" }
+  Blend SrcAlpha OneMinusSrcAlpha, One One
+  ColorMask 0 0
+  ZTest Less
+  Stencil {
+   ReadMask 0
+   WriteMask 0
+   Comp Disabled
+   Pass Keep
+   Fail Keep
+   ZFail Keep
+  }
+  GpuProgramID 61292
+Program "vp" {
+SubProgram "gles " {
+"// hash: 5e1b818aeb127fe
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 _Time;
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _tex1_st;
+uniform 	vec2 _Tex1_Speed;
+uniform 	vec4 _Color1;
+uniform 	float _Emission1;
+attribute highp vec4 in_POSITION0;
+attribute highp vec4 in_COLOR0;
+attribute highp vec2 in_TEXCOORD0;
+varying mediump vec4 vs_COLOR0;
+varying mediump vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    u_xlat0.xyz = _Color1.xyz * vec3(_Emission1);
+    u_xlat0.xyz = u_xlat0.xyz * in_COLOR0.xyz;
+    u_xlat0.w = in_COLOR0.w;
+    vs_COLOR0 = u_xlat0;
+    u_xlat0.xy = _Time.xx * _Tex1_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _tex1_st.zw;
+    u_xlat0.xy = in_TEXCOORD0.xy * _tex1_st.xy + u_xlat0.xy;
+    vs_TEXCOORD0.xy = u_xlat0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform lowp sampler2D _Tex1;
+varying mediump vec4 vs_COLOR0;
+varying mediump vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+lowp vec4 u_xlat10_0;
+void main()
+{
+    u_xlat10_0 = texture2D(_Tex1, vs_TEXCOORD0.xy);
+    SV_Target0 = u_xlat10_0 * vs_COLOR0;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+"// hash: 15cde6ae72280184
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Time;
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _tex1_st;
+uniform 	vec2 _Tex1_Speed;
+uniform 	vec4 _Color1;
+uniform 	float _Emission1;
+in highp vec4 in_POSITION0;
+in highp vec4 in_COLOR0;
+in highp vec2 in_TEXCOORD0;
+out mediump vec4 vs_COLOR0;
+out mediump vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    u_xlat0.xyz = _Color1.xyz * vec3(_Emission1);
+    u_xlat0.xyz = u_xlat0.xyz * in_COLOR0.xyz;
+    u_xlat0.w = in_COLOR0.w;
+    vs_COLOR0 = u_xlat0;
+    u_xlat0.xy = _Time.xx * _Tex1_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _tex1_st.zw;
+    u_xlat0.xy = in_TEXCOORD0.xy * _tex1_st.xy + u_xlat0.xy;
+    vs_TEXCOORD0.xy = u_xlat0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+UNITY_LOCATION(0) uniform mediump sampler2D _Tex1;
+in mediump vec4 vs_COLOR0;
+in mediump vec2 vs_TEXCOORD0;
+layout(location = 0) out mediump vec4 SV_Target0;
+mediump vec4 u_xlat16_0;
+void main()
+{
+    u_xlat16_0 = texture(_Tex1, vs_TEXCOORD0.xy);
+    SV_Target0 = u_xlat16_0 * vs_COLOR0;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles " {
+Keywords { "UNITY_UI_ALPHACLIP" }
+"// hash: 1d53e520c1871c92
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 _Time;
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _tex1_st;
+uniform 	vec2 _Tex1_Speed;
+uniform 	vec4 _Color1;
+uniform 	float _Emission1;
+attribute highp vec4 in_POSITION0;
+attribute highp vec4 in_COLOR0;
+attribute highp vec2 in_TEXCOORD0;
+varying mediump vec4 vs_COLOR0;
+varying mediump vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    u_xlat0.xyz = _Color1.xyz * vec3(_Emission1);
+    u_xlat0.xyz = u_xlat0.xyz * in_COLOR0.xyz;
+    u_xlat0.w = in_COLOR0.w;
+    vs_COLOR0 = u_xlat0;
+    u_xlat0.xy = _Time.xx * _Tex1_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _tex1_st.zw;
+    u_xlat0.xy = in_TEXCOORD0.xy * _tex1_st.xy + u_xlat0.xy;
+    vs_TEXCOORD0.xy = u_xlat0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform lowp sampler2D _Tex1;
+varying mediump vec4 vs_COLOR0;
+varying mediump vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+mediump vec4 u_xlat16_0;
+lowp vec4 u_xlat10_0;
+mediump float u_xlat16_1;
+bool u_xlatb2;
+void main()
+{
+    u_xlat10_0 = texture2D(_Tex1, vs_TEXCOORD0.xy);
+    u_xlat16_1 = u_xlat10_0.w * vs_COLOR0.w + -0.00999999978;
+    u_xlat16_0 = u_xlat10_0 * vs_COLOR0;
+    SV_Target0 = u_xlat16_0;
+    u_xlatb2 = u_xlat16_1<0.0;
+    if(u_xlatb2){discard;}
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+Keywords { "UNITY_UI_ALPHACLIP" }
+"// hash: 8fc091dc1ee3b32c
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Time;
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _tex1_st;
+uniform 	vec2 _Tex1_Speed;
+uniform 	vec4 _Color1;
+uniform 	float _Emission1;
+in highp vec4 in_POSITION0;
+in highp vec4 in_COLOR0;
+in highp vec2 in_TEXCOORD0;
+out mediump vec4 vs_COLOR0;
+out mediump vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    u_xlat0.xyz = _Color1.xyz * vec3(_Emission1);
+    u_xlat0.xyz = u_xlat0.xyz * in_COLOR0.xyz;
+    u_xlat0.w = in_COLOR0.w;
+    vs_COLOR0 = u_xlat0;
+    u_xlat0.xy = _Time.xx * _Tex1_Speed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _tex1_st.zw;
+    u_xlat0.xy = in_TEXCOORD0.xy * _tex1_st.xy + u_xlat0.xy;
+    vs_TEXCOORD0.xy = u_xlat0.xy;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+UNITY_LOCATION(0) uniform mediump sampler2D _Tex1;
+in mediump vec4 vs_COLOR0;
+in mediump vec2 vs_TEXCOORD0;
+layout(location = 0) out mediump vec4 SV_Target0;
+mediump vec4 u_xlat16_0;
+mediump float u_xlat16_1;
+bool u_xlatb2;
+void main()
+{
+    u_xlat16_0 = texture(_Tex1, vs_TEXCOORD0.xy);
+    u_xlat16_1 = u_xlat16_0.w * vs_COLOR0.w + -0.00999999978;
+    u_xlat16_0 = u_xlat16_0 * vs_COLOR0;
+    SV_Target0 = u_xlat16_0;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb2 = !!(u_xlat16_1<0.0);
+#else
+    u_xlatb2 = u_xlat16_1<0.0;
+#endif
+    if(u_xlatb2){discard;}
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+SubProgram "gles " {
+Keywords { "UNITY_UI_ALPHACLIP" }
+""
+}
+SubProgram "gles3 " {
+Keywords { "UNITY_UI_ALPHACLIP" }
+""
+}
+}
+}
+}
+}

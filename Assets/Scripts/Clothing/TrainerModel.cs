@@ -361,6 +361,8 @@ public class TrainerModel : MonoBehaviour
                             Color hairCol = ConvertColor32ToHDR(info.HairColor, 1f);
                             material.SetColor("_color1", hairCol);
                             material.SetColor("_color2", hairCol);
+                            material.SetColor("_color3", hairCol);
+                            material.SetColor("_color4", hairCol);
                         }
                         else if (matName.Contains("eye0"))
                         {

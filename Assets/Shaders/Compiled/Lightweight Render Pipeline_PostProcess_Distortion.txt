@@ -1,0 +1,25 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "Lightweight Render Pipeline/PostProcess/Distortion" {
+Properties {
+}
+SubShader {
+ Pass {
+  ZTest Always
+  ZWrite Off
+  Cull Off
+  GpuProgramID 55384
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+}

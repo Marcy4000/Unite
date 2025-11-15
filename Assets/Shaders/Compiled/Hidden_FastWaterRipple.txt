@@ -1,0 +1,210 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "Hidden/FastWaterRipple" {
+Properties {
+_RippleData ("velocity, lambda, phase, aspectAdjust", Vector) = (1,1,1,1)
+}
+SubShader {
+ Pass {
+  Blend One One, One One
+  GpuProgramID 30798
+Program "vp" {
+SubProgram "gles " {
+"// hash: d30940f62a94b43b
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+attribute highp vec4 in_POSITION0;
+attribute mediump vec4 in_COLOR0;
+varying highp vec3 vs_TEXCOORD0;
+varying mediump vec4 vs_COLOR0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xyz = in_POSITION0.xyz;
+    vs_COLOR0 = in_COLOR0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	vec4 _RippleData;
+varying highp vec3 vs_TEXCOORD0;
+varying mediump vec4 vs_COLOR0;
+#define SV_Target0 gl_FragData[0]
+mediump vec4 u_xlat16_0;
+mediump vec3 u_xlat16_1;
+bool u_xlatb2;
+mediump vec3 u_xlat16_3;
+bool u_xlatb5;
+void main()
+{
+    u_xlat16_0.w = 1.0;
+    u_xlat16_0.yz = vs_TEXCOORD0.xy + (-vs_COLOR0.xy);
+    u_xlat16_0.x = u_xlat16_0.y * _RippleData.w;
+    u_xlat16_3.x = dot(u_xlat16_0.xzw, u_xlat16_0.xzw);
+    u_xlat16_3.x = inversesqrt(u_xlat16_3.x);
+    u_xlat16_1.xyz = u_xlat16_3.xxx * u_xlat16_0.xwz;
+    u_xlat16_0.x = dot(u_xlat16_0.xz, u_xlat16_0.xz);
+    u_xlat16_0.x = sqrt(u_xlat16_0.x);
+    u_xlat16_0.x = u_xlat16_0.x / _RippleData.y;
+    u_xlat16_0.x = _RippleData.x * vs_COLOR0.z + (-u_xlat16_0.x);
+    u_xlat16_0.x = u_xlat16_0.x * 6.28318548 + _RippleData.z;
+    u_xlat16_3.xyz = u_xlat16_1.xyz * vs_COLOR0.www;
+    u_xlat16_1.x = cos(u_xlat16_0.x);
+    u_xlat16_3.xyz = u_xlat16_3.xyz * u_xlat16_1.xxx;
+    u_xlatb2 = u_xlat16_0.x>=0.0;
+    u_xlatb5 = 6.28318548>=u_xlat16_0.x;
+    u_xlat16_0.x = (u_xlatb5) ? 1.0 : 0.0;
+    u_xlat16_1.x = (u_xlatb2) ? 1.0 : 0.0;
+    u_xlat16_3.xyz = u_xlat16_3.xyz * u_xlat16_1.xxx;
+    SV_Target0.xyz = u_xlat16_0.xxx * u_xlat16_3.xyz;
+    SV_Target0.w = 1.0;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+"// hash: 8015421e633bb79c
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+in highp vec4 in_POSITION0;
+in mediump vec4 in_COLOR0;
+out highp vec3 vs_TEXCOORD0;
+out mediump vec4 vs_COLOR0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xyz = in_POSITION0.xyz;
+    vs_COLOR0 = in_COLOR0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _RippleData;
+in highp vec3 vs_TEXCOORD0;
+in mediump vec4 vs_COLOR0;
+layout(location = 0) out mediump vec4 SV_Target0;
+mediump vec4 u_xlat16_0;
+mediump vec3 u_xlat16_1;
+bool u_xlatb2;
+mediump vec3 u_xlat16_3;
+bool u_xlatb5;
+void main()
+{
+    u_xlat16_0.w = 1.0;
+    u_xlat16_0.yz = vs_TEXCOORD0.xy + (-vs_COLOR0.xy);
+    u_xlat16_0.x = u_xlat16_0.y * _RippleData.w;
+    u_xlat16_3.x = dot(u_xlat16_0.xzw, u_xlat16_0.xzw);
+    u_xlat16_3.x = inversesqrt(u_xlat16_3.x);
+    u_xlat16_1.xyz = u_xlat16_3.xxx * u_xlat16_0.xwz;
+    u_xlat16_0.x = dot(u_xlat16_0.xz, u_xlat16_0.xz);
+    u_xlat16_0.x = sqrt(u_xlat16_0.x);
+    u_xlat16_0.x = u_xlat16_0.x / _RippleData.y;
+    u_xlat16_0.x = _RippleData.x * vs_COLOR0.z + (-u_xlat16_0.x);
+    u_xlat16_0.x = u_xlat16_0.x * 6.28318548 + _RippleData.z;
+    u_xlat16_3.xyz = u_xlat16_1.xyz * vs_COLOR0.www;
+    u_xlat16_1.x = cos(u_xlat16_0.x);
+    u_xlat16_3.xyz = u_xlat16_3.xyz * u_xlat16_1.xxx;
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb2 = !!(u_xlat16_0.x>=0.0);
+#else
+    u_xlatb2 = u_xlat16_0.x>=0.0;
+#endif
+#ifdef UNITY_ADRENO_ES3
+    u_xlatb5 = !!(6.28318548>=u_xlat16_0.x);
+#else
+    u_xlatb5 = 6.28318548>=u_xlat16_0.x;
+#endif
+    u_xlat16_0.x = (u_xlatb5) ? 1.0 : 0.0;
+    u_xlat16_1.x = (u_xlatb2) ? 1.0 : 0.0;
+    u_xlat16_3.xyz = u_xlat16_3.xyz * u_xlat16_1.xxx;
+    SV_Target0.xyz = u_xlat16_0.xxx * u_xlat16_3.xyz;
+    SV_Target0.w = 1.0;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+}

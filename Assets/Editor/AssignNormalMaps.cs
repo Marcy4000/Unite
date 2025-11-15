@@ -14,9 +14,35 @@ public class ClothingMaterialConverter : EditorWindow
     // You must create a preset asset for this to work!
     private const string PresetSearchString = "t:ShaderConversionPreset";
 
-    // Renamed the menu item
+    // Menu item now opens an EditorWindow so the user can choose options
     [MenuItem("Tools/Clothing/Convert Clothing Materials to URP")]
-    public static void ConvertClothingMaterials()
+    public static void ShowWindow()
+    {
+        var window = GetWindow<ClothingMaterialConverter>();
+        window.titleContent = new GUIContent("Clothing Material Converter");
+        window.Show();
+    }
+
+    // Instance field exposed in the EditorWindow to let the user toggle hair-only conversion
+    private bool onlyConvertHair = false;
+
+    // Draw the simple UI so users can toggle hair-only conversion and run the conversion
+    private void OnGUI()
+    {
+        EditorGUILayout.LabelField("Clothing Material Conversion", EditorStyles.boldLabel);
+        onlyConvertHair = EditorGUILayout.Toggle("Only convert hair materials", onlyConvertHair);
+
+        EditorGUILayout.Space();
+        if (GUILayout.Button("Convert Now"))
+        {
+            // Run conversion with the selected option
+            ConvertClothingMaterials(onlyConvertHair);
+            Debug.Log($"Conversion finished. onlyConvertHair={onlyConvertHair}");
+        }
+    }
+
+    // Keep a static converter entry point which accepts the option
+    public static void ConvertClothingMaterials(bool onlyConvertHair)
     {
         // --- Find the Preset Asset ---
         string[] presetGuids = AssetDatabase.FindAssets(PresetSearchString);
@@ -92,10 +118,14 @@ public class ClothingMaterialConverter : EditorWindow
 
             foreach (var folderMapping in folderMappings)
             {
+                // If user requested hair-only conversion, skip other folders
+                if (onlyConvertHair && !string.Equals(folderMapping.Key, "Hair", System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 string typeFolderPath = Path.Combine(genderPath, folderMapping.Key, LodLevel);
                 if (!Directory.Exists(typeFolderPath)) continue;
 
-                ProcessModelsInFolder(typeFolderPath, facePreset, hairPreset);
+                ProcessModelsInFolder(typeFolderPath, facePreset, hairPreset, onlyConvertHair);
             }
         }
 
@@ -104,7 +134,7 @@ public class ClothingMaterialConverter : EditorWindow
         Debug.Log("Material conversion for URP completed.");
     }
 
-    private static void ProcessModelsInFolder(string folderPath, ShaderConversionPreset facePreset, ShaderConversionPreset hairPreset)
+    private static void ProcessModelsInFolder(string folderPath, ShaderConversionPreset facePreset, ShaderConversionPreset hairPreset, bool onlyConvertHair)
     {
         string[] modelGuids = AssetDatabase.FindAssets("t:Model", new[] { folderPath });
 
@@ -132,6 +162,11 @@ public class ClothingMaterialConverter : EditorWindow
                         // Decide which preset to use based on material name.
                         string matNameLower = (material.name ?? string.Empty).ToLower();
                         bool isHair = matNameLower.Contains("hair") || matNameLower.Contains("shadow");
+                        // If user requested hair-only conversion and this material is not hair, skip it
+                        if (onlyConvertHair && !isHair)
+                        {
+                            continue;
+                        }
                         ShaderConversionPreset selected = isHair && hairPreset != null ? hairPreset : facePreset;
                         ConvertMaterialProperties(material, selected, isHair, matPath);
                     }

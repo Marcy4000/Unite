@@ -26,10 +26,13 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _ATVECTOR_X
+  - _SHTYPE_LERP
+  - _SLUV_UV0
+  - _VCOLOR2N_OFF
+  - _VTEX_OFF
+  m_InvalidKeywords:
   - _DEBUG_OFF
   - _NORMALMAP
-  - _SHTYPE_LERP
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -89,6 +92,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _OutlineMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -111,6 +118,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _ActorScaleAttribute: 1
     - _AddPrecomputedVelocity: 0
     - _AddlightAttenuation: 1
     - _AddlightLerp: 0.5
@@ -150,6 +158,7 @@ Material:
     - _Queue: 2000
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _RenderType: 0
     - _RimlightAttenuation: 0.04
     - _RimlightScale: 1
     - _RimlightScale2: 1.5
@@ -157,6 +166,7 @@ Material:
     - _RoughNessOffset: 0
     - _SHScale: 1
     - _SHType: 1
+    - _SLUV: 0
     - _ShadowOffset: 0
     - _ShadowPow: 1
     - _ShadowScale: 0
@@ -173,6 +183,9 @@ Material:
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
     - _StencilZFailOp: 0
+    - _SunShift: 0
+    - _SunShiftOffuse1: 0
+    - _SunShiftOffuse2: 0
     - _Surface: 0
     - _UVSec: 0
     - _UseObjectSpace: 1
@@ -200,10 +213,16 @@ Material:
     - _SHColorScale: {r: 1, g: 1, b: 1, a: 1}
     - _SHTopColor: {r: 5.992157, g: 5.992157, b: 5.992157, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _color1: {r: 0.245, g: 0.05249999, b: 0.105000034, a: 1}
     - _color2: {r: 0.78353804, g: 0.23074007, b: 0.20507877, a: 1}
     - _color3: {r: 0.19120172, g: 0, b: 0.015996292, a: 1}
+    - _color4: {r: 1, g: 1, b: 1, a: 1}
+    - _colorSkin: {r: 1, g: 1, b: 1, a: 1}
     - _lightDir: {r: -14.87, g: 3.68, b: 83.19, a: 0}
+    - _metalv4: {r: 0, g: 0, b: 0, a: 0}
+    - _roughv4: {r: 1, g: 1, b: 1, a: 1}
+    - _shapeST: {r: 1, g: 1, b: 0, a: 0}
     - _specularColor1: {r: 6.418176, g: 0, b: 5.4076552, a: 1}
     - _specularColor2: {r: 1.4585246, g: 0.1868358, b: 0.80761284, a: 1}
   m_BuildTextureStacks: []

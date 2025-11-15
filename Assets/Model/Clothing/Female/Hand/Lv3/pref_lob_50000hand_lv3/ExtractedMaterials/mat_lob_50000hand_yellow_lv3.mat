@@ -28,7 +28,9 @@ Material:
   - _ATVECTOR_Y
   - _DEBUG_OFF
   - _SHTYPE_LERP
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _USE_OBJECT_SPACE
+  - _VTEX_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -136,7 +138,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.4472136
     - _GlossyReflections: 1
-    - _MainlightAttenuation: 0.04
+    - _MainlightAttenuation: 10
     - _Mask: 1
     - _Metallic: 0
     - _MetallicOffset: 0
@@ -149,7 +151,7 @@ Material:
     - _Queue: 2000
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimlightAttenuation: 5
+    - _RimlightAttenuation: 6
     - _RimlightScale: 10
     - _RimlightScale2: 1.5
     - _RimlightShadowScale: 0

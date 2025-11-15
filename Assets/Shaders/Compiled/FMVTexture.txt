@@ -1,0 +1,193 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "FMVTexture" {
+Properties {
+_MainTex ("Luminance Texture", 2D) = "black" { }
+_ChromaTex ("Chroma Texture", 2D) = "green" { }
+}
+SubShader {
+ Pass {
+  GpuProgramID 53112
+Program "vp" {
+SubProgram "gles " {
+"// hash: 7a1bcf06fb046716
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _MainTex_ST;
+attribute highp vec4 in_POSITION0;
+attribute highp vec4 in_TEXCOORD0;
+varying highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy * _MainTex_ST.xy + _MainTex_ST.zw;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform lowp sampler2D _MainTex;
+uniform lowp sampler2D _ChromaTex;
+varying highp vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+bvec2 u_xlatb0;
+vec4 u_xlat1;
+vec3 u_xlat2;
+lowp vec2 u_xlat10_3;
+bvec2 u_xlatb3;
+void main()
+{
+    u_xlatb0.xy = lessThan(vs_TEXCOORD0.xyxx, vec4(0.0, 0.0, 0.0, 0.0)).xy;
+    u_xlatb0.x = u_xlatb0.y || u_xlatb0.x;
+    u_xlatb3.xy = lessThan(vec4(1.0, 1.0, 0.0, 0.0), vs_TEXCOORD0.xyxx).xy;
+    u_xlatb0.x = u_xlatb3.x || u_xlatb0.x;
+    u_xlatb0.x = u_xlatb3.y || u_xlatb0.x;
+    u_xlat1.w = 1.0;
+    u_xlat10_3.x = texture2D(_MainTex, vs_TEXCOORD0.xy).x;
+    u_xlat2.x = u_xlat10_3.x + -0.0625;
+    u_xlat10_3.xy = texture2D(_ChromaTex, vs_TEXCOORD0.xy).xy;
+    u_xlat2.yz = u_xlat10_3.xy + vec2(-0.5, -0.5);
+    u_xlat1.x = dot(vec2(1.16439998, 1.79270005), u_xlat2.xz);
+    u_xlat1.y = dot(vec3(1.16439998, -0.213300005, -0.532899976), u_xlat2.xyz);
+    u_xlat1.z = dot(vec2(1.16439998, 2.11240005), u_xlat2.xy);
+    SV_Target0 = (u_xlatb0.x) ? vec4(1.0, 0.0, 0.0, 1.0) : u_xlat1;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+"// hash: 7fc20844656615d3
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+uniform 	vec4 _MainTex_ST;
+in highp vec4 in_POSITION0;
+in highp vec4 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0 = in_POSITION0.yyyy * hlslcc_mtx4x4unity_ObjectToWorld[1];
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[0] * in_POSITION0.xxxx + u_xlat0;
+    u_xlat0 = hlslcc_mtx4x4unity_ObjectToWorld[2] * in_POSITION0.zzzz + u_xlat0;
+    u_xlat0 = u_xlat0 + hlslcc_mtx4x4unity_ObjectToWorld[3];
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = hlslcc_mtx4x4unity_MatrixVP[3] * u_xlat0.wwww + u_xlat1;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy * _MainTex_ST.xy + _MainTex_ST.zw;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+UNITY_LOCATION(0) uniform mediump sampler2D _MainTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _ChromaTex;
+in highp vec2 vs_TEXCOORD0;
+layout(location = 0) out highp vec4 SV_Target0;
+vec3 u_xlat0;
+mediump float u_xlat16_0;
+vec3 u_xlat1;
+mediump vec2 u_xlat16_1;
+bvec2 u_xlatb1;
+float u_xlat6;
+bool u_xlatb6;
+void main()
+{
+    u_xlat16_0 = texture(_MainTex, vs_TEXCOORD0.xy).x;
+    u_xlat0.x = u_xlat16_0 + -0.0625;
+    u_xlat16_1.xy = texture(_ChromaTex, vs_TEXCOORD0.xy).xy;
+    u_xlat0.yz = u_xlat16_1.xy + vec2(-0.5, -0.5);
+    u_xlat1.x = dot(vec2(1.16439998, 1.79270005), u_xlat0.xz);
+    u_xlat1.y = dot(vec3(1.16439998, -0.213300005, -0.532899976), u_xlat0.xyz);
+    u_xlat1.z = dot(vec2(1.16439998, 2.11240005), u_xlat0.xy);
+    u_xlat0.x = dot(vec3(3.24060011, -1.53719997, -0.498600006), u_xlat1.xyz);
+    u_xlat0.y = dot(vec3(-0.968900025, 1.87580001, 0.0414999984), u_xlat1.xyz);
+    u_xlat0.z = dot(vec3(0.0557000004, -0.203999996, 1.05700004), u_xlat1.xyz);
+    u_xlat6 = dot(vec3(0.412400007, 0.357600003, 0.180500001), u_xlat0.xyz);
+    u_xlat1.x = log2(u_xlat6);
+    u_xlat6 = dot(vec3(0.212599993, 0.715200007, 0.0722000003), u_xlat0.xyz);
+    u_xlat0.x = dot(vec3(0.0193000007, 0.119199999, 0.950200021), u_xlat0.xyz);
+    u_xlat1.z = log2(u_xlat0.x);
+    u_xlat1.y = log2(u_xlat6);
+    u_xlat0.xyz = u_xlat1.xyz * vec3(2.20000005, 2.20000005, 2.20000005);
+    u_xlat0.xyz = exp2(u_xlat0.xyz);
+    u_xlatb1.xy = lessThan(vs_TEXCOORD0.xyxx, vec4(0.0, 0.0, 0.0, 0.0)).xy;
+    u_xlatb6 = u_xlatb1.y || u_xlatb1.x;
+    u_xlatb1.xy = lessThan(vec4(1.0, 1.0, 0.0, 0.0), vs_TEXCOORD0.xyxx).xy;
+    u_xlatb6 = u_xlatb6 || u_xlatb1.x;
+    u_xlatb6 = u_xlatb1.y || u_xlatb6;
+    SV_Target0.xyz = (bool(u_xlatb6)) ? vec3(1.0, 0.0, 0.0) : u_xlat0.xyz;
+    SV_Target0.w = 1.0;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+}

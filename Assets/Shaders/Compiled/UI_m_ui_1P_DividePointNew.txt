@@ -1,0 +1,358 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "UI/m_ui_1P_DividePointNew" {
+Properties {
+[Header(Tex)] [NoScaleOffset] _Tex1 ("MainTex1", 2D) = "white" { }
+_DivideScale ("分解缩放", Range(0, 1)) = 0.1
+_MoveSpeed ("流动速度", Range(0, 5)) = 1
+_ChangeWidth ("分解宽度", Range(0, 0.5)) = 0.1
+_ChangePosi ("分解位置", Float) = 0
+_Rotate ("旋转", Range(-3.1415925, 3.1415925)) = 0
+_HeightWidthRat ("长宽比", Float) = 1
+_CircleTime ("时间", Float) = 0.1
+[HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
+[HideInInspector] _Stencil ("Stencil ID", Float) = 0
+[HideInInspector] _StencilOp ("Stencil Operation", Float) = 0
+[HideInInspector] _StencilWriteMask ("Stencil Write Mask", Float) = 255
+[HideInInspector] _StencilReadMask ("Stencil Read Mask", Float) = 255
+[HideInInspector] _ColorMask ("Color Mask", Float) = 15
+[HideInInspector] _RenderType ("Vector1", Float) = 0
+[HideInInspector] _Cull ("Vector1", Float) = 0
+[HideInInspector] _ZWrite ("Vector1", Float) = 1
+[HideInInspector] _ZTest ("Vector1", Float) = 4
+[HideInInspector] _AlphaToMask ("Vector1", Float) = 0
+[HideInInspector] _SrcBlendFactor ("Vector1", Float) = 5
+[HideInInspector] _DstBlendFactor ("Vector1", Float) = 10
+[HideInInspector] _SrcBlendFactorAlpha ("Vector1", Float) = 5
+[HideInInspector] _DstBlendFactorAlpha ("Vector1", Float) = 10
+[HideInInspector] _BlendOp ("Vector1", Float) = 0
+[HideInInspector] _BlendOpAlpha ("Vector1", Float) = 0
+[HideInInspector] _BlendMode ("Vector1", Float) = 0
+[Toggle(UNITY_UI_ALPHACLIP)] [HideInInspector] _UseUIAlphaClip ("Use Alpha Clip", Float) = 0
+}
+SubShader {
+ LOD 300
+ Tags { "IGNOREPROJECTOR" = "true" "QUEUE" = "Transparent" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Transparent" }
+ Pass {
+  Name "ForwardLit"
+  LOD 300
+  Tags { "CanUseSpriteAtlas" = "true" "IGNOREPROJECTOR" = "true" "PreviewType" = "Plane" "QUEUE" = "Transparent" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Transparent" }
+  Blend Zero Zero, Zero Zero
+  ZTest Off
+  ZWrite Off
+  Cull Off
+  Stencil {
+   ReadMask 0
+   WriteMask 0
+   Comp Disabled
+   Pass Keep
+   Fail Keep
+   ZFail Keep
+  }
+  GpuProgramID 30426
+Program "vp" {
+SubProgram "gles " {
+"// hash: d4fc11202a6541ba
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+attribute highp vec4 in_POSITION0;
+attribute highp vec2 in_TEXCOORD0;
+varying highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    u_xlat0.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat0.xyz;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat0 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = u_xlat0 + hlslcc_mtx4x4unity_MatrixVP[3];
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	float _MoveSpeed;
+uniform 	float _ChangeWidth;
+uniform 	float _ChangePosi;
+uniform 	float _DivideScale;
+uniform 	float _Rotate;
+uniform 	float _HeightWidthRat;
+uniform 	float _CircleTime;
+uniform lowp sampler2D _Tex1;
+varying highp vec2 vs_TEXCOORD0;
+#define SV_Target0 gl_FragData[0]
+vec2 u_xlat0;
+lowp vec4 u_xlat10_0;
+vec2 u_xlat1;
+float u_xlat2;
+float u_xlat3;
+mediump float u_xlat16_4;
+vec2 u_xlat6;
+mediump float u_xlat16_9;
+vec2 u_xlat10;
+mediump float u_xlat16_14;
+float u_xlat15;
+void main()
+{
+    u_xlat0.x = vs_TEXCOORD0.x * _HeightWidthRat;
+    u_xlat0.y = vs_TEXCOORD0.y;
+    u_xlat1.y = 0.0;
+    u_xlat1.x = _MoveSpeed * _CircleTime;
+    u_xlat0.xy = u_xlat0.xy + u_xlat1.xy;
+    u_xlat2 = sin(_Rotate);
+    u_xlat3 = cos(_Rotate);
+    u_xlat0.y = _ChangePosi * u_xlat2 + u_xlat0.y;
+    u_xlat0.x = (-_ChangePosi) * u_xlat3 + u_xlat0.x;
+    u_xlat0.xy = u_xlat0.xy + vec2(-0.5, -0.5);
+    u_xlat10.x = u_xlat2 * u_xlat0.y;
+    u_xlat10.x = u_xlat0.x * u_xlat3 + (-u_xlat10.x);
+    u_xlat0.x = u_xlat2 * u_xlat0.x;
+    u_xlat0.x = u_xlat0.y * u_xlat3 + u_xlat0.x;
+    u_xlat0.y = u_xlat0.x + 0.5;
+    u_xlat0.x = u_xlat10.x + 0.5;
+    u_xlat10.xy = vec2(vec2(_DivideScale, _DivideScale)) * vec2(0.5, 0.5) + u_xlat0.xy;
+    u_xlat10.xy = u_xlat10.xy / vec2(vec2(_DivideScale, _DivideScale));
+    u_xlat10.xy = floor(u_xlat10.xy);
+    u_xlat6.xy = (-u_xlat10.xy) * vec2(vec2(_DivideScale, _DivideScale)) + u_xlat0.xy;
+    u_xlat10.x = u_xlat10.x * _DivideScale + (-u_xlat1.x);
+    u_xlat10.x = u_xlat10.x * _ChangeWidth + (-_ChangePosi);
+    u_xlat15 = dot(u_xlat6.xy, u_xlat6.xy);
+    u_xlat15 = sqrt(u_xlat15);
+    u_xlat16_4 = (-u_xlat10.x) + u_xlat15;
+    u_xlat16_4 = u_xlat16_4 * -999.999939;
+    u_xlat16_4 = clamp(u_xlat16_4, 0.0, 1.0);
+    u_xlat16_9 = u_xlat16_4 * -2.0 + 3.0;
+    u_xlat16_4 = u_xlat16_4 * u_xlat16_4;
+    u_xlat16_4 = u_xlat16_4 * u_xlat16_9;
+    u_xlat10.xy = u_xlat0.xy / vec2(vec2(_DivideScale, _DivideScale));
+    u_xlat10.xy = floor(u_xlat10.xy);
+    u_xlat1.x = _DivideScale * 0.5;
+    u_xlat10.xy = u_xlat10.xy * vec2(vec2(_DivideScale, _DivideScale)) + u_xlat1.xx;
+    u_xlat0.xy = (-u_xlat10.xy) + u_xlat0.xy;
+    u_xlat10.x = (-_CircleTime) * _MoveSpeed + u_xlat10.x;
+    u_xlat10.x = u_xlat10.x * _ChangeWidth + (-_ChangePosi);
+    u_xlat0.x = dot(u_xlat0.xy, u_xlat0.xy);
+    u_xlat0.x = sqrt(u_xlat0.x);
+    u_xlat16_9 = (-u_xlat10.x) + u_xlat0.x;
+    u_xlat16_9 = u_xlat16_9 * -999.999939;
+    u_xlat16_9 = clamp(u_xlat16_9, 0.0, 1.0);
+    u_xlat16_14 = u_xlat16_9 * -2.0 + 3.0;
+    u_xlat16_9 = u_xlat16_9 * u_xlat16_9;
+    u_xlat16_9 = u_xlat16_9 * u_xlat16_14;
+    u_xlat16_4 = max(u_xlat16_4, u_xlat16_9);
+    u_xlat10_0 = texture2D(_Tex1, vs_TEXCOORD0.xy);
+    SV_Target0.w = u_xlat16_4 * u_xlat10_0.w;
+    SV_Target0.xyz = u_xlat10_0.xyz;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+"// hash: 2fd433e2271b22f9
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(1) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    u_xlat0.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat0.xyz;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat0 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = u_xlat0 + hlslcc_mtx4x4unity_MatrixVP[3];
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerMaterial {
+#endif
+	UNITY_UNIFORM float _MoveSpeed;
+	UNITY_UNIFORM float _ChangeWidth;
+	UNITY_UNIFORM float _ChangePosi;
+	UNITY_UNIFORM float _DivideScale;
+	UNITY_UNIFORM float _Rotate;
+	UNITY_UNIFORM float _HeightWidthRat;
+	UNITY_UNIFORM float _CircleTime;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+UNITY_LOCATION(0) uniform mediump sampler2D _Tex1;
+in highp vec2 vs_TEXCOORD0;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec2 u_xlat0;
+mediump vec4 u_xlat16_0;
+vec2 u_xlat1;
+float u_xlat2;
+float u_xlat3;
+mediump float u_xlat16_4;
+vec2 u_xlat6;
+mediump float u_xlat16_9;
+vec2 u_xlat10;
+mediump float u_xlat16_14;
+float u_xlat15;
+void main()
+{
+    u_xlat0.x = vs_TEXCOORD0.x * _HeightWidthRat;
+    u_xlat0.y = vs_TEXCOORD0.y;
+    u_xlat1.y = 0.0;
+    u_xlat1.x = _MoveSpeed * _CircleTime;
+    u_xlat0.xy = u_xlat0.xy + u_xlat1.xy;
+    u_xlat2 = sin(_Rotate);
+    u_xlat3 = cos(_Rotate);
+    u_xlat0.y = _ChangePosi * u_xlat2 + u_xlat0.y;
+    u_xlat0.x = (-_ChangePosi) * u_xlat3 + u_xlat0.x;
+    u_xlat0.xy = u_xlat0.xy + vec2(-0.5, -0.5);
+    u_xlat10.x = u_xlat2 * u_xlat0.y;
+    u_xlat10.x = u_xlat0.x * u_xlat3 + (-u_xlat10.x);
+    u_xlat0.x = u_xlat2 * u_xlat0.x;
+    u_xlat0.x = u_xlat0.y * u_xlat3 + u_xlat0.x;
+    u_xlat0.y = u_xlat0.x + 0.5;
+    u_xlat0.x = u_xlat10.x + 0.5;
+    u_xlat10.xy = vec2(vec2(_DivideScale, _DivideScale)) * vec2(0.5, 0.5) + u_xlat0.xy;
+    u_xlat10.xy = u_xlat10.xy / vec2(vec2(_DivideScale, _DivideScale));
+    u_xlat10.xy = floor(u_xlat10.xy);
+    u_xlat6.xy = (-u_xlat10.xy) * vec2(vec2(_DivideScale, _DivideScale)) + u_xlat0.xy;
+    u_xlat10.x = u_xlat10.x * _DivideScale + (-u_xlat1.x);
+    u_xlat10.x = u_xlat10.x * _ChangeWidth + (-_ChangePosi);
+    u_xlat15 = dot(u_xlat6.xy, u_xlat6.xy);
+    u_xlat15 = sqrt(u_xlat15);
+    u_xlat16_4 = (-u_xlat10.x) + u_xlat15;
+    u_xlat16_4 = u_xlat16_4 * -999.999939;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_4 = min(max(u_xlat16_4, 0.0), 1.0);
+#else
+    u_xlat16_4 = clamp(u_xlat16_4, 0.0, 1.0);
+#endif
+    u_xlat16_9 = u_xlat16_4 * -2.0 + 3.0;
+    u_xlat16_4 = u_xlat16_4 * u_xlat16_4;
+    u_xlat16_4 = u_xlat16_4 * u_xlat16_9;
+    u_xlat10.xy = u_xlat0.xy / vec2(vec2(_DivideScale, _DivideScale));
+    u_xlat10.xy = floor(u_xlat10.xy);
+    u_xlat1.x = _DivideScale * 0.5;
+    u_xlat10.xy = u_xlat10.xy * vec2(vec2(_DivideScale, _DivideScale)) + u_xlat1.xx;
+    u_xlat0.xy = (-u_xlat10.xy) + u_xlat0.xy;
+    u_xlat10.x = (-_CircleTime) * _MoveSpeed + u_xlat10.x;
+    u_xlat10.x = u_xlat10.x * _ChangeWidth + (-_ChangePosi);
+    u_xlat0.x = dot(u_xlat0.xy, u_xlat0.xy);
+    u_xlat0.x = sqrt(u_xlat0.x);
+    u_xlat16_9 = (-u_xlat10.x) + u_xlat0.x;
+    u_xlat16_9 = u_xlat16_9 * -999.999939;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_9 = min(max(u_xlat16_9, 0.0), 1.0);
+#else
+    u_xlat16_9 = clamp(u_xlat16_9, 0.0, 1.0);
+#endif
+    u_xlat16_14 = u_xlat16_9 * -2.0 + 3.0;
+    u_xlat16_9 = u_xlat16_9 * u_xlat16_9;
+    u_xlat16_9 = u_xlat16_9 * u_xlat16_14;
+    u_xlat16_4 = max(u_xlat16_4, u_xlat16_9);
+    u_xlat16_0 = texture(_Tex1, vs_TEXCOORD0.xy);
+    SV_Target0.w = u_xlat16_4 * u_xlat16_0.w;
+    SV_Target0.xyz = u_xlat16_0.xyz;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+Fallback "Hidden/InternalErrorShader"
+CustomEditor "UnityEditor.CustomExtension.ShaderFixedPropGUI"
+}

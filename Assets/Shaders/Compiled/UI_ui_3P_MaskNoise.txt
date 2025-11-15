@@ -1,0 +1,321 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "UI/ui_3P_MaskNoise" {
+Properties {
+[Toggle(_IF_ADD_MODE_ON)] _IF_ADD_MODE ("ADD 模式 ", Float) = 0
+_MainTex ("MainTex", 2D) = "white" { }
+_MainTexSpeed ("Main Tex Speed", Vector) = (1,1,0,0)
+[NoScaleOffset] _NoiseMask ("NoiseMask", 2D) = "white" { }
+_NoiseTex ("NoiseTex", 2D) = "white" { }
+_NoiseTexSpeed ("Noise Tex Speed", Vector) = (1,1,0,0)
+[HDR] _Color ("Color", Color) = (1,1,1,1)
+_Emission ("Emission", Range(0, 1)) = 0
+_Alpha ("Alpha", Range(0, 1)) = 0
+_Noise ("Noise", Range(0, 1)) = 0
+_Zoffset ("Zoffset", Range(-3, 3)) = 0
+_NoiseMin ("扭曲最小值", Range(0, 1)) = 0
+_NoiseMax ("扭曲最大值", Range(0, 1)) = 0
+_NoisepulseRate ("频率", Range(0, 10)) = 0
+[HideInInspector] _RenderType ("Vector1", Float) = 0
+[HideInInspector] _Cull ("Vector1", Float) = 0
+[HideInInspector] _ZWrite ("Vector1", Float) = 1
+[HideInInspector] _ZTest ("Vector1", Float) = 4
+[HideInInspector] _StencilData ("Vector1", Float) = 0
+[HideInInspector] _StencilReadMask ("Vector1", Float) = 255
+[HideInInspector] _StencilWriteMask ("Vector1", Float) = 255
+[HideInInspector] _StencilComp ("Vector1", Float) = 8
+[HideInInspector] _StencilPassOp ("Vector1", Float) = 0
+[HideInInspector] _StencilFailOp ("Vector1", Float) = 0
+[HideInInspector] _StencilZFailOp ("Vector1", Float) = 0
+[HideInInspector] _AlphaToMask ("Vector1", Float) = 0
+[HideInInspector] _SrcBlendFactor ("Vector1", Float) = 5
+[HideInInspector] _DstBlendFactor ("Vector1", Float) = 10
+[HideInInspector] _SrcBlendFactorAlpha ("Vector1", Float) = 5
+[HideInInspector] _DstBlendFactorAlpha ("Vector1", Float) = 10
+[HideInInspector] _BlendOp ("Vector1", Float) = 0
+[HideInInspector] _BlendOpAlpha ("Vector1", Float) = 0
+[HideInInspector] _BlendMode ("Vector1", Float) = 0
+}
+SubShader {
+ Tags { "IGNOREPROJECTOR" = "true" "QUEUE" = "Transparent" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Opaque" }
+ Pass {
+  Name "ForwardLit"
+  Tags { "IGNOREPROJECTOR" = "true" "LIGHTMODE" = "LightweightForward" "QUEUE" = "Transparent" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Opaque" }
+  Blend Zero Zero, Zero Zero
+  ZTest Off
+  ZWrite Off
+  Cull Off
+  GpuProgramID 64156
+Program "vp" {
+SubProgram "gles " {
+"// hash: 1058c35552e9e220
+#ifdef VERTEX
+#version 100
+
+uniform 	vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+attribute highp vec4 in_POSITION0;
+attribute highp vec2 in_TEXCOORD0;
+attribute highp vec4 in_COLOR0;
+varying mediump vec2 vs_TEXCOORD0;
+varying mediump vec4 vs_TEXCOORD1;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    u_xlat0.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat0.xyz;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat0 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = u_xlat0 + hlslcc_mtx4x4unity_MatrixVP[3];
+    vs_TEXCOORD1 = in_COLOR0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 100
+
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+#else
+    precision mediump float;
+#endif
+precision highp int;
+uniform 	vec4 _Time;
+uniform 	vec4 _MainTex_ST;
+uniform 	vec4 _NoiseTex_ST;
+uniform 	vec4 _Color;
+uniform 	vec4 _MainTexSpeed;
+uniform 	vec4 _NoiseTexSpeed;
+uniform 	float _Emission;
+uniform 	float _Alpha;
+uniform 	float _Noise;
+uniform 	float _Zoffset;
+uniform 	float _NoiseMin;
+uniform 	float _NoiseMax;
+uniform 	float _NoisepulseRate;
+uniform lowp sampler2D _NoiseMask;
+uniform lowp sampler2D _NoiseTex;
+uniform lowp sampler2D _MainTex;
+varying mediump vec2 vs_TEXCOORD0;
+varying mediump vec4 vs_TEXCOORD1;
+#define SV_Target0 gl_FragData[0]
+vec4 u_xlat0;
+mediump vec4 u_xlat16_0;
+lowp vec4 u_xlat10_0;
+vec2 u_xlat1;
+lowp vec2 u_xlat10_1;
+mediump float u_xlat16_2;
+vec2 u_xlat6;
+lowp float u_xlat10_6;
+vec2 u_xlat7;
+float u_xlat9;
+void main()
+{
+    u_xlat0.xy = _Time.yy * _MainTexSpeed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _MainTex_ST.zw;
+    u_xlat6.xy = vs_TEXCOORD0.xy / _MainTex_ST.xy;
+    u_xlat0.xy = u_xlat0.xy + u_xlat6.xy;
+    u_xlat6.x = _Time.y * _NoisepulseRate;
+    u_xlat6.x = u_xlat6.x * 0.159235656;
+    u_xlat6.x = fract(u_xlat6.x);
+    u_xlat6.x = u_xlat6.x * 6.28000021;
+    u_xlat6.x = cos(u_xlat6.x);
+    u_xlat9 = (-_NoiseMin) + _NoiseMax;
+    u_xlat6.x = abs(u_xlat6.x) * u_xlat9 + _NoiseMin;
+    u_xlat6.x = u_xlat6.x * _Noise;
+    u_xlat1.xy = _Time.yy * _NoiseTexSpeed.xy;
+    u_xlat1.xy = fract(u_xlat1.xy);
+    u_xlat1.xy = u_xlat1.xy + _NoiseTex_ST.zw;
+    u_xlat7.xy = vs_TEXCOORD0.xy / _NoiseTex_ST.xy;
+    u_xlat1.xy = u_xlat1.xy + u_xlat7.xy;
+    u_xlat10_1.xy = texture2D(_NoiseTex, u_xlat1.xy).xy;
+    u_xlat16_2 = (-u_xlat10_1.y) + 1.0;
+    u_xlat1.x = u_xlat6.x * u_xlat10_1.x;
+    u_xlat1.y = u_xlat6.x * u_xlat16_2;
+    u_xlat10_6 = texture2D(_NoiseMask, vs_TEXCOORD0.xy).x;
+    u_xlat0.xy = u_xlat1.xy * vec2(u_xlat10_6) + u_xlat0.xy;
+    u_xlat10_0 = texture2D(_MainTex, u_xlat0.xy);
+    u_xlat16_0 = u_xlat10_0.wxyz * vs_TEXCOORD1.wxyz;
+    u_xlat0 = u_xlat16_0.yzwx * vec4(_Emission, _Emission, _Emission, _Alpha);
+    u_xlat0.xyz = u_xlat0.xyz * _Color.xyz + vec3(vec3(_Zoffset, _Zoffset, _Zoffset));
+    SV_Target0 = u_xlat0;
+    return;
+}
+
+#endif
+"
+}
+SubProgram "gles3 " {
+"// hash: 13bf89a524629e9c
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in highp vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+in highp vec4 in_COLOR0;
+out mediump vec2 vs_TEXCOORD0;
+out mediump vec4 vs_TEXCOORD1;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    u_xlat0.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat0.xyz;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat0 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    gl_Position = u_xlat0 + hlslcc_mtx4x4unity_MatrixVP[3];
+    vs_TEXCOORD1 = in_COLOR0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Time;
+uniform 	vec4 _MainTex_ST;
+uniform 	vec4 _NoiseTex_ST;
+uniform 	vec4 _Color;
+uniform 	vec4 _MainTexSpeed;
+uniform 	vec4 _NoiseTexSpeed;
+uniform 	float _Emission;
+uniform 	float _Alpha;
+uniform 	float _Noise;
+uniform 	float _Zoffset;
+uniform 	float _NoiseMin;
+uniform 	float _NoiseMax;
+uniform 	float _NoisepulseRate;
+UNITY_LOCATION(0) uniform mediump sampler2D _MainTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _NoiseMask;
+UNITY_LOCATION(2) uniform mediump sampler2D _NoiseTex;
+in mediump vec2 vs_TEXCOORD0;
+in mediump vec4 vs_TEXCOORD1;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec4 u_xlat0;
+mediump vec4 u_xlat16_0;
+vec2 u_xlat1;
+mediump vec2 u_xlat16_1;
+mediump float u_xlat16_2;
+vec2 u_xlat6;
+mediump float u_xlat16_6;
+vec2 u_xlat7;
+float u_xlat9;
+void main()
+{
+    u_xlat0.xy = _Time.yy * _MainTexSpeed.xy;
+    u_xlat0.xy = fract(u_xlat0.xy);
+    u_xlat0.xy = u_xlat0.xy + _MainTex_ST.zw;
+    u_xlat6.xy = vs_TEXCOORD0.xy / _MainTex_ST.xy;
+    u_xlat0.xy = u_xlat0.xy + u_xlat6.xy;
+    u_xlat6.x = _Time.y * _NoisepulseRate;
+    u_xlat6.x = u_xlat6.x * 0.159235656;
+    u_xlat6.x = fract(u_xlat6.x);
+    u_xlat6.x = u_xlat6.x * 6.28000021;
+    u_xlat6.x = cos(u_xlat6.x);
+    u_xlat9 = (-_NoiseMin) + _NoiseMax;
+    u_xlat6.x = abs(u_xlat6.x) * u_xlat9 + _NoiseMin;
+    u_xlat6.x = u_xlat6.x * _Noise;
+    u_xlat1.xy = _Time.yy * _NoiseTexSpeed.xy;
+    u_xlat1.xy = fract(u_xlat1.xy);
+    u_xlat1.xy = u_xlat1.xy + _NoiseTex_ST.zw;
+    u_xlat7.xy = vs_TEXCOORD0.xy / _NoiseTex_ST.xy;
+    u_xlat1.xy = u_xlat1.xy + u_xlat7.xy;
+    u_xlat16_1.xy = texture(_NoiseTex, u_xlat1.xy).xy;
+    u_xlat16_2 = (-u_xlat16_1.y) + 1.0;
+    u_xlat1.x = u_xlat6.x * u_xlat16_1.x;
+    u_xlat1.y = u_xlat6.x * u_xlat16_2;
+    u_xlat16_6 = texture(_NoiseMask, vs_TEXCOORD0.xy).x;
+    u_xlat0.xy = u_xlat1.xy * vec2(u_xlat16_6) + u_xlat0.xy;
+    u_xlat16_0 = texture(_MainTex, u_xlat0.xy);
+    u_xlat16_0 = u_xlat16_0.wxyz * vs_TEXCOORD1.wxyz;
+    u_xlat0 = u_xlat16_0.yzwx * vec4(_Emission, _Emission, _Emission, _Alpha);
+    u_xlat0.xyz = u_xlat0.xyz * _Color.xyz + vec3(vec3(_Zoffset, _Zoffset, _Zoffset));
+    SV_Target0 = u_xlat0;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+Fallback "Hidden/InternalErrorShader"
+CustomEditor "UnityEditor.CustomExtension.ShaderFixedPropGUI"
+}

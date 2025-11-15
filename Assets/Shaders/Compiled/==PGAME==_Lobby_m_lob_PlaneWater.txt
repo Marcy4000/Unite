@@ -1,0 +1,183 @@
+//////////////////////////////////////////
+//
+// NOTE: This is *not* a valid shader file
+//
+///////////////////////////////////////////
+Shader "==PGAME==/Lobby/m_lob_PlaneWater" {
+Properties {
+[NoScaleOffset] _RiverTex ("Texture", 2D) = "white" { }
+[NoScaleOffset] _RampTex ("Ramp", 2D) = "white" { }
+_RiverWidth ("河水宽度", Range(0.5, 1.5)) = 1
+_RiverPosi ("河水平移", Range(0.4, 0.6)) = 0.5
+_HeightScale ("水位缩放", Range(0, 3)) = 0.5
+_NoiseSpeed ("noise流动速度&强度", Vector) = (0.1,0.1,0.1,0.1)
+_NoiseScale ("noise Tilling", Range(0, 10)) = 1
+}
+SubShader {
+ LOD 300
+ Tags { "IGNOREPROJECTOR" = "true" "QUEUE" = "Geometry" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Opaque" }
+ Pass {
+  Name "ForwardLit"
+  LOD 300
+  Tags { "IGNOREPROJECTOR" = "true" "LIGHTMODE" = "LightweightForward" "QUEUE" = "Geometry" "RenderPipeline" = "LightweightPipeline" "RenderType" = "Opaque" }
+  ZWrite Off
+  GpuProgramID 26037
+Program "vp" {
+SubProgram "gles3 " {
+"// hash: 47f30b09732a4f18
+#ifdef VERTEX
+#version 300 es
+
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _ProjectionParams;
+uniform 	vec4 hlslcc_mtx4x4unity_MatrixVP[4];
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+UNITY_BINDING(0) uniform UnityPerDraw {
+#endif
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_ObjectToWorld[4];
+	UNITY_UNIFORM vec4 hlslcc_mtx4x4unity_WorldToObject[4];
+	UNITY_UNIFORM vec4 unity_LODFade;
+	UNITY_UNIFORM mediump vec4 unity_WorldTransformParams;
+	UNITY_UNIFORM mediump vec4 unity_LightData;
+	UNITY_UNIFORM mediump vec4 unity_LightIndices[2];
+	UNITY_UNIFORM vec4 unity_ProbesOcclusion;
+	UNITY_UNIFORM mediump vec4 unity_SpecCube0_HDR;
+	UNITY_UNIFORM vec4 unity_LightmapST;
+	UNITY_UNIFORM vec4 unity_DynamicLightmapST;
+	UNITY_UNIFORM mediump vec4 unity_SHAr;
+	UNITY_UNIFORM mediump vec4 unity_SHAg;
+	UNITY_UNIFORM mediump vec4 unity_SHAb;
+	UNITY_UNIFORM mediump vec4 unity_SHBr;
+	UNITY_UNIFORM mediump vec4 unity_SHBg;
+	UNITY_UNIFORM mediump vec4 unity_SHBb;
+	UNITY_UNIFORM mediump vec4 unity_SHC;
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+};
+#endif
+in mediump vec4 in_POSITION0;
+in highp vec2 in_TEXCOORD0;
+out highp vec2 vs_TEXCOORD0;
+out mediump vec4 vs_TEXCOORD1;
+out mediump vec3 vs_TEXCOORD2;
+vec4 u_xlat0;
+vec4 u_xlat1;
+void main()
+{
+    u_xlat0.xyz = in_POSITION0.yyy * hlslcc_mtx4x4unity_ObjectToWorld[1].xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[0].xyz * in_POSITION0.xxx + u_xlat0.xyz;
+    u_xlat0.xyz = hlslcc_mtx4x4unity_ObjectToWorld[2].xyz * in_POSITION0.zzz + u_xlat0.xyz;
+    u_xlat0.xyz = u_xlat0.xyz + hlslcc_mtx4x4unity_ObjectToWorld[3].xyz;
+    u_xlat1 = u_xlat0.yyyy * hlslcc_mtx4x4unity_MatrixVP[1];
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[0] * u_xlat0.xxxx + u_xlat1;
+    u_xlat1 = hlslcc_mtx4x4unity_MatrixVP[2] * u_xlat0.zzzz + u_xlat1;
+    vs_TEXCOORD2.xyz = u_xlat0.xyz;
+    u_xlat0 = u_xlat1 + hlslcc_mtx4x4unity_MatrixVP[3];
+    gl_Position = u_xlat0;
+    vs_TEXCOORD0.xy = in_TEXCOORD0.xy;
+    u_xlat1.x = u_xlat0.y * _ProjectionParams.x;
+    u_xlat1.w = u_xlat1.x * 0.5;
+    u_xlat1.xz = u_xlat0.xw * vec2(0.5, 0.5);
+    u_xlat0.xy = u_xlat1.zz + u_xlat1.xw;
+    vs_TEXCOORD1 = u_xlat0;
+    return;
+}
+
+#endif
+#ifdef FRAGMENT
+#version 300 es
+
+precision highp float;
+precision highp int;
+#define HLSLCC_ENABLE_UNIFORM_BUFFERS 1
+#if HLSLCC_ENABLE_UNIFORM_BUFFERS
+#define UNITY_UNIFORM
+#else
+#define UNITY_UNIFORM uniform
+#endif
+#define UNITY_SUPPORTS_UNIFORM_LOCATION 1
+#if UNITY_SUPPORTS_UNIFORM_LOCATION
+#define UNITY_LOCATION(x) layout(location = x)
+#define UNITY_BINDING(x) layout(binding = x, std140)
+#else
+#define UNITY_LOCATION(x)
+#define UNITY_BINDING(x) layout(std140)
+#endif
+uniform 	vec4 _Time;
+uniform 	vec4 _NoiseSpeed;
+uniform 	float _NoiseScale;
+uniform 	mediump float _HeightScale;
+uniform 	mediump float _RiverWidth;
+uniform 	mediump float _RiverPosi;
+UNITY_LOCATION(0) uniform mediump sampler2D _RiverTex;
+UNITY_LOCATION(1) uniform mediump sampler2D _RampTex;
+in highp vec2 vs_TEXCOORD0;
+in mediump vec4 vs_TEXCOORD1;
+layout(location = 0) out mediump vec4 SV_Target0;
+vec2 u_xlat0;
+mediump vec2 u_xlat16_0;
+mediump vec3 u_xlat16_1;
+mediump vec4 u_xlat16_2;
+mediump vec3 u_xlat16_3;
+mediump vec3 u_xlat16_4;
+mediump vec2 u_xlat16_5;
+void main()
+{
+    u_xlat0.xy = _Time.yy * _NoiseSpeed.xy;
+    u_xlat0.xy = vs_TEXCOORD0.xy * vec2(_NoiseScale) + u_xlat0.xy;
+    u_xlat16_0.x = texture(_RiverTex, u_xlat0.xy).z;
+    u_xlat16_1.x = u_xlat16_0.x * 2.0 + -1.0;
+    u_xlat16_5.xy = vs_TEXCOORD1.yx / vs_TEXCOORD1.ww;
+    u_xlat16_5.xy = u_xlat16_5.xy + vec2(0.00999999978, -0.5);
+    u_xlat16_2.y = u_xlat16_5.y * _RiverWidth + _RiverPosi;
+#ifdef UNITY_ADRENO_ES3
+    u_xlat16_2.y = min(max(u_xlat16_2.y, 0.0), 1.0);
+#else
+    u_xlat16_2.y = clamp(u_xlat16_2.y, 0.0, 1.0);
+#endif
+    u_xlat16_2.x = u_xlat16_5.x * _HeightScale;
+    u_xlat0.xy = u_xlat16_1.xx * _NoiseSpeed.zw + u_xlat16_2.yx;
+    u_xlat16_0.xy = texture(_RiverTex, u_xlat0.xy).xy;
+    u_xlat16_2.y = float(0.100000001);
+    u_xlat16_2.w = float(0.5);
+    u_xlat16_3.xyz = texture(_RampTex, u_xlat16_2.xy).xyz;
+    u_xlat16_1.xyz = u_xlat16_3.xyz * vec3(1.20000005, 1.20000005, 1.20000005) + u_xlat16_0.yyy;
+    u_xlat16_4.xyz = texture(_RampTex, u_xlat16_2.xw).xyz;
+    u_xlat16_1.xyz = (-u_xlat16_4.xyz) + u_xlat16_1.xyz;
+    SV_Target0.xyz = u_xlat16_0.xxx * u_xlat16_1.xyz + u_xlat16_4.xyz;
+#ifdef UNITY_ADRENO_ES3
+    SV_Target0.xyz = min(max(SV_Target0.xyz, 0.0), 1.0);
+#else
+    SV_Target0.xyz = clamp(SV_Target0.xyz, 0.0, 1.0);
+#endif
+    SV_Target0.w = 1.0;
+    return;
+}
+
+#endif
+"
+}
+}
+Program "fp" {
+SubProgram "gles " {
+""
+}
+SubProgram "gles3 " {
+""
+}
+}
+}
+}
+}
