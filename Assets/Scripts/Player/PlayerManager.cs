@@ -422,6 +422,7 @@ public class PlayerManager : NetworkBehaviour
         movesController.CancelAllMoves();
         movesController.ResetAllMoves();
         playerMovement.CanMove = false;
+        playerMovement.IsFlying = false;
 
         pokemon.RemoveAllStatChangesRPC();
         pokemon.RemoveAllStatusEffectsRPC();
