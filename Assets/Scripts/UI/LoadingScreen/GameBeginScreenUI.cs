@@ -235,18 +235,42 @@ public class GameBeginScreenUI : MonoBehaviour
 
         for (int i = 0; i < blueTeamPlayers.Length; i++)
         {
+            if (i >= blueTeamObjects.Length)
+                break;
+
             TrainerModel trainerModel = PlayerClothesPreloader.Instance.GetPlayerModel(blueTeamPlayers[i].Id).GetComponent<TrainerModel>();
 
-            trainerModel.ActiveAnimator.Play(trainerModel.IsMale ? playerAnimationsBlueMale[i] : playerAnimationsBlueFemale[i]);
+            if (trainerModel.IsMale)
+            {
+                if (playerAnimationsBlueMale.ContainsKey(i))
+                    trainerModel.ActiveAnimator.Play(playerAnimationsBlueMale[i]);
+            }
+            else
+            {
+                if (playerAnimationsBlueFemale.ContainsKey(i))
+                    trainerModel.ActiveAnimator.Play(playerAnimationsBlueFemale[i]);
+            }
 
             blueTeamObjects[i].ObjectPrefab = trainerModel.transform;
         }
 
         for (int i = 0; i < orangeTeamPlayers.Length; i++)
         {
+            if (i >= orangeTeamObjects.Length)
+                break;
+
             TrainerModel trainerModel = PlayerClothesPreloader.Instance.GetPlayerModel(orangeTeamPlayers[i].Id).GetComponent<TrainerModel>();
 
-            trainerModel.ActiveAnimator.Play(trainerModel.IsMale ? playerAnimationsOrangeMale[i] : playerAnimationsOrangeFemale[i]);
+            if (trainerModel.IsMale)
+            {
+                if (playerAnimationsOrangeMale.ContainsKey(i))
+                    trainerModel.ActiveAnimator.Play(playerAnimationsOrangeMale[i]);
+            }
+            else
+            {
+                if (playerAnimationsOrangeFemale.ContainsKey(i))
+                    trainerModel.ActiveAnimator.Play(playerAnimationsOrangeFemale[i]);
+            }
 
             orangeTeamObjects[i].ObjectPrefab = trainerModel.transform;
         }
@@ -255,11 +279,15 @@ public class GameBeginScreenUI : MonoBehaviour
 
         for (int i = 0; i < blueTeamPlayers.Length; i++)
         {
+            if (i >= blueTeamObjects.Length)
+                break;
             blueTeamObjects[i].Render();
         }
 
         for (int i = 0; i < orangeTeamPlayers.Length; i++)
         {
+            if (i >= orangeTeamObjects.Length)
+                break;
             orangeTeamObjects[i].Render();
         }
     }

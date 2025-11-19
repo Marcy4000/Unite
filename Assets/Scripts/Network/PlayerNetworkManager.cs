@@ -219,7 +219,7 @@ public class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void SpawnPlayerRpc(ulong clientID, Team team)
     {
-        Transform spawnpoint = team == Team.Orange ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint() : SpawnpointManager.Instance.GetBlueTeamSpawnpoint();
+        Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(team);
         GameObject spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);
         var spawnedPlayerNetworkObject = spawnedPlayer.GetComponent<NetworkObject>();
         spawnedPlayerNetworkObject.SpawnAsPlayerObject(clientID, true);
@@ -264,7 +264,7 @@ public class PlayerNetworkManager : NetworkBehaviour
                         }
 
                         short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
-                        Transform spawnpoint = team == Team.Orange ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
+                        Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(team, pos);
                         playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
                         playerManager.PlayerMovement.CanMove = false;
                     }

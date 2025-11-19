@@ -1217,47 +1217,49 @@ public class LobbyController : MonoBehaviour
         }
     }
 
-    public void CheckIfShouldChangePos(int maxTeamSize)
+public void CheckIfShouldChangePos(int maxTeamSize)
+{
+    var map = CharactersList.Instance.GetCurrentLobbyMap();
+    var teams = map.availableTeams;
+    HashSet<string> usedPositions = new HashSet<string>();
+
+    foreach (var player in partyLobby.Players)
     {
-        HashSet<string> usedPositions = new HashSet<string>();
+        string playerTeam = player.Data["PlayerTeam"].Value;
+        string playerPos = NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value).ToString();
+        usedPositions.Add(playerTeam + playerPos);
+    }
 
-        foreach (var player in partyLobby.Players)
+    string localTeam = localPlayer.Data["PlayerTeam"].Value;
+    short localPos = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
+
+    // Se il proprio slot è già occupato da qualcun altro, trova il primo slot libero
+    bool slotOccupiedByOther = partyLobby.Players.Any(p =>
+        p.Id != localPlayer.Id &&
+        p.Data["PlayerTeam"].Value == localTeam &&
+        NumberEncoder.FromBase64<short>(p.Data["PlayerPos"].Value) == localPos);
+
+    if (localPos >= maxTeamSize)
+    {
+        localPos = (short)(maxTeamSize - 1);
+        UpdatePlayerTeamAndPos(TeamMember.GetTeamFromString(localTeam), localPos);
+    }
+
+    if (slotOccupiedByOther)
+    {
+        foreach (var team in teams)
         {
-            string playerTeam = player.Data["PlayerTeam"].Value;
-            string playerPos = NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value).ToString();
-            usedPositions.Add(playerTeam + playerPos);
-        }
-
-        string localTeam = localPlayer.Data["PlayerTeam"].Value;
-        short localPos = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
-
-        // Se il proprio slot è già occupato da qualcun altro, trova il primo slot libero
-        bool slotOccupiedByOther = partyLobby.Players.Any(p =>
-            p.Id != localPlayer.Id &&
-            p.Data["PlayerTeam"].Value == localTeam &&
-            NumberEncoder.FromBase64<short>(p.Data["PlayerPos"].Value) == localPos);
-
-        if (localPos >= maxTeamSize)
-        {
-            localPos = (short)(maxTeamSize - 1);
-            UpdatePlayerTeamAndPos(TeamMember.GetTeamFromString(localTeam), localPos);
-        }
-
-        if (slotOccupiedByOther)
-        {
-            for (int i = 0; i < maxTeamSize * 2; i++)
+            for (short pos = 0; pos < maxTeamSize; pos++)
             {
-                Team team = i < maxTeamSize ? Team.Blue : Team.Orange;
-                short pos = (short)(i % maxTeamSize);
-
-                if (!usedPositions.Contains(team + pos.ToString()))
+                if (!usedPositions.Contains(team.ToString() + pos.ToString()))
                 {
                     UpdatePlayerTeamAndPos(team, pos);
-                    break;
+                    return;
                 }
             }
         }
     }
+}
 
     private async void UpdatePlayerData(UpdatePlayerOptions options)
     {
@@ -1500,16 +1502,33 @@ public class LobbyController : MonoBehaviour
             return;
         }
 
-        UpdateLobbyOptions options = new UpdateLobbyOptions();
-        options.Data = partyLobby.Data;
-        options.MaxPlayers = map.maxTeamSize * 2;
-        options.HostId = partyLobby.HostId;
-        options.Name = partyLobby.Name;
-        options.IsPrivate = partyLobby.IsPrivate;
-        options.IsLocked = partyLobby.IsLocked;
-        options.Data["SelectedMap"] = new DataObject(DataObject.VisibilityOptions.Public, NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)));
+        // Check for invalid teams and reassign if needed
+        var validTeams = map.availableTeams;
+        foreach (var player in partyLobby.Players)
+        {
+            Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+            if (!validTeams.Contains(playerTeam))
+            {
+                // Assign to first valid team and position 0 (or next available)
+                Team newTeam = validTeams.Count > 0 ? validTeams[0] : Team.Neutral;
+                UpdatePlayerOptions playerOptions = new UpdatePlayerOptions();
+                playerOptions.Data = new Dictionary<string, PlayerDataObject>(player.Data);
+                playerOptions.Data["PlayerTeam"].Value = newTeam.ToString();
+                playerOptions.Data["PlayerPos"].Value = NumberEncoder.ToBase64((short)0);
+                _ = LobbyService.Instance.UpdatePlayerAsync(partyLobby.Id, player.Id, playerOptions);
+            }
+        }
 
-        UpdateLobbyData(options);
+        UpdateLobbyOptions lobbyOptions = new UpdateLobbyOptions();
+        lobbyOptions.Data = partyLobby.Data;
+        lobbyOptions.MaxPlayers = map.maxTeamSize * 2;
+        lobbyOptions.HostId = partyLobby.HostId;
+        lobbyOptions.Name = partyLobby.Name;
+        lobbyOptions.IsPrivate = partyLobby.IsPrivate;
+        lobbyOptions.IsLocked = partyLobby.IsLocked;
+        lobbyOptions.Data["SelectedMap"] = new DataObject(DataObject.VisibilityOptions.Public, NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)));
+
+        UpdateLobbyData(lobbyOptions);
     }
 
     private async Task<Allocation> AllocateRelay()
@@ -1713,18 +1732,8 @@ public class LobbyController : MonoBehaviour
 
     public Team GetLocalPlayerTeam()
     {
-
-        string team = localPlayer.Data["PlayerTeam"].Value.ToLower();
-
-        switch (team)
-        {
-            case "blue":
-                return Team.Blue;
-            case "orange":
-                return Team.Orange;
-            default:
-                return Team.Neutral;
-        }
+        string teamStr = localPlayer.Data["PlayerTeam"].Value;
+        return TeamMember.GetTeamFromString(teamStr);
     }
 
     public bool IsPlayerInResultScreen(Player player)

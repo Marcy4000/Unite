@@ -4,41 +4,43 @@ public class SpawnpointManager : MonoBehaviour
 {
     public static SpawnpointManager Instance;
 
-    [SerializeField] private Transform[] blueTeamPoints;
-    [SerializeField] private Transform[] orangeTeamPoints;
+    [System.Serializable]
+    public class TeamSpawnpoints
+    {
+        public Team team;
+        public Transform[] points;
+    }
+
+    [SerializeField] private TeamSpawnpoints[] teamSpawnpoints;
 
     private void Awake()
     {
         Instance = this;
     }
 
-    public Transform GetBlueTeamSpawnpoint()
+    public Transform GetSpawnpoint(Team team)
     {
-        return blueTeamPoints[Random.Range(0, blueTeamPoints.Length)];
-    }
-
-    public Transform GetOrangeTeamSpawnpoint()
-    {
-        return orangeTeamPoints[Random.Range(0, orangeTeamPoints.Length)];
-    }
-
-    public Transform GetBlueTeamSpawnpoint(int index)
-    {
-        if (index < 0 || index >= blueTeamPoints.Length)
-        {
+        var entry = GetEntry(team);
+        if (entry == null || entry.points == null || entry.points.Length == 0)
             return null;
-        }
-
-        return blueTeamPoints[index];
+        return entry.points[Random.Range(0, entry.points.Length)];
     }
 
-    public Transform GetOrangeTeamSpawnpoint(int index)
+    public Transform GetSpawnpoint(Team team, int index)
     {
-        if (index < 0 || index >= orangeTeamPoints.Length)
-        {
+        var entry = GetEntry(team);
+        if (entry == null || entry.points == null || index < 0 || index >= entry.points.Length)
             return null;
-        }
+        return entry.points[index];
+    }
 
-        return orangeTeamPoints[index];
+    private TeamSpawnpoints GetEntry(Team team)
+    {
+        foreach (var entry in teamSpawnpoints)
+        {
+            if (entry.team == team)
+                return entry;
+        }
+        return null;
     }
 }

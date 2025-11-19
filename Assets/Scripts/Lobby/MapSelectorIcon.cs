@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,7 +31,11 @@ public class MapSelectorIcon : MonoBehaviour
         defaultMap = mapInfo;
         mapIcon.sprite = mapInfo.mapIcon;
         mapNameText.text = mapInfo.mapName;
-        playerCountText.text = $"{mapInfo.maxTeamSize} vs {mapInfo.maxTeamSize}";
+        playerCountText.text = $"{mapInfo.maxTeamSize}";
+        for (int i = 1; i < mapInfo.availableTeams.Count; i++)
+        {
+            playerCountText.text += $" vs {mapInfo.maxTeamSize}";
+        }
         if (toggleGroup != null) toggle.group = toggleGroup;
         toggle.onValueChanged.AddListener(OnToggleValueChanged);
     }

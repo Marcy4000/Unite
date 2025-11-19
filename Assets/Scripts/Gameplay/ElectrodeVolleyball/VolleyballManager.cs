@@ -166,20 +166,7 @@ public class VolleyballManager : NetworkBehaviour
     private Transform GetSpawnPoint(PlayerManager player)
     {
         short pos = NumberEncoder.FromBase64<short>(player.LobbyPlayer.Data["PlayerPos"].Value);
-        Transform spawnpoint;
-        switch (player.CurrentTeam.Team)
-        {
-            case Team.Blue:
-                spawnpoint = SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
-                break;
-            case Team.Orange:
-                spawnpoint = SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos);
-                break;
-            default:
-                spawnpoint = SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
-                break;
-        }
-
+        Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(player.CurrentTeam.Team, pos);
         return spawnpoint;
     }
 

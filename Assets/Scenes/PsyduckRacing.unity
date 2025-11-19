@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -42,8 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
-  m_GIWorkflowMode: 1
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -66,9 +66,6 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 1
@@ -477,6 +474,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 13
   isFinishLine: 0
 --- !u!114 &163732734
@@ -493,6 +491,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 922463542
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -500,6 +500,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &163732735
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -801,6 +803,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 5
   isFinishLine: 0
 --- !u!114 &301954043
@@ -817,6 +820,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3078996683
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -824,6 +829,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &301954044
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1294,16 +1301,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa22f8b81edc6f34ba1b4a91e14bb99a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blueTeamPoints:
-  - {fileID: 591524679}
-  - {fileID: 133067153}
-  - {fileID: 1263633191}
-  - {fileID: 297924865}
-  orangeTeamPoints:
-  - {fileID: 876747043}
-  - {fileID: 1102166085}
-  - {fileID: 14373421}
-  - {fileID: 757141739}
+  teamSpawnpoints:
+  - team: 1
+    points:
+    - {fileID: 591524679}
+    - {fileID: 133067153}
+    - {fileID: 1263633191}
+    - {fileID: 297924865}
+    - {fileID: 876747043}
+    - {fileID: 1102166085}
+    - {fileID: 14373421}
+    - {fileID: 757141739}
 --- !u!4 &457037697
 Transform:
   m_ObjectHideFlags: 0
@@ -1533,6 +1541,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 16
   isFinishLine: 0
 --- !u!114 &515477217
@@ -1549,6 +1558,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2517754754
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -1556,6 +1567,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &515477218
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1623,6 +1636,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 18
   isFinishLine: 0
 --- !u!114 &536715657
@@ -1639,6 +1653,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1917510109
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -1646,6 +1662,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &536715658
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2222,22 +2240,22 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
-      propertyPath: notificationTimes.Array.data[0]
+      propertyPath: 'notificationTimes.Array.data[0]'
       value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
-      propertyPath: notificationTimes.Array.data[1]
+      propertyPath: 'notificationTimes.Array.data[1]'
       value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
-      propertyPath: notificationTimes.Array.data[2]
+      propertyPath: 'notificationTimes.Array.data[2]'
       value: 240
       objectReference: {fileID: 0}
     - target: {fileID: 7321125685804329921, guid: 2706dd02067078547b84fbe105b7b406,
         type: 3}
-      propertyPath: notificationTimes.Array.data[3]
+      propertyPath: 'notificationTimes.Array.data[3]'
       value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 7597068249424976980, guid: 2706dd02067078547b84fbe105b7b406,
@@ -2495,6 +2513,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 8
   isFinishLine: 0
 --- !u!114 &655980933
@@ -2511,6 +2530,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1193777481
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -2518,6 +2539,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &655980934
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2710,6 +2733,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 2
   isFinishLine: 0
 --- !u!114 &721392025
@@ -2726,6 +2750,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1427793017
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -2733,6 +2759,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &721392026
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2823,6 +2851,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2057276322
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -2830,6 +2860,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &727985215
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2842,6 +2874,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 0
   isFinishLine: 1
 --- !u!1 &757141738
@@ -3296,6 +3329,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 17
   isFinishLine: 0
 --- !u!114 &832929962
@@ -3312,6 +3346,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3650649752
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -3319,6 +3355,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &832929963
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3487,6 +3525,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 12
   isFinishLine: 0
 --- !u!114 &893288079
@@ -3503,6 +3542,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 245251744
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -3510,6 +3551,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &893288080
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3977,6 +4020,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 10
   isFinishLine: 0
 --- !u!114 &994383282
@@ -3993,6 +4037,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3328966635
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -4000,6 +4046,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &994383283
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4121,15 +4169,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -4404,6 +4454,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 6
   isFinishLine: 0
 --- !u!114 &1058763563
@@ -4420,6 +4471,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1822771669
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -4427,6 +4480,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &1058763564
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4860,6 +4915,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 14
   isFinishLine: 0
 --- !u!114 &1231295576
@@ -4876,6 +4932,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 819237139
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -4883,6 +4941,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &1231295577
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5072,6 +5132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c74134b9fe7f124fac411c2da79b7f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   visionController: {fileID: 1270582435}
   visionCollider: {fileID: 1270582433}
   team: 2
@@ -5102,6 +5163,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 4133820932
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -5109,6 +5172,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!4 &1270582437
 Transform:
   m_ObjectHideFlags: 0
@@ -5170,6 +5235,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 11
   isFinishLine: 0
 --- !u!114 &1316624233
@@ -5186,6 +5252,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1319614365
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -5193,6 +5261,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &1316624234
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5791,6 +5861,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 19
   isFinishLine: 0
 --- !u!114 &1489414818
@@ -5807,6 +5878,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3104190471
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -5814,6 +5887,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &1489414819
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6119,6 +6194,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 15
   isFinishLine: 0
 --- !u!114 &1574218864
@@ -6135,6 +6211,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1114823911
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -6142,6 +6220,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &1574218865
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6293,6 +6373,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 9
   isFinishLine: 0
 --- !u!114 &1626676920
@@ -6309,6 +6390,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3609686828
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -6316,6 +6399,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &1626676921
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6383,6 +6468,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 1
   isFinishLine: 0
 --- !u!114 &1633574176
@@ -6399,6 +6485,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3214292054
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -6406,6 +6494,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &1633574177
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6800,6 +6890,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 7
   isFinishLine: 0
 --- !u!114 &1720150922
@@ -6816,6 +6907,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2367129351
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -6823,6 +6916,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &1720150923
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7011,6 +7106,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 332168391
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -7018,6 +7115,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &1733415208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7030,6 +7129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c74134b9fe7f124fac411c2da79b7f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   visionController: {fileID: 1733415205}
   visionCollider: {fileID: 1733415204}
   team: 1
@@ -7065,6 +7165,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3682573314
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -7072,6 +7174,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!4 &1752785734
 Transform:
   m_ObjectHideFlags: 0
@@ -7099,6 +7203,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44be4ed1be84ba14b90b8a53dade9165, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   raceLapCounterPrefab: {fileID: 2819873063049393466, guid: 86cbbeddc1682754db58fd2a0c8a8f49,
     type: 3}
   dashMove: {fileID: 11400000, guid: 24df53d2726c16e43a084015472c6d2e, type: 2}
@@ -7718,6 +7823,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 4
   isFinishLine: 0
 --- !u!114 &2097954827
@@ -7734,6 +7840,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1501015557
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -7741,6 +7849,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &2097954828
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7892,6 +8002,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec14db2a6821c94f924f9291fca2d9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   checkpointIndex: 3
   isFinishLine: 0
 --- !u!114 &2106266835
@@ -7908,6 +8019,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3098166568
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -7915,6 +8028,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!65 &2106266836
 BoxCollider:
   m_ObjectHideFlags: 0

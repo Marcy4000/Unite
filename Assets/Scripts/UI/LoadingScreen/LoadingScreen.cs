@@ -117,7 +117,6 @@ public class LoadingScreen : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
-
         foreach (Transform child in orangeTeamSpawn)
         {
             Destroy(child.gameObject);
@@ -125,40 +124,68 @@ public class LoadingScreen : MonoBehaviour
 
         playerList.Clear();
 
-        Player[] orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Orange);
-        Player[] blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Blue);
+        var map = CharactersList.Instance.GetCurrentLobbyMap();
+        var teams = map.availableTeams;
+        var allPlayers = LobbyController.Instance.Lobby.Players;
+        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
-        foreach (var player in orangeTeamPlayers)
+        // For 2 teams: local team on top (blueTeamSpawn), other on bottom (orangeTeamSpawn)
+        // For 3+ teams: alternate spawn top/bottom (blueTeamSpawn/orangeTeamSpawn)
+        if (teams.Count == 2)
         {
-            GameObject playerObj = Instantiate(playerPrefab, orangeTeamSpawn);
-            var loadingScreenPlayer = playerObj.GetComponent<LoadingScreenPlayer>();
-            loadingScreenPlayer.SetPlayerData(player);
-
-            ulong clientId = ulong.Parse(player.Data["OwnerID"].Value);
-            loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
-            if (progressTracker != null)
+            foreach (var player in allPlayers)
             {
-                progressTracker.Progress.OnValueChanged += loadingScreenPlayer.UpdateProgressBar;
-            }
+                Team t = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+                bool isLocalTeam = t == localTeam;
+                Transform parent = isLocalTeam ? blueTeamSpawn : orangeTeamSpawn;
 
-            playerList.Add(loadingScreenPlayer);
+                GameObject playerObj = Instantiate(playerPrefab, parent);
+                var loadingScreenPlayer = playerObj.GetComponent<LoadingScreenPlayer>();
+                loadingScreenPlayer.SetPlayerData(player);
+
+                ulong clientId = ulong.Parse(player.Data["OwnerID"].Value);
+                loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
+                if (progressTracker != null)
+                {
+                    progressTracker.Progress.OnValueChanged += loadingScreenPlayer.UpdateProgressBar;
+                }
+
+                playerList.Add(loadingScreenPlayer);
+            }
         }
-
-        foreach (var player in blueTeamPlayers)
+        else
         {
-            GameObject playerObj = Instantiate(playerPrefab, blueTeamSpawn);
-            var loadingScreenPlayer = playerObj.GetComponent<LoadingScreenPlayer>();
-            loadingScreenPlayer.SetPlayerData(player);
-
-            ulong clientId = ulong.Parse(player.Data["OwnerID"].Value);
-            loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
-
-            if (progressTracker != null)
+            // Sort all players by team, then by position
+            List<Player> sortedPlayers = new List<Player>(allPlayers);
+            sortedPlayers.Sort((a, b) =>
             {
-                progressTracker.Progress.OnValueChanged += loadingScreenPlayer.UpdateProgressBar;
-            }
+                Team ta = TeamMember.GetTeamFromString(a.Data["PlayerTeam"].Value);
+                Team tb = TeamMember.GetTeamFromString(b.Data["PlayerTeam"].Value);
+                int cmp = ta.CompareTo(tb);
+                if (cmp != 0) return cmp;
+                short pa = NumberEncoder.FromBase64<short>(a.Data["PlayerPos"].Value);
+                short pb = NumberEncoder.FromBase64<short>(b.Data["PlayerPos"].Value);
+                return pa.CompareTo(pb);
+            });
 
-            playerList.Add(loadingScreenPlayer);
+            for (int i = 0; i < sortedPlayers.Count; i++)
+            {
+                var player = sortedPlayers[i];
+                Transform parent = (i % 2 == 0) ? blueTeamSpawn : orangeTeamSpawn;
+
+                GameObject playerObj = Instantiate(playerPrefab, parent);
+                var loadingScreenPlayer = playerObj.GetComponent<LoadingScreenPlayer>();
+                loadingScreenPlayer.SetPlayerData(player);
+
+                ulong clientId = ulong.Parse(player.Data["OwnerID"].Value);
+                loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
+                if (progressTracker != null)
+                {
+                    progressTracker.Progress.OnValueChanged += loadingScreenPlayer.UpdateProgressBar;
+                }
+
+                playerList.Add(loadingScreenPlayer);
+            }
         }
     }
 

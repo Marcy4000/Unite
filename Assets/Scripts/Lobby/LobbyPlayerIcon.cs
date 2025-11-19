@@ -14,10 +14,10 @@ public class LobbyPlayerIcon : MonoBehaviour
 
     private Player assignedPlayer;
 
-    private bool orangeTeam = false;
+    private Team team;
     private short position = 0;
 
-    public bool OrangeTeam => orangeTeam;
+    public Team Team => team;
     public short Position => position;
 
     public Button SwitchButton => switchButton;
@@ -26,9 +26,9 @@ public class LobbyPlayerIcon : MonoBehaviour
     public string PlayerName => playerNameText.text;
     public string PlayerId => assignedPlayer?.Id;
 
-    public void InitializeElement(bool orangeTeam, short position)
+    public void InitializeElement(Team team, short position)
     {
-        this.orangeTeam = orangeTeam;
+        this.team = team;
         this.position = position;
     }
 

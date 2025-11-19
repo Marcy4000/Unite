@@ -28,8 +28,7 @@ public class PartyScreenUI : MonoBehaviour
     [SerializeField] private Toggle[] disableTogglesOnMatchmaking;
     [SerializeField] private GameObject[] hideOnMatchmaking;
 
-    private List<LobbyPlayerIcon> playerIconsBlueTeam;
-    private List<LobbyPlayerIcon> playerIconsOrangeTeam;
+private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary<Team, List<LobbyPlayerIcon>>();
 
     private MapInfo selectedMap;
 
@@ -241,45 +240,39 @@ public class PartyScreenUI : MonoBehaviour
         // --- CUSTOMS LOBBY UI ---
         maxPlayers = LobbyController.Instance.GetMaxPartyMembers();
 
-        int blueSlots = 0, orangeSlots = 0;
-        foreach (var player in lobby.Players)
-        {
-            if (player.Data["PlayerTeam"].Value == "Blue") blueSlots++;
-            else orangeSlots++;
-        }
-        int slotsPerTeam = Mathf.Max(maxPlayers / 2, Mathf.Max(blueSlots, orangeSlots, 1));
+        var teams = selectedMap.availableTeams;
+        int slotsPerTeam = selectedMap.maxTeamSize;
 
-        if (playerIconsBlueTeam == null) playerIconsBlueTeam = new List<LobbyPlayerIcon>(slotsPerTeam);
-        if (playerIconsOrangeTeam == null) playerIconsOrangeTeam = new List<LobbyPlayerIcon>(slotsPerTeam);
+        teamPlayerIcons.Clear();
+
+        foreach (var team in teams)
+        {
+            var iconList = new List<LobbyPlayerIcon>();
+            for (int i = 0; i < slotsPerTeam; i++)
+            {
+                var icon = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
+                icon.InitializeElement(team, (short)i);
+                iconList.Add(icon);
+            }
+            teamPlayerIcons[team] = iconList;
+        }
+
+        // Add listeners after all icons are created
+        foreach (var kvp in teamPlayerIcons)
+        {
+            var team = kvp.Key;
+            var iconList = kvp.Value;
+            for (int i = 0; i < iconList.Count; i++)
+            {
+                int index = i;
+                iconList[index].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(iconList[index]));
+                iconList[index].KickButton.onClick.AddListener(() => LobbyController.Instance.KickPlayer(iconList[index].PlayerId));
+            }
+        }
 
         lobbyCodeText.text = $"Lobby Code: {lobby.LobbyCode}";
-
         startGameButton.gameObject.SetActive(lobby.HostId == Unity.Services.Authentication.AuthenticationService.Instance.PlayerId);
         openLobbyToggle.interactable = lobby.HostId == Unity.Services.Authentication.AuthenticationService.Instance.PlayerId;
-
-        for (int i = 0; i < slotsPerTeam; i++)
-        {
-            var blueIcon = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
-            blueIcon.InitializeElement(false, (short)i);
-            // L'evento sarà aggiunto dopo che la lista è completa
-            playerIconsBlueTeam.Add(blueIcon);
-        }
-        for (int i = 0; i < slotsPerTeam; i++)
-        {
-            var orangeIcon = Instantiate(playerIconPrefab, playerIconHolder.transform).GetComponent<LobbyPlayerIcon>();
-            orangeIcon.InitializeElement(true, (short)i);
-            // L'evento sarà aggiunto dopo che la lista è completa
-            playerIconsOrangeTeam.Add(orangeIcon);
-        }
-        // Ora che le liste sono popolate, aggiungi i listener
-        for (int i = 0; i < slotsPerTeam; i++)
-        {
-            int index = i;
-            playerIconsBlueTeam[index].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsBlueTeam[index]));
-            playerIconsBlueTeam[index].KickButton.onClick.AddListener(() => LobbyController.Instance.KickPlayer(playerIconsBlueTeam[index].PlayerId));
-            playerIconsOrangeTeam[index].SwitchButton.onClick.AddListener(() => CheckIfPosIsAvailable(playerIconsOrangeTeam[index]));
-            playerIconsOrangeTeam[index].KickButton.onClick.AddListener(() => LobbyController.Instance.KickPlayer(playerIconsOrangeTeam[index].PlayerId));
-        }
 
         UpdatePlayers(lobby);
     }
@@ -330,12 +323,15 @@ public class PartyScreenUI : MonoBehaviour
             return;
         }
 
-        int slotsPerTeam = playerIconsBlueTeam.Count;
+        var teams = selectedMap.availableTeams;
+        int slotsPerTeam = selectedMap.maxTeamSize;
 
-        for (int i = 0; i < slotsPerTeam; i++)
+        foreach (var iconList in teamPlayerIcons.Values)
         {
-            playerIconsBlueTeam[i].ResetName();
-            playerIconsOrangeTeam[i].ResetName();
+            foreach (var icon in iconList)
+            {
+                icon.ResetName();
+            }
         }
 
         foreach (var player in lobby.Players)
@@ -343,20 +339,14 @@ public class PartyScreenUI : MonoBehaviour
             try
             {
                 int playerPos = NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value);
-                string team = player.Data["PlayerTeam"].Value;
-                if (playerPos < 0 || playerPos >= slotsPerTeam)
+                Team team = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+                if (!teamPlayerIcons.ContainsKey(team)) continue;
+                if (playerPos < 0 || playerPos >= teamPlayerIcons[team].Count)
                 {
                     Debug.LogWarning($"PlayerPos {playerPos} out of bounds for team {team} (slotsPerTeam={slotsPerTeam})");
                     continue;
                 }
-                if (team == "Blue")
-                {
-                    playerIconsBlueTeam[playerPos].InitializePlayer(player);
-                }
-                else
-                {
-                    playerIconsOrangeTeam[playerPos].InitializePlayer(player);
-                }
+                teamPlayerIcons[team][playerPos].InitializePlayer(player);
             }
             catch (System.Exception ex)
             {
@@ -373,59 +363,42 @@ public class PartyScreenUI : MonoBehaviour
                 LobbyController.Instance.StartGame();
                 break;
             case StartRestriction.SameTeamSizes:
-                if (LobbyController.Instance.Lobby.Players.Count % 2 != 0)
+                var teams = selectedMap.availableTeams;
+                var teamCounts = new Dictionary<Team, int>();
+                foreach (var team in teams)
+                    teamCounts[team] = 0;
+                foreach (var player in LobbyController.Instance.Lobby.Players)
                 {
-                    return;
+                    Team t = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+                    if (teamCounts.ContainsKey(t))
+                        teamCounts[t]++;
                 }
-
-                int blueTeamCount = 0;
-                int orangeTeamCount = 0;
-
-                for (int i = 0; i < LobbyController.Instance.Lobby.Players.Count; i++)
+                int? refCount = null;
+                foreach (var count in teamCounts.Values)
                 {
-                    if (LobbyController.Instance.Lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
-                    {
-                        blueTeamCount++;
-                    }
-                    else
-                    {
-                        orangeTeamCount++;
-                    }
+                    if (refCount == null)
+                        refCount = count;
+                    else if (count != refCount)
+                        return;
                 }
-
-                if (blueTeamCount != orangeTeamCount)
-                {
-                    return;
-                }
-
                 LobbyController.Instance.StartGame();
                 break;
             case StartRestriction.FullTeams:
-                if (LobbyController.Instance.Lobby.Players.Count != maxPlayers)
+                var teamsFull = selectedMap.availableTeams;
+                var teamCountsFull = new Dictionary<Team, int>();
+                foreach (var team in teamsFull)
+                    teamCountsFull[team] = 0;
+                foreach (var player in LobbyController.Instance.Lobby.Players)
                 {
-                    return;
+                    Team t = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+                    if (teamCountsFull.ContainsKey(t))
+                        teamCountsFull[t]++;
                 }
-
-                int blueTeamCountFull = 0;
-                int orangeTeamCountFull = 0;
-
-                for (int i = 0; i < LobbyController.Instance.Lobby.Players.Count; i++)
+                foreach (var count in teamCountsFull.Values)
                 {
-                    if (LobbyController.Instance.Lobby.Players[i].Data["PlayerTeam"].Value == "Blue")
-                    {
-                        blueTeamCountFull++;
-                    }
-                    else
-                    {
-                        orangeTeamCountFull++;
-                    }
+                    if (count != selectedMap.maxTeamSize)
+                        return;
                 }
-
-                if (blueTeamCountFull != maxPlayers / 2 || orangeTeamCountFull != maxPlayers / 2)
-                {
-                    return;
-                }
-
                 LobbyController.Instance.StartGame();
                 break;
             default:
@@ -450,41 +423,24 @@ public class PartyScreenUI : MonoBehaviour
 
     private void CheckIfPosIsAvailable(LobbyPlayerIcon playerIcon)
     {
-        if (!playerIcon.OrangeTeam)
+        var team = playerIcon.Team;
+        var pos = playerIcon.Position;
+        if (teamPlayerIcons.ContainsKey(team) && teamPlayerIcons[team][pos].PlayerName == "No Player")
         {
-            if (playerIconsBlueTeam[playerIcon.Position].PlayerName == "No Player")
-            {
-                ChangePosition(Team.Blue, playerIcon.Position);
-            }
-        }
-        else
-        {
-            if (playerIconsOrangeTeam[playerIcon.Position].PlayerName == "No Player")
-            {
-                ChangePosition(Team.Orange, playerIcon.Position);
-            }
+            ChangePosition(team, pos);
         }
     }
 
     public void ClearUI()
     {
-        if (playerIconsBlueTeam != null)
+        foreach (var iconList in teamPlayerIcons.Values)
         {
-            foreach (var icon in playerIconsBlueTeam)
+            foreach (var icon in iconList)
             {
                 if (icon != null)
                     Destroy(icon.gameObject);
             }
-            playerIconsBlueTeam.Clear();
         }
-        if (playerIconsOrangeTeam != null)
-        {
-            foreach (var icon in playerIconsOrangeTeam)
-            {
-                if (icon != null)
-                    Destroy(icon.gameObject);
-            }
-            playerIconsOrangeTeam.Clear();
-        }
+        teamPlayerIcons.Clear();
     }
 }

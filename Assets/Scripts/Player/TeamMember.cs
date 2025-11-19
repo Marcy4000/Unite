@@ -1,7 +1,19 @@
 using System;
 using Unity.Netcode;
 
-public enum Team : byte { Neutral, Blue, Orange }
+public enum Team : byte
+{
+    Neutral,
+    Blue,
+    Orange,
+    Green,
+    Red,
+    Purple,
+    Yellow,
+    Pink,
+    Cyan,
+    Lime
+}
 
 [Serializable]
 public struct TeamMember : INetworkSerializable
@@ -36,16 +48,15 @@ public struct TeamMember : INetworkSerializable
 
     public static Team GetTeamFromString(string team)
     {
-        team = team.ToLower();
-
-        switch (team)
+        if (string.IsNullOrEmpty(team))
+            return Team.Neutral;
+        team = team.ToLowerInvariant();
+        foreach (Team t in Enum.GetValues(typeof(Team)))
         {
-            case "blue":
-                return Team.Blue;
-            case "orange":
-                return Team.Orange;
-            default:
-                return Team.Neutral;
+            if (t == Team.Neutral) continue;
+            if (t.ToString().ToLowerInvariant() == team)
+                return t;
         }
+        return Team.Neutral;
     }
 }

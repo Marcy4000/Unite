@@ -16,12 +16,15 @@ public class MapInfo : ScriptableObject
     public string mapSceneKey;
 
     [Space]
-    [Header("Teams & Results")]
-    [Tooltip("Maximum number of players per team.")]
-    public int maxTeamSize;
+[Header("Teams & Results")]
+[Tooltip("Teams available for this map/gamemode.")]
+public System.Collections.Generic.List<Team> availableTeams = new System.Collections.Generic.List<Team> { Team.Blue, Team.Orange };
 
-    [Tooltip("Result screen sprite for the blue team.")]
-    public AssetReferenceSprite mapResultsBlue;
+[Tooltip("Maximum number of players per team.")]
+public int maxTeamSize;
+
+[Tooltip("Result screen sprite for the blue team.")]
+public AssetReferenceSprite mapResultsBlue;
     [Tooltip("Result screen sprite for the orange team.")]
     public AssetReferenceSprite mapResultsOrange;
 

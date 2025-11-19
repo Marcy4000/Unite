@@ -387,21 +387,7 @@ public class PlayerManager : NetworkBehaviour
     private Transform GetSpawnPoint()
     {
         short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
-        Transform spawnpoint;
-        //CurrentTeam ? SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos) : SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
-        switch (CurrentTeam.Team)
-        {
-            case Team.Blue:
-                spawnpoint = SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
-                break;
-            case Team.Orange:
-                spawnpoint = SpawnpointManager.Instance.GetOrangeTeamSpawnpoint(pos);
-                break;
-            default:
-                spawnpoint = SpawnpointManager.Instance.GetBlueTeamSpawnpoint(pos);
-                break;
-        }
-
+        Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(CurrentTeam.Team, pos);
         return spawnpoint;
     }
 

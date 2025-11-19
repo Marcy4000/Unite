@@ -44,7 +44,7 @@ public class MapPlayerIcon : MonoBehaviour
     private IEnumerator UpdateBackgroundSprite()
     {
         yield return new WaitForSeconds(0.2f);
-        background.sprite = player.CurrentTeam.IsOnSameTeam(Team.Orange) ? orangeBG : blueBG;
+        background.sprite = player.CurrentTeam.IsOnSameTeam(LobbyController.Instance.GetLocalPlayerTeam()) ? blueBG : orangeBG;
     }
 
     private void Update()

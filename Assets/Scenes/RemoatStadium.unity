@@ -3471,18 +3471,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa22f8b81edc6f34ba1b4a91e14bb99a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blueTeamPoints:
-  - {fileID: 2103770063}
-  - {fileID: 323949542}
-  - {fileID: 870179576}
-  - {fileID: 1897935149}
-  - {fileID: 1023039486}
-  orangeTeamPoints:
-  - {fileID: 518752926}
-  - {fileID: 2082874921}
-  - {fileID: 86803728}
-  - {fileID: 581706616}
-  - {fileID: 898299054}
+  teamSpawnpoints:
+  - team: 1
+    points:
+    - {fileID: 2103770063}
+    - {fileID: 323949542}
+    - {fileID: 870179576}
+    - {fileID: 1897935149}
+    - {fileID: 1023039486}
+  - team: 2
+    points:
+    - {fileID: 518752926}
+    - {fileID: 2082874921}
+    - {fileID: 86803728}
+    - {fileID: 581706616}
+    - {fileID: 898299054}
 --- !u!4 &230497313
 Transform:
   m_ObjectHideFlags: 0
