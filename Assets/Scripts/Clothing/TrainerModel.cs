@@ -363,6 +363,7 @@ public class TrainerModel : MonoBehaviour
                             material.SetColor("_color2", hairCol);
                             material.SetColor("_color3", hairCol);
                             material.SetColor("_color4", hairCol);
+                            material.SetFloat("_OutlineWidth", 0.5f);
                         }
                         else if (matName.Contains("eye0"))
                         {

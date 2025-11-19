@@ -443,7 +443,7 @@ public class PartyScreenUI : MonoBehaviour
         LobbyController.Instance.PlayerSwitchTeam();
     }
 
-    public void ChangePosition(string team, short position)
+    public void ChangePosition(Team team, short position)
     {
         LobbyController.Instance.UpdatePlayerTeamAndPos(team, position);
     }
@@ -454,14 +454,14 @@ public class PartyScreenUI : MonoBehaviour
         {
             if (playerIconsBlueTeam[playerIcon.Position].PlayerName == "No Player")
             {
-                ChangePosition("Blue", playerIcon.Position);
+                ChangePosition(Team.Blue, playerIcon.Position);
             }
         }
         else
         {
             if (playerIconsOrangeTeam[playerIcon.Position].PlayerName == "No Player")
             {
-                ChangePosition("Orange", playerIcon.Position);
+                ChangePosition(Team.Orange, playerIcon.Position);
             }
         }
     }

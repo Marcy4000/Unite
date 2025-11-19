@@ -76,6 +76,7 @@ public class CresseliaUnite : MoveBase
                 playerManager.transform.DOMoveY(3f, 0.2f).onComplete += () =>
                 {
                     playerManager.PlayerMovement.CanMove = true;
+                    playerManager.PlayerMovement.IsFlying = true;
                     playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
                 };
 
@@ -91,6 +92,7 @@ public class CresseliaUnite : MoveBase
                 {
                     playerManager.PlayerMovement.CanMove = true;
                     playerManager.PlayerMovement.SnapToGround = true;
+                    playerManager.PlayerMovement.IsFlying = false;
                     playerManager.MovesController.UnlockEveryAction();
                     playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
                 };

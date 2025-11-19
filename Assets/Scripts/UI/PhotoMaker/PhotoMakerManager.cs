@@ -6,6 +6,9 @@ using System.Text.RegularExpressions; // Added for Regex
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using System.Threading.Tasks;
 
 public class PhotoMakerManager : MonoBehaviour
 {
@@ -40,7 +43,17 @@ public class PhotoMakerManager : MonoBehaviour
     [SerializeField] private GameObject clothesMenu;
     [SerializeField] private DialogueTrigger dialogueTrigger;
 
+    [SerializeField] private GameObject trainerCardHolder;
+    [SerializeField] private Image trainerCardBackground, trainerCardFrame;
+    [SerializeField] private RenderTexture photoPreviewRenderTexture;
+    [SerializeField] private TrainerCardItem[] backgrounds;
+    [SerializeField] private TrainerCardItem[] frames;
+
     [SerializeField] private FixedJoystick positionJoystick, rotationJoystick;
+
+    private bool trainerCardEditorMode = false;
+    private AsyncOperationHandle<Sprite> trainerBackgroundHandle;
+    private AsyncOperationHandle<Sprite> trainerFrameHandle;
 
     private List<TrainerModel> trainerModels = new List<TrainerModel>();
     private int currentTrainerIndex = -1;
@@ -174,6 +187,12 @@ public class PhotoMakerManager : MonoBehaviour
             currentTrainerText.text = $"Trainer {currentTrainerIndex + 1}";
             trainerClothesInputField.text = trainerModels[currentTrainerIndex].PlayerClothesInfo.Serialize();
             UpdateAnimationList();
+
+            if (trainerCardEditorMode && trainerCardHolder != null)
+            {
+                var card = trainerModels[currentTrainerIndex].PlayerClothesInfo.TrainerCardInfo;
+                _ = LoadTrainerCardSpritesAsync(card.BackgroundIndex, card.FrameIndex);
+            }
         }
         else
         {
@@ -385,5 +404,271 @@ public class PhotoMakerManager : MonoBehaviour
             trainerModels[currentTrainerIndex].InitializeClothes(clothesSelector.LocalPlayerClothesInfo);
         }
     }
-}
 
+    private void OnDestroy()
+    {
+        if (trainerBackgroundHandle.IsValid())
+        {
+            Addressables.Release(trainerBackgroundHandle);
+        }
+
+        if (trainerFrameHandle.IsValid())
+        {
+            Addressables.Release(trainerFrameHandle);
+        }
+    }
+
+    public void SetTrainerCardEditorMode(bool enabled)
+    {
+        trainerCardEditorMode = enabled;
+        if (trainerCardHolder != null)
+            trainerCardHolder.SetActive(enabled);
+
+        if (enabled)
+        {
+            if (currentTrainerIndex != -1 && trainerModels.Count > 0 && trainerModels[currentTrainerIndex].IsInitialized)
+            {
+                var card = trainerModels[currentTrainerIndex].PlayerClothesInfo.TrainerCardInfo;
+                _ = LoadTrainerCardSpritesAsync(card.BackgroundIndex, card.FrameIndex);
+            }
+        }
+        else
+        {
+            if (trainerCardBackground != null) trainerCardBackground.sprite = null;
+            if (trainerCardFrame != null) trainerCardFrame.sprite = null;
+
+            if (trainerBackgroundHandle.IsValid())
+            {
+                Addressables.Release(trainerBackgroundHandle);
+                trainerBackgroundHandle = default;
+            }
+            if (trainerFrameHandle.IsValid())
+            {
+                Addressables.Release(trainerFrameHandle);
+                trainerFrameHandle = default;
+            }
+        }
+    }
+
+
+    private async Task LoadTrainerCardSpritesAsync(byte backgroundIndex, byte frameIndex)
+    {
+        if (trainerBackgroundHandle.IsValid())
+        {
+            if (trainerCardBackground != null) trainerCardBackground.sprite = null;
+            Addressables.Release(trainerBackgroundHandle);
+            trainerBackgroundHandle = default;
+        }
+
+        if (trainerFrameHandle.IsValid())
+        {
+            if (trainerCardFrame != null) trainerCardFrame.sprite = null;
+            Addressables.Release(trainerFrameHandle);
+            trainerFrameHandle = default;
+        }
+
+        if (backgrounds == null || backgrounds.Length == 0 || backgroundIndex >= backgrounds.Length) return;
+        if (frames == null || frames.Length == 0 || frameIndex >= frames.Length) return;
+
+        trainerBackgroundHandle = Addressables.LoadAssetAsync<Sprite>(backgrounds[backgroundIndex].itemSprite);
+        trainerFrameHandle = Addressables.LoadAssetAsync<Sprite>(frames[frameIndex].itemSprite);
+
+        await Task.WhenAll(trainerBackgroundHandle.Task, trainerFrameHandle.Task);
+
+        if (trainerBackgroundHandle.Status == AsyncOperationStatus.Succeeded && trainerCardBackground != null)
+        {
+            trainerCardBackground.sprite = trainerBackgroundHandle.Result;
+        }
+        if (trainerFrameHandle.Status == AsyncOperationStatus.Succeeded && trainerCardFrame != null)
+        {
+            trainerCardFrame.sprite = trainerFrameHandle.Result;
+        }
+    }
+
+    // Call this from your photo-capture flow when a photo is taken.
+    // If trainer card editor mode is active, this will compose background + preview + frame and save a PNG.
+    public void SaveTrainerCardPhotoIfInTrainerCardMode()
+    {
+        if (!trainerCardEditorMode) return;
+        try
+        {
+            ComposeAndSaveTrainerCardPhoto();
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Error composing trainer card photo: {ex}");
+        }
+    }
+
+    private void ComposeAndSaveTrainerCardPhoto()
+    {
+        if (trainerCardBackground == null || trainerCardBackground.sprite == null ||
+            trainerCardFrame == null || trainerCardFrame.sprite == null ||
+            photoPreviewRenderTexture == null)
+        {
+            Debug.LogWarning("Missing sprites/textures for trainer card composition.");
+            return;
+        }
+
+        Sprite bgSprite = trainerCardBackground.sprite;
+        Sprite frameSprite = trainerCardFrame.sprite;
+
+        int w = (int)bgSprite.rect.width;
+        int h = (int)bgSprite.rect.height;
+
+        // Convert/resize photo RenderTexture to proper size if needed
+        Texture2D photoTexture = PreparePhotoTextureFromRenderTexture(photoPreviewRenderTexture, w, h);
+
+        // Render the full UI (background, photo, frame) into a single texture
+        Texture2D composed = RenderCardUIToTexture(bgSprite, photoTexture, frameSprite, w, h);
+
+        if (composed == null)
+        {
+            Debug.LogError("Failed to render trainer card UI to texture.");
+            if (photoTexture != null) Object.Destroy(photoTexture);
+            return;
+        }
+
+        // Save composed texture
+        byte[] png = composed.EncodeToPNG();
+        string fileName = SanitizeFileName($"TrainerCard_{System.DateTime.Now:yyyyMMdd_HHmmss}.png");
+        string path = Path.Combine(Application.persistentDataPath, fileName);
+        System.IO.File.WriteAllBytes(path, png);
+        Debug.Log($"Saved trainer card photo to: {path}");
+
+        Object.Destroy(composed);
+        Object.Destroy(photoTexture);
+    }
+
+    // Prepare a Texture2D from RenderTexture, properly handling color space conversion and resizing to w x h
+    private Texture2D PreparePhotoTextureFromRenderTexture(RenderTexture sourceRT, int w, int h)
+    {
+        if (sourceRT == null) return null;
+
+        // Create an sRGB intermediate RT to convert from Linear (if source is Linear) to sRGB
+        RenderTexture srgbRT = RenderTexture.GetTemporary(sourceRT.width, sourceRT.height, 0, 
+            RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+
+        // Blit from source to sRGB RT - this handles color space conversion
+        Graphics.Blit(sourceRT, srgbRT);
+
+        // Read pixels from sRGB RT
+        RenderTexture current = RenderTexture.active;
+        RenderTexture.active = srgbRT;
+        Texture2D photoTex2D = new Texture2D(sourceRT.width, sourceRT.height, TextureFormat.RGBA32, false);
+        photoTex2D.ReadPixels(new Rect(0, 0, sourceRT.width, sourceRT.height), 0, 0);
+        photoTex2D.Apply();
+        RenderTexture.active = current;
+        
+        RenderTexture.ReleaseTemporary(srgbRT);
+
+        // Resize if needed
+        if (photoTex2D.width != w || photoTex2D.height != h)
+        {
+            RenderTexture temp = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            Graphics.Blit(photoTex2D, temp);
+            RenderTexture.active = temp;
+            Texture2D scaled = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            scaled.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            scaled.Apply();
+            RenderTexture.active = null;
+            RenderTexture.ReleaseTemporary(temp);
+            Object.Destroy(photoTex2D);
+            photoTex2D = scaled;
+        }
+
+        return photoTex2D;
+    }
+
+    // Render the UI (background sprite, photo texture, frame sprite) into a Texture2D sized w x h using a temporary Canvas+Camera.
+    private Texture2D RenderCardUIToTexture(Sprite bgSprite, Texture2D photoTexture, Sprite frameSprite, int w, int h)
+    {
+        int tempLayer = 31; // use a high unused layer for isolation
+
+        // Create a standard ARGB32 RenderTexture with default (sRGB) color space
+        RenderTexture rt = RenderTexture.GetTemporary(w, h, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default);
+
+        // Create temporary camera
+        GameObject camGO = new GameObject("TempUICam");
+        Camera cam = camGO.AddComponent<Camera>();
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = Color.clear;
+        cam.orthographic = true;
+        cam.orthographicSize = h * 0.5f;
+        cam.cullingMask = 1 << tempLayer;
+        cam.targetTexture = rt;
+        cam.allowHDR = true;
+        cam.allowMSAA = false;
+
+        // Create Canvas
+        GameObject canvasGO = new GameObject("TempUICanvas");
+        canvasGO.layer = tempLayer;
+        Canvas canvas = canvasGO.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = cam;
+        canvas.planeDistance = 1f;
+        CanvasScaler scaler = canvasGO.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(w, h);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+        canvasGO.AddComponent<GraphicRaycaster>();
+
+        // Background Image (bottom layer)
+        GameObject bgGO = new GameObject("TempBG");
+        bgGO.layer = tempLayer;
+        bgGO.transform.SetParent(canvasGO.transform, false);
+        Image bgImage = bgGO.AddComponent<Image>();
+        bgImage.sprite = bgSprite;
+        bgImage.preserveAspect = false;
+        RectTransform bgRT = bgGO.GetComponent<RectTransform>();
+        bgRT.anchorMin = Vector2.zero;
+        bgRT.anchorMax = Vector2.one;
+        bgRT.offsetMin = Vector2.zero;
+        bgRT.offsetMax = Vector2.zero;
+
+        // Photo RawImage (middle layer)
+        GameObject photoGO = new GameObject("TempPhoto");
+        photoGO.layer = tempLayer;
+        photoGO.transform.SetParent(canvasGO.transform, false);
+        RawImage raw = photoGO.AddComponent<RawImage>();
+        raw.texture = photoTexture;
+        RectTransform photoRT = photoGO.GetComponent<RectTransform>();
+        photoRT.anchorMin = Vector2.zero;
+        photoRT.anchorMax = Vector2.one;
+        photoRT.offsetMin = Vector2.zero;
+        photoRT.offsetMax = Vector2.zero;
+
+        // Frame Image (top layer)
+        GameObject frameGO = new GameObject("TempFrame");
+        frameGO.layer = tempLayer;
+        frameGO.transform.SetParent(canvasGO.transform, false);
+        Image frameImage = frameGO.AddComponent<Image>();
+        frameImage.sprite = frameSprite;
+        frameImage.preserveAspect = false;
+        RectTransform frameRT = frameGO.GetComponent<RectTransform>();
+        frameRT.anchorMin = Vector2.zero;
+        frameRT.anchorMax = Vector2.one;
+        frameRT.offsetMin = Vector2.zero;
+        frameRT.offsetMax = Vector2.zero;
+
+        // Force a render
+        cam.Render();
+
+        // Read pixels from the render texture
+        RenderTexture prev = RenderTexture.active;
+        RenderTexture.active = rt;
+        Texture2D result = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        result.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+        result.Apply();
+        RenderTexture.active = prev;
+
+        // Cleanup
+        cam.targetTexture = null;
+        Object.DestroyImmediate(camGO);
+        Object.DestroyImmediate(canvasGO);
+        RenderTexture.ReleaseTemporary(rt);
+
+        return result;
+    }
+}

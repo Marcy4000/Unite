@@ -99,6 +99,7 @@ public class VaporDive : MoveBase
 
         yield return new WaitForSeconds(0.8f);
         playerManager.PlayerMovement.RemoveMovementRestriction();
+        playerManager.PlayerMovement.IsFlying = true;
         playerManager.AnimationManager.SetTrigger("Transition");
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
     }
@@ -118,6 +119,7 @@ public class VaporDive : MoveBase
 
         yield return new WaitForSeconds(0.3f);
         playerManager.PlayerMovement.RemoveMovementRestriction();
+        playerManager.PlayerMovement.IsFlying = false;
 
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);

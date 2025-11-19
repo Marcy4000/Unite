@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class GlaceUnite : MoveBase
@@ -45,6 +46,7 @@ public class GlaceUnite : MoveBase
         if (direction.magnitude != 0 && IsActive)
         {
             //playerManager.MovesController.LaunchHomingProjectileRpc(target.GetComponent<NetworkObject>().NetworkObjectId, damageInfo);
+            playerManager.StartCoroutine(FlyCoroutine());
             playerManager.MovesController.onObjectSpawned += (uniteArea) =>
             {
                 this.uniteArea = uniteArea.GetComponent<GlaceUniteArea>();
@@ -70,6 +72,13 @@ public class GlaceUnite : MoveBase
         Aim.Instance.HideGlaceonUniteAim();
         Debug.Log("Finished glaceon unite!");
         base.Finish();
+    }
+
+    private IEnumerator FlyCoroutine()
+    {
+        playerManager.PlayerMovement.IsFlying = true;
+        yield return new WaitForSeconds(0.3f);
+        playerManager.PlayerMovement.IsFlying = false;
     }
 
     public override void Cancel()

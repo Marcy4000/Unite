@@ -78,6 +78,7 @@ public class SylvUnite : MoveBase
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
 
         playerManager.AnimationManager.PlayAnimation("ani_spellu_bat_0700");
+        playerManager.PlayerMovement.IsFlying = true;
         playerManager.Pokemon.AddStatusEffect(invulnerable);
         playerManager.MovesController.LockEveryAction();
         foreach (var status in playerManager.Pokemon.StatusEffects)
@@ -95,6 +96,7 @@ public class SylvUnite : MoveBase
         yield return new WaitForSeconds(0.3f);
 
         playerManager.MovesController.UnlockEveryAction();
+        playerManager.PlayerMovement.IsFlying = false;
 
         uniteArea.DoDamageRPC();
         uniteArea = null;

@@ -110,6 +110,7 @@ public class FlygonDig : MoveBase
         yield return new WaitForSeconds(0.8f);
         playerManager.Pokemon.AddStatChange(slow);
         playerManager.PlayerMovement.CanMove = true;
+        playerManager.PlayerMovement.IsFlying = true;
         playerManager.AnimationManager.SetTrigger("Transition");
     }
 
@@ -127,6 +128,7 @@ public class FlygonDig : MoveBase
         yield return new WaitForSeconds(0.5f);
         playerManager.PlayerMovement.CanMove = true;
         playerManager.Pokemon.RemoveStatChangeWithIDRPC(slow.ID);
+        playerManager.PlayerMovement.IsFlying = false;
 
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);

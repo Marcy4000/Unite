@@ -365,7 +365,7 @@ public class LobbyController : MonoBehaviour
             {
                 {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, localPlayerName)},
                 {"OwnerID", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "0")},
-                {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "Blue")},
+                {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, Team.Blue.ToString())},
                 {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
                 {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(-1))},
                 {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")},
@@ -1240,14 +1240,14 @@ public class LobbyController : MonoBehaviour
         if (localPos >= maxTeamSize)
         {
             localPos = (short)(maxTeamSize - 1);
-            UpdatePlayerTeamAndPos(localTeam, localPos);
+            UpdatePlayerTeamAndPos(TeamMember.GetTeamFromString(localTeam), localPos);
         }
 
         if (slotOccupiedByOther)
         {
             for (int i = 0; i < maxTeamSize * 2; i++)
             {
-                string team = i < maxTeamSize ? "Blue" : "Orange";
+                Team team = i < maxTeamSize ? Team.Blue : Team.Orange;
                 short pos = (short)(i % maxTeamSize);
 
                 if (!usedPositions.Contains(team + pos.ToString()))
@@ -1337,11 +1337,11 @@ public class LobbyController : MonoBehaviour
         Debug.Log($"Switched team to {localPlayer.Data["PlayerTeam"].Value}");
     }
 
-    public void UpdatePlayerTeamAndPos(string team, short pos)
+    public void UpdatePlayerTeamAndPos(Team team, short pos)
     {
         UpdatePlayerOptions options = new UpdatePlayerOptions();
         options.Data = localPlayer.Data;
-        options.Data["PlayerTeam"].Value = team;
+        options.Data["PlayerTeam"].Value = team.ToString();
         options.Data["PlayerPos"].Value = NumberEncoder.ToBase64(pos);
         Debug.Log($"Changed team to {options.Data["PlayerTeam"].Value} and pos to {options.Data["PlayerPos"].Value}");
 
