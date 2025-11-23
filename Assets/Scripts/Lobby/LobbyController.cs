@@ -42,6 +42,7 @@ public class LobbyController : MonoBehaviour
 
     private GameResults gameResults;
     private RaceGameResults raceGameResults;
+    private UniteRoyaleGameResults uniteRoyaleGameResults;
 
     private List<PlayerNetworkManager> playerNetworkManagers = new List<PlayerNetworkManager>();
     private bool loadResultsScreen = false;
@@ -239,6 +240,7 @@ public class LobbyController : MonoBehaviour
 
     public GameResults GameResults { get => gameResults; set => gameResults = value; }
     public RaceGameResults RaceGameResults { get => raceGameResults; set => raceGameResults = value; }
+    public UniteRoyaleGameResults UniteRoyaleGameResults { get => uniteRoyaleGameResults; set => uniteRoyaleGameResults = value; }
 
     public ILobbyEvents LobbyEvents => lobbyEvents;
 
@@ -1634,9 +1636,7 @@ public void CheckIfShouldChangePos(int maxTeamSize)
 
     private IEnumerator LoadResultsScreenAsync()
     {
-        string resultScreen = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType == CharacterSelectType.PsyduckRacing ? "RacingGameResults" : "GameResults";
-
-        var task = SceneManager.LoadSceneAsync(resultScreen, LoadSceneMode.Additive);
+        var task = SceneManager.LoadSceneAsync(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene, LoadSceneMode.Additive);
         while (!task.isDone)
         {
             yield return null;
@@ -1659,9 +1659,8 @@ public void CheckIfShouldChangePos(int maxTeamSize)
     private IEnumerator ReturnToHomeWithoutLeavingLobbyAsync()
     {
         LoadingScreen.Instance.ShowGenericLoadingScreen();
-        string resultScreen = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType == CharacterSelectType.PsyduckRacing ? "RacingGameResults" : "GameResults";
 
-        var loadTask = SceneManager.UnloadSceneAsync(resultScreen);
+        var loadTask = SceneManager.UnloadSceneAsync(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene);
 
         yield return loadTask;
 

@@ -33,6 +33,8 @@ public class PlayerNetworkManager : NetworkBehaviour
     public event System.Action<float> OnDeathTimerChanged;
     public event System.Action<PlayerStats> OnPlayerStatsChanged;
 
+    public PlayerManager Player => playerManager;
+
     public override void OnNetworkSpawn()
     {
         //GameManager.instance.onGameStateChanged += HandleGameStateChanged;

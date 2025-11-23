@@ -16,6 +16,7 @@ MonoBehaviour:
   mapIcon: {fileID: 21300000, guid: 2e431b6cfb14ea2478cc285793281c79, type: 3}
   sceneName: AuromaPark
   mapSceneKey: Assets/Scenes/AuromaParkMap.unity
+  resultScreenScene: UniteRoyaleGameResults
   availableTeams: 01020304
   maxTeamSize: 1
   mapResultsBlue:
@@ -33,9 +34,10 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 1
   gameMode: 0
-  gameTime: 300
-  finalStretchTime: 240
+  gameTime: 180
+  finalStretchTime: 135
   maxScore: 0
+  overrideDefaultResultScreen: 1
   customProperties:
   - key: skipPreparationPhaseBlind
     value: 
@@ -43,19 +45,13 @@ MonoBehaviour:
   finalStretchMusic: 8
   characterSelectType: 0
   startRestriction: 0
-  respawnLevelDurations: 04000000040000000400000004000000050000000600000008000000090000000a0000000b0000000c0000000f000000110000001300000013000000
+  respawnLevelDurations: 040000000400000004000000040000000400000004000000040000000400000004000000040000000400000004000000040000000400000004000000
   killsDivisor: 2
   killsClampMin: 0
-  killsClampMax: 10
+  killsClampMax: 2
   pointsDivisor: 60
   pointsClampMin: 0
   pointsClampMax: 10
   timeClampMin: 0
   timeClampMax: 45
-  respawnTimeThresholds:
-  - minTime: 61
-    maxTime: 121
-    value: 4
-  - minTime: 0
-    maxTime: 61
-    value: 10
+  respawnTimeThresholds: []

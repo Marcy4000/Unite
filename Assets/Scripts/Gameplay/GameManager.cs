@@ -478,16 +478,18 @@ public class GameManager : NetworkBehaviour
             BattleUIManager.instance.ShowSurrenderTextbox(yourTeamSurrendered);
         }
 
-        StartCoroutine(EndGameRoutine());
-    }
-
-    public IEnumerator EndGameRoutine()
-    {
         if (IsServer)
         {
             gameState.Value = GameState.Ended;
         }
 
+        if (currentMap.overrideDefaultResultScreen) return;
+
+        StartCoroutine(EndGameRoutine());
+    }
+
+    public IEnumerator EndGameRoutine()
+    {
         yield return new WaitForSeconds(1.7f);
 
         LoadingScreen.Instance.ShowGenericLoadingScreen();

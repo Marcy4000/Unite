@@ -14,6 +14,8 @@ public class MapInfo : ScriptableObject
     public string sceneName;
     [Tooltip("Addressables key for the map scene.")]
     public string mapSceneKey;
+    [Tooltip("Type of result screen to display after the game.")]
+    public string resultScreenScene = "GameResults";
 
     [Space]
 [Header("Teams & Results")]
@@ -38,6 +40,8 @@ public AssetReferenceSprite mapResultsBlue;
     public float finalStretchTime;
     [Tooltip("Maximum score achievable.")]
     public ushort maxScore;
+    [Tooltip("If enabled, the GameManager won't automatically go to the standard results screen.")]
+    public bool overrideDefaultResultScreen = false;
     [Tooltip("Additional custom properties for the map.")]
     public List<CustomMapProperties> customProperties = new List<CustomMapProperties>();
 

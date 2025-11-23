@@ -48,6 +48,18 @@ public class SettlementTeamModels : MonoBehaviour
         }
     }
 
+    public void PlayVictoryAnimation(int trainerIndex)
+    {
+        if (trainerIndex < 0 || trainerIndex >= trainerModels.Length)
+            return;
+
+        if (trainerModels[trainerIndex].gameObject.activeSelf)
+        {
+            int animIndex = Random.Range(0, trainerModels[trainerIndex].PlayerClothesInfo.IsMale ? maleVictoryAnimations.Length : femaleVictoryAnimations.Length);
+            trainerModels[trainerIndex].ActiveAnimator.Play(trainerModels[trainerIndex].PlayerClothesInfo.IsMale ? maleVictoryAnimations[animIndex] : femaleVictoryAnimations[animIndex]);
+        }
+    }
+
     private void OnDestroy()
     {
         for (int i = 0; i < trainerPokemonPositions.Length; i++)

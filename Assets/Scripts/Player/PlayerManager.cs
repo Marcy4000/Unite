@@ -151,7 +151,7 @@ public class PlayerManager : NetworkBehaviour
         vision.HasATeam = true;
         vision.IsVisiblyEligible = true;
 
-        hpBar.InitializeEnergyUI(PokemonType.Player, tempTeam == Team.Orange, IsOwner);
+        hpBar.InitializeEnergyUI(PokemonType.Player, tempTeam, IsOwner);
         hpBar.UpdateHpBarColor(tempTeam != currentPlayerTeam, IsOwner);
 
         if (IsOwner)

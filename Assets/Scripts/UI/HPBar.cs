@@ -64,7 +64,7 @@ public class HPBar : MonoBehaviour
         }
     }
 
-    public void InitializeEnergyUI(PokemonType type, bool orangeTeam=false, bool hideUI=false)
+    public void InitializeEnergyUI(PokemonType type, Team team, bool hideUI=false)
     {
         if (hideUI)
         {
@@ -76,7 +76,7 @@ public class HPBar : MonoBehaviour
         switch (type)
         {
             case PokemonType.Player:
-                if (orangeTeam)
+                if (team != LobbyController.Instance.GetLocalPlayerTeam())
                 {
                     energyBG.sprite = orangeEnergyBG;
                 }
