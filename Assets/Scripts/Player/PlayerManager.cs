@@ -674,14 +674,13 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonLevelUp()
     {
-        switch (pokemon.CurrentLevel)
+        if (pokemon.CurrentLevel >= 11)
         {
-            case 8:
-                ChangeMaxEnergyRPC(40);
-                break;
-            case 11:
-                ChangeMaxEnergyRPC(50);
-                break;
+            ChangeMaxEnergyRPC(50);
+        }
+        else if (pokemon.CurrentLevel >= 8)
+        {
+            ChangeMaxEnergyRPC(40);
         }
     }
 

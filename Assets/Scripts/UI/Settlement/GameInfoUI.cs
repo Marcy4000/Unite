@@ -18,13 +18,13 @@ public class GameInfoUI : MonoBehaviour
         foreach (var player in blueTeam)
         {
             PlayerInfoUI info = Instantiate(playerInfoPrefab, blueTeamSpawn).GetComponent<PlayerInfoUI>();
-            info.SetPlayerInfo(player, PlayerInfoType.Normal);
+            info.SetPlayerInfo(player, PlayerInfoType.Normal, false);
         }
 
         foreach (var player in orangeTeam)
         {
             PlayerInfoUI info = Instantiate(playerInfoPrefab, orangeTeamSpawn).GetComponent<PlayerInfoUI>();
-            info.SetPlayerInfo(player, PlayerInfoType.Normal);
+            info.SetPlayerInfo(player, PlayerInfoType.Normal, false);
         }
     }
 }

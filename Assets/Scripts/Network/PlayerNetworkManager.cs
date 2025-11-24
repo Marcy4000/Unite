@@ -97,7 +97,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             return;
         }
 
-        if (scene.name.Equals("GameResults") || scene.name.Equals("RacingGameResults"))
+        if (scene.name.Equals(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene))
         {
             isInResultScreen.Value = true;
         }
@@ -110,7 +110,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             return;
         }
 
-        if (scene.name.Equals("GameResults") || scene.name.Equals("RacingGameResults"))
+        if (scene.name.Equals(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene))
         {
             matchStarted = false;
             isInResultScreen.Value = false;

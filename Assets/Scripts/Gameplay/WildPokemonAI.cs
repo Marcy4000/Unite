@@ -8,6 +8,7 @@ public class WildPokemonAI : NetworkBehaviour
 {
     public enum WildPokemonState
     {
+        Initializing,
         Idle,
         MovingToPosition,
         Chasing,
@@ -193,7 +194,7 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsServer)
+        if (!IsServer || state == WildPokemonState.Initializing)
         {
             return;
         }

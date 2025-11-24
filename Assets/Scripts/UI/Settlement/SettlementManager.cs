@@ -7,6 +7,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 using DG.Tweening;
+using System.Linq;
 
 public class SettlementManager : MonoBehaviour
 {
@@ -45,6 +46,8 @@ public class SettlementManager : MonoBehaviour
     private bool isRankedGame;
     private PlayerRankData previousRankData;
 
+    private bool skipPointsAnimation = false;
+
     private IEnumerator Start()
     {
         gameInfoUI.Initialize();
@@ -82,6 +85,11 @@ public class SettlementManager : MonoBehaviour
         MapInfo currentMap = CharactersList.Instance.GetCurrentLobbyMap();
 
         blueScoreboardHandle = Addressables.LoadAssetAsync<Sprite>(currentMap.mapResultsBlue);
+
+        if (currentMap.customProperties.Any(prop => prop.key == "skipPointsAnimation"))
+        {
+            skipPointsAnimation = true;
+        }
 
         yield return blueScoreboardHandle;
 
@@ -126,6 +134,13 @@ public class SettlementManager : MonoBehaviour
         }
 
         resultBarsUI.InitializeUI(maxScore);
+
+        if (skipPointsAnimation)
+        {
+            resultBarsUI.SetBars(blueScoreValue, orangeScoreValue);
+            OnShowScoreEnded();
+            return;
+        }
 
         AnimateAppear(resultBarsUI.gameObject);
 

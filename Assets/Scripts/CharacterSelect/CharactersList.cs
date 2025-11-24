@@ -33,7 +33,12 @@ public enum AvailableWildPokemons : short
     RotomSoldier,
     Regieleki,
     RegielekiSoldier,
-    Zapdos500Points
+    Zapdos500Points,
+    Regice,
+    Regirock,
+    RegisteelNoEnergy,
+    RegiceNoEnergy,
+    RegirockNoEnergy
 }
 
 

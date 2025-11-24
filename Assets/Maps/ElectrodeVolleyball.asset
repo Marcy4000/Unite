@@ -16,6 +16,8 @@ MonoBehaviour:
   mapIcon: {fileID: 21300000, guid: 393522b0e17eeb740a44b126e989ff13, type: 3}
   sceneName: ElectrodeVolleyball
   mapSceneKey: Assets/Scenes/ElectrodeVolleyballMap.unity
+  resultScreenScene: GameResults
+  availableTeams: 0102
   maxTeamSize: 3
   mapResultsBlue:
     m_AssetGUID: 08d4394f99ef5b644b660dbf4b94ddc4
@@ -35,8 +37,11 @@ MonoBehaviour:
   gameTime: 300
   finalStretchTime: 400
   maxScore: 0
+  overrideDefaultResultScreen: 0
   customProperties:
   - key: skipPreparationPhaseBlind
+    value: 
+  - key: skipPointsAnimation
     value: 
   normalMusic: 13
   finalStretchMusic: 14

@@ -10,6 +10,7 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     [SerializeField] private GameObject pokemonPrefab;
     [SerializeField] private AvailableWildPokemons wildPokemonID;
+    [SerializeField] private AvailableWildPokemons[] availableWildPokemonIDs;
     [SerializeField] private bool usesTimeRemaining = true;
     [SerializeField] private float firstSpawnTime = 600f;
     [SerializeField] private float respawnCooldown;
@@ -140,7 +141,7 @@ public class WildPokemonSpawner : NetworkBehaviour
         {
             if (newValue == true)
             {
-                if (MinimapManager.Instance != null)
+                if (MinimapManager.Instance != null && !isObjective)
                 {
                     MinimapManager.Instance.CreateWildPokemonIcon(this);
                 }
@@ -174,7 +175,7 @@ public class WildPokemonSpawner : NetworkBehaviour
         }
 
         // --- Despawning ---
-        if (despawnTime != Mathf.Infinity && GameManager.Instance.GameTime >= despawnTime)
+        if ((despawnTime != Mathf.Infinity || despawnTime < 0) && GameManager.Instance.GameTime >= despawnTime)
         {
             if (wildPokemon != null)
             {
@@ -261,6 +262,17 @@ public class WildPokemonSpawner : NetworkBehaviour
             return;
         }
 
+        // Determine the ID to use for spawning
+        short idToUse;
+        if (availableWildPokemonIDs.Length > 0)
+        {
+            idToUse = (short)availableWildPokemonIDs[Random.Range(0, availableWildPokemonIDs.Length)];
+        }
+        else
+        {
+            idToUse = (short)wildPokemonID;
+        }
+
         GameObject pokemonInstance = Instantiate(pokemonPrefab, transform.position, transform.rotation, transform);
         wildPokemon = pokemonInstance.GetComponent<WildPokemon>();
         if (wildPokemon == null)
@@ -280,7 +292,7 @@ public class WildPokemonSpawner : NetworkBehaviour
         }
         instanceNetworkObject.Spawn();
 
-        wildPokemon.SetWildPokemonInfoRPC((short)wildPokemonID, isObjective);
+        wildPokemon.SetWildPokemonInfoRPC(idToUse, isObjective);
         wildPokemon.SoldierLaneID = soldierLaneID;
         wildPokemon.Pokemon.OnDeath += HandlePokemonDeath;
         wildPokemon.Pokemon.OnPokemonInitialized += InitializeAISettings;

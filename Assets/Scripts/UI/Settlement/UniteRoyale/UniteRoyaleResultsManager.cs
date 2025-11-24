@@ -16,6 +16,7 @@ public class UniteRoyaleResultsManager : MonoBehaviour
     [SerializeField] private TMP_Text[] playerNames;
 
     [SerializeField] private SettlementTeamModels teamModels;
+    [SerializeField] private BattleInfoUI battleInfoUI;
 
     private UniteRoyaleGameResults gameResults;
 
@@ -61,6 +62,8 @@ public class UniteRoyaleResultsManager : MonoBehaviour
         }
 
         teamModels.Initialize(players.ToArray());
+
+        battleInfoUI.Initialize(LobbyController.Instance.GameResults);
 
         yield return new WaitForSeconds(1.5f);
 

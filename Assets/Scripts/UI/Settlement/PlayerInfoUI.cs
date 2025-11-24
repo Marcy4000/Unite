@@ -27,10 +27,13 @@ public class PlayerInfoUI : MonoBehaviour
 
     [SerializeField] private Sprite blueBG, orangeBG;
 
+    public bool relativeMode = false;
+
     private PlayerInfoType playerInfoType;
 
-    public void SetPlayerInfo(Player player, PlayerInfoType type)
+    public void SetPlayerInfo(Player player, PlayerInfoType type, bool relativeMode)
     {
+        this.relativeMode = relativeMode;
         playerInfoType = type;
 
         switch (playerInfoType)
@@ -63,13 +66,15 @@ public class PlayerInfoUI : MonoBehaviour
 
         playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)).icon;
 
-        if (player.Data["PlayerTeam"].Value == "Blue")
+        Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        if (relativeMode)
         {
-            playerBGImage.sprite = blueBG;
+            playerBGImage.sprite = playerTeam == localTeam ? blueBG : orangeBG;
         }
         else
         {
-            playerBGImage.sprite = orangeBG;
+            playerBGImage.sprite = playerTeam == Team.Blue ? blueBG : orangeBG;
         }
 
         if (player.Id == LobbyController.Instance.Player.Id)
@@ -103,13 +108,15 @@ public class PlayerInfoUI : MonoBehaviour
         playerBattleScoreText.text = playerStats.CalculateBattleScore().ToString();
         playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)).icon;
 
-        if (player.Data["PlayerTeam"].Value == "Blue")
+        Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        if (relativeMode)
         {
-            playerBGImage.sprite = blueBG;
+            playerBGImage.sprite = playerTeam == localTeam ? blueBG : orangeBG;
         }
         else
         {
-            playerBGImage.sprite = orangeBG;
+            playerBGImage.sprite = playerTeam == Team.Blue ? blueBG : orangeBG;
         }
 
         if (player.Id == LobbyController.Instance.Player.Id)
@@ -129,13 +136,15 @@ public class PlayerInfoUI : MonoBehaviour
         uniteMoveIcon.sprite = CharactersList.Instance.GetMoveAsset(playerStats.uniteMove).icon;
         playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)).icon;
 
-        if (player.Data["PlayerTeam"].Value == "Blue")
+        Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        if (relativeMode)
         {
-            playerBGImage.sprite = blueBG;
+            playerBGImage.sprite = playerTeam == localTeam ? blueBG : orangeBG;
         }
         else
         {
-            playerBGImage.sprite = orangeBG;
+            playerBGImage.sprite = playerTeam == Team.Blue ? blueBG : orangeBG;
         }
 
         if (player.Id == LobbyController.Instance.Player.Id)

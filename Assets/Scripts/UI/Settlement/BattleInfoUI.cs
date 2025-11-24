@@ -8,10 +8,13 @@ public class BattleInfoUI : MonoBehaviour
     [SerializeField] private Toggle[] menuOptions;
     [SerializeField] private BattleInfoMenuUI[] menuPanels;
 
+    [SerializeField] private bool relativeMode = false;
+
     public void Initialize(GameResults gameResults)
     {
         foreach (var panel in menuPanels)
         {
+            panel.relativeMode = relativeMode;
             panel.InitializeMenu();
         }
 

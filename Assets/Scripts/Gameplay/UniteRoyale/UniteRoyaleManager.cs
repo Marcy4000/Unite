@@ -7,12 +7,14 @@ using UnityEngine;
 
 public struct UniteRoyalePlayerStats : INetworkSerializable, System.IEquatable<UniteRoyalePlayerStats>
 {
+    public FixedString32Bytes playerLobbyID;
     public ulong playerID;
     public int kills;
     public int deaths;
 
-    public UniteRoyalePlayerStats(ulong playerID)
+    public UniteRoyalePlayerStats(FixedString32Bytes playerLobbyID, ulong playerID)
     {
+        this.playerLobbyID = playerLobbyID;
         this.playerID = playerID;
         kills = 0;
         deaths = 0;
@@ -20,11 +22,13 @@ public struct UniteRoyalePlayerStats : INetworkSerializable, System.IEquatable<U
 
     public bool Equals(UniteRoyalePlayerStats other)
     {
-        return kills == other.kills && deaths == other.deaths;
+        return kills == other.kills && deaths == other.deaths && playerLobbyID.Equals(other.playerLobbyID) && playerID == other.playerID;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
+        serializer.SerializeValue(ref playerLobbyID);
+        serializer.SerializeValue(ref playerID);
         serializer.SerializeValue(ref kills);
         serializer.SerializeValue(ref deaths);
     }
@@ -73,8 +77,8 @@ public class UniteRoyaleManager : NetworkBehaviour
         {
             foreach (var player in playersInGame)
             {
-                playerStats.Add(new UniteRoyalePlayerStats(player.NetworkObjectId));
-                player.OnPlayerStatsChanged += (newStats) => UpdatePlayerStats(player, newStats);
+                playerStats.Add(new UniteRoyalePlayerStats(player.LocalPlayer.Id, player.NetworkObjectId));
+                player.OnPlayerStatsChanged += OnPlayerStatsChangedHandler;
             }
         }
 
@@ -85,13 +89,13 @@ public class UniteRoyaleManager : NetworkBehaviour
         };
     }
 
-    private void UpdatePlayerStats(PlayerNetworkManager playerNetworkManager, PlayerStats newStats)
+    private void OnPlayerStatsChangedHandler(PlayerStats newStats)
     {
         if (!IsServer) return;
 
         for (int i = 0; i < playerStats.Count; i++)
         {
-            if (playerStats[i].playerID == playerNetworkManager.NetworkObjectId)
+            if (playerStats[i].playerLobbyID == newStats.playerId)
             {
                 UniteRoyalePlayerStats updatedStats = playerStats[i];
                 updatedStats.kills = newStats.kills;
@@ -100,6 +104,17 @@ public class UniteRoyaleManager : NetworkBehaviour
                 break;
             }
         }
+    }
+
+    public override void OnDestroy()
+    {
+        foreach (var player in playersInGame)
+        {
+            if (player != null)
+                player.OnPlayerStatsChanged -= OnPlayerStatsChangedHandler;
+        }
+
+        base.OnDestroy();
     }
 
     private void OnGameStateChanged(GameState state)
@@ -153,12 +168,21 @@ public class UniteRoyaleManager : NetworkBehaviour
         List<UniteRoyalePlayerStats> sortedStats = GetSortedPlayerStats();
 
         byte position = 1;
+        int previousKills = -1;
 
         foreach (var stats in sortedStats)
         {
+            if (stats.kills != previousKills)
+            {
+                if (previousKills != -1)
+                {
+                    position++;
+                }
+                previousKills = stats.kills;
+            }
+
             PlayerStats playerStats = playersInGame.Where(p => p.NetworkObjectId == stats.playerID).First().PlayerStats;
             finalStats.Add(new UniteRoyalePlayerResult(playerStats, position));
-            position++;
         }
 
         return new UniteRoyaleGameResults(finalStats.ToArray());

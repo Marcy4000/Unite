@@ -190,7 +190,24 @@ public class WildPokemon : NetworkBehaviour
                 HandleRotom(attacker, info);
                 break;
             case ObjectiveType.Registeel:
-                HandleRegisteel(attacker, info);
+                HandleRegi(attacker, info, new StatChange[]
+                {
+                    new StatChange(15, Stat.Attack, 90f, true, true, true, 0),
+                    new StatChange(15, Stat.SpAttack, 90f, true, true, true, 0)
+                });
+                break;
+            case ObjectiveType.Regice:
+                HandleRegi(attacker, info, new StatChange[]
+                {
+                    new StatChange(15, Stat.MaxHp, 90f, true, true, true, 0)
+                });
+                break;
+            case ObjectiveType.Regirock:
+                HandleRegi(attacker, info, new StatChange[]
+                {
+                    new StatChange(15, Stat.Defense, 90f, true, true, true, 0),
+                    new StatChange(15, Stat.SpDefense, 90f, true, true, true, 0)
+                });
                 break;
             default:
                 break;
@@ -259,7 +276,7 @@ public class WildPokemon : NetworkBehaviour
         StartCoroutine(DumbDespawn());
     }
 
-    private void HandleRegisteel(Pokemon attacker, DamageInfo info)
+    private void HandleRegi(Pokemon attacker, DamageInfo info, StatChange[] statsToGive)
     {
         Team teamToGiveExp = attacker.TeamMember.Team;
         if (attacker.TryGetComponent(out PlayerManager player))
@@ -275,8 +292,10 @@ public class WildPokemon : NetworkBehaviour
                 if (playerManager.PlayerState != PlayerState.Dead)
                 {
                     playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.08f), 9, 0, 30f, true));
-                    playerManager.Pokemon.AddStatChange(new StatChange(15, Stat.Attack, 90f, true, true, true, 0));
-                    playerManager.Pokemon.AddStatChange(new StatChange(15, Stat.SpAttack, 90f, true, true, true, 0));
+                    foreach (var stat in statsToGive)
+                    {
+                        playerManager.Pokemon.AddStatChange(stat);
+                    }
                 }
             }
         }
@@ -381,7 +400,6 @@ public class WildPokemon : NetworkBehaviour
 
                 if (isObjective)
                 {
-                    MinimapManager.Instance.CreateObjectiveIcon(this);
                     objectiveType = wildPokemonInfo.ObjectiveType;
                 }
 
