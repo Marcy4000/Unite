@@ -738,6 +738,12 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void RemoveAllStatusEffectsRPC()
     {
+        for (int i = statusEffects.Count - 1; i >= 0; i--)
+        {
+            StatusEffect effect = statusEffects[i];
+            OnStatusListChangedRPC(effect, false);
+        }
+
         statusEffects.Clear();
         statusTimers.Clear();
     }
@@ -879,6 +885,12 @@ public class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void ClearStatusEffectsRPC()
     {
+        for (int i = statusEffects.Count - 1; i >= 0; i--)
+        {
+            StatusEffect effect = statusEffects[i];
+            OnStatusListChangedRPC(effect, false);
+        }
+
         statusEffects.Clear();
         statusTimers.Clear();
     }

@@ -79,29 +79,36 @@ public class KillNotificationUI : MonoBehaviour
 
         streakImage.gameObject.SetActive(true);
 
+        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
         attacker.TryGetComponent(out PlayerManager playerManager);
+
+        bool sameTeam = playerManager.CurrentTeam.IsOnSameTeam(localTeam);
 
         int index = Mathf.Clamp(attacker.KillStreak - 2, 0, 3);
 
-        streakImage.sprite = playerManager.CurrentTeam.Team == Team.Orange ? orangeKoSprites[index] : blueKoSprites[index];
+        streakImage.sprite = sameTeam ? blueKoSprites[index] : orangeKoSprites[index];
     }
 
     private Sprite ChooseBackground(Pokemon attacker, Pokemon killed)
     {
+        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
         attacker.TryGetComponent(out PlayerManager attackerPlayer);
         killed.TryGetComponent(out PlayerManager killedPlayer);
 
         if (attackerPlayer != null && killedPlayer != null)
         {
-            return attackerPlayer.CurrentTeam.Team == Team.Orange ? backgrounds[0] : backgrounds[1];
+            bool sameTeam = attackerPlayer.CurrentTeam.IsOnSameTeam(localTeam);
+            return sameTeam ? backgrounds[1] : backgrounds[0];
         }
         else if (attackerPlayer != null && killedPlayer == null)
         {
-            return attackerPlayer.CurrentTeam.Team == Team.Orange ? backgrounds[2] : backgrounds[3];
+            bool sameTeam = attackerPlayer.CurrentTeam.IsOnSameTeam(localTeam);
+            return sameTeam ? backgrounds[3] : backgrounds[2];
         }
         else if (attackerPlayer == null && killedPlayer != null)
         {
-            return killedPlayer.CurrentTeam.Team == Team.Orange ? backgrounds[4] : backgrounds[5];
+            bool sameTeam = killedPlayer.CurrentTeam.IsOnSameTeam(localTeam);
+            return sameTeam ? backgrounds[5] : backgrounds[4];
         }
         else
         {

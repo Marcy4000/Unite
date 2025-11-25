@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Core.Environments;
@@ -571,7 +570,7 @@ public class LobbyController : MonoBehaviour
             var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
             int maxPlayers = (type == LobbyType.Standards)
                 ? CharactersList.Instance.GetMapFromID(0).maxTeamSize
-                : CharactersList.Instance.GetMapFromID(0).maxTeamSize * 2;
+                : CharactersList.Instance.GetMapFromID(0).maxTeamSize * CharactersList.Instance.GetMapFromID(0).availableTeams.Count;
             partyLobby = await LobbyService.Instance.CreateLobbyAsync(partyLobbyName, maxPlayers, partyLobbyOptions);
             currentLobbyType = type;
             Debug.Log($"Joined lobby: {partyLobby.Name}, code: {partyLobby.LobbyCode}");
@@ -1523,7 +1522,7 @@ public void CheckIfShouldChangePos(int maxTeamSize)
 
         UpdateLobbyOptions lobbyOptions = new UpdateLobbyOptions();
         lobbyOptions.Data = partyLobby.Data;
-        lobbyOptions.MaxPlayers = map.maxTeamSize * 2;
+        lobbyOptions.MaxPlayers = map.maxTeamSize * map.availableTeams.Count;
         lobbyOptions.HostId = partyLobby.HostId;
         lobbyOptions.Name = partyLobby.Name;
         lobbyOptions.IsPrivate = partyLobby.IsPrivate;
@@ -1790,7 +1789,7 @@ public void CheckIfShouldChangePos(int maxTeamSize)
         options.Data = partyLobby.Data;
         options.MaxPlayers = (newType == LobbyType.Standards)
             ? CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize
-            : CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * 2;
+            : CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * CharactersList.Instance.GetCurrentLobbyMap().availableTeams.Count;
         options.HostId = partyLobby.HostId;
         options.Name = partyLobby.Name;
         options.IsPrivate = partyLobby.IsPrivate;
@@ -1838,7 +1837,7 @@ public void CheckIfShouldChangePos(int maxTeamSize)
         if (IsStandardsLobby())
             return CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize;
         else
-            return CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * 2;
+            return CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * CharactersList.Instance.GetCurrentLobbyMap().availableTeams.Count;
     }
 
     private void OnClientDisconnectFromServer(ulong clientId)
