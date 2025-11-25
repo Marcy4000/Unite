@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class MeowsticMReflect : MoveBase
@@ -37,7 +38,8 @@ public class MeowsticMReflect : MoveBase
     {
         if (IsActive)
         {
-            playerManager.StopMovementForTime(0.6f);
+            playerManager.StopMovementForTime(0.5f);
+            playerManager.StartCoroutine(StopActionsForTime());
             playerManager.AnimationManager.PlayAnimation("Armature_pm0734_00_ba20_buturi01");
             if (target != null)
             {
@@ -53,6 +55,17 @@ public class MeowsticMReflect : MoveBase
         }
         Aim.Instance.HideAutoAim();
         base.Finish();
+    }
+
+    private IEnumerator StopActionsForTime()
+    {
+        playerManager.MovesController.LockEveryAction();
+        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
+
+        yield return new WaitForSeconds(0.51f);
+
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 
     public override void Cancel()
@@ -78,5 +91,7 @@ public class MeowsticMReflect : MoveBase
 
     public override void ResetMove()
     {
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

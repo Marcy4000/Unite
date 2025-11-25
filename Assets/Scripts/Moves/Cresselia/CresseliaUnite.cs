@@ -4,7 +4,7 @@ using UnityEngine;
 public class CresseliaUnite : MoveBase
 {
     private StatusEffect invincible = new StatusEffect(StatusType.Invincible, 0f, false, 10);
-    private DamageInfo damage = new DamageInfo(0, 0.8f, 7, 740, DamageType.Special);
+    private DamageInfo damage = new DamageInfo(0, 1.35f, 9, 840, DamageType.Special);
 
     private const float maxUseCooldown = 5f;
 

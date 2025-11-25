@@ -10,7 +10,7 @@ public class MarshadowPhantomForce : MoveBase
 
     private StatusEffect invulnerableEffect = new StatusEffect(StatusType.Invincible, 0, false, 6);
     private StatusEffect invisibleEffect = new StatusEffect(StatusType.Invisible, 0, false, 7);
-    private DamageInfo damage = new DamageInfo(0, 1.2f, 7, 320, DamageType.Physical);
+    private DamageInfo damage = new DamageInfo(0, 1.76f, 9, 520, DamageType.Physical);
 
     private float range = 2.9f;
 

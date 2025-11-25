@@ -16,7 +16,7 @@ public class CresseliaLunarBlessing : MoveBase
     public CresseliaLunarBlessing()
     {
         Name = "Lunar Blessing";
-        Cooldown = 11.5f;
+        Cooldown = 9.5f;
     }
 
     public override void Start(PlayerManager controller)
@@ -59,7 +59,7 @@ public class CresseliaLunarBlessing : MoveBase
                 }
             }
 
-            playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.15f), 8, 0, 5f, true));
+            playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.15f), 8, 0, 3.7f, true));
 
             if (target != null)
             {
@@ -83,7 +83,7 @@ public class CresseliaLunarBlessing : MoveBase
                     }
                 }
 
-                pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.15f), 8, 0, 5f, true));
+                pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.15f), 8, 0, 3.7f, true));
             }
 
             playerManager.MovesController.onObjectSpawned += (obj) =>

@@ -8,14 +8,14 @@ public class CresseliaMoonblast : MoveBase
 
     private string projectilePath = "Assets/Prefabs/Objects/Moves/Cresselia/CresseliaMoonblast.prefab";
 
-    private DamageInfo damageInfo = new DamageInfo(0, 0.67f, 7, 400, DamageType.Special);
+    private DamageInfo damageInfo = new DamageInfo(0, 1.27f, 7, 475, DamageType.Special);
 
     private Coroutine moveCoroutine;
 
     public CresseliaMoonblast()
     {
         Name = "Moonblast";
-        Cooldown = 9f;
+        Cooldown = 7.5f;
     }
 
     public override void Start(PlayerManager controller)

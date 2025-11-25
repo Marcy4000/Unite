@@ -1,3 +1,6 @@
+using System.Collections;
+using UnityEngine;
+
 public class MeowsticMMagicCoat : MoveBase
 {
     private string assetPath = "Assets/Prefabs/Objects/Moves/Meowstic/Male/MeowsticMMagicCoat.prefab";
@@ -27,6 +30,7 @@ public class MeowsticMMagicCoat : MoveBase
         if (IsActive)
         {
             playerManager.StopMovementForTime(0.6f);
+            playerManager.StartCoroutine(StopActionsForTime());
             playerManager.AnimationManager.PlayAnimation("Armature_pm0734_00_kw30_hate01");
             playerManager.Pokemon.AddStatChange(new StatChange(20, Stat.Speed, 4f, true, true, false, 0));
             playerManager.MovesController.onObjectSpawned += (obj) =>
@@ -42,6 +46,17 @@ public class MeowsticMMagicCoat : MoveBase
         base.Finish();
     }
 
+    private IEnumerator StopActionsForTime()
+    {
+        playerManager.MovesController.LockEveryAction();
+        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
+
+        yield return new WaitForSeconds(0.61f);
+
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+    }
+
     public override void Cancel()
     {
         Aim.Instance.HideSimpleCircle();
@@ -50,5 +65,7 @@ public class MeowsticMMagicCoat : MoveBase
 
     public override void ResetMove()
     {
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

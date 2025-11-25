@@ -18,8 +18,8 @@ public class CresseliaBasicAtk : BasicAttackBase
         base.Initialize(manager);
         range = 4f;
         attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
-        normalDmg = new DamageInfo(playerManager.NetworkObjectId, 1f, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack);
-        boostedDmg = new DamageInfo(playerManager.NetworkObjectId, 0.44f, 18, 280, DamageType.Special, DamageProprieties.IsBasicAttack);
+        normalDmg = new DamageInfo(playerManager.NetworkObjectId, 0.44f, 10, 100, DamageType.Special, DamageProprieties.IsBasicAttack);
+        boostedDmg = new DamageInfo(playerManager.NetworkObjectId, 0.5f, 18, 280, DamageType.Special, DamageProprieties.IsBasicAttack);
         playerManager.HPBar.ShowGenericGuage(true);
     }
 

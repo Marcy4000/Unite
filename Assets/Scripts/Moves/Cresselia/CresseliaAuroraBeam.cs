@@ -8,14 +8,14 @@ public class CresseliaAuroraBeam : MoveBase
 
     private string projectilePath = "Assets/Prefabs/Objects/Moves/Cresselia/CresseliaAuroraBeam.prefab";
 
-    private DamageInfo damageInfo = new DamageInfo(0, 0.56f, 5, 340, DamageType.Special);
+    private DamageInfo damageInfo = new DamageInfo(0, 0.75f, 5, 370, DamageType.Special);
 
     private Coroutine moveCoroutine;
 
     public CresseliaAuroraBeam()
     {
         Name = "Aurora Beam";
-        Cooldown = 6.5f;
+        Cooldown = 5.5f;
     }
 
     public override void Start(PlayerManager controller)

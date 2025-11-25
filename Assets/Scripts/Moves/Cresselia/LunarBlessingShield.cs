@@ -15,7 +15,7 @@ public class LunarBlessingShield : NetworkBehaviour
         target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetId].GetComponent<Pokemon>();
         target.OnDeath += (killer) => NetworkObject.Despawn(true);
         target.OnShieldChange += CheckForShield;
-        timer = 4.8f;
+        timer = 3.5f;
         initialized = true;
     }
 

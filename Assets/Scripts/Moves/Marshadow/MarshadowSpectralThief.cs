@@ -10,7 +10,7 @@ public class MarshadowSpectralThief : MoveBase
 
     private Vector3 dashDirection;
 
-    private DamageInfo damage = new DamageInfo(0, 1.2f, 4, 310, DamageType.Physical);
+    private DamageInfo damage = new DamageInfo(0, 1.65f, 6, 510, DamageType.Physical);
     private StatusEffect stun = new StatusEffect(StatusType.Incapacitated, 0.6f, true, 0);
     private string assetPath = "Assets/Prefabs/Objects/Moves/Marshadow/MarshSpectralThiefArea.prefab";
 

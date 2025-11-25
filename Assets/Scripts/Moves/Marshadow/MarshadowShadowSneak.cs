@@ -94,6 +94,8 @@ public class MarshadowShadowSneak : MoveBase
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
 
         yield return new WaitForSeconds(0.5f);
+
+        playerManager.PlayerMovement.IsFlying = true;
         playerManager.Pokemon.AddStatChange(speedBoost);
         playerManager.PlayerMovement.CanMove = true;
         playerManager.AnimationManager.SetTrigger("Transition");
@@ -115,6 +117,7 @@ public class MarshadowShadowSneak : MoveBase
 
         yield return new WaitForSeconds(0.2f);
         playerManager.PlayerMovement.CanMove = true;
+        playerManager.PlayerMovement.IsFlying = false;
 
         playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
@@ -137,6 +140,7 @@ public class MarshadowShadowSneak : MoveBase
         playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
         playerManager.Pokemon.RemoveStatusEffectWithID(underwaterEffect.ID);
+        playerManager.PlayerMovement.IsFlying = false;
         isUnderwater = false;
         isFinishing = false;
         underwaterTime = 5f;

@@ -8,7 +8,7 @@ public class CresseliaPsybeam : MoveBase
 
     private string projectilePath = "Assets/Prefabs/Objects/Moves/Cresselia/CresseliaPsybeam.prefab";
 
-    private DamageInfo damageInfo = new DamageInfo(0, 0.7f, 8, 430, DamageType.Special);
+    private DamageInfo damageInfo = new DamageInfo(0, 0.95f, 8, 480, DamageType.Special);
 
     private Coroutine moveCoroutine;
 

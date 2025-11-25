@@ -15,7 +15,7 @@ public class MeowsticMBasicAtk : BasicAttackBase
         range = 4f;
         attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
         normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1f, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.1f, 0, 0, DamageType.Special, DamageProprieties.IsBasicAttack);
+        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.1f, 3, 70, DamageType.Special, DamageProprieties.IsBasicAttack);
     }
 
     public override void Perform(bool wildPriority)
@@ -29,7 +29,6 @@ public class MeowsticMBasicAtk : BasicAttackBase
             DamageInfo damage = charge == 2 ? boostedDmg : normalDmg;
 
             playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damage, attackPrefab);
-            //playerManager.AnimationManager.PlayAnimation($"ani_atk{charge + 1}_bat_0815");
             playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown(), false);
             playerManager.transform.LookAt(closestEnemy.transform);
             playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);

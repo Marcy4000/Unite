@@ -4,7 +4,7 @@ using UnityEngine;
 public class MarshadowDrainPunch : MoveBase
 {
     // The user strikes in an area dealing damage and healing the user.
-    private DamageInfo damage = new DamageInfo(0, 1f, 6, 260, DamageType.Physical);
+    private DamageInfo damage = new DamageInfo(0, 1.15f, 6, 265, DamageType.Physical);
     private float range = 2.9f;
 
     private Vector3 direction;
@@ -47,8 +47,10 @@ public class MarshadowDrainPunch : MoveBase
 
     private IEnumerator DamageRoutine()
     {
+        playerManager.MovesController.LockEveryAction();
+        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
         playerManager.AnimationManager.PlayAnimation("pm0883_ba20_buturi01");
-        playerManager.StopMovementForTime(1.32f, false);
+        playerManager.StopMovementForTime(1f, false);
         playerManager.transform.rotation = Quaternion.LookRotation(direction);
 
         yield return new WaitForSeconds(0.53f);
@@ -75,6 +77,11 @@ public class MarshadowDrainPunch : MoveBase
             DamageInfo heal = new DamageInfo(playerManager.NetworkObjectId, 0, 0, (short)healAmount, DamageType.Special);
             playerManager.Pokemon.HealDamageRPC(heal);
         }
+
+        yield return new WaitForSeconds(0.475f);
+
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 
     public override void Cancel()
@@ -89,5 +96,7 @@ public class MarshadowDrainPunch : MoveBase
         {
             playerManager.StopCoroutine(damageRoutine);
         }
+        playerManager.MovesController.UnlockEveryAction();
+        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

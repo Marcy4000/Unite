@@ -55,13 +55,10 @@ public class MeowsticMWonderRoom : MoveBase
             }
         };
 
-        playerManager.MovesController.AddMoveStatus(0, ActionStatusType.Disabled);
-        playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
-        playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
-        playerManager.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
+        playerManager.MovesController.LockEveryAction();
         playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
 
-        playerManager.StopMovementForTime(1f);
+        playerManager.StopMovementForTime(0.75f);
         playerManager.transform.LookAt(spawnPosition);
         playerManager.transform.rotation = Quaternion.Euler(0, playerManager.transform.rotation.eulerAngles.y, 0);
         playerManager.AnimationManager.PlayAnimation("Armature_pm0734_00_ba21_tokusyu01");
@@ -70,12 +67,9 @@ public class MeowsticMWonderRoom : MoveBase
 
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.26f);
 
-        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
-        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
-        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
-        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.MovesController.UnlockEveryAction();
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 
@@ -87,10 +81,7 @@ public class MeowsticMWonderRoom : MoveBase
 
     public override void ResetMove()
     {
-        playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
-        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
-        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
-        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
+        playerManager.MovesController.UnlockEveryAction();
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
     }
 }

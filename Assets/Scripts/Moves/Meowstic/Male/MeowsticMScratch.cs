@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class MeowsticMScratch : MoveBase
 {
-    private DamageInfo damage = new DamageInfo(0, 0.35f, 5, 120, DamageType.Special);
+    private DamageInfo damage = new DamageInfo(0, 0.45f, 5, 160, DamageType.Special);
     private float range = 2.5f;
 
     private Vector3 direction;
@@ -48,7 +48,7 @@ public class MeowsticMScratch : MoveBase
         playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
 
         playerManager.AnimationManager.PlayAnimation("Armature_pm0733_00_ba20_buturi01");
-        playerManager.StopMovementForTime(1f);
+        playerManager.StopMovementForTime(0.6f);
         playerManager.transform.rotation = Quaternion.LookRotation(direction);
 
         yield return new WaitForSeconds(0.32f);
@@ -66,6 +66,8 @@ public class MeowsticMScratch : MoveBase
 
             playerManager.StartCoroutine(DamageRoutine(targetPokemon));
         }
+
+        yield return new WaitForSeconds(0.285f);
 
         playerManager.MovesController.UnlockEveryAction();
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
