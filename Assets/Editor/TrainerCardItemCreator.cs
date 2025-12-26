@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -7,7 +8,7 @@ using UnityEngine.AddressableAssets;
 public class TrainerCardItemCreator : EditorWindow
 {
     private const string BackgroundsPath = "Assets/Sprites/Lobby/TrainerCards/Backgrounds/";
-    private const string FramesPath = "Assets/Sprites/Lobby/TrainerCards/Frames";
+    private const string FramesPath = "Assets/Sprites/Lobby/TrainerCards/Frames/";
     private const string SavePath = "Assets/ScriptableObjects/TrainerCard/";
 
     [MenuItem("Tools/Trainer Card Item Creator")]
@@ -37,52 +38,105 @@ public class TrainerCardItemCreator : EditorWindow
         }
 
         // Load all sprites and icons from the folder
-        string iconsPath = Path.Combine(folderPath, "icons");
-        string[] spriteFiles = Directory.GetFiles(folderPath, "t_entrycard_*.png", SearchOption.TopDirectoryOnly);
-        string[] iconFiles = Directory.GetFiles(iconsPath, "t_entrycard_*_icon*.png", SearchOption.TopDirectoryOnly);
+        string iconsPath = Path.Combine(folderPath, "Icons");
+        string[] spriteFiles = Directory.GetFiles(folderPath, "*.png", SearchOption.TopDirectoryOnly).Where(f => Path.GetFileNameWithoutExtension(f).StartsWith("t_entrycard_")).ToArray();
+        string[] iconFiles = Directory.GetFiles(iconsPath, "*.png", SearchOption.TopDirectoryOnly).Where(f => Path.GetFileNameWithoutExtension(f).StartsWith("t_entrycard_") && Path.GetFileNameWithoutExtension(f).Contains("_icon")).ToArray();
 
+        // Group sprites by item name
+        var items = new System.Collections.Generic.Dictionary<string, (string cat, string num, System.Collections.Generic.List<string> sprites)>();
         foreach (string spriteFile in spriteFiles)
         {
             string spriteFileName = Path.GetFileNameWithoutExtension(spriteFile);
-
-            // Match the corresponding icon by reconstructing its name
-            string expectedIconName = ReconstructIconName(spriteFileName);
-            string iconFile = Array.Find(iconFiles, icon => Path.GetFileNameWithoutExtension(icon).Equals(expectedIconName));
-
-            if (iconFile != null)
+            string baseName = RemoveHexSuffix(spriteFileName);
+            var (cat, num) = ParseCategoryAndNumber(baseName);
+            if (cat == null || num == null) continue;
+            string itemName = cat + num;
+            if (!items.ContainsKey(itemName))
             {
-                string itemName = spriteFileName.Replace("t_entrycard_", "");
+                items[itemName] = (cat, num, new System.Collections.Generic.List<string>());
+            }
+            items[itemName].sprites.Add(spriteFile);
+        }
 
+        // Process each unique item
+        foreach (var kvp in items)
+        {
+            string itemName = kvp.Key;
+            var (cat, num, sprites) = kvp.Value;
+            string expectedIconBase = $"t_entrycard_{cat}_icon{num}";
+            var matchingIcons = iconFiles.Where(icon => {
+                string name = Path.GetFileNameWithoutExtension(icon);
+                return name.StartsWith(expectedIconBase) && (name.Length == expectedIconBase.Length || name[expectedIconBase.Length] == '_');
+            }).ToArray();
+            if (sprites.Any() && matchingIcons.Any())
+            {
+                string bestSprite = SelectBestSprite(sprites.ToArray());
+                string bestIcon = SelectBestIcon(matchingIcons);
                 // Create the ScriptableObject
                 TrainerCardItem newItem = ScriptableObject.CreateInstance<TrainerCardItem>();
                 newItem.itemName = itemName;
-                newItem.itemSprite = new AssetReferenceSprite(AssetDatabase.AssetPathToGUID(spriteFile));
-                newItem.itemIcon = new AssetReferenceSprite(AssetDatabase.AssetPathToGUID(iconFile));
-
+                newItem.itemSprite = new AssetReferenceSprite(AssetDatabase.AssetPathToGUID(bestSprite));
+                newItem.itemIcon = new AssetReferenceSprite(AssetDatabase.AssetPathToGUID(bestIcon));
                 // Save the ScriptableObject
-                string assetPath = Path.Combine(categorySavePath, $"{spriteFileName}.asset");
+                string assetPath = Path.Combine(categorySavePath, $"{itemName}.asset");
                 AssetDatabase.CreateAsset(newItem, assetPath);
-
                 Debug.Log($"Created TrainerCardItem: {itemName} at {assetPath}");
             }
             else
             {
-                Debug.LogWarning($"No matching icon found for sprite: {spriteFileName}. Expected icon name: {expectedIconName}");
+                Debug.LogWarning($"Missing assets for item: {itemName}. Sprites: {sprites.Count}, Icons: {matchingIcons.Length}");
             }
         }
     }
 
-    private static string ReconstructIconName(string spriteFileName)
+    private static string RemoveHexSuffix(string name)
     {
-        // Reconstruct icon name by moving "_icon" before the numerical identifier
-        if (spriteFileName.Contains("bg"))
+        var parts = name.Split('_');
+        if (parts.Length > 1 && parts.Last().Length == 16 && parts.Last().All(c => "0123456789abcdefABCDEF".Contains(c)))
         {
-            return spriteFileName.Replace("bg", "bg_icon");
+            return string.Join("_", parts.Take(parts.Length - 1));
         }
-        else if (spriteFileName.Contains("frame"))
+        return name;
+    }
+
+    private static (string cat, string num) ParseCategoryAndNumber(string baseName)
+    {
+        const string prefix = "t_entrycard_";
+        if (!baseName.StartsWith(prefix)) return (null, null);
+        string rest = baseName.Substring(prefix.Length);
+        int i = 0;
+        string cat = "";
+        while (i < rest.Length && !char.IsDigit(rest[i]))
         {
-            return spriteFileName.Replace("frame", "frame_icon");
+            cat += rest[i];
+            i++;
         }
-        return spriteFileName; // Fallback in case the structure doesn't match
+        string num = rest.Substring(i);
+        if (string.IsNullOrEmpty(cat) || string.IsNullOrEmpty(num)) return (null, null);
+        return (cat, num);
+    }
+
+    private static string SelectBestIcon(string[] icons)
+    {
+        // Prefer the one with hex suffix
+        var withHex = icons.FirstOrDefault(icon =>
+        {
+            string name = Path.GetFileNameWithoutExtension(icon);
+            var parts = name.Split('_');
+            return parts.Length > 1 && parts.Last().Length == 16 && parts.Last().All(c => "0123456789abcdefABCDEF".Contains(c));
+        });
+        return withHex ?? icons[0];
+    }
+
+    private static string SelectBestSprite(string[] sprites)
+    {
+        // Prefer the one with hex suffix
+        var withHex = sprites.FirstOrDefault(sprite =>
+        {
+            string name = Path.GetFileNameWithoutExtension(sprite);
+            var parts = name.Split('_');
+            return parts.Length > 1 && parts.Last().Length == 16 && parts.Last().All(c => "0123456789abcdefABCDEF".Contains(c));
+        });
+        return withHex ?? sprites[0];
     }
 }
