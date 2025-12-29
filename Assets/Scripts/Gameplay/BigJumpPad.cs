@@ -1,5 +1,6 @@
 using DG.Tweening;
 using JSAM;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
@@ -13,6 +14,7 @@ public class BigJumpPad : NetworkBehaviour
     [SerializeField] private Transform[] lanes; // Array of lane parents, each containing landing positions
     [SerializeField] private int[] laneAnimations;
     [SerializeField] private Transform lineObject; // Origin point of the jump pad
+    [SerializeField] private string landingPositionTag = "JumpLandingPosition"; // Tag for landing position colliders
 
     [Header("Settings")]
     [SerializeField] private float jumpTime = 1f;
@@ -37,10 +39,22 @@ public class BigJumpPad : NetworkBehaviour
     private float selectionCooldown = 0.2f; // Cooldown time between selection changes
     private float selectionTimer = 0f;
 
+    // Events for UI communication
+    public static event Action<BigJumpPad> OnEnterJumpSelection;
+    public static event Action OnExitJumpSelection;
+    public static event Action<BigJumpPad> OnEnterJumpPad; // When player enters pad area
+    public static event Action OnExitJumpPad; // When player exits pad area
+
+    // Public properties for mobile input handler
+    public bool InJumpSelection => inJumpSelection;
+    public Transform[] Lanes => lanes;
+    public PlayerManager CurrentJumper => currentJumper;
+
     public override void OnNetworkSpawn()
     {
         isActive.OnValueChanged += SetJumpPadActive;
 
+        inJumpSelection = true;
         ExitJumpSelection();
 
         SetJumpPadActive(false, isActive.Value);
@@ -87,6 +101,7 @@ public class BigJumpPad : NetworkBehaviour
 
     private void HandleJumpSelectionState()
     {
+        // Both desktop and mobile use the same input (Recall button/jump button on UI)
         if (!inJumpSelection)
         {
             if (playerControls.Movement.Recall.WasPressedThisFrame())
@@ -96,8 +111,11 @@ public class BigJumpPad : NetworkBehaviour
         }
         else
         {
+#if !UNITY_ANDROID
+            // Desktop: use joystick for selection
             HandleIndicatorSelection();
-
+#endif
+            // Both platforms: MoveB confirms the jump
             if (playerControls.Movement.MoveB.WasPressedThisFrame())
             {
                 PerformJumpServerRPC(currentJumper.NetworkObjectId, currentLane, currentPosition);
@@ -107,6 +125,8 @@ public class BigJumpPad : NetworkBehaviour
 
     private void EnterJumpSelection()
     {
+        if (inJumpSelection) return; // Prevent re-entering
+
         AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_BigJump_Ready);
 
         inJumpSelection = true;
@@ -115,10 +135,14 @@ public class BigJumpPad : NetworkBehaviour
         UpdateIndicatorPosition();
 
         CameraController.Instance.SetSuperJumpCamera(true);
+
+        OnEnterJumpSelection?.Invoke(this);
     }
 
     private void ExitJumpSelection()
     {
+        if (!inJumpSelection) return; // Prevent multiple exits
+
         inJumpSelection = false;
         landingIndicator.SetActive(false);
         lineObject.gameObject.SetActive(false);
@@ -126,7 +150,45 @@ public class BigJumpPad : NetworkBehaviour
         currentPosition = 0;
 
         CameraController.Instance.SetSuperJumpCamera(false);
+
+        OnExitJumpSelection?.Invoke();
     }
+
+    /// <summary>
+    /// Called by mobile input handler when a landing position is tapped.
+    /// Finds the lane and position indices for the tapped transform and performs the jump.
+    /// </summary>
+    public void OnMobileTapLandingPosition(Transform tappedPosition)
+    {
+        if (!inJumpSelection || currentJumper == null || !currentJumper.IsOwner) return;
+
+        // Find the lane and position for the tapped transform
+        for (int laneIndex = 0; laneIndex < lanes.Length; laneIndex++)
+        {
+            Transform lane = lanes[laneIndex];
+            for (int posIndex = 0; posIndex < lane.childCount; posIndex++)
+            {
+                if (lane.GetChild(posIndex) == tappedPosition)
+                {
+                    // Update visual selection before jumping
+                    currentLane = laneIndex;
+                    currentPosition = posIndex;
+                    UpdateIndicatorPosition();
+
+                    // Perform the jump
+                    PerformJumpServerRPC(currentJumper.NetworkObjectId, laneIndex, posIndex);
+                    return;
+                }
+            }
+        }
+
+        Debug.LogWarning($"Tapped position {tappedPosition.name} not found in any lane");
+    }
+
+    /// <summary>
+    /// Gets the tag used by landing position colliders for mobile raycast detection.
+    /// </summary>
+    public string GetLandingPositionTag() => landingPositionTag;
 
     private void HandleIndicatorSelection()
     {
@@ -292,6 +354,7 @@ public class BigJumpPad : NetworkBehaviour
         {
             currentJumper = playerManager;
             LockPlayerMovementRPC(playerManager.NetworkObjectId, RpcTarget.Single(playerManager.OwnerClientId, RpcTargetUse.Temp));
+            OnEnterJumpPad?.Invoke(this);
         }
     }
 
@@ -309,6 +372,7 @@ public class BigJumpPad : NetworkBehaviour
 
         if (currentJumper = playerManager)
         {
+            OnExitJumpPad?.Invoke();
             currentJumper = null;
 
             if (!isJumping)

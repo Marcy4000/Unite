@@ -9,9 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3078081436898392274}
-  m_Layer: 0
+  - component: {fileID: 7868746148962522715}
+  m_Layer: 11
   m_Name: LandIndicator (1)
-  m_TagString: Untagged
+  m_TagString: JumpLandingPosition
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -32,6 +33,27 @@ Transform:
   - {fileID: 7568342718574190817}
   m_Father: {fileID: 6694347045109715014}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &7868746148962522715
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 316086661014936400}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8, y: 2, z: 8}
+  m_Center: {x: 0, y: 0.75, z: 0}
 --- !u!1 &404436018058364200
 GameObject:
   m_ObjectHideFlags: 0
@@ -41,9 +63,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2119855903658702880}
-  m_Layer: 0
+  - component: {fileID: 3534680136590159699}
+  m_Layer: 11
   m_Name: LandIndicator (1)
-  m_TagString: Untagged
+  m_TagString: JumpLandingPosition
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -64,6 +87,27 @@ Transform:
   - {fileID: 3145058411661624999}
   m_Father: {fileID: 4614007573723495844}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3534680136590159699
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 404436018058364200}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8, y: 2, z: 8}
+  m_Center: {x: 0, y: 0.75, z: 0}
 --- !u!1 &2087683851750963935
 GameObject:
   m_ObjectHideFlags: 0
@@ -112,8 +156,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 464601134
+  GlobalObjectIdHash: 474827055
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -121,6 +167,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &6319296174482197662
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -133,6 +181,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d536fc87b12f82246be0b111925d71d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   jumpPadAnimator: {fileID: 5195971021859071414}
   landingIndicator: {fileID: 761319903344838504}
   lanes:
@@ -141,6 +190,7 @@ MonoBehaviour:
   - {fileID: 6694347045109715014}
   laneAnimations: 010000000000000002000000
   lineObject: {fileID: 4449735195202111526}
+  landingPositionTag: JumpLandingPosition
   jumpTime: 1.5
   jumpHeight: 7
   spawnTime: 0
@@ -158,6 +208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   TransitionStateInfoList: []
   m_Animator: {fileID: 5195971021859071414}
 --- !u!65 &8101774773323997268
@@ -289,9 +340,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4868564851599943262}
-  m_Layer: 0
+  - component: {fileID: 6888887409552534862}
+  m_Layer: 11
   m_Name: LandIndicator (1)
-  m_TagString: Untagged
+  m_TagString: JumpLandingPosition
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -312,6 +364,27 @@ Transform:
   - {fileID: 3973784741500560613}
   m_Father: {fileID: 1571120226498452992}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &6888887409552534862
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4506068973092460044}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8, y: 2, z: 8}
+  m_Center: {x: 0, y: 0.75, z: 0}
 --- !u!1 &7798472798590619997
 GameObject:
   m_ObjectHideFlags: 0
@@ -321,9 +394,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4032994677021095180}
-  m_Layer: 0
+  - component: {fileID: 3120173829168347329}
+  m_Layer: 11
   m_Name: LandIndicator
-  m_TagString: Untagged
+  m_TagString: JumpLandingPosition
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -344,6 +418,27 @@ Transform:
   - {fileID: 876020094600709275}
   m_Father: {fileID: 4614007573723495844}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &3120173829168347329
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7798472798590619997}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8, y: 2, z: 8}
+  m_Center: {x: 0, y: 0.75, z: 0}
 --- !u!1 &8014200836606892056
 GameObject:
   m_ObjectHideFlags: 0
@@ -353,9 +448,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5786607766068920845}
-  m_Layer: 0
+  - component: {fileID: 1420763999635368275}
+  m_Layer: 11
   m_Name: LandIndicator
-  m_TagString: Untagged
+  m_TagString: JumpLandingPosition
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -376,6 +472,27 @@ Transform:
   - {fileID: 3913125984253767140}
   m_Father: {fileID: 1571120226498452992}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1420763999635368275
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8014200836606892056}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8, y: 2, z: 8}
+  m_Center: {x: 0, y: 0.75, z: 0}
 --- !u!1 &9064427779218568157
 GameObject:
   m_ObjectHideFlags: 0
@@ -385,9 +502,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6073977827353039112}
-  m_Layer: 0
+  - component: {fileID: 1123706565356151547}
+  m_Layer: 11
   m_Name: LandIndicator
-  m_TagString: Untagged
+  m_TagString: JumpLandingPosition
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -408,6 +526,27 @@ Transform:
   - {fileID: 8617054382796761382}
   m_Father: {fileID: 6694347045109715014}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1123706565356151547
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9064427779218568157}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8, y: 2, z: 8}
+  m_Center: {x: 0, y: 0.75, z: 0}
 --- !u!1001 &838380773055325040
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -466,10 +605,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3567276577299147358, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -1656080703557605207, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -474193117416216998, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
         type: 3}
       propertyPath: m_Name
       value: pref_Indicator_SelectCircle_superjump_lv3
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -540,10 +699,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3567276577299147358, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -1656080703557605207, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -474193117416216998, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
         type: 3}
       propertyPath: m_Name
       value: pref_Indicator_SelectCircle_superjump_lv3
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -614,10 +793,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3567276577299147358, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -1656080703557605207, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -474193117416216998, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
         type: 3}
       propertyPath: m_Name
       value: pref_Indicator_SelectCircle_superjump_lv3
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -688,10 +887,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3567276577299147358, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -1656080703557605207, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -474193117416216998, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
         type: 3}
       propertyPath: m_Name
       value: pref_Indicator_SelectCircle_superjump_lv3
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -879,7 +1098,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
 --- !u!95 &5195971021859071414
 Animator:
-  serializedVersion: 5
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -893,6 +1112,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -962,10 +1182,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3567276577299147358, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -1656080703557605207, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -474193117416216998, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
         type: 3}
       propertyPath: m_Name
       value: pref_Indicator_SelectCircle_superjump_lv3
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1036,10 +1276,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -3567276577299147358, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -1656080703557605207, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: -474193117416216998, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
         type: 3}
       propertyPath: m_Name
       value: pref_Indicator_SelectCircle_superjump_lv3
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2c0f1d33ec4a3014581db50b6de4bce2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

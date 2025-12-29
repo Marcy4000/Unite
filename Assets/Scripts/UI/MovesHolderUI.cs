@@ -8,6 +8,10 @@ public class MovesHolderUI : MonoBehaviour
     [SerializeField] private BattleItemUI battleItemUI;
     [SerializeField] private EnergyUI energyUI;
 
+    [Header("Jump Mode (Mobile Only)")]
+    [SerializeField] private GameObject normalButtonsHolder; // Parent of normal move buttons
+    [SerializeField] private GameObject jumpModeOverlay; // Overlay shown during jump selection
+
     public void SetEnergyBallState(bool isPressed)
     {
         energyUI.SetBallPressed(isPressed);
@@ -101,5 +105,38 @@ public class MovesHolderUI : MonoBehaviour
     public void InitializeBattleItemUI(BattleItemAsset battleItem)
     {
         battleItemUI.Initialize(battleItem);
+    }
+
+    /// <summary>
+    /// Shows the jump button on mobile when player enters a jump pad.
+    /// The button will trigger the same input as the Recall button.
+    /// </summary>
+    public void ShowJumpButton()
+    {
+        if (normalButtonsHolder != null)
+        {
+            normalButtonsHolder.SetActive(false);
+        }
+
+        if (jumpModeOverlay != null)
+        {
+            jumpModeOverlay.SetActive(true);
+        }
+    }
+
+    /// <summary>
+    /// Hides the jump button and restores normal buttons when player exits jump pad.
+    /// </summary>
+    public void HideJumpButton()
+    {
+        if (normalButtonsHolder != null)
+        {
+            normalButtonsHolder.SetActive(true);
+        }
+
+        if (jumpModeOverlay != null)
+        {
+            jumpModeOverlay.SetActive(false);
+        }
     }
 }

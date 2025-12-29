@@ -39,6 +39,19 @@ public class BattleUIManager : MonoBehaviour
     private void Start()
     {
         GameManager.Instance.onGameStateChanged += HandleGameStateChanged;
+
+#if UNITY_ANDROID
+        BigJumpPad.OnEnterJumpPad += HandleJumpPadEnter;
+        BigJumpPad.OnExitJumpPad += HandleJumpPadExit;
+#endif
+    }
+
+    private void OnDestroy()
+    {
+#if UNITY_ANDROID
+        BigJumpPad.OnEnterJumpPad -= HandleJumpPadEnter;
+        BigJumpPad.OnExitJumpPad -= HandleJumpPadExit;
+#endif
     }
 
     private void HandleGameStateChanged(GameState currentState)
@@ -200,4 +213,16 @@ public class BattleUIManager : MonoBehaviour
     {
         surrenderTextbox.ShowSurrenderTextbox(yourTeamSurrendered);
     }
+
+#if UNITY_ANDROID
+    private void HandleJumpPadEnter(BigJumpPad jumpPad)
+    {
+        currentUI.ShowJumpButton();
+    }
+
+    private void HandleJumpPadExit()
+    {
+        currentUI.HideJumpButton();
+    }
+#endif
 }
