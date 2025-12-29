@@ -19,6 +19,7 @@ public class FullHeal : BattleItemBase
         {
             playerManager.Pokemon.ClearStatusEffectsRPC();
             playerManager.Pokemon.AddStatusEffect(statusEffect);
+            SpatialAudioManager.Instance.PlaySpatialSound(DefaultAudioSounds.Play_Props_FullHeal_JingHua, playerManager.Vision, AudioAudibility.Everyone, playerManager);
             wasUseSuccessful = true;
         }
         base.Finish();

@@ -54,6 +54,10 @@ public class UniteRoyaleResultsManager : MonoBehaviour
             if (i < players.Count)
             {
                 playerNames[i].text = $"{gameResults.PlayerStats[i].position}\n{players[i].Data["PlayerName"].Value}";
+                if (players[i].Id == LobbyController.Instance.Player.Id)
+                {
+                    playerNames[i].color = Color.yellow;
+                }
             }
             else
             {

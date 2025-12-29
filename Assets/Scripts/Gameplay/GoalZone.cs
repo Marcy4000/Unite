@@ -279,6 +279,7 @@ public class GoalZone : NetworkBehaviour
         if (IsServer)
         {
             goalStatus.Value = GoalStatus.Destroyed;
+            SpatialAudioManager.Instance.PlaySpatialSound(DefaultAudioSounds.Play_UI_InGame_TransitionDestroyed, transform.position, team, AudioAudibility.Everyone);
         }
     }
 

@@ -17,6 +17,13 @@ public class RacingResultsPlayer : MonoBehaviour
         Unity.Services.Lobbies.Models.Player player = LobbyController.Instance.Lobby.Players.Find(p => p.Id == racePlayerResult.PlayerID);
 
         trainerNameText.text = player.Data["PlayerName"].Value;
+        
+        // Set local player's name to yellow
+        if (racePlayerResult.PlayerID == LobbyController.Instance.Player.Id)
+        {
+            trainerNameText.color = Color.yellow;
+        }
+        
         trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value));
 
         CharacterInfo currentPokemon = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value));

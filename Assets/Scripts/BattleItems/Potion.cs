@@ -26,6 +26,7 @@ public class Potion : BattleItemBase
         {
             wasUseSuccessful = true;
             playerManager.Pokemon.HealDamageRPC(Mathf.RoundToInt((playerManager.Pokemon.GetMaxHp() * healAmount) + 160f));
+            SpatialAudioManager.Instance.PlaySpatialSound(DefaultAudioSounds.Play_Props_Potion_ZhiLiao, playerManager.Vision, AudioAudibility.Everyone, playerManager);
         }
         base.Finish();
     }

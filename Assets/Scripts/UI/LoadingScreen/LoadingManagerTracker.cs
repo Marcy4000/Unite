@@ -67,13 +67,13 @@ public class LoadingManagerTracker : NetworkBehaviour
             ProgressTrackers[NetworkManager.LocalClientId].Progress.Value : m_LocalProgress;
         private set
         {
+            // Always update local progress first
+            m_LocalProgress = value;
+            
+            // Then sync to network if available
             if (IsSpawned && ProgressTrackers.ContainsKey(NetworkManager.LocalClientId) && ProgressTrackers[NetworkManager.LocalClientId].IsSpawned)
             {
                 ProgressTrackers[NetworkManager.LocalClientId].Progress.Value = value;
-            }
-            else
-            {
-                m_LocalProgress = value;
             }
         }
     }
@@ -141,9 +141,10 @@ public class LoadingManagerTracker : NetworkBehaviour
                 if (tracker.IsSpawned)
                 {
                     ProgressTrackers[tracker.OwnerClientId] = tracker;
-                    if (tracker.OwnerClientId == NetworkManager.LocalClientId)
+                    // Sync any accumulated local progress to the network tracker
+                    if (tracker.OwnerClientId == NetworkManager.LocalClientId && m_LocalProgress > 0)
                     {
-                        LocalProgress = Mathf.Max(m_LocalProgress, LocalProgress);
+                        tracker.Progress.Value = m_LocalProgress;
                     }
                 }
             }

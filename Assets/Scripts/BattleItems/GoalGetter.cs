@@ -24,6 +24,7 @@ public class GoalGetter : BattleItemBase
         {
             wasUseSuccessful = true;
             playerManager.AddScoreBoostRPC(new ScoreBoost(0, ScoreSpeedFactor.GoalGetter, boostDuration, true));
+            SpatialAudioManager.Instance.PlaySpatialSound(DefaultAudioSounds.Play_Props_JiaSuZhuangZhi, playerManager.Vision, AudioAudibility.Everyone, playerManager);
         }
         base.Finish();
     }

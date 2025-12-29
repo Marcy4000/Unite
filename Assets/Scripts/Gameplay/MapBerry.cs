@@ -67,25 +67,22 @@ public class MapBerry : NetworkBehaviour
                 default:
                     break;
             }
-            PlaySoundRPC(RpcTarget.Single(player.OwnerClientId, RpcTargetUse.Temp));
+            PlayBerrySound(player);
             isCollected.Value = true;
         }
     }
 
-    [Rpc(SendTo.SpecifiedInParams)]
-    private void PlaySoundRPC(RpcParams rpcParams = default)
+    private void PlayBerrySound(PlayerManager player)
     {
-        switch (berryType)
+        DefaultAudioSounds sound = berryType switch
         {
-            case BerryType.HealBerry:
-                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_Fruit_Hp, transform);
-                break;
-            case BerryType.SpeedBerry:
-                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_Fruit_Speed, transform);
-                break;
-            default:
-                break;
-        }
+            BerryType.HealBerry => DefaultAudioSounds.Play_UI_InGame_Fruit_Hp,
+            BerryType.SpeedBerry => DefaultAudioSounds.Play_UI_InGame_Fruit_Speed,
+            _ => DefaultAudioSounds.Play_UI_InGame_Fruit_Hp
+        };
+
+        // Play the sound only to the player who collected the berry
+        SpatialAudioManager.Instance.PlaySpatialSound(sound, player.transform.position, player.CurrentTeam.Team, AudioAudibility.Everyone);
     }
 
     private void Update()

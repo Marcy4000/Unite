@@ -39,6 +39,7 @@ public class XSpeed : BattleItemBase
             {
                 playerManager.Pokemon.RemoveStatChangeRPC(stat);
             }
+            SpatialAudioManager.Instance.PlaySpatialSound(DefaultAudioSounds.Play_Props_XSpeed_JiPao, playerManager.Vision, AudioAudibility.Everyone, playerManager);
         }
         base.Finish();
     }

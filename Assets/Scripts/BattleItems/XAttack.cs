@@ -28,6 +28,7 @@ public class XAttack : BattleItemBase
             playerManager.Pokemon.AddStatChange(atkBoost);
             playerManager.Pokemon.AddStatChange(spAtkBoost);
             playerManager.Pokemon.AddStatChange(atkSpdBoost);
+            SpatialAudioManager.Instance.PlaySpatialSound(DefaultAudioSounds.Play_Props_XAttack_KuangBao, playerManager.Vision, AudioAudibility.Everyone, playerManager);
         }
         base.Finish();
     }

@@ -35,21 +35,52 @@ public class LoadingScreen : MonoBehaviour
 
     private void OnTrackersUpdated()
     {
-        if (!NetworkManager.Singleton.IsServer)
+        if (NetworkManager.Singleton.IsServer)
+        {
+            NetworkedLoadingProgressTracker[] trackers = FindObjectsByType<NetworkedLoadingProgressTracker>(FindObjectsSortMode.None);
+            List<ulong> playerIds = new List<ulong>();
+            foreach (var tracker in trackers)
+            {
+                if (playerIds.Contains(tracker.OwnerClientId))
+                {
+                    tracker.NetworkObject.Despawn(true);
+                    continue;
+                }
+                playerIds.Add(tracker.OwnerClientId);
+            }
+        }
+        
+        // Re-subscribe to all trackers to handle race conditions
+        UpdateProgressSubscriptions();
+    }
+
+    private void UpdateProgressSubscriptions()
+    {
+        // Only update if the loading screen is active and we have players
+        if (!holder.activeSelf || playerList.Count == 0)
         {
             return;
         }
 
-        NetworkedLoadingProgressTracker[] trackers = FindObjectsByType<NetworkedLoadingProgressTracker>(FindObjectsSortMode.None);
-        List<ulong> playerIds = new List<ulong>();
-        foreach (var tracker in trackers)
+        foreach (var playerIcon in playerList)
         {
-            if (playerIds.Contains(tracker.OwnerClientId))
+            if (playerIcon.CurrentPlayer == null)
             {
-                tracker.NetworkObject.Despawn(true);
                 continue;
             }
-            playerIds.Add(tracker.OwnerClientId);
+
+            ulong clientId = ulong.Parse(playerIcon.CurrentPlayer.Data["OwnerID"].Value);
+            loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
+            
+            if (progressTracker != null && progressTracker.IsSpawned)
+            {
+                // Unsubscribe first to avoid duplicate subscriptions
+                progressTracker.Progress.OnValueChanged -= playerIcon.UpdateProgressBar;
+                // Re-subscribe
+                progressTracker.Progress.OnValueChanged += playerIcon.UpdateProgressBar;
+                // Update the bar immediately with current progress
+                playerIcon.UpdateProgressBar(0, progressTracker.Progress.Value);
+            }
         }
     }
 
@@ -187,6 +218,9 @@ public class LoadingScreen : MonoBehaviour
                 playerList.Add(loadingScreenPlayer);
             }
         }
+        
+        // Update subscriptions after all players are added
+        UpdateProgressSubscriptions();
     }
 
     public void OnSceneEvent(SceneEvent sceneEvent)
