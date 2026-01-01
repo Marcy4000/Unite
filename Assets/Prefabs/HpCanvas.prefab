@@ -32,10 +32,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 920896927196140088}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.001, y: -0.0023}
-  m_SizeDelta: {x: 1.70875, y: 0.2397}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1743914076654347851
 CanvasRenderer:
@@ -794,25 +794,30 @@ MonoBehaviour:
   hpBar: {fileID: 8934469506320073401}
   shieldBar: {fileID: 619418929813540095}
   damageBar: {fileID: 3167304701205769320}
-  expBar: {fileID: 656282534842516931}
-  storedExpBar: {fileID: 9157168502252101602}
-  energyBG: {fileID: 7595144068744694338}
-  genericGuageBar: {fileID: 292229098733492837}
-  lvText: {fileID: 5448810540541169056}
-  playerNameText: {fileID: 2121716453485269283}
-  energyText: {fileID: 3991306128724340146}
-  pokemon: {fileID: 0}
-  orangeEnergyBG: {fileID: 21300000, guid: 4fd9f15fdb900ae499eba79e312e8cbf, type: 3}
-  blueEnergyBG: {fileID: 21300000, guid: 5c194d1ed3b6ff54192a3dac52adb519, type: 3}
-  generigGuage: {fileID: 8720253224023248238}
-  eyeIcon: {fileID: 6095072623054890236}
-  linePrefab: {fileID: 7479052449914554761, guid: 3a61168937f2d5e4e8ee2c027ee5a523,
-    type: 3}
-  linesHolder: {fileID: 1258920485888525843}
   hpBarColors:
   - {fileID: 21300000, guid: 52dc274d6ece6a74eb866d5e6768aeb1, type: 3}
   - {fileID: 21300000, guid: 20f65c98bd8817849a0db50ced434b6d, type: 3}
   - {fileID: 21300000, guid: 092865663f52df34cba3058e1d8da212, type: 3}
+  linePrefab: {fileID: 7479052449914554761, guid: 3a61168937f2d5e4e8ee2c027ee5a523,
+    type: 3}
+  linesHolder: {fileID: 1258920485888525843}
+  hpPerMarker: 1000
+  expBar: {fileID: 656282534842516931}
+  storedExpBar: {fileID: 9157168502252101602}
+  lvText: {fileID: 5448810540541169056}
+  playerNameText: {fileID: 2121716453485269283}
+  eyeIcon: {fileID: 6095072623054890236}
+  energyBG: {fileID: 7595144068744694338}
+  energyText: {fileID: 3991306128724340146}
+  orangeEnergyBG: {fileID: 21300000, guid: 4fd9f15fdb900ae499eba79e312e8cbf, type: 3}
+  blueEnergyBG: {fileID: 21300000, guid: 5c194d1ed3b6ff54192a3dac52adb519, type: 3}
+  generigGuage: {fileID: 8720253224023248238}
+  genericGuageBar: {fileID: 292229098733492837}
+  modulesContainer: {fileID: 6175372883464148602}
+  prefabModules: []
+  barRectTransform: {fileID: 1820318213114527232}
+  wildBarWidth: 1
+  objectiveBarWidth: 2
 --- !u!114 &4839206435105611476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -857,10 +862,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 920896927196140088}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.001, y: -0.0023}
-  m_SizeDelta: {x: 1.70875, y: 0.2397}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &515658081680146926
 CanvasRenderer:
@@ -1007,10 +1012,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 920896927196140088}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.001, y: -0.0023}
-  m_SizeDelta: {x: 1.70875, y: 0.2397}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6988622988489027005
 CanvasRenderer:
@@ -1161,10 +1166,10 @@ RectTransform:
   - {fileID: 1258920485888525843}
   m_Father: {fileID: 1820318213114527232}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0.00527, y: -0.0012}
-  m_SizeDelta: {x: 1.6956, y: 0.2371}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 1, y: 0.5}
+  m_AnchoredPosition: {x: 0.004400015, y: -0.0012}
+  m_SizeDelta: {x: -0.1239, y: 0.2371}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2343421707412105746
 MonoBehaviour:

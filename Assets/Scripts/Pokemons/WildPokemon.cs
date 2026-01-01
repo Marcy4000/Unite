@@ -11,7 +11,7 @@ public class WildPokemon : NetworkBehaviour
     private Pokemon pokemon;
     private AnimationManager animationManager;
     private WildPokemonInfo wildPokemonInfo;
-    [SerializeField] private HPBarWild hpBar;
+    [SerializeField] private HPBar hpBar;
     [SerializeField] private RedBlueBuffAura redBlueBuffAura;
 
     [SerializeField] private GameObject soldierPrefab;
@@ -397,6 +397,7 @@ public class WildPokemon : NetworkBehaviour
                 pokemon.SetNewPokemon(handle.Result);
                 hpBar.SetPokemon(pokemon);
                 hpBar.InitializeEnergyUI(EnergyYield);
+                hpBar.ConfigureBarSize(pokemon.Type);
 
                 if (isObjective)
                 {

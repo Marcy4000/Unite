@@ -56,8 +56,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3353566335
+  GlobalObjectIdHash: 66388048
   InScenePlacedSourceGlobalObjectIdHash: 2640768568
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -65,6 +67,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &5832044233672380169
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -77,6 +81,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2af2e69055f68e94aa29e80140ce9f0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   damagePrefab: {fileID: 4424315286788905445, guid: c7441dfa30daa4c4a9a2b2b15cdb9a96,
     type: 3}
 --- !u!136 &7613990525575695890
@@ -114,7 +119,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 788d5d11b372c2b40816f4d1a7c56c77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hpBar: {fileID: 5284035416719741777}
+  ShowTopMostFoldoutHeaderGroup: 1
+  hpBar: {fileID: 3897751501960073310}
   redBlueBuffAura: {fileID: 3820963255332138539}
   soldierPrefab: {fileID: 4674675999896457163, guid: 61cc06971931f61498bb700401dc4751,
     type: 3}
@@ -172,6 +178,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
   UseUnreliableDeltas: 0
   SyncPositionX: 1
   SyncPositionY: 1
@@ -189,6 +209,7 @@ MonoBehaviour:
   UseQuaternionCompression: 0
   UseHalfFloatPrecision: 0
   InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
 --- !u!114 &-106310329676102820
@@ -203,6 +224,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkRigidbodyBaseExpanded: 0
+  UseRigidBodyForMotion: 0
+  AutoUpdateKinematicState: 1
+  AutoSetKinematicOnDespawn: 1
 --- !u!114 &2849314583341337282
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -215,6 +241,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36c573e7e80b17e47b97cad21509ad9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &2054797202977555652
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -227,6 +254,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f21964570dc23c84b8850c022345431e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
   wildPokemon: {fileID: 8415087467801378016}
   animationManager: {fileID: 2849314583341337282}
   agent: {fileID: 1884056972833796195}
@@ -519,15 +547,15 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 2624253125846763847}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5284035416719741777 stripped
+--- !u!114 &3897751501960073310 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7872171646036466198, guid: 69b1a2b4911620f4b93849ac6c5cd7a9,
+  m_CorrespondingSourceObject: {fileID: 1332115543462598937, guid: 69b1a2b4911620f4b93849ac6c5cd7a9,
     type: 3}
   m_PrefabInstance: {fileID: 2624253125846763847}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9471ea741726e8148a0124e4e0914b1e, type: 3}
+  m_Script: {fileID: 11500000, guid: 3da3e8633f234414d8d7b622990ef193, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

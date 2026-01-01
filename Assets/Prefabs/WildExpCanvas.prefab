@@ -161,7 +161,7 @@ GameObject:
   - component: {fileID: 868307847897760657}
   - component: {fileID: 5186025063020119869}
   - component: {fileID: 1916243250085464895}
-  - component: {fileID: 7872171646036466198}
+  - component: {fileID: 1332115543462598937}
   m_Layer: 6
   m_Name: WildExpCanvas
   m_TagString: Untagged
@@ -225,7 +225,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d533458e97f99140b4f11198437fd35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &7872171646036466198
+--- !u!114 &1332115543462598937
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -234,16 +234,35 @@ MonoBehaviour:
   m_GameObject: {fileID: 2165376201691215407}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9471ea741726e8148a0124e4e0914b1e, type: 3}
+  m_Script: {fileID: 11500000, guid: 3da3e8633f234414d8d7b622990ef193, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   hpBar: {fileID: 2468554398562785106}
   shieldBar: {fileID: 5847664306076047636}
   damageBar: {fileID: 8235688783498967427}
+  hpBarColors:
+  - {fileID: 21300000, guid: 85352f75509e6f943b38803131556bba, type: 3}
+  - {fileID: 21300000, guid: 20f65c98bd8817849a0db50ced434b6d, type: 3}
+  - {fileID: 21300000, guid: 092865663f52df34cba3058e1d8da212, type: 3}
+  linePrefab: {fileID: 0}
+  linesHolder: {fileID: 0}
+  hpPerMarker: 1000
+  expBar: {fileID: 0}
+  storedExpBar: {fileID: 0}
+  lvText: {fileID: 0}
+  playerNameText: {fileID: 0}
+  eyeIcon: {fileID: 0}
   energyBG: {fileID: 3519794841412558761}
-  bar: {fileID: 4682789568847145963}
   energyText: {fileID: 7988394317286783065}
-  pokemon: {fileID: 0}
+  orangeEnergyBG: {fileID: 21300000, guid: b3441e9289305e442a80f3195688a8d1, type: 3}
+  blueEnergyBG: {fileID: 21300000, guid: b3441e9289305e442a80f3195688a8d1, type: 3}
+  generigGuage: {fileID: 0}
+  genericGuageBar: {fileID: 0}
+  modulesContainer: {fileID: 868307847897760657}
+  prefabModules: []
+  barRectTransform: {fileID: 4682789568847145963}
+  wildBarWidth: 1
+  objectiveBarWidth: 2
 --- !u!1 &3710773048336270930
 GameObject:
   m_ObjectHideFlags: 0
@@ -632,15 +651,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 0
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
