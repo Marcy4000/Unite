@@ -223,6 +223,13 @@ public static class MoveDatabase
             case AvailableMoves.SerperiorWringOut:
                 return new SerperiorWringOut();
 
+            case AvailableMoves.DuraLaserFocus:
+                return new DuraLaserFocus();
+            case AvailableMoves.DuraMetalClaw:
+                return new DuraMetalClaw();
+            case AvailableMoves.DuraFlashCannon:
+                return new DuraFlashCannon();
+
             default:
                 return null;
         }
@@ -334,4 +341,12 @@ public enum AvailableMoves : uint
     SerperiorWringOut,
     SerperiorBrutalSwing,
     SerperiorUnite,
+
+    DuraLaserFocus,
+    DuraFlashCannon,
+    DuraDragonPulse,
+    DuraDragonTail,
+    DuraMetalClaw,
+    DuraStelthRock,
+    DuraludonUnite
 }

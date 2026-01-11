@@ -61,32 +61,48 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    public void SetSuperJumpCamera(bool isSuperJump)
+    public void ZoomCamera(Vector3 targetOffset, float targetFOV = 25f, float duration = 1.0f)
     {
-        virtualCamera.m_Lens.FieldOfView = isSuperJump ? 30 : 25;
-        var trasposer = virtualCamera.GetCinemachineComponent<CinemachineTransposer>();
-        Vector3 targetOffset = isSuperJump ? new Vector3(0, 57.7f, -61) : new Vector3(0, 18.85f, -18.6f);
-
         if (superJumpCameraCoroutine != null)
         {
             StopCoroutine(superJumpCameraCoroutine);
         }
-        superJumpCameraCoroutine = StartCoroutine(SmoothTransition(trasposer, targetOffset));
+        superJumpCameraCoroutine = StartCoroutine(SmoothZoomTransition(targetFOV, targetOffset, duration));
     }
 
-    private IEnumerator SmoothTransition(CinemachineTransposer trasposer, Vector3 targetOffset)
+    public void ResetZoom()
     {
+        ZoomCamera(new Vector3(0, 18.85f, -18.6f), 25f);
+    }
+
+    public void SetSuperJumpCamera(bool isSuperJump)
+    {
+        if (isSuperJump)
+        {
+            ZoomCamera(new Vector3(0, 57.7f, -61), 30f);
+        }
+        else
+        {
+            ResetZoom();
+        }
+    }
+
+    private IEnumerator SmoothZoomTransition(float targetFOV, Vector3 targetOffset, float duration)
+    {
+        var trasposer = virtualCamera.GetCinemachineComponent<CinemachineTransposer>();
+        float initialFOV = virtualCamera.m_Lens.FieldOfView;
         Vector3 initialOffset = trasposer.m_FollowOffset;
-        float transitionDuration = 1.0f; // Duration of the transition in seconds
         float elapsedTime = 0f;
 
-        while (elapsedTime < transitionDuration)
+        while (elapsedTime < duration)
         {
-            trasposer.m_FollowOffset = Vector3.Lerp(initialOffset, targetOffset, elapsedTime / transitionDuration);
+            virtualCamera.m_Lens.FieldOfView = Mathf.Lerp(initialFOV, targetFOV, elapsedTime / duration);
+            trasposer.m_FollowOffset = Vector3.Lerp(initialOffset, targetOffset, elapsedTime / duration);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
+        virtualCamera.m_Lens.FieldOfView = targetFOV;
         trasposer.m_FollowOffset = targetOffset;
 
         superJumpCameraCoroutine = null;

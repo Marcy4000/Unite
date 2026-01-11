@@ -67,6 +67,8 @@ public static class BasicAttacksDatabase
                 return new SerperiorBasicAtk();
             case "wildpokemon":
                 return new WildPokemonBasicAtk();
+            case "duraludon":
+                return new DuraBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }
