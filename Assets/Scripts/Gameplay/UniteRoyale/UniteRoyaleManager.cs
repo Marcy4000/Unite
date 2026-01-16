@@ -38,7 +38,10 @@ public class UniteRoyaleManager : NetworkBehaviour
 {
     public static UniteRoyaleManager Instance { get; private set; }
 
+    [SerializeField] private GameObject trainerPrefab;
+
     private PlayerNetworkManager[] playersInGame;
+    private Dictionary<ulong, UniteRoyaleTrainer> playerTrainers = new Dictionary<ulong, UniteRoyaleTrainer>();
 
     private NetworkList<UniteRoyalePlayerStats> playerStats;
 
@@ -89,6 +92,41 @@ public class UniteRoyaleManager : NetworkBehaviour
         };
     }
 
+    private void SpawnTrainers()
+    {
+        if (!IsServer || trainerPrefab == null)
+        {
+            Debug.LogWarning("Cannot spawn trainers: IsServer=" + IsServer + ", trainerPrefab=" + (trainerPrefab != null));
+            return;
+        }
+
+        foreach (var player in playersInGame)
+        {
+            if (player == null || playerTrainers.ContainsKey(player.NetworkObjectId))
+            {
+                continue;
+            }
+
+            // Spawn trainer at player position
+            Vector3 spawnPosition = player.transform.position + Vector3.right * 2f;
+            GameObject trainerObj = Instantiate(trainerPrefab, spawnPosition, Quaternion.identity);
+            NetworkObject trainerNetObj = trainerObj.GetComponent<NetworkObject>();
+            
+            if (trainerNetObj != null)
+            {
+                // Spawn with client ownership
+                trainerNetObj.SpawnWithOwnership(player.OwnerClientId, true);
+                
+                UniteRoyaleTrainer trainer = trainerObj.GetComponent<UniteRoyaleTrainer>();
+                if (trainer != null)
+                {
+                    trainer.SetAssignedPlayer(player.NetworkObjectId);
+                    playerTrainers[player.NetworkObjectId] = trainer;
+                }
+            }
+        }
+    }
+
     private void OnPlayerStatsChangedHandler(PlayerStats newStats)
     {
         if (!IsServer) return;
@@ -128,6 +166,7 @@ public class UniteRoyaleManager : NetworkBehaviour
                 {
                     player.Pokemon.GainExperienceRPC(100000);
                 }
+                SpawnTrainers();
                 NotifyPlayersInitializedRPC();
                 break;
             case GameState.Ended:

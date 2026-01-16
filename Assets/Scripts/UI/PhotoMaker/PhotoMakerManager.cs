@@ -19,6 +19,8 @@ public class PhotoMakerManager : MonoBehaviour
         public Vector3 Position;
         public Vector3 Rotation;
         public string Animation;
+        public bool IsPaused = false;
+        public float PausedTime = 0f;
     }
 
     [System.Serializable]
@@ -42,6 +44,7 @@ public class PhotoMakerManager : MonoBehaviour
     [SerializeField] private ClothesSelector clothesSelector;
     [SerializeField] private GameObject clothesMenu;
     [SerializeField] private DialogueTrigger dialogueTrigger;
+    [SerializeField] private Toggle animationPauseToggle;
 
     [SerializeField] private GameObject trainerCardHolder;
     [SerializeField] private Image trainerCardBackground, trainerCardFrame;
@@ -69,6 +72,7 @@ public class PhotoMakerManager : MonoBehaviour
         prevTrainerButton.onClick.AddListener(SelectPreviousTrainer);
         spawnTrainerButton.onClick.AddListener(SpawnTrainer);
         despawnTrainerButton.onClick.AddListener(DespawnTrainer);
+        animationPauseToggle.onValueChanged.AddListener(OnAnimationPauseToggled);
 
         SpawnTrainer();
 
@@ -109,6 +113,14 @@ public class PhotoMakerManager : MonoBehaviour
 
         trainerModels[currentTrainerIndex].InitializeClothes(PlayerClothesInfo.Deserialize(trainerClothesInputField.text));
         UpdateAnimationList();
+    }
+
+    private void OnAnimationPauseToggled(bool isOn)
+    {
+        if (currentTrainerIndex == -1 || trainerModels.Count == 0) return;
+        if (!trainerModels[currentTrainerIndex].IsInitialized) return;
+
+        trainerModels[currentTrainerIndex].ActiveAnimator.speed = isOn ? 0f : 1f;
     }
 
     private void UpdateAnimationList()
@@ -181,12 +193,15 @@ public class PhotoMakerManager : MonoBehaviour
         nextTrainerButton.interactable = hasTrainer && trainerModels.Count > 1;
         prevTrainerButton.interactable = hasTrainer && trainerModels.Count > 1;
         despawnTrainerButton.interactable = hasTrainer;
+        animationPauseToggle.interactable = hasTrainer;
 
         if (hasTrainer)
         {
             currentTrainerText.text = $"Trainer {currentTrainerIndex + 1}";
             trainerClothesInputField.text = trainerModels[currentTrainerIndex].PlayerClothesInfo.Serialize();
             UpdateAnimationList();
+
+            animationPauseToggle.isOn = trainerModels[currentTrainerIndex].ActiveAnimator.speed == 0f;
 
             if (trainerCardEditorMode && trainerCardHolder != null)
             {
@@ -262,7 +277,9 @@ public class PhotoMakerManager : MonoBehaviour
                 Clothes = trainer.PlayerClothesInfo.Serialize(),
                 Position = trainer.transform.position,
                 Rotation = trainer.transform.rotation.eulerAngles,
-                Animation = trainer.ActiveAnimator.GetCurrentAnimatorClipInfo(0)[0].clip.name
+                Animation = trainer.ActiveAnimator.GetCurrentAnimatorClipInfo(0)[0].clip.name,
+                IsPaused = trainer.ActiveAnimator.speed == 0f,
+                PausedTime = trainer.ActiveAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime
             };
             wrapper.trainers.Add(data);
         }
@@ -370,6 +387,16 @@ public class PhotoMakerManager : MonoBehaviour
         else
         {
             Debug.LogWarning($"Animation '{data.Animation}' not found for trainer. Playing default state.");
+        }
+
+        if (data.IsPaused)
+        {
+            trainerModel.ActiveAnimator.speed = 0f;
+            trainerModel.ActiveAnimator.Play(data.Animation, 0, data.PausedTime);
+        }
+        else
+        {
+            trainerModel.ActiveAnimator.speed = 1f;
         }
     }
 

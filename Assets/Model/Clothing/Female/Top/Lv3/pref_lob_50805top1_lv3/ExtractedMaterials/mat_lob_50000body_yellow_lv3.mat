@@ -12,11 +12,13 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _ATVECTOR_X
+  - _ATVECTOR_Y
   - _DEBUG_OFF
   - _NORMALMAP
   - _SHTYPE_LERP
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _USE_OBJECT_SPACE
+  - _VTEX_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -120,7 +122,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.4472136
     - _GlossyReflections: 1
-    - _MainlightAttenuation: 0.04
+    - _MainlightAttenuation: 10
     - _Mask: 1
     - _Metallic: 0
     - _MetallicOffset: 0

@@ -1,5 +1,7 @@
+using System.Collections;
 using JSAM;
 using TMPro;
+using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -106,6 +108,7 @@ public class MainMenuUI : MonoBehaviour
         {
             UpdateTrainerModel();
         }
+        PlayTrainerModelAnimation();
     }
 
     public void ShowClothesMenu()
@@ -175,7 +178,25 @@ public class MainMenuUI : MonoBehaviour
 
     public void UpdateTrainerModel()
     {
-        trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
+        StartCoroutine(UpdateTrainerModelRoutine());
+    }
+
+    private IEnumerator UpdateTrainerModelRoutine()
+    {
+        PlayerClothesInfo clothesInfo = PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value);
+
+        trainerModel.InitializeClothes(clothesInfo);
+
+        yield return null;
+        yield return null;
+
+        PlayTrainerModelAnimation();
+    }
+
+    private void PlayTrainerModelAnimation()
+    {
+        string animName = trainerModel.PlayerClothesInfo.IsMale ? "ani_pos51_lob_male" : "ani_pos51_lob_female";
+        trainerModel.ActiveAnimator.Play(animName);
     }
 
     public void LoadPhotoMaker()

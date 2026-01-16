@@ -27,9 +27,23 @@ public class BoneSync : MonoBehaviour
 
     private void SyncBoneTransforms(Transform baseBone, Transform clothingBone)
     {
-        clothingBone.localPosition = baseBone.localPosition;
-        clothingBone.localRotation = baseBone.localRotation;
-        clothingBone.localScale = baseBone.localScale;
+        // Check for NaN in localPosition
+        if (!float.IsNaN(baseBone.localPosition.x) && !float.IsNaN(baseBone.localPosition.y) && !float.IsNaN(baseBone.localPosition.z))
+        {
+            clothingBone.localPosition = baseBone.localPosition;
+        }
+
+        // Check for NaN in localRotation components
+        if (!float.IsNaN(baseBone.localRotation.w) && !float.IsNaN(baseBone.localRotation.x) && !float.IsNaN(baseBone.localRotation.y) && !float.IsNaN(baseBone.localRotation.z))
+        {
+            clothingBone.localRotation = baseBone.localRotation;
+        }
+
+        // Check for NaN in localScale
+        if (!float.IsNaN(baseBone.localScale.x) && !float.IsNaN(baseBone.localScale.y) && !float.IsNaN(baseBone.localScale.z))
+        {
+            clothingBone.localScale = baseBone.localScale;
+        }
 
         for (int i = 0; i < baseBone.childCount; i++)
         {

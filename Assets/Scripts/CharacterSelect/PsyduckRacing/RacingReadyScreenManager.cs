@@ -50,7 +50,7 @@ public class RacingReadyScreenManager : NetworkBehaviour
 
         yield return new WaitForSeconds(1.5f);
 
-        trainerModel.ActiveAnimator.Play(trainerModel.IsMale ? "ani_obpos5_40040_lob_male" : "ani_createend_50040_lob_female");
+        trainerModel.ActiveAnimator.Play(trainerModel.IsMale ? "ani_40645solo_lob_male" : "ani_50645solo_lob_female");
     }
 
     private IEnumerator PlaceholderStart()
