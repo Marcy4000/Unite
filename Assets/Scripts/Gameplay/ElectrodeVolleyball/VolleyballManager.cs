@@ -239,7 +239,6 @@ public class VolleyballManager : NetworkBehaviour
     {
         yield return null;
 
-        player.MovesController.BattleItemStatus.AddStatus(ActionStatusType.Disabled);
         player.ScoreStatus.AddStatus(ActionStatusType.Busy);
     }
 

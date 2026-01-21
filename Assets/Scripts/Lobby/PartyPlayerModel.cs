@@ -33,8 +33,15 @@ public class PartyPlayerModel : MonoBehaviour
         lobbyOwnerIcon.SetActive(player.Id == LobbyController.Instance.Lobby.HostId);
     }
 
-    public void PlayVictoryAnimation()
+    public void PlayVictoryAnimation(float delay = 0f)
     {
+        StartCoroutine(PlayVictoryAnimationCoroutine(delay));
+    }
+
+    private IEnumerator PlayVictoryAnimationCoroutine(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
         if (trainerModel.gameObject.activeSelf)
         {
             int animIndex = Random.Range(0, trainerModel.PlayerClothesInfo.IsMale ? maleVictoryAnimations.Length : femaleVictoryAnimations.Length);

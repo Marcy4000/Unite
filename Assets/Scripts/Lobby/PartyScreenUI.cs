@@ -308,11 +308,13 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
                     {
                         standardsLobbyPlayers[i].gameObject.SetActive(true);
                         standardsLobbyPlayers[i].Initialize(lobby.Players[localPlayerIndex]);
+                        standardsLobbyPlayers[i].PlayVictoryAnimation(0.02f);
                     }
                     else if (i - 1 < otherPlayers.Count)
                     {
                         standardsLobbyPlayers[i].gameObject.SetActive(true);
                         standardsLobbyPlayers[i].Initialize(otherPlayers[i - 1]);
+                        standardsLobbyPlayers[i].PlayVictoryAnimation(0.02f);
                     }
                     else
                     {

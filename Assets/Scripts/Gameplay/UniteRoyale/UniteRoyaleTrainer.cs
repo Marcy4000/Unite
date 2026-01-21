@@ -91,6 +91,8 @@ public class UniteRoyaleTrainer : NetworkBehaviour
             return;
         }
 
+        trainerModel.ActiveAnimator.SetBool("useAltIdle", true);
+
         // Check if the agent is moving based on velocity
         bool shouldBeRunning = navMeshAgent.velocity.sqrMagnitude > 0.1f;
 
