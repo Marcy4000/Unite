@@ -1,4 +1,4 @@
-﻿using JSAM;
+using JSAM;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -66,6 +66,8 @@ public class GameManager : NetworkBehaviour
     public event Action onFinalStretch;
     public event Action onFarmLevelUps;
 
+    private BaseStartAnimationUI startAnimationUI;
+
     private AsyncOperationHandle<SceneInstance> loadHandle;
     private AsyncOperationHandle<IList<PokemonBase>> pokemonHandle;
 
@@ -124,6 +126,14 @@ public class GameManager : NetworkBehaviour
             gameState.Value = GameState.Initialising;
         }
         yield return new WaitForSeconds(1.9f);
+        
+        // Find and subscribe to the start animation in the scene
+        startAnimationUI = FindAnyObjectByType<BaseStartAnimationUI>();
+        if (startAnimationUI != null)
+        {
+            startAnimationUI.OnAnimationComplete += OnStartAnimationComplete;
+        }
+        
         StartCoroutine(StartGameRoutine());
     }
 
@@ -221,25 +231,21 @@ public class GameManager : NetworkBehaviour
             gameState.Value = GameState.Starting;
         }
         LoadingScreen.Instance.HideMatchLoadingScreen();
-        AudioManager.PlaySound(DefaultAudioSounds.Game_ui_Rookie_Scoreboard_1);
 
-        yield return new WaitForSeconds(0.2f);
-
-        AudioManager.PlayMusic(currentMap.normalMusic, true);
-
-        yield return new WaitForSeconds(0.4f);
-
-        AudioManager.PlaySound(DefaultAudioSounds.AnnouncerReady);
-
-        yield return new WaitForSeconds(1.6f);
-
-        AudioManager.PlaySound(DefaultAudioSounds.Game_ui_Rookie_Scoreboard_Go);
-
-        yield return new WaitForSeconds(0.9f);
-
+        yield break;
+    }
+    
+    private void OnStartAnimationComplete()
+    {
         if (IsServer)
         {
             gameState.Value = GameState.Playing;
+        }
+        
+        // Unsubscribe to prevent memory leaks
+        if (startAnimationUI != null)
+        {
+            startAnimationUI.OnAnimationComplete -= OnStartAnimationComplete;
         }
     }
 
