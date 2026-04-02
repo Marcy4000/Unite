@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c05f484ca36268440bf6ca1f6aedf5ef, type: 3}
   m_Name: JSAMSettings
   m_EditorClassIdentifier: 
-  establishSingletonDominance: 1
   spatialSound: 1
   startingSoundChannels: 16
   startingMusicChannels: 3
   defaultSoundMaxDistance: 7
+  useBuiltInAudioListRenderer: 1
   disableConsoleLogs: 0
   dontDestroyOnLoad: 1
   dynamicSourceAllocation: 1
@@ -27,18 +27,10 @@ MonoBehaviour:
   spatializeLateUpdate: 0
   spatializationMode: 0
   timeScaledSounds: 1
-  mixer: {fileID: 0}
-  masterGroup: {fileID: 0}
-  musicGroup: {fileID: 0}
-  soundGroup: {fileID: 0}
-  voiceGroup: {fileID: 0}
+  masterTrack: {fileID: 11400000, guid: 1b30be477d9700615b89a314211ab997, type: 2}
+  tracks:
+  - {fileID: 11400000, guid: 91677b10e633223fe9a5a0ca90c41e6b, type: 2}
+  - {fileID: 11400000, guid: c790d1720ab363a6182ed04c4b6cc5af, type: 2}
+  - {fileID: 11400000, guid: 9a788cd39d90ba901919d0cb8f93cfc3, type: 2}
   saveVolumeToPlayerPrefs: 1
-  masterVolumeKey: JSAM_MASTER_VOL
-  masterMutedKey: JSAM_MASTER_MUTE
-  musicVolumeKey: JSAM_MUSIC_VOL
-  musicMutedKey: JSAM_MUSIC_MUTE
-  soundVolumeKey: JSAM_SOUND_VOL
-  soundMutedKey: JSAM_SOUND_MUTE
-  voiceVolumeKey: JSAM_VOICE_VOL
-  voiceMutedKey: JSAM_VOICE_MUTE
   quickReferenceFontSize: 10

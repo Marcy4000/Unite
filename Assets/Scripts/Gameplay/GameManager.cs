@@ -119,7 +119,7 @@ public class GameManager : NetworkBehaviour
     private IEnumerator StartGameDelayed()
     {
         yield return new WaitForSeconds(0.1f);
-        AudioManager.StopMusic(DefaultAudioMusic.LoadingTheme);
+        AudioManager.StopMusic(DefaultAudioMusic.LoadingTheme, null, true);
         AudioManager.PlaySound(DefaultAudioSounds.LoadComplete);
         if (IsServer)
         {

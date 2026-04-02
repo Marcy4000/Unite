@@ -23,6 +23,11 @@ public class SettingsManager : MonoBehaviour
     [SerializeField] private Slider masterVolumeSlider;
     [SerializeField] private Slider musicVolumeSlider;
     [SerializeField] private Slider sfxVolumeSlider;
+    [SerializeField] private Slider announcerVolumeSlider;
+
+    [SerializeField] private VolumeTrack musicVolumeTrack;
+    [SerializeField] private VolumeTrack sfxVolumeTrack;
+    [SerializeField] private VolumeTrack announcerVolumeTrack;
 
     private Resolution[] resolutions;
 
@@ -64,7 +69,7 @@ public class SettingsManager : MonoBehaviour
         masterVolumeSlider.onValueChanged.AddListener(SetMasterVolume);
         musicVolumeSlider.onValueChanged.AddListener(SetMusicVolume);
         sfxVolumeSlider.onValueChanged.AddListener(SetSFXVolume);
-
+        announcerVolumeSlider.onValueChanged.AddListener(SetAnnouncerVolume);
         // Load saved settings
         fullscreenToggle.isOn = Screen.fullScreen;
         vsyncToggle.isOn = QualitySettings.vSyncCount == 1;
@@ -83,9 +88,10 @@ public class SettingsManager : MonoBehaviour
             qualityToggles[i].onValueChanged.AddListener((value) => SetQuality(qualityIndex));
         }
 
-        musicVolumeSlider.value = AudioManager.MusicVolume;
-        sfxVolumeSlider.value = AudioManager.SoundVolume;
-        masterVolumeSlider.value = AudioManager.MasterVolume;
+        musicVolumeSlider.value = AudioManager.GetVolume(musicVolumeTrack);
+        sfxVolumeSlider.value = AudioManager.GetVolume(sfxVolumeTrack);
+        announcerVolumeSlider.value = AudioManager.GetVolume(announcerVolumeTrack);
+        masterVolumeSlider.value = AudioManager.GetVolume();
 
         if (Application.platform == RuntimePlatform.WebGLPlayer)
         {
@@ -126,9 +132,10 @@ public class SettingsManager : MonoBehaviour
             qualityToggles[i].isOn = QualitySettings.GetQualityLevel() == i;
         }
 
-        musicVolumeSlider.value = AudioManager.MusicVolume;
-        sfxVolumeSlider.value = AudioManager.SoundVolume;
-        masterVolumeSlider.value = AudioManager.MasterVolume;
+        musicVolumeSlider.value = AudioManager.GetVolume(musicVolumeTrack);
+        sfxVolumeSlider.value = AudioManager.GetVolume(sfxVolumeTrack);
+        announcerVolumeSlider.value = AudioManager.GetVolume(announcerVolumeTrack);
+        masterVolumeSlider.value = AudioManager.GetVolume();
     }
 
     public void OpenSettings()
@@ -186,16 +193,21 @@ public class SettingsManager : MonoBehaviour
 
     public void SetMasterVolume(float volume)
     {
-        AudioManager.MasterVolume = volume;
+        AudioManager.SetVolume(volume);
     }
 
     public void SetMusicVolume(float volume)
     {
-        AudioManager.MusicVolume = volume;
+        AudioManager.SetVolume(musicVolumeTrack, volume);
     }
 
     public void SetSFXVolume(float volume)
     {
-        AudioManager.SoundVolume = volume;
+        AudioManager.SetVolume(sfxVolumeTrack, volume);
+    }
+
+    public void SetAnnouncerVolume(float volume)
+    {
+        AudioManager.SetVolume(announcerVolumeTrack, volume);
     }
 }
