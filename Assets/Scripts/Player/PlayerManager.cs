@@ -50,7 +50,10 @@ public class PlayerManager : NetworkBehaviour
 
     private PlayerStats playerStats;
 
-    private string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
+    [Header("Aeos Energy Drop")]
+    [SerializeField] private string aeosEnergyResourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
+    [SerializeField] private float aeosEnergyScatterRadius = 1f;
+    [SerializeField] private int aeosEnergyBigValue = 5;
 
     private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm:NetworkVariableWritePermission.Owner);
 
@@ -401,7 +404,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonDeath(DamageInfo info)
     {
-        SpawnEnergy(currentEnergy.Value);
+        SpawnEnergyOnDeathRPC(currentEnergy.Value);
         ResetEnergyRPC();
         pokemon.GiveExpRpc(info.attackerId, transform.position, GetBaseExp());
 
@@ -835,40 +838,20 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
-    private void SpawnEnergy(ushort amount)
+    private AeosEnergyDropSettings GetAeosEnergyDropSettings()
     {
-        int numFives = amount / 5;
-        int remainderOnes = amount % 5;
-
-        for (int i = 0; i < numFives; i++)
+        return new AeosEnergyDropSettings
         {
-            SpawnEnergyRpc(true);
-        }
-
-        for (int i = 0; i < remainderOnes; i++)
-        {
-            SpawnEnergyRpc(false);
-        }
+            ResourcePath = aeosEnergyResourcePath,
+            ScatterRadius = aeosEnergyScatterRadius,
+            BigEnergyValue = aeosEnergyBigValue
+        };
     }
 
     [Rpc(SendTo.Server)]
-    private void SpawnEnergyRpc(bool isBig)
+    private void SpawnEnergyOnDeathRPC(ushort amount)
     {
-        Vector3 offset = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f));
-        Addressables.LoadAssetAsync<GameObject>(resourcePath).Completed += (handle) =>
-        {
-            if (handle.Status == AsyncOperationStatus.Succeeded)
-            {
-                GameObject prefab = handle.Result;
-                GameObject spawnedObject = Instantiate(prefab, transform.position + offset, Quaternion.identity);
-                spawnedObject.GetComponent<AeosEnergy>().LocalBigEnergy = isBig;
-                spawnedObject.GetComponent<NetworkObject>().Spawn(true);
-            }
-            else
-            {
-                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
-            }
-        };
+        AeosEnergyDropper.SpawnDrops(transform.position, amount, GetAeosEnergyDropSettings());
     }
 
     [Rpc(SendTo.Server)]

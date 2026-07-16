@@ -15,12 +15,15 @@ public class WildPokemon : NetworkBehaviour
     [SerializeField] private RedBlueBuffAura redBlueBuffAura;
 
     [SerializeField] private GameObject soldierPrefab;
+    [Header("Aeos Energy Drop")]
+    [SerializeField] private string aeosEnergyResourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
+    [SerializeField] private float aeosEnergyScatterRadius = 1f;
+    [SerializeField] private int aeosEnergyBigValue = 5;
     private AvailableWildPokemons soldierToSpawn;
 
     private Vision vision;
     private Rigidbody rb;
 
-    private const string resourcePath = "Assets/Prefabs/Objects/Objects/AeosEnergy.prefab";
     private float healingTick;
     private ObjectiveType objectiveType;
 
@@ -348,40 +351,19 @@ public class WildPokemon : NetworkBehaviour
         }
     }
 
-    private void SpawnEnergy(short amount)
+    private AeosEnergyDropSettings GetAeosEnergyDropSettings()
     {
-        int numFives = amount / 5;
-        int remainderOnes = amount % 5;
-
-        for (int i = 0; i < numFives; i++)
+        return new AeosEnergyDropSettings
         {
-            SpawnEnergyRpc(true);
-        }
-
-        for (int i = 0; i < remainderOnes; i++)
-        {
-            SpawnEnergyRpc(false);
-        }
+            ResourcePath = aeosEnergyResourcePath,
+            ScatterRadius = aeosEnergyScatterRadius,
+            BigEnergyValue = aeosEnergyBigValue
+        };
     }
 
-    [Rpc(SendTo.Server)]
-    private void SpawnEnergyRpc(bool isBig)
+    private void SpawnEnergy(short amount)
     {
-        Vector3 offset = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, 1f));
-        Addressables.LoadAssetAsync<GameObject>(resourcePath).Completed += (handle) =>
-        {
-            if (handle.Status == AsyncOperationStatus.Succeeded)
-            {
-                GameObject prefab = handle.Result;
-                GameObject spawnedObject = Instantiate(prefab, transform.position + offset, Quaternion.identity);
-                spawnedObject.GetComponent<AeosEnergy>().LocalBigEnergy = isBig;
-                spawnedObject.GetComponent<NetworkObject>().Spawn(true);
-            }
-            else
-            {
-                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
-            }
-        };
+        AeosEnergyDropper.SpawnDrops(transform.position, amount, GetAeosEnergyDropSettings());
     }
 
     [Rpc(SendTo.Everyone)]

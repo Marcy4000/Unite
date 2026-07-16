@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 [ExecuteInEditMode]
 public class BoneSync : MonoBehaviour
@@ -9,50 +10,94 @@ public class BoneSync : MonoBehaviour
     [Tooltip("The root transforms of the clothing items that need to sync with the base skeleton.")]
     public Transform[] clothingRoots;
 
-    private void LateUpdate()
+    private struct TransformPair
+    {
+        public Transform source;
+        public Transform target;
+    }
+
+    private TransformPair[] bonePairs = new TransformPair[0];
+
+    // Call this from your initialization script whenever clothingRoots changes.
+    public void RebuildSyncData()
     {
         if (baseSkeletonRoot == null || clothingRoots == null || clothingRoots.Length == 0)
         {
+            bonePairs = new TransformPair[0];
             return;
         }
+
+        List<TransformPair> pairsList = new List<TransformPair>();
 
         foreach (var clothingRoot in clothingRoots)
         {
             if (clothingRoot != null)
             {
-                SyncBoneTransforms(baseSkeletonRoot, clothingRoot);
+                MapBones(baseSkeletonRoot, clothingRoot, pairsList);
             }
         }
+
+        bonePairs = pairsList.ToArray();
     }
 
-    private void SyncBoneTransforms(Transform baseBone, Transform clothingBone)
+    private void MapBones(Transform baseBone, Transform clothingBone, List<TransformPair> pairsList)
     {
-        // Check for NaN in localPosition
-        if (!float.IsNaN(baseBone.localPosition.x) && !float.IsNaN(baseBone.localPosition.y) && !float.IsNaN(baseBone.localPosition.z))
-        {
-            clothingBone.localPosition = baseBone.localPosition;
-        }
-
-        // Check for NaN in localRotation components
-        if (!float.IsNaN(baseBone.localRotation.w) && !float.IsNaN(baseBone.localRotation.x) && !float.IsNaN(baseBone.localRotation.y) && !float.IsNaN(baseBone.localRotation.z))
-        {
-            clothingBone.localRotation = baseBone.localRotation;
-        }
-
-        // Check for NaN in localScale
-        if (!float.IsNaN(baseBone.localScale.x) && !float.IsNaN(baseBone.localScale.y) && !float.IsNaN(baseBone.localScale.z))
-        {
-            clothingBone.localScale = baseBone.localScale;
-        }
+        pairsList.Add(new TransformPair { source = baseBone, target = clothingBone });
 
         for (int i = 0; i < baseBone.childCount; i++)
         {
-            var baseChild = baseBone.GetChild(i);
-            var clothingChild = clothingBone.Find(baseChild.name);
+            Transform baseChild = baseBone.GetChild(i);
+            Transform clothingChild = clothingBone.Find(baseChild.name);
+
             if (clothingChild != null)
             {
-                SyncBoneTransforms(baseChild, clothingChild);
+                MapBones(baseChild, clothingChild, pairsList);
             }
         }
     }
+
+    public void ForceSync()
+    {
+        for (int i = 0; i < bonePairs.Length; i++)
+        {
+            Transform source = bonePairs[i].source;
+            Transform target = bonePairs[i].target;
+
+            if (source == null || target == null)
+            {
+                continue;
+            }
+
+            if (!float.IsNaN(source.localPosition.x) && !float.IsNaN(source.localPosition.y) && !float.IsNaN(source.localPosition.z))
+            {
+                target.localPosition = source.localPosition;
+            }
+
+            if (!float.IsNaN(source.localRotation.w) && !float.IsNaN(source.localRotation.x) && !float.IsNaN(source.localRotation.y) && !float.IsNaN(source.localRotation.z))
+            {
+                target.localRotation = source.localRotation;
+            }
+
+            if (!float.IsNaN(source.localScale.x) && !float.IsNaN(source.localScale.y) && !float.IsNaN(source.localScale.z))
+            {
+                target.localScale = source.localScale;
+            }
+        }
+    }
+
+    private void LateUpdate()
+    {
+        ForceSync();
+    }
+    
+    #if UNITY_EDITOR
+    private void OnValidate()
+    {
+        // Ensures bones are mapped when changing fields in the editor inspector
+        if (!Application.isPlaying)
+        {
+            RebuildSyncData();
+        }
+    }
+    #endif
 }

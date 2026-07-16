@@ -24,23 +24,32 @@ public class TrainerCardUI : MonoBehaviour
     private AsyncOperationHandle<Sprite> frameHandle;
 
     private byte currentAnimationIndex;
-
     private TrainerModel trainerModel;
+    
+    private PlayerClothesInfo? currentClothes; 
+    private Coroutine setupCoroutine;
 
     private void OnEnable()
     {
-        if (trainerModel != null && trainerObject.TargetGameObject != null)
+        if (currentClothes.HasValue)
         {
-            if (trainerModel.IsMale)
+            if (setupCoroutine != null)
             {
-                PlayModelAnimation(maleAnimations[currentAnimationIndex]);
+                StopCoroutine(setupCoroutine);
             }
-            else
-            {
-                PlayModelAnimation(femaleAnimations[currentAnimationIndex]);
-            }
-            StartCoroutine(RenderDelayed());
+            setupCoroutine = StartCoroutine(SetupTrainerModelUI(currentClothes.Value));
         }
+    }
+
+    private void OnDisable()
+    {
+        if (setupCoroutine != null)
+        {
+            StopCoroutine(setupCoroutine);
+            setupCoroutine = null;
+        }
+        trainerModel = null;
+        SetImageAlpha(0f);
     }
 
     private void OnDestroy()
@@ -54,11 +63,6 @@ public class TrainerCardUI : MonoBehaviour
         {
             Addressables.Release(frameHandle);
         }
-
-        if (trainerModel != null)
-        {
-            Destroy(trainerModel.gameObject);
-        }
     }
 
     public void Initialize()
@@ -68,13 +72,19 @@ public class TrainerCardUI : MonoBehaviour
 
     public void Initialize(PlayerClothesInfo clothes)
     {
-        if (trainerModel != null)
-        {
-            Destroy(trainerModel.gameObject);
-        }
+        currentClothes = clothes;
+        currentAnimationIndex = clothes.TrainerCardInfo.TrainerAnimation;
 
-        trainerModel = Instantiate(trainerPrefab, new Vector3(0f, -100f, 0f), Quaternion.identity).GetComponent<TrainerModel>();
-        trainerModel.InitializeClothes(clothes);
+        trainerObject.ObjectPrefab = trainerPrefab.transform;
+
+        if (gameObject.activeInHierarchy)
+        {
+            if (setupCoroutine != null)
+            {
+                StopCoroutine(setupCoroutine);
+            }
+            setupCoroutine = StartCoroutine(SetupTrainerModelUI(clothes));
+        }
 
         _ = LoadSpritesAsync(clothes.TrainerCardInfo.BackgroundIndex, clothes.TrainerCardInfo.FrameIndex);
 
@@ -85,20 +95,29 @@ public class TrainerCardUI : MonoBehaviour
 
         float actualCameraDistance = -1f - (clothes.TrainerCardInfo.TrainerScale / 255f) * 9f;
         trainerObject.CameraDistance = actualCameraDistance;
-        currentAnimationIndex = clothes.TrainerCardInfo.TrainerAnimation;
+    }
 
-        trainerModel.onClothesInitialized += () =>
+    private IEnumerator SetupTrainerModelUI(PlayerClothesInfo clothes)
+    {
+        SetImageAlpha(0f);
+
+        while (trainerObject.TargetGameObject == null)
         {
-            trainerObject.ObjectPrefab = trainerModel.transform;
-            if (trainerModel.IsMale)
-            {
-                PlayModelAnimation(maleAnimations[clothes.TrainerCardInfo.TrainerAnimation]);
-            }
-            else
-            {
-                PlayModelAnimation(femaleAnimations[clothes.TrainerCardInfo.TrainerAnimation]);
-            }
+            yield return null;
+        }
+
+        trainerModel = trainerObject.TargetGameObject.GetComponent<TrainerModel>();
+
+        string animName = clothes.IsMale ? maleAnimations[currentAnimationIndex] : femaleAnimations[currentAnimationIndex];
+        
+        PlayModelAnimation(animName, triggerRender: false);
+
+        trainerModel.onClothesInitialized = () =>
+        {
+            PlayModelAnimation(animName, triggerRender: true);
         };
+
+        trainerModel.InitializeClothes(clothes);
     }
 
     public void UpdateCardPlayer(TrainerCardInfo cardInfo)
@@ -112,13 +131,17 @@ public class TrainerCardUI : MonoBehaviour
         trainerObject.CameraDistance = actualCameraDistance;
         currentAnimationIndex = cardInfo.TrainerAnimation;
 
-        if (trainerModel.IsMale)
+        if (trainerModel != null && currentClothes.HasValue)
         {
-            PlayModelAnimation(maleAnimations[cardInfo.TrainerAnimation]);
+            string animName = currentClothes.Value.IsMale ? maleAnimations[cardInfo.TrainerAnimation] : femaleAnimations[cardInfo.TrainerAnimation];
+            PlayModelAnimation(animName, triggerRender: true);
         }
-        else
+        
+        if (currentClothes.HasValue)
         {
-            PlayModelAnimation(femaleAnimations[cardInfo.TrainerAnimation]);
+            var updatedClothes = currentClothes.Value;
+            updatedClothes.TrainerCardInfo = cardInfo;
+            currentClothes = updatedClothes;
         }
     }
 
@@ -150,17 +173,20 @@ public class TrainerCardUI : MonoBehaviour
         frameImage.sprite = frameHandle.Result;
     }
 
-    private void PlayModelAnimation(string animationName)
+    private void PlayModelAnimation(string animationName, bool triggerRender = true)
     {
-        if (trainerObject.TargetGameObject == null)
+        if (trainerObject.TargetGameObject == null || trainerModel == null)
         {
             return;
         }
 
-        if (trainerObject.TargetGameObject.TryGetComponent(out TrainerModel model))
+        Animator animator = trainerModel.ActiveAnimator;
+        if (animator != null)
         {
-            model.ActiveAnimator.Play(animationName);
-            if (gameObject.activeInHierarchy)
+            animator.Play(animationName);
+            animator.Update(0f); 
+
+            if (triggerRender && gameObject.activeInHierarchy)
             {
                 StartCoroutine(RenderDelayed());
             }
@@ -169,7 +195,18 @@ public class TrainerCardUI : MonoBehaviour
 
     private IEnumerator RenderDelayed()
     {
-        yield return null;
+        yield return new WaitForEndOfFrame();
+        
         trainerObject.Render();
+        
+        SetImageAlpha(1f);
     }
+
+    private void SetImageAlpha(float alpha)
+{
+    if (trainerObject != null && trainerObject.imageComponent != null)
+    {
+        trainerObject.imageComponent.color = new Color(1f, 1f, 1f, alpha);
+    }
+}
 }

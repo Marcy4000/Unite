@@ -243,6 +243,8 @@ public class TrainerModel : MonoBehaviour
         if (activeBoneSync != null)
         {
             activeBoneSync.clothingRoots = bonesToSync.ToArray();
+            activeBoneSync.RebuildSyncData();
+            activeBoneSync.ForceSync();
         }
         else
         {
