@@ -16,6 +16,8 @@ MonoBehaviour:
   mapIcon: {fileID: 21300000, guid: 79844d824be0fac4e8f0f922bc8433ed, type: 3}
   sceneName: TheiaSkyRuins
   mapSceneKey: Assets/Scenes/TheiaSkyRuinsMap.unity
+  resultScreenScene: GameResults
+  availableTeams: 0102
   maxTeamSize: 4
   mapResultsBlue:
     m_AssetGUID: 9824fab8986ac754e8c4a14463c3b834
@@ -35,7 +37,13 @@ MonoBehaviour:
   gameTime: 600
   finalStretchTime: 480
   maxScore: 0
+  overrideDefaultResultScreen: 0
   customProperties: []
+  passiveExpSettings:
+  - activationTime: 0
+    value: 4
+  - activationTime: 120
+    value: 6
   normalMusic: 9
   finalStretchMusic: 10
   characterSelectType: 1

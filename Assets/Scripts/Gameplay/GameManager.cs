@@ -46,6 +46,8 @@ public class GameManager : NetworkBehaviour
     private List<ResultScoreInfo> orangeTeamScores;
 
     private MapInfo currentMap;
+    private readonly Queue<PassiveExpSetting> passiveExpQueue = new Queue<PassiveExpSetting>();
+    private PassiveExpSetting currentPassiveExpSetting;
 
     public float GameTime => gameTime.Value;
     public int BlueTeamScore => blueTeamScore.Value;
@@ -203,6 +205,8 @@ public class GameManager : NetworkBehaviour
         FINAL_STRETCH_TIME = currentMap.finalStretchTime;
         MAX_GAME_TIME = currentMap.gameTime;
 
+        InitializePassiveExpQueue();
+
         StartCoroutine(HandlePassiveExp());
         StartCoroutine(HandleFarmLevelUps());
     }
@@ -261,6 +265,39 @@ public class GameManager : NetworkBehaviour
         onUpdatePassiveExp -= player.Pokemon.GainPassiveExp;
     }
 
+    private void InitializePassiveExpQueue()
+    {
+        passiveExpQueue.Clear();
+        currentPassiveExpSetting = null;
+
+        PassiveExpSetting[] passiveExpSettings = currentMap.passiveExpSettings;
+        if (passiveExpSettings == null || passiveExpSettings.Length == 0)
+        {
+            return;
+        }
+
+        PassiveExpSetting[] sortedSettings = (PassiveExpSetting[])passiveExpSettings.Clone();
+        Array.Sort(sortedSettings, (left, right) => left.activationTime.CompareTo(right.activationTime));
+
+        foreach (PassiveExpSetting setting in sortedSettings)
+        {
+            passiveExpQueue.Enqueue(setting);
+        }
+
+        if (passiveExpQueue.Count > 0)
+        {
+            currentPassiveExpSetting = passiveExpQueue.Dequeue();
+        }
+    }
+
+    private void UpdatePassiveExpSetting()
+    {
+        while (passiveExpQueue.Count > 0 && gameTime.Value >= passiveExpQueue.Peek().activationTime)
+        {
+            currentPassiveExpSetting = passiveExpQueue.Dequeue();
+        }
+    }
+
     private IEnumerator HandlePassiveExp()
     {
         yield return new WaitUntil(() => gameState.Value == GameState.Playing);
@@ -270,13 +307,11 @@ public class GameManager : NetworkBehaviour
             yield return new WaitForSeconds(1f);
             if (gameState.Value == GameState.Playing)
             {
-                if (gameTime.Value < 480)
+                UpdatePassiveExpSetting();
+
+                if (currentPassiveExpSetting != null)
                 {
-                    onUpdatePassiveExp?.Invoke(4);
-                }
-                else
-                {
-                    onUpdatePassiveExp?.Invoke(6);
+                    onUpdatePassiveExp?.Invoke(currentPassiveExpSetting.value);
                 }
             }
         }

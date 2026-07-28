@@ -16,6 +16,8 @@ MonoBehaviour:
   mapIcon: {fileID: 21300000, guid: 2e431b6cfb14ea2478cc285793281c79, type: 3}
   sceneName: MerStadium
   mapSceneKey: Assets/Scenes/MerStadiumMap.unity
+  resultScreenScene: GameResults
+  availableTeams: 0102
   maxTeamSize: 4
   mapResultsBlue:
     m_AssetGUID: 08d4394f99ef5b644b660dbf4b94ddc4
@@ -35,9 +37,15 @@ MonoBehaviour:
   gameTime: 300
   finalStretchTime: 240
   maxScore: 0
+  overrideDefaultResultScreen: 0
   customProperties:
   - key: skipPreparationPhaseBlind
     value: 
+  passiveExpSettings:
+  - activationTime: 0
+    value: 8
+  - activationTime: 60
+    value: 10
   normalMusic: 7
   finalStretchMusic: 8
   characterSelectType: 0

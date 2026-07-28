@@ -46,6 +46,15 @@ public AssetReferenceSprite mapResultsBlue;
     public List<CustomMapProperties> customProperties = new List<CustomMapProperties>();
 
     [Space]
+    [Header("Passive Exp")]
+    [Tooltip("Passive exp schedule ordered by the elapsed match time when each value becomes active.")]
+    public PassiveExpSetting[] passiveExpSettings = new PassiveExpSetting[2]
+    {
+        new PassiveExpSetting { activationTime = 0f, value = 4 },
+        new PassiveExpSetting { activationTime = 480f, value = 6 }
+    };
+
+    [Space]
     [Header("Audio")]
     [Tooltip("Background music for normal gameplay.")]
     public DefaultAudioMusic normalMusic;
@@ -91,6 +100,15 @@ public class RespawnTimeThreshold
     [Tooltip("Exclusive maximum remaining match time (in seconds) for this threshold.")]
     public float maxTime;
     [Tooltip("Respawn time value to use if the remaining time is within this range.")]
+    public int value;
+}
+
+[System.Serializable]
+public class PassiveExpSetting
+{
+    [Tooltip("Elapsed match time in seconds when this passive exp value becomes active.")]
+    public float activationTime;
+    [Tooltip("Passive exp amount awarded every second while this setting is active.")]
     public int value;
 }
 
