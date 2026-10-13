@@ -58,7 +58,6 @@ namespace UI.ThreeDimensional
         /// <summary>
         /// An offset (X/Y) to apply to the target (relative to its default location of 0,0)
         /// </summary>
-        [SerializeField]
         public Vector2 TargetOffset
         {
             get { return new Vector2(_TargetOffsetX, _TargetOffsetY); }
@@ -156,7 +155,6 @@ namespace UI.ThreeDimensional
         /// <summary>
         /// An offset (X/Y) to apply to the target (relative to its default location of 0,0)
         /// </summary>
-        [SerializeField]
         public Vector2 LookTargetOffset
         {
             get { return new Vector2(_LookOffsetX, _LookOffsetY); }
