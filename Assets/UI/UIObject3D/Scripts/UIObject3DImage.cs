@@ -13,7 +13,29 @@ namespace UI.ThreeDimensional
     /// </summary>
     [RequireComponent(typeof(RectTransform)), DisallowMultipleComponent, ExecuteInEditMode]    
     public class UIObject3DImage : Image, ILayoutElement
-    {        
+    {
+        private static Material captureMaterial;
+
+        // Image.material still takes precedence when the user explicitly assigns a
+        // custom UI material. Resources keeps this shader available in player builds.
+        public override Material defaultMaterial
+        {
+            get
+            {
+                if (captureMaterial == null)
+                {
+                    var shader = Resources.Load<Shader>("UIObject3DPremultiplied");
+                    if (shader == null) return base.defaultMaterial;
+                    captureMaterial = new Material(shader)
+                    {
+                        name = "UIObject3D Capture (Premultiplied)",
+                        hideFlags = HideFlags.HideAndDontSave
+                    };
+                }
+                return captureMaterial;
+            }
+        }
+
         void ILayoutElement.CalculateLayoutInputHorizontal()
         {            
         }

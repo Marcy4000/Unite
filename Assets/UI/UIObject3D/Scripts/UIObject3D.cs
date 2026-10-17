@@ -603,30 +603,34 @@ namespace UI.ThreeDimensional
             if (targetCamera == null) return;
 
             RenderTexture previousRenderTexture = RenderTexture.active;
-            if (!copyTextureSupported) RenderTexture.active = this.renderTexture;
-
-            // If we don't manually clear the buffer, we end up with a copy of the target in the background
-            if (ClearGLBufferBeforeRendering)
+            try
             {
-                GL.Clear(true, true, BackgroundColor);
+                // The CopyTexture path also needs the right target for GL.Clear.
+                // Otherwise this clears whichever camera/UI texture happened to be active.
+                RenderTexture.active = this.renderTexture;
+                if (ClearGLBufferBeforeRendering)
+                {
+                    GL.Clear(true, true, BackgroundColor);
+                }
+
+                if (targetCamera.targetTexture != this.renderTexture) targetCamera.targetTexture = this.renderTexture;
+                targetCamera.Render();
+                if (copyTextureSupported)
+                {
+                    Graphics.CopyTexture(renderTexture, texture2D);
+                }
+                else
+                {
+                    RenderTexture.active = this.renderTexture;
+                    var rect = new Rect(0, 0, (int)TextureSize.x, (int)TextureSize.y);
+                    this.texture2D.ReadPixels(rect, 0, 0);
+                    this.texture2D.Apply();
+                }
             }
-
-            if (targetCamera.targetTexture != this.renderTexture) targetCamera.targetTexture = this.renderTexture;
-            targetCamera.Render();
-
-
-            if (copyTextureSupported)
+            finally
             {
-                Graphics.CopyTexture(renderTexture, texture2D);
+                RenderTexture.active = previousRenderTexture;
             }
-            else
-            {
-                var rect = new Rect(0, 0, (int)TextureSize.x, (int)TextureSize.y);
-                this.texture2D.ReadPixels(rect, 0, 0);
-                this.texture2D.Apply();
-            }
-
-            if (!copyTextureSupported) RenderTexture.active = previousRenderTexture;
 
             renderQueued = false;
         }
