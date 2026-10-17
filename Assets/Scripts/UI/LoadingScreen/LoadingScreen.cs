@@ -1,5 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
@@ -18,6 +19,7 @@ public class LoadingScreen : MonoBehaviour
     [SerializeField] private GameBeginScreenUI gameBeginScreenUI;
 
     private List<LoadingScreenPlayer> playerList = new List<LoadingScreenPlayer>();
+    private Coroutine missingTrackersWarning;
 
     private void Awake()
     {
@@ -35,22 +37,6 @@ public class LoadingScreen : MonoBehaviour
 
     private void OnTrackersUpdated()
     {
-        if (NetworkManager.Singleton.IsServer)
-        {
-            NetworkedLoadingProgressTracker[] trackers = FindObjectsByType<NetworkedLoadingProgressTracker>(FindObjectsSortMode.None);
-            List<ulong> playerIds = new List<ulong>();
-            foreach (var tracker in trackers)
-            {
-                if (playerIds.Contains(tracker.OwnerClientId))
-                {
-                    tracker.NetworkObject.Despawn(true);
-                    continue;
-                }
-                playerIds.Add(tracker.OwnerClientId);
-            }
-        }
-        
-        // Re-subscribe to all trackers to handle race conditions
         UpdateProgressSubscriptions();
     }
 
@@ -69,18 +55,13 @@ public class LoadingScreen : MonoBehaviour
                 continue;
             }
 
-            ulong clientId = ulong.Parse(playerIcon.CurrentPlayer.Data["OwnerID"].Value);
-            loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
-            
-            if (progressTracker != null && progressTracker.IsSpawned)
+            NetworkedLoadingProgressTracker progressTracker = null;
+            if (playerIcon.CurrentPlayer.Data.TryGetValue("OwnerID", out var ownerId) &&
+                ulong.TryParse(ownerId.Value, out var clientId))
             {
-                // Unsubscribe first to avoid duplicate subscriptions
-                progressTracker.Progress.OnValueChanged -= playerIcon.UpdateProgressBar;
-                // Re-subscribe
-                progressTracker.Progress.OnValueChanged += playerIcon.UpdateProgressBar;
-                // Update the bar immediately with current progress
-                playerIcon.UpdateProgressBar(0, progressTracker.Progress.Value);
+                loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out progressTracker);
             }
+            playerIcon.BindProgressTracker(progressTracker != null && progressTracker.IsSpawned ? progressTracker : null);
         }
     }
 
@@ -92,23 +73,55 @@ public class LoadingScreen : MonoBehaviour
             HideGameBeginScreen();
         }
         holder.SetActive(true);
+        UpdateProgressSubscriptions();
+        missingTrackersWarning = StartCoroutine(WarnAboutMissingTrackers());
     }
 
     public void HideMatchLoadingScreen()
     {
         holder.SetActive(false);
+        if (missingTrackersWarning != null)
+        {
+            StopCoroutine(missingTrackersWarning);
+            missingTrackersWarning = null;
+        }
 
         foreach (var playerIcon in playerList)
         {
-            ulong clientId = ulong.Parse(playerIcon.CurrentPlayer.Data["OwnerID"].Value);
-            loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
-            if (progressTracker != null)
-            {
-                progressTracker.Progress.OnValueChanged -= playerIcon.UpdateProgressBar;
-            }
+            playerIcon.UnbindProgressTracker();
         }
 
         playerList.Clear();
+    }
+
+    private IEnumerator WarnAboutMissingTrackers()
+    {
+        // Allow initial network synchronization time without warning on normal late arrivals.
+        yield return new WaitForSecondsRealtime(5f);
+        foreach (var playerIcon in playerList)
+        {
+            if (!playerIcon.HasProgressTracker && playerIcon.CurrentPlayer != null)
+            {
+                var player = playerIcon.CurrentPlayer;
+                string ownerId = player.Data.TryGetValue("OwnerID", out var owner) ? owner.Value : "missing";
+                Debug.LogWarning($"[LoadingProgress] No spawned progress tracker for player {player.Id} (OwnerID: {ownerId}); loading bar cannot update.", this);
+            }
+        }
+        missingTrackersWarning = null;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+        if (loadingProgressManager != null)
+        {
+            loadingProgressManager.onTrackersUpdated -= OnTrackersUpdated;
+        }
+        foreach (var playerIcon in playerList)
+        {
+            if (playerIcon != null) playerIcon.UnbindProgressTracker();
+        }
+        Instance = null;
     }
 
     public void ShowGenericLoadingScreen()
@@ -144,6 +157,7 @@ public class LoadingScreen : MonoBehaviour
 
     private void InitializeLoadingScreen()
     {
+        HideMatchLoadingScreen();
         foreach (Transform child in blueTeamSpawn)
         {
             Destroy(child.gameObject);
@@ -174,13 +188,6 @@ public class LoadingScreen : MonoBehaviour
                 var loadingScreenPlayer = playerObj.GetComponent<LoadingScreenPlayer>();
                 loadingScreenPlayer.SetPlayerData(player);
 
-                ulong clientId = ulong.Parse(player.Data["OwnerID"].Value);
-                loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
-                if (progressTracker != null)
-                {
-                    progressTracker.Progress.OnValueChanged += loadingScreenPlayer.UpdateProgressBar;
-                }
-
                 playerList.Add(loadingScreenPlayer);
             }
         }
@@ -208,19 +215,9 @@ public class LoadingScreen : MonoBehaviour
                 var loadingScreenPlayer = playerObj.GetComponent<LoadingScreenPlayer>();
                 loadingScreenPlayer.SetPlayerData(player);
 
-                ulong clientId = ulong.Parse(player.Data["OwnerID"].Value);
-                loadingProgressManager.ProgressTrackers.TryGetValue(clientId, out var progressTracker);
-                if (progressTracker != null)
-                {
-                    progressTracker.Progress.OnValueChanged += loadingScreenPlayer.UpdateProgressBar;
-                }
-
                 playerList.Add(loadingScreenPlayer);
             }
         }
-        
-        // Update subscriptions after all players are added
-        UpdateProgressSubscriptions();
     }
 
     public void OnSceneEvent(SceneEvent sceneEvent)
@@ -228,16 +225,9 @@ public class LoadingScreen : MonoBehaviour
         switch (sceneEvent.SceneEventType)
         {
             case SceneEventType.Load:
-                if (NetworkManager.Singleton.IsClient)
+                if (NetworkManager.Singleton.IsClient && sceneEvent.ClientId == NetworkManager.Singleton.LocalClientId)
                 {
-                    if (sceneEvent.LoadSceneMode == LoadSceneMode.Single)
-                    {
-                        loadingProgressManager.LocalLoadOperation = sceneEvent.AsyncOperation;
-                    }
-                    else
-                    {
-                        loadingProgressManager.LocalLoadOperation = sceneEvent.AsyncOperation;
-                    }
+                    loadingProgressManager.LocalLoadOperation = sceneEvent.AsyncOperation;
                 }
 
                 if (sceneEvent.SceneName.Equals("CharacterSelect") || sceneEvent.SceneName.Equals("DraftSelect") || sceneEvent.SceneName.Equals("RacingReadyScreen"))

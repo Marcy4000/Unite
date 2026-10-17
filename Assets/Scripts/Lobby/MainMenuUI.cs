@@ -1,7 +1,7 @@
 using System.Collections;
 using JSAM;
 using TMPro;
-using Unity.Services.Lobbies.Models;
+using Lobby = Unite.Multiplayer.GameSessionView;
 using UnityEngine;
 using UnityEngine.UI;
 

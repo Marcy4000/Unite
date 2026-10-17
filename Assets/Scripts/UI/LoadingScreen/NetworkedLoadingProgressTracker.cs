@@ -1,3 +1,4 @@
+using System;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -6,6 +7,9 @@ using UnityEngine;
 /// </summary>
 public class NetworkedLoadingProgressTracker : NetworkBehaviour
 {
+    public static event Action<NetworkedLoadingProgressTracker> Spawned;
+    public static event Action<NetworkedLoadingProgressTracker> Despawned;
+
     /// <summary>
     /// The current loading progress associated with the owner of this NetworkBehavior
     /// </summary>
@@ -14,5 +18,15 @@ public class NetworkedLoadingProgressTracker : NetworkBehaviour
     void Awake()
     {
         DontDestroyOnLoad(this);
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        Spawned?.Invoke(this);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        Despawned?.Invoke(this);
     }
 }

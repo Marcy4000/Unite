@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
 using UnityEngine;
 
 public class PreviewScreenUI : MonoBehaviour

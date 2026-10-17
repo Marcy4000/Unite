@@ -1,6 +1,7 @@
 using JSAM;
 using System.Collections;
 using System.Threading.Tasks;
+using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,6 +19,7 @@ public class QuickJoinManager : MonoBehaviour
     private bool isSearching = false;
 
     private Coroutine searchCoroutine;
+    private CancellationTokenSource searchCancellation;
 
     private void Start()
     {
@@ -36,6 +38,7 @@ public class QuickJoinManager : MonoBehaviour
         AudioManager.PlaySound(DefaultAudioSounds.Home_ui_start_04);
 
         isSearching = true;
+        searchCancellation = new CancellationTokenSource();
         timeElapsed = 0f;
 
         // Imposta la callback di annullamento ogni volta che parte una ricerca
@@ -52,6 +55,9 @@ public class QuickJoinManager : MonoBehaviour
 
     private void CancelSearch()
     {
+        searchCancellation?.Cancel();
+        searchCancellation?.Dispose();
+        searchCancellation = null;
         if (searchCoroutine != null)
         {
             StopCoroutine(searchCoroutine);
@@ -87,12 +93,14 @@ public class QuickJoinManager : MonoBehaviour
     {
         while (isSearching)
         {
-            var searchTask = LobbyController.Instance.QuickJoin();
+            var searchTask = LobbyController.Instance.QuickJoin(searchCancellation.Token);
 
             yield return new WaitUntil(() => searchTask.IsCompleted);
 
-            if (searchTask.Result)
+            if (searchTask.Status == TaskStatus.RanToCompletion && searchTask.Result)
             {
+                searchCancellation?.Dispose();
+                searchCancellation = null;
                 isSearching = false;
                 matchmakingBarUI.StopSearching();
                 startSearchButton.interactable = true;
@@ -107,5 +115,16 @@ public class QuickJoinManager : MonoBehaviour
         }
         // Se la ricerca viene annullata, assicurati che la barra venga nascosta
         matchmakingBarUI.StopSearching();
+    }
+
+    private void OnDestroy()
+    {
+        searchCancellation?.Cancel();
+        searchCancellation?.Dispose();
+    }
+
+    private void OnDisable()
+    {
+        if (searchCancellation != null) CancelSearch();
     }
 }

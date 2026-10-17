@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Netcode;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -85,17 +85,7 @@ public class DraftSelectController : NetworkBehaviour
         draftTimer.OnValueChanged += UpdateTimerUI;
         playerStates.OnListChanged += OnPlayerStatesChanged;
         bannedCharacters.OnListChanged += (listEvent) => { draftCharacterSelector.UpdateUnavailablePokemons(); };
-        LobbyController.Instance.LobbyEvents.Callbacks.PlayerDataChanged += (change) =>
-        {
-            foreach (var player in change)
-            {
-                if (player.Value.ContainsKey("SelectedCharacter"))
-                {
-                    draftCharacterSelector.UpdateUnavailablePokemons();
-                    UpdatePlayerSelectedCharacter(LobbyController.Instance.Lobby.Players[player.Key].Id, NumberEncoder.FromBase64<short>(player.Value["SelectedCharacter"].Value.Value));
-                }
-            }
-        };
+        LobbyController.Instance.onPlayerDataChanged += OnSessionPlayerDataChanged;
 
         if (IsServer)
         {
@@ -128,7 +118,29 @@ public class DraftSelectController : NetworkBehaviour
 
     private void OnDisable()
     {
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        if (LobbyController.Instance != null)
+            LobbyController.Instance.onPlayerDataChanged -= OnSessionPlayerDataChanged;
+    }
+
+    private readonly Dictionary<string, short> selectedCharacters = new Dictionary<string, short>();
+
+    public override void OnNetworkDespawn()
+    {
+        if (LobbyController.Instance != null)
+            LobbyController.Instance.onPlayerDataChanged -= OnSessionPlayerDataChanged;
+        selectedCharacters.Clear();
+    }
+
+    private void OnSessionPlayerDataChanged(Player player)
+    {
+        if (!IsSpawned || !player.Data.TryGetValue("SelectedCharacter", out var property)) return;
+        var character = NumberEncoder.FromBase64<short>(property.Value);
+        if (selectedCharacters.TryGetValue(player.Id, out var previous) && previous == character) return;
+        selectedCharacters[player.Id] = character;
+        draftCharacterSelector.UpdateUnavailablePokemons();
+        UpdatePlayerSelectedCharacter(player.Id, character);
     }
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)

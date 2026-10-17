@@ -1,6 +1,6 @@
 using TMPro;
 using UnityEngine;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
 
 public class LobbyPlayerInfoIcons : MonoBehaviour
 {

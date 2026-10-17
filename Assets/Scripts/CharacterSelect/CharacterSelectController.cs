@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using JSAM;

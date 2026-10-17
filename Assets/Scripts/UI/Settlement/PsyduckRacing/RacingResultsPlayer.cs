@@ -14,7 +14,7 @@ public class RacingResultsPlayer : MonoBehaviour
 
     public void Initialize(RacePlayerResult racePlayerResult, bool spawnPsyduck = true)
     {
-        Unity.Services.Lobbies.Models.Player player = LobbyController.Instance.Lobby.Players.Find(p => p.Id == racePlayerResult.PlayerID);
+        Unite.Multiplayer.GameSessionPlayer player = LobbyController.Instance.GetPlayerByID(racePlayerResult.PlayerID);
 
         trainerNameText.text = player.Data["PlayerName"].Value;
         

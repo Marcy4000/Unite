@@ -10,7 +10,7 @@ public class RacingLoadingAnimation : MonoBehaviour
 
     private void Start()
     {
-        Unity.Services.Lobbies.Models.Player[] players = LobbyController.Instance.Lobby.Players.ToArray();
+        Unite.Multiplayer.GameSessionPlayer[] players = LobbyController.Instance.Lobby.Players.ToArray();
 
         for (int i = 0; i < trainerCards.Length; i++)
         {

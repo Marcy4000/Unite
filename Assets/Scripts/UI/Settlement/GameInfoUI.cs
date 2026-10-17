@@ -1,4 +1,5 @@
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
+using Lobby = Unite.Multiplayer.GameSessionView;
 using UnityEngine;
 
 public class GameInfoUI : MonoBehaviour

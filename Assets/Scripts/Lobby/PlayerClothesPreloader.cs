@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
+using Lobby = Unite.Multiplayer.GameSessionView;
 using UnityEngine;
 
 public class PlayerClothesPreloader : MonoBehaviour
@@ -20,6 +21,13 @@ public class PlayerClothesPreloader : MonoBehaviour
     private void Start()
     {
         LobbyController.Instance.onLobbyUpdate += OnLobbyUpdated;
+    }
+
+    private void OnDestroy()
+    {
+        if (LobbyController.Instance != null)
+            LobbyController.Instance.onLobbyUpdate -= OnLobbyUpdated;
+        if (Instance == this) Instance = null;
     }
 
     private void OnLobbyUpdated(Lobby lobby)
@@ -47,13 +55,16 @@ public class PlayerClothesPreloader : MonoBehaviour
             }
         }
 
+        var departedPlayers = new List<string>();
         foreach (var playerModel in playerModels)
         {
             if (!currentLobby.Players.Exists(player => player.Id == playerModel.Key))
             {
-                UnloadPlayerModel(playerModel.Key);
+                departedPlayers.Add(playerModel.Key);
             }
         }
+        foreach (var playerId in departedPlayers)
+            UnloadPlayerModel(playerId);
     }
 
     private void LoadPlayerModel(Player player)

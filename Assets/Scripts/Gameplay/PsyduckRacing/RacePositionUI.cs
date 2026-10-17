@@ -20,7 +20,7 @@ public class RacePositionUI : MonoBehaviour
     public void AssignPlayer(RaceLapCounter lapCounter)
     {
         raceLapCounter = lapCounter;
-        Unity.Services.Lobbies.Models.Player lobbyPlayer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[raceLapCounter.AssignedPlayerID].GetComponent<PlayerManager>().LobbyPlayer;
+        Unite.Multiplayer.GameSessionPlayer lobbyPlayer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[raceLapCounter.AssignedPlayerID].GetComponent<PlayerManager>().LobbyPlayer;
 
         playerName.text = lobbyPlayer.Data["PlayerName"].Value;
 

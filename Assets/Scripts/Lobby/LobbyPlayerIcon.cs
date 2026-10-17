@@ -1,5 +1,5 @@
 using TMPro;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
 using UnityEngine;
 using UnityEngine.UI;
 

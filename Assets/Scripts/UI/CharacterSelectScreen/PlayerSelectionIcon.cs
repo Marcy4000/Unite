@@ -1,5 +1,6 @@
 using TMPro;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
+using Lobby = Unite.Multiplayer.GameSessionView;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -38,7 +39,10 @@ public class PlayerSelectionIcon : MonoBehaviour
 
     private void UpdatePlayerData(Lobby lobby)
     {
-        assignedPlayer = lobby.Players.Find(x => x.Id == assignedPlayer.Id);
+        if (assignedPlayer == null) return;
+        var updatedPlayer = lobby.Players.Find(x => x.Id == assignedPlayer.Id);
+        if (updatedPlayer == null) return;
+        assignedPlayer = updatedPlayer;
 
         CharacterInfo info = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(assignedPlayer.Data["SelectedCharacter"].Value));
 

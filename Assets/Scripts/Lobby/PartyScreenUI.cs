@@ -1,7 +1,8 @@
 using JSAM;
 using TMPro;
 using System.Collections.Generic;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
+using Lobby = Unite.Multiplayer.GameSessionView;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -79,7 +80,7 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
 
     private void OnLobbyUpdate(Lobby lobby)
     {
-        openLobbyToggle.isOn = !lobby.IsPrivate;
+        openLobbyToggle.SetIsOnWithoutNotify(!lobby.IsPrivate);
         UpdateLobbyTypeToggles();
         mapSelector.UpdateSelectedMap();
 
@@ -183,7 +184,7 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
     {
         ClearUI();
 
-        openLobbyToggle.isOn = !lobby.IsPrivate;
+        openLobbyToggle.SetIsOnWithoutNotify(!lobby.IsPrivate);
 
         mapSelector.Initialize(lobby.HostId == Unity.Services.Authentication.AuthenticationService.Instance.PlayerId);
         selectedMap = CharactersList.Instance.GetCurrentLobbyMap();

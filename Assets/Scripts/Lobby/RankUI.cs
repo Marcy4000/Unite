@@ -40,7 +40,7 @@ public class RankUI : MonoBehaviour
         }
     }
 
-    private void OnLobbyUpdate(Unity.Services.Lobbies.Models.Lobby lobby)
+    private void OnLobbyUpdate(Unite.Multiplayer.GameSessionView lobby)
     {
         UpdateRankDisplay();
     }

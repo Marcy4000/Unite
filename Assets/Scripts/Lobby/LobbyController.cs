@@ -2,17 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Unite.Multiplayer;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Core.Environments;
-using Unity.Services.Lobbies;
-using Unity.Services.Lobbies.Models;
-using Unity.Services.Matchmaker;
-using Unity.Services.Relay;
-using Unity.Services.Relay.Models;
+using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -26,1827 +24,1129 @@ public class LobbyController : MonoBehaviour
 
     public static LobbyController Instance { get; private set; }
 
-    private MainMenuUI lobbyUI;
     private const string LobbyNamePrefix = "PartyLobby";
-    private int maxPartyMembers = 10;
-    private Player localPlayer;
-    private Lobby partyLobby;
-
-    private float lobbyHeartBeatTimer = 15.0f;
-    private float lobbyUpdateTimer = 1.1f;
-
+    private const string SessionType = "UniteGame";
+    private MainMenuUI lobbyUI;
+    private ISession session;
+    private ISession sessionAwaitingCleanup;
+    private GameSessionView partyLobby;
+    private GameSessionPlayer localPlayer;
     private string localPlayerName;
+    private Task authenticationTask;
+    private readonly CancellationTokenSource lifetimeCancellation = new CancellationTokenSource();
+    private CancellationTokenSource matchmakingCancellation;
+    private readonly SemaphoreSlim lifecycleGate = new SemaphoreSlim(1, 1);
+    private readonly SemaphoreSlim playerWriteGate = new SemaphoreSlim(1, 1);
+    private readonly SemaphoreSlim hostWriteGate = new SemaphoreSlim(1, 1);
+    private readonly Dictionary<string, PlayerProperty> pendingPlayerProperties = new Dictionary<string, PlayerProperty>();
+    private readonly Dictionary<string, GameSessionPlayer> gamePlayers = new Dictionary<string, GameSessionPlayer>();
+    private readonly PartyMatchmakerAdapter partyMatchmaker = new PartyMatchmakerAdapter();
+    private readonly List<PlayerNetworkManager> playerNetworkManagers = new List<PlayerNetworkManager>();
 
-    private ILobbyEvents lobbyEvents;
-
+    private bool lobbyOperationInProgress;
+    private string sessionOperationStage;
+    private bool transitioningNetwork;
+    private bool handlingSessionLoss;
+    private bool startingGame;
+    private bool loadResultsScreen;
+    private bool isSearching;
+    private bool isInMatchmakingGame;
+    private string pendingMatchId;
+    private string[] expectedMatchPlayerIds = Array.Empty<string>();
+    private LobbyType currentLobbyType = LobbyType.Custom;
+    private NetworkSceneManager subscribedSceneManager;
+    private OriginalPartyInfo originalPartyInfo;
     private GameResults gameResults;
     private RaceGameResults raceGameResults;
     private UniteRoyaleGameResults uniteRoyaleGameResults;
 
-    private List<PlayerNetworkManager> playerNetworkManagers = new List<PlayerNetworkManager>();
-    private bool loadResultsScreen = false;
-
-    private bool isSearching = false;
-    private Unity.Services.Matchmaker.Models.CreateTicketResponse createTicketResponse;
-
-#if UNITY_WEBGL
-    private string connectionType = "wss";
-#else
-    private string connectionType = "dtls";
-#endif
-
-    private Lobby originalPartyLobby;
-    private bool isInMatchmakingGame = false;
-    private bool isPartyLeader => partyLobby != null && partyLobby.HostId == localPlayer.Id;
-    private string partyMatchmakerTicketId = null;
-
-    private string pendingMatchId = null; // aggiungi questo campo per i client
-    private int expectedMatchmakingPlayers = 0; // Track expected players for validation
-
-    // Original party information for recreation after matchmaking
-    private class OriginalPartyInfo
+    private sealed class OriginalPartyInfo
     {
-        public string originalLeaderId;
-        public List<string> originalMemberIds;
-        public LobbyType originalLobbyType;
-        public Dictionary<string, DataObject> originalLobbyData;
-        public string originalLobbyName;
-        public bool originalIsPrivate;
-        public int originalMaxPlayers;
-    }
-    private OriginalPartyInfo originalPartyInfo = null;
-
-    // Central error handling for matchmaking operations
-    private async void HandleMatchmakingError(string context, Exception ex = null)
-    {
-        // Se è un rate limit, ignora e non fare nulla
-        if (ex is LobbyServiceException lobbyEx && lobbyEx.Reason == LobbyExceptionReason.RateLimited)
-        {
-            Debug.LogWarning($"Rate limited during matchmaking operation: {context}. Ignorato.");
-            return;
-        }
-        // TODO: Show error message to user: "Matchmaking failed: {context}"
-        Debug.LogError($"Matchmaking error in {context}: {ex?.Message ?? "Unknown error"}");
-
-        // Clean up state and return to main menu
-        await CleanupMatchmakingStateAsync();
-        LoadingScreen.Instance.HideGenericLoadingScreen();
-        lobbyUI.ShowMainMenuUI();
+        public string LeaderId;
+        public string ReturnSessionId;
+        public LobbyType Type;
+        public bool IsPrivate;
+        public Dictionary<string, SessionProperty> Properties;
     }
 
-    private async Task CleanupMatchmakingStateAsync()
-    {
-        Debug.Log("Starting cleanup of matchmaking state...");
-        
-        // Always reset the searching state first
-        isSearching = false;
-        
-        // Delete matchmaking ticket if it exists
-        await DeleteMatchmakingTicket();
-        
-        // Reset all matchmaking-related state
-        isInMatchmakingGame = false;
-        createTicketResponse = null;
-        partyMatchmakerTicketId = null;
-        originalPartyInfo = null;
-        expectedMatchmakingPlayers = 0;
-        pendingMatchId = null;
+    public enum LobbyType { Custom, Standards }
 
-        // Update lobby data to stop matchmaking for all players
-        await UpdateLobbyMatchmakingStatus("stopped");
-
-        // Disconnect from any current lobby/network
-        try
-        {
-            if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsHost))
-            {
-                NetworkManager.Singleton.Shutdown();
-            }
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning($"Error during network shutdown: {e.Message}");
-        }
-
-        // Clear player network managers
-        playerNetworkManagers.Clear();
-
-        // Hide matchmaking UI if visible
-        try
-        {
-            lobbyUI?.HideMatchmakingBarUI();
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning($"Error hiding matchmaking UI: {e.Message}");
-        }
-        
-        Debug.Log("Matchmaking state cleanup completed successfully.");
-    }
-
-    private async Task DeleteMatchmakingTicket()
-    {
-        if (string.IsNullOrEmpty(partyMatchmakerTicketId))
-        {
-            Debug.Log("No matchmaking ticket to delete (ticket ID is null or empty)");
-            return;
-        }
-
-        try
-        {
-            Debug.Log($"Attempting to delete matchmaking ticket: {partyMatchmakerTicketId}");
-            await MatchmakerService.Instance.DeleteTicketAsync(partyMatchmakerTicketId);
-            Debug.Log("Matchmaking ticket deleted successfully");
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Error deleting matchmaking ticket '{partyMatchmakerTicketId}': {ex.Message}");
-            // Don't re-throw - we want to continue with cleanup even if ticket deletion fails
-        }
-        finally
-        {
-            partyMatchmakerTicketId = null;
-        }
-    }
-
-    private async Task UpdateLobbyMatchmakingStatus(string status)
-    {
-        if (partyLobby == null)
-        {
-            Debug.Log("No lobby to update matchmaking status");
-            return;
-        }
-
-        try
-        {
-            var updateOptions = new UpdateLobbyOptions();
-            updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
-            updateOptions.Data["MatchmakingStatus"] = new DataObject(DataObject.VisibilityOptions.Member, status);
-            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, updateOptions);
-            Debug.Log($"Updated lobby matchmaking status to: {status}");
-        }
-        catch (Exception ex)
-        {
-            Debug.LogWarning($"Error updating lobby matchmaking status to '{status}': {ex.Message}");
-            // Don't re-throw - this is a cleanup operation
-        }
-    }
-
-    private void CleanupMatchmakingState()
-    {
-        // Legacy method - redirect to async version
-        _ = CleanupMatchmakingStateAsync();
-    }
-
-    private bool ValidateMatchmakingLobbyReady()
-    {
-        if (partyLobby == null)
-        {
-            Debug.LogError("Party lobby is null during validation");
-            return false;
-        }
-
-        if (expectedMatchmakingPlayers > 0 && partyLobby.Players.Count < expectedMatchmakingPlayers)
-        {
-            Debug.LogError($"Not enough players joined: {partyLobby.Players.Count}/{expectedMatchmakingPlayers}");
-            return false;
-        }
-
-        if (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsHost)
-        {
-            Debug.LogError("Network connection not established");
-            return false;
-        }
-
-        // Ensure all players have proper team assignments
-        foreach (var player in partyLobby.Players)
-        {
-            if (!player.Data.ContainsKey("PlayerTeam"))
-            {
-                Debug.LogError($"Player {player.Id} missing team assignment");
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public Lobby Lobby => partyLobby;
-    public Player Player => localPlayer;
+    // These game-owned views preserve the existing UI contract without exposing Lobby SDK models.
+    public GameSessionView Lobby => partyLobby;
+    public GameSessionPlayer Player => localPlayer;
+    public ISession Session => session;
     public List<PlayerNetworkManager> PlayerNetworkManagers => playerNetworkManagers;
-
     public bool ShouldLoadResultsScreen { get => loadResultsScreen; set => loadResultsScreen = value; }
-
     public GameResults GameResults { get => gameResults; set => gameResults = value; }
     public RaceGameResults RaceGameResults { get => raceGameResults; set => raceGameResults = value; }
     public UniteRoyaleGameResults UniteRoyaleGameResults { get => uniteRoyaleGameResults; set => uniteRoyaleGameResults = value; }
-
-    public ILobbyEvents LobbyEvents => lobbyEvents;
-
     public bool IsMatchmaking => isSearching;
-
-    public event Action<Lobby> onLobbyUpdate;
-
-    public enum LobbyType
-    {
-        Custom,
-        Standards
-    }
-
-    private LobbyType currentLobbyType = LobbyType.Custom;
     public LobbyType CurrentLobbyType => currentLobbyType;
+    private bool IsPartyLeader => session != null && session.IsHost;
+
+    public event Action<GameSessionView> onLobbyUpdate;
+    public event Action<GameSessionPlayer> onPlayerDataChanged;
 
     private void Awake()
     {
-        if (Instance != null && this != Instance)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
         localPlayerName = $"TestPlayer {UnityEngine.Random.Range(0, 1000)}";
         lobbyUI = FindFirstObjectByType<MainMenuUI>();
-
-        InitializeUnityAuthentication();
-
-        SceneManager.sceneLoaded += (scene, mode) =>
-        {
-            if (scene.name == "LobbyScene")
-            {
-                lobbyUI = FindFirstObjectByType<MainMenuUI>();
-            }
-        };
+        SceneManager.sceneLoaded += OnUnitySceneLoaded;
+        authenticationTask = InitializeUnityAuthenticationAsync();
+        ObserveTask(authenticationTask);
     }
 
     private void Start()
     {
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectFromServer;
+        NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+    }
 
-        NetworkManager.Singleton.OnClientConnectedCallback += (clientId) =>
+    private void OnDestroy()
+    {
+        if (Instance != this) return;
+        lifetimeCancellation.Cancel();
+        matchmakingCancellation?.Cancel();
+        UnsubscribeFromSession();
+        DetachSceneEvents();
+        SceneManager.sceneLoaded -= OnUnitySceneLoaded;
+        if (NetworkManager.Singleton != null)
         {
-            if (clientId != NetworkManager.Singleton.LocalClientId)
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectFromServer;
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+        }
+        Instance = null;
+    }
+
+    private static async void ObserveTask(Task task)
+    {
+        try { await task; }
+        catch (OperationCanceledException) { }
+        catch (Exception exception) { Debug.LogException(exception); }
+    }
+
+    private async Task InitializeUnityAuthenticationAsync()
+    {
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+        try
+        {
+            if (UnityServices.State != ServicesInitializationState.Initialized)
             {
-                return;
-            }
-            StartCoroutine(UpdatePlayerOwnerID(clientId));
-        };
-    }
-
-    public async void StartGame(string playerName)
-    {
-        if (UnityServices.State != ServicesInitializationState.Initialized)
-        {
-            Debug.LogError("Unity Services not initialized.");
-            return;
-        }
-
-        LoadingScreen.Instance.ShowGenericLoadingScreen();
-
-        await AuthenticationService.Instance.UpdatePlayerNameAsync(playerName);
-
-        ChangePlayerName(playerName);
-        StartCoroutine(LoadLobbyAsync());
-    }
-
-    private IEnumerator LoadLobbyAsync()
-    {
-        LoadingScreen.Instance.ShowGenericLoadingScreen();
-        var task = SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
-        while (!task.isDone)
-        {
-            yield return null;
-        }
-        LoadingScreen.Instance.HideGenericLoadingScreen();
-    }
-
-    private void Update()
-    {
-        HandleLobbyHeartBeat();
-
-        HandleLobbyPollForUpdates();
-    }
-
-    private async void InitializeUnityAuthentication()
-    {
-        if (UnityServices.State != ServicesInitializationState.Initialized)
-        {
-            LoadingScreen.Instance.ShowGenericLoadingScreen();
-            InitializationOptions options = new InitializationOptions();
-
-            string eviromentName = Debug.isDebugBuild ? "development" : "production";
-            options.SetEnvironmentName(eviromentName);
-
+                var options = new InitializationOptions();
+                options.SetEnvironmentName(Debug.isDebugBuild ? "development" : "production");
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD
-            string profile = SystemInfo.deviceUniqueIdentifier;
-            profile = RemoveInvalidCharacters(profile);
-            profile = TruncateProfile(profile, 30);
-            options.SetProfile(profile);
+                var profile = TruncateProfile(RemoveInvalidCharacters(SystemInfo.deviceUniqueIdentifier), 30);
+                options.SetProfile(string.IsNullOrEmpty(profile) ? "default" : profile);
 #else
-            options.SetProfile(UnityEngine.Random.Range(0, 1000).ToString());
+                options.SetProfile(Guid.NewGuid().ToString("N").Substring(0, 30));
 #endif
-
-            await UnityServices.InitializeAsync(options);
-
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+                await UnityServices.InitializeAsync(options);
+            }
+            if (!AuthenticationService.Instance.IsSignedIn)
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
 
             PlayerClothesInfo clothes;
-
             try
             {
-                clothes = PlayerPrefs.HasKey("ClothingInfo") ? PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo")) : PlayerClothesInfo.Deserialize("AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA=");
+                clothes = PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo", "AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA="));
             }
             catch (Exception)
             {
                 clothes = PlayerClothesInfo.Deserialize("AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA=");
             }
 
-            localPlayer = new Player(AuthenticationService.Instance.PlayerId, AuthenticationService.Instance.Profile, new Dictionary<string, PlayerDataObject>
-            {
-                {"PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, localPlayerName)},
-                {"OwnerID", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "0")},
-                {"PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, Team.Blue.ToString())},
-                {"PlayerPos", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
-                {"SelectedCharacter", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(-1))},
-                {"BattleItem", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, "1")},
-                {"HeldItems", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, HeldItemDatabase.SerializeHeldItems(new byte[] {0, 0, 0}))},
-                {"ClothingInfo", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, clothes.Serialize())},
-                {"PlayerRank", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Public, RankedManager.Instance != null ? RankedManager.Instance.GetPlayerRankSerialized() : PlayerRankData.GetDefault().Serialize())}
-            });
-
+            localPlayer = new GameSessionPlayer(AuthenticationService.Instance.PlayerId);
+            localPlayer.Data["PlayerName"] = new PlayerProperty(localPlayerName);
+            localPlayer.Data["OwnerID"] = MemberPlayerProperty("0");
+            localPlayer.Data["PlayerTeam"] = MemberPlayerProperty(Team.Blue.ToString());
+            localPlayer.Data["PlayerPos"] = MemberPlayerProperty(NumberEncoder.ToBase64<short>(0));
+            localPlayer.Data["SelectedCharacter"] = MemberPlayerProperty(NumberEncoder.ToBase64<short>(-1));
+            localPlayer.Data["BattleItem"] = MemberPlayerProperty("1");
+            localPlayer.Data["HeldItems"] = MemberPlayerProperty(HeldItemDatabase.SerializeHeldItems(new byte[] { 0, 0, 0 }));
+            localPlayer.Data["ClothingInfo"] = new PlayerProperty(clothes.Serialize());
+            localPlayer.Data["PlayerRank"] = new PlayerProperty(RankedManager.Instance != null
+                ? RankedManager.Instance.GetPlayerRankSerialized() : PlayerRankData.GetDefault().Serialize());
 #if UNITY_WEBGL
             NetworkManager.Singleton.GetComponent<UnityTransport>().UseWebSockets = true;
 #endif
-
+        }
+        finally
+        {
             LoadingScreen.Instance.HideGenericLoadingScreen();
         }
     }
 
-    // Do not remove these 2 methods
+    // Keep the platform authentication profile sanitation helpers.
     private string RemoveInvalidCharacters(string profile)
     {
-        string validCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
-        return new string(profile.Where(c => validCharacters.Contains(c)).ToArray());
+        const string validCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+        return new string(profile.Where(validCharacters.Contains).ToArray());
     }
 
     private string TruncateProfile(string profile, int maxLength)
     {
-        if (profile.Length > maxLength)
-        {
-            return profile.Substring(0, maxLength);
-        }
-        return profile;
+        return profile.Length > maxLength ? profile.Substring(0, maxLength) : profile;
     }
 
-    private async Task SubscribeToLobbyEvents(string lobbyID)
+    private static PlayerProperty MemberPlayerProperty(string value) => new PlayerProperty(value, VisibilityPropertyOptions.Member);
+    private static SessionProperty MemberSessionProperty(string value) => new SessionProperty(value, VisibilityPropertyOptions.Member);
+
+    private static NetworkOptions GetNetworkOptions()
     {
-        var lobbyEventCallbacks = new LobbyEventCallbacks();
-
-        lobbyEventCallbacks.KickedFromLobby += () =>
+        return new NetworkOptions
         {
-            partyLobby = null;
-            PlayerClothesPreloader.Instance.ClearAllModels();
-            NetworkManager.Singleton.Shutdown();
-            playerNetworkManagers.Clear();
-            if (lobbyUI != null)
-            {
-                lobbyUI.ShowMainMenuUI();
-            }
+#if UNITY_WEBGL
+            RelayProtocol = RelayProtocol.WSS
+#else
+            RelayProtocol = RelayProtocol.DTLS
+#endif
         };
+    }
 
-        lobbyEventCallbacks.LobbyChanged += (changes) =>
+    private int GetRelayCapacity()
+    {
+        // Allocate once for all supported map sizes. The compatibility adapter can
+        // subsequently shrink/grow the lobby limit without exceeding Relay capacity.
+        return Math.Max(10, CharactersList.Instance.Maps.Max(map => map.maxTeamSize * map.availableTeams.Count));
+    }
+
+    private SessionOptions BuildSessionOptions(LobbyType type, Dictionary<string, SessionProperty> properties = null)
+    {
+        properties = properties == null ? new Dictionary<string, SessionProperty>() : new Dictionary<string, SessionProperty>(properties);
+        properties["SelectedMap"] = properties.TryGetValue("SelectedMap", out var selectedMap)
+            ? selectedMap : new SessionProperty(NumberEncoder.ToBase64<short>(0));
+        properties["LobbyType"] = new SessionProperty(type.ToString());
+        properties["HostDisplayName"] = new SessionProperty(localPlayer.Data["PlayerName"].Value);
+        properties["GameVersion"] = new SessionProperty("sessions-v1", VisibilityPropertyOptions.Public, PropertyIndex.String1);
+#if UNITY_EDITOR
+        if (treatCustomAsMatchmaking && type == LobbyType.Custom)
+            properties["IsMatchmakingLobby"] = MemberSessionProperty("true");
+#endif
+        return new SessionOptions
         {
-            if (partyLobby != null)
-            {
-                changes.ApplyToLobby(partyLobby);
-            }
-            onLobbyUpdate?.Invoke(Lobby);
-        };
+            Type = SessionType,
+            Name = $"{LobbyNamePrefix}_{localPlayer.Id}",
+            MaxPlayers = GetRelayCapacity(),
+            IsPrivate = true,
+            PlayerProperties = new Dictionary<string, PlayerProperty>(localPlayer.Data),
+            SessionProperties = properties
+        }.WithRelayNetwork().WithNetworkOptions(GetNetworkOptions());
+    }
 
-        lobbyEventCallbacks.DataChanged += async (changes) =>
+    private JoinSessionOptions BuildJoinOptions()
+    {
+        return new JoinSessionOptions
         {
-            onLobbyUpdate?.Invoke(Lobby);
+            Type = SessionType,
+            PlayerProperties = new Dictionary<string, PlayerProperty>(localPlayer.Data)
+        }.WithNetworkOptions(GetNetworkOptions());
+    }
 
-            // Solo i client non leader ascoltano il campo PendingMatchId
-            if (!isPartyLeader && partyLobby != null && partyLobby.Data != null && partyLobby.Data.ContainsKey("PendingMatchId"))
-            {
-                string newMatchId = partyLobby.Data["PendingMatchId"].Value;
-                if (!string.IsNullOrEmpty(newMatchId) && newMatchId != pendingMatchId)
-                {
-                    pendingMatchId = newMatchId;
-                    // Lascia la lobby corrente e unisciti alla nuova
-                    NetworkManager.Singleton.Shutdown();
-                    TryCreateOrLobbyJoin(newMatchId, 10);
-                }
-            }
-
-            // Aggiorna il PlayerTeam solo se la lobby NON è custom
-            if (partyLobby != null && partyLobby.Data != null && partyLobby.Data.ContainsKey("RequestedTeam") && !IsCustomLobby())
-            {
-                string requestedTeam = partyLobby.Data["RequestedTeam"].Value;
-                if (!string.IsNullOrEmpty(requestedTeam) &&
-                    (!localPlayer.Data.ContainsKey("PlayerTeam") || localPlayer.Data["PlayerTeam"].Value != requestedTeam))
-                {
-                    UpdatePlayerOptions options = new UpdatePlayerOptions();
-                    options.Data = new Dictionary<string, PlayerDataObject>(localPlayer.Data);
-                    if (options.Data.ContainsKey("PlayerTeam"))
-                        options.Data["PlayerTeam"].Value = requestedTeam;
-                    else
-                        options.Data.Add("PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, requestedTeam));
-                    await LobbyService.Instance.UpdatePlayerAsync(partyLobby.Id, localPlayer.Id, options);
-                }
-            }
-
-            // Handle matchmaking status changes for all players
-            if (partyLobby != null && partyLobby.Data != null && partyLobby.Data.ContainsKey("MatchmakingStatus"))
-            {
-                string matchmakingStatus = partyLobby.Data["MatchmakingStatus"].Value;
-                if (matchmakingStatus == "searching" && !isSearching)
-                {
-                    // Show matchmaking UI - only party leader can cancel
-                    isSearching = true;
-                    lobbyUI.ShowMatchmakingBarUI(isPartyLeader ? CancelMatchmaking : null);
-                    Debug.Log($"Matchmaking UI shown to {(isPartyLeader ? "party leader" : "party member")}");
-                }
-                else if (matchmakingStatus == "stopped" && isSearching)
-                {
-                    // Hide matchmaking UI for all players
-                    isSearching = false;
-                    lobbyUI.HideMatchmakingBarUI();
-                    Debug.Log("Matchmaking UI hidden for all players");
-                }
-            }
-        };
-
+    private async Task<bool> RunLobbyOperationAsync(Func<Task> operation, bool showMainMenuOnFailure = true,
+        bool showLoadingScreen = true,
+        [System.Runtime.CompilerServices.CallerMemberName] string operationName = null)
+    {
+        if (lobbyOperationInProgress || isSearching) return false;
+        lobbyOperationInProgress = true;
+        await lifecycleGate.WaitAsync();
+        transitioningNetwork = true;
+        if (showLoadingScreen) LoadingScreen.Instance.ShowGenericLoadingScreen();
         try
         {
-            lobbyEvents = await LobbyService.Instance.SubscribeToLobbyEventsAsync(lobbyID, lobbyEventCallbacks);
+            sessionOperationStage = "initializing authentication";
+            await authenticationTask;
+            lifetimeCancellation.Token.ThrowIfCancellationRequested();
+            sessionOperationStage = "executing operation";
+            await operation();
+            return true;
         }
-        catch (LobbyServiceException ex)
+        catch (OperationCanceledException) { return false; }
+        catch (Exception exception)
         {
-            switch (ex.Reason)
-            {
-                case LobbyExceptionReason.AlreadySubscribedToLobby: Debug.LogWarning($"Already subscribed to lobby[{Lobby.Id}]. We did not need to try and subscribe again. Exception Message: {ex.Message}"); break;
-                case LobbyExceptionReason.SubscriptionToLobbyLostWhileBusy: Debug.LogError($"Subscription to lobby events was lost while it was busy trying to subscribe. Exception Message: {ex.Message}"); throw;
-                case LobbyExceptionReason.LobbyEventServiceConnectionError: Debug.LogError($"Failed to connect to lobby events. Exception Message: {ex.Message}"); throw;
-                default: Debug.LogError(ex.Message); return;
-            }
+            // Message alone discards the SessionError and any preserved inner
+            // exception. Include the original throw stack, not just this logger's
+            // async continuation, without logging tokens or player metadata.
+            var details = $"Session operation '{operationName}' failed during {sessionOperationStage}: " +
+                $"{exception.GetType().FullName}: {exception}\n{exception.StackTrace}";
+            if (showMainMenuOnFailure) Debug.LogError(details);
+            else Debug.LogWarning(details);
+            try { await LeaveCurrentSessionAsync(); }
+            catch (Exception cleanupException) { Debug.LogWarning($"Session cleanup failed: {cleanupException.Message}"); }
+            ResetMatchState();
+            if (showMainMenuOnFailure) lobbyUI?.ShowMainMenuUI();
+            return false;
+        }
+        finally
+        {
+            transitioningNetwork = false;
+            lobbyOperationInProgress = false;
+            sessionOperationStage = null;
+            lifecycleGate.Release();
+            if (showLoadingScreen) LoadingScreen.Instance.HideGenericLoadingScreen();
         }
     }
 
-    private async void HandleLobbyHeartBeat()
-    {
-        if (partyLobby != null)
-        {
-            if (partyLobby.HostId != localPlayer.Id)
-            {
-                return;
-            }
-
-            lobbyHeartBeatTimer -= Time.deltaTime;
-            if (lobbyHeartBeatTimer <= 0)
-            {
-                lobbyHeartBeatTimer = 15.0f;
-                await LobbyService.Instance.SendHeartbeatPingAsync(partyLobby.Id);
-            }
-        }
-    }
-
-    private async void HandleLobbyPollForUpdates()
-    {
-        if (partyLobby != null)
-        {
-            lobbyUpdateTimer -= Time.deltaTime;
-            if (lobbyUpdateTimer <= 0)
-            {
-                lobbyUpdateTimer = 1.1f;
-                partyLobby = await LobbyService.Instance.GetLobbyAsync(partyLobby.Id);
-                localPlayer = partyLobby.Players.Find(player => player.Id == localPlayer.Id);
-
-                SyncLobbyTypeFromLobby();
-
-                onLobbyUpdate?.Invoke(Lobby);
-            }
-        }
-    }
-
-    private async Task<JoinAllocation> JoinRelay(string joinCode)
+    public async void StartGame(string playerName)
     {
         try
         {
-            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode);
-            return joinAllocation;
+            await authenticationTask;
+            await AuthenticationService.Instance.UpdatePlayerNameAsync(playerName);
+            await SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty> { ["PlayerName"] = new PlayerProperty(playerName) });
+            StartCoroutine(LoadLobbyAsync());
         }
-        catch (RelayServiceException e)
-        {
-            Debug.LogError(e);
-            return default;
-        }
+        catch (Exception exception) { Debug.LogException(exception); }
     }
 
     public async void CreateLobby(LobbyType type = LobbyType.Custom)
     {
-        try
+        await RunLobbyOperationAsync(async () =>
         {
-            LoadingScreen.Instance.ShowGenericLoadingScreen();
-            var partyLobbyOptions = new CreateLobbyOptions()
-            {
-                IsPrivate = true,
-                Player = localPlayer,
-                Data = new Dictionary<string, DataObject>
-                {
-                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Public, NumberEncoder.ToBase64<short>(0))},
-                    {"LobbyType", new DataObject(DataObject.VisibilityOptions.Public, type.ToString())}
-                },
-            };
-
-#if UNITY_EDITOR
-            if (treatCustomAsMatchmaking && type == LobbyType.Custom)
-            {
-                partyLobbyOptions.Data["IsMatchmakingLobby"] = new DataObject(DataObject.VisibilityOptions.Member, "true");
-            }
-#endif
-            var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
-            int maxPlayers = (type == LobbyType.Standards)
-                ? CharactersList.Instance.GetMapFromID(0).maxTeamSize
-                : CharactersList.Instance.GetMapFromID(0).maxTeamSize * CharactersList.Instance.GetMapFromID(0).availableTeams.Count;
-            partyLobby = await LobbyService.Instance.CreateLobbyAsync(partyLobbyName, maxPlayers, partyLobbyOptions);
-            currentLobbyType = type;
-            Debug.Log($"Joined lobby: {partyLobby.Name}, code: {partyLobby.LobbyCode}");
-
-            Allocation allocation = await AllocateRelay();
-            string relayJoinCode = await GetRelayJoinCode(allocation);
-
-            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, new UpdateLobbyOptions()
-            {
-                Data = new Dictionary<string, DataObject>
-                {
-                    {"RelayJoinCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)}
-                }
-            });
-
-            await SubscribeToLobbyEvents(partyLobby.Id);
-
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
-
-            if (NetworkManager.Singleton.StartHost())
-            {
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
-            }
-            lobbyUI.ShowLobbyUI();
-
-            onLobbyUpdate?.Invoke(partyLobby);
-
-            LoadingScreen.Instance.HideGenericLoadingScreen();
-        }
-        catch (LobbyServiceException e)
-        {
-            LoadingScreen.Instance.HideGenericLoadingScreen();
-            Debug.LogError($"Failed to create party lobby: {e.Message}");
-        }
+            sessionOperationStage = "leaving the previous session";
+            await LeaveCurrentSessionAsync();
+            sessionOperationStage = "creating the session (Lobby, Relay and NGO)";
+            var created = await MultiplayerService.Instance.CreateSessionAsync(BuildSessionOptions(type), lifetimeCancellation.Token);
+            sessionOperationStage = "initializing session player data";
+            await ActivateSessionAsync(created);
+            sessionOperationStage = "updating session capacity";
+            await SessionCapacityAdapter.SetCapacityAsync(created, GetMaxPartyMembers());
+            sessionOperationStage = "updating the lobby UI";
+            SyncSession();
+            ShowLobby();
+        });
     }
 
     public async void TryLobbyJoin(string joinCode, bool useID = false)
     {
-        try
+        await RunLobbyOperationAsync(async () =>
         {
-            LoadingScreen.Instance.ShowGenericLoadingScreen();
-
-            if (useID)
-            {
-                var joinOptions = new JoinLobbyByIdOptions()
-                {
-                    Player = localPlayer
-                };
-
-                partyLobby = await LobbyService.Instance.JoinLobbyByIdAsync(joinCode, joinOptions);
-            }
-            else
-            {
-                var joinOptions = new JoinLobbyByCodeOptions()
-                {
-                    Player = localPlayer
-                };
-
-                partyLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(joinCode, joinOptions);
-            }
-
-            JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
-
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(joinAllocation, connectionType));
-            Debug.Log($"Joined lobby: {partyLobby.Name}");
-
-            await SubscribeToLobbyEvents(partyLobby.Id);
-
-            // Check if matchmaking is already in progress and show UI accordingly
-            if (partyLobby.Data != null && partyLobby.Data.ContainsKey("MatchmakingStatus") &&
-                partyLobby.Data["MatchmakingStatus"].Value == "searching")
-            {
-                isSearching = true;
-                lobbyUI.ShowMatchmakingBarUI(isPartyLeader ? CancelMatchmaking : null);
-                Debug.Log($"Joined lobby during active matchmaking - showing matchmaking UI to {(isPartyLeader ? "party leader" : "party member")}");
-            }
-
+            await LeaveCurrentSessionAsync();
+            var joined = useID
+                ? await MultiplayerService.Instance.JoinSessionByIdAsync(joinCode, BuildJoinOptions(), lifetimeCancellation.Token)
+                : await MultiplayerService.Instance.JoinSessionByCodeAsync(joinCode, BuildJoinOptions(), lifetimeCancellation.Token);
+            await ActivateSessionAsync(joined);
             CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
-            if (NetworkManager.Singleton.StartClient())
+            ShowLobby();
+        });
+    }
+
+    public Task<bool> QuickJoin(CancellationToken cancellationToken = default)
+    {
+        if (session != null) return Task.FromResult(false);
+        return RunLobbyOperationAsync(async () =>
+        {
+            if (session != null) throw new InvalidOperationException("Leave the current session before quick joining.");
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lifetimeCancellation.Token);
+            var networkManager = NetworkManager.Singleton;
+            var loadingScreenShown = false;
+            void OnQuickJoinClientStarted()
             {
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
+                // Sessions starts NGO only after finding and joining a lobby.
+                // Do not cover the matchmaking bar while searching/retrying.
+                if (loadingScreenShown || linked.IsCancellationRequested) return;
+                loadingScreenShown = true;
+                LoadingScreen.Instance.ShowGenericLoadingScreen();
             }
-            lobbyUI.ShowLobbyUI();
-
-            onLobbyUpdate?.Invoke(partyLobby);
-
-            LoadingScreen.Instance.HideGenericLoadingScreen();
-        }
-        catch (LobbyServiceException e)
-        {
-            LoadingScreen.Instance.HideGenericLoadingScreen();
-            Debug.LogError($"Failed to join party lobby: {e.Message}");
-        }
-    }
-
-    public async Task<bool> QuickJoin()
-    {
-        try
-        {
-            QuickJoinLobbyOptions options = new QuickJoinLobbyOptions();
-
-            options.Player = localPlayer;
-
-            /*options.Filter = new List<QueryFilter>()
+            networkManager.OnClientStarted += OnQuickJoinClientStarted;
+            try
             {
-                new QueryFilter(
-                    field: QueryFilter.FieldOptions.MaxPlayers,
-                    op: QueryFilter.OpOptions.GE,
-                    value: "10")
-             };*/
-
-            partyLobby = await LobbyService.Instance.QuickJoinLobbyAsync(options);
-
-            LoadingScreen.Instance.ShowGenericLoadingScreen();
-
-            JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
-
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(joinAllocation, connectionType));
-            Debug.Log($"Joined lobby: {partyLobby.Name}");
-
-            await SubscribeToLobbyEvents(partyLobby.Id);
-
-            CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
-            if (NetworkManager.Singleton.StartClient())
-            {
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
-            }
-            lobbyUI.ShowLobbyUI();
-
-            onLobbyUpdate?.Invoke(partyLobby);
-
-            LoadingScreen.Instance.HideGenericLoadingScreen();
-            return true;
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogWarning(e);
-            return false;
-        }
-    }
-
-    public async Task<QueryResponse> GetOpenLobbies()
-    {
-        try
-        {
-            QueryLobbiesOptions options = new QueryLobbiesOptions();
-
-            var lobbies = await LobbyService.Instance.QueryLobbiesAsync(options);
-
-            return lobbies;
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogError(e);
-
-            return default;
-        }
-    }
-
-    public void ReturnToOriginalLobbyAfterMatch()
-    {
-        if (!isInMatchmakingGame || originalPartyInfo == null)
-            return;
-
-        isInMatchmakingGame = false;
-
-        // Instead of trying to rejoin the original lobby (which expired), 
-        // recreate the party if we were the original leader
-        if (originalPartyInfo.originalLeaderId == localPlayer.Id)
-        {
-            RecreateOriginalParty();
-        }
-        else
-        {
-            // Non-leaders return to main menu and wait for party invite
-            lobbyUI.ShowMainMenuUI();
-            Debug.Log("Waiting for original party leader to recreate the party...");
-        }
-
-        // Clear the original party info
-        originalPartyInfo = null;
-    }
-
-    public void OnMatchmakingGameEnded()
-    {
-        ReturnToOriginalLobbyAfterMatch();
-    }
-
-    private void RecreateOriginalParty()
-    {
-        if (originalPartyInfo == null)
-            return;
-
-        try
-        {
-            Debug.Log("Recreating original party lobby...");
-
-            // Create a new lobby with the original settings
-            CreateLobby(originalPartyInfo.originalLobbyType);
-
-            // TODO: Implement party invitation system to invite original members
-            // This would require a separate invitation mechanism since we can't rejoin the expired lobby
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Failed to recreate original party: {e.Message}");
-            lobbyUI.ShowMainMenuUI();
-        }
-    }
-
-    private async Task PollMatchmakerTicket()
-    {
-        if (!isPartyLeader)
-        {
-            return;
-        }
-
-        // Validate that we have a valid ticket ID before polling
-        if (string.IsNullOrEmpty(partyMatchmakerTicketId))
-        {
-            Debug.LogError("Cannot poll matchmaker ticket - ticket ID is null or empty");
-            HandleMatchmakingError("PollMatchmakerTicket - invalid ticket ID", null);
-            return;
-        }
-
-        try
-        {
-            Unity.Services.Matchmaker.Models.TicketStatusResponse ticketStatusResponse = await MatchmakerService.Instance.GetTicketAsync(partyMatchmakerTicketId);
-
-            if (ticketStatusResponse == null)
-            {
-                Debug.LogWarning("Matchmaker ticket status response is null");
-                return;
-            }
-
-            var matchIdAssignment = ticketStatusResponse.Value as Unity.Services.Matchmaker.Models.MatchIdAssignment;
-            
-            if (matchIdAssignment == null)
-            {
-                Debug.LogError("Match ID assignment is null");
-                HandleMatchmakingError("PollMatchmakerTicket - null assignment", null);
-                return;
-            }
-
-            Debug.Log($"{matchIdAssignment.Status}; {matchIdAssignment.AssignmentType}; {matchIdAssignment.Message}; {matchIdAssignment.MatchId}");
-
-            switch (matchIdAssignment.Status)
-            {
-                case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.Timeout:
-                    Debug.Log("Matchmaking timeout");
-                    // TODO: Show timeout message to user: "Matchmaking timed out"
-                    HandleMatchmakingError("Matchmaking timeout", null);
-                    break;
-                case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.Failed:
-                    Debug.LogError($"Failed to find a match: {matchIdAssignment.Message}");
-                    HandleMatchmakingError($"Matchmaker failed: {matchIdAssignment.Message}", null);
-                    break;
-                case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.InProgress:
-                    break;
-                case Unity.Services.Matchmaker.Models.MatchIdAssignment.StatusOptions.Found:
-                    isSearching = false;
-                    Debug.Log("Match found!");
-
-                    if (string.IsNullOrEmpty(matchIdAssignment.MatchId))
-                    {
-                        throw new Exception("Match found but MatchId is null or empty");
-                    }
-
-                    // Scrivi il matchId nella lobby data per notificare tutti i membri
-                    if (partyLobby != null && partyLobby.HostId == localPlayer.Id)
-                    {
-                        var updateOptions = new UpdateLobbyOptions();
-                        updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
-                        updateOptions.Data["PendingMatchId"] = new DataObject(DataObject.VisibilityOptions.Member, matchIdAssignment.MatchId);
-                        await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, updateOptions);
-                    }
-
-                    // Il leader si sposta subito
-                    NetworkManager.Singleton.Shutdown();
-                    TryCreateOrLobbyJoin(matchIdAssignment.MatchId, 10);
-                    break;
-                default:
-                    Debug.LogWarning($"Unknown matchmaker status: {matchIdAssignment.Status}");
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            HandleMatchmakingError("PollMatchmakerTicket", ex);
-        }
-    }
-
-    public async void TryCreateOrLobbyJoin(string lobbyID, int maxPlayers)
-    {
-        try
-        {
-            LoadingScreen.Instance.ShowGenericLoadingScreen();
-
-            var partyLobbyOptions = new CreateLobbyOptions()
-            {
-                IsPrivate = true,
-                Player = localPlayer,
-                Data = new Dictionary<string, DataObject>
+                var joined = await MultiplayerService.Instance.MatchmakeSessionAsync(new QuickJoinOptions
                 {
-                    {"SelectedMap", new DataObject(DataObject.VisibilityOptions.Member, NumberEncoder.ToBase64<short>(0))},
-                    {"LobbyType", new DataObject(DataObject.VisibilityOptions.Public, LobbyType.Custom.ToString())},
-                    {"IsMatchmakingLobby", new DataObject(DataObject.VisibilityOptions.Member, "true")}
-                },
-            };
-
-            var partyLobbyName = $"{LobbyNamePrefix}_{localPlayer.Id}";
-            partyLobby = await LobbyService.Instance.CreateOrJoinLobbyAsync(lobbyID, $"MATCH_{lobbyID}", maxPlayers, partyLobbyOptions);
-
-            if (partyLobby == null)
-            {
-                throw new Exception("Failed to create or join matchmaking lobby - lobby is null");
-            }
-
-            Debug.Log($"Joined matchmaking lobby: {partyLobby.Name}, code: {partyLobby.LobbyCode}");
-
-            await SubscribeToLobbyEvents(partyLobby.Id);
-
-            if (partyLobby.HostId == Player.Id)
-            {
-                Allocation allocation = await AllocateRelay();
-                if (allocation.AllocationId == null)
+                    CreateSession = false,
+                    Timeout = TimeSpan.FromSeconds(2),
+                    Filters = GetBrowserFilters()
+                }, BuildSessionOptions(LobbyType.Custom), linked.Token);
+                if (linked.IsCancellationRequested)
                 {
-                    throw new Exception("Failed to allocate relay server");
+                    await joined.LeaveAsync();
+                    linked.Token.ThrowIfCancellationRequested();
                 }
-
-                string relayJoinCode = await GetRelayJoinCode(allocation);
-                if (string.IsNullOrEmpty(relayJoinCode))
+                await ActivateSessionAsync(joined);
+                if (linked.IsCancellationRequested)
                 {
-                    throw new Exception("Failed to get relay join code");
+                    await LeaveCurrentSessionAsync();
+                    linked.Token.ThrowIfCancellationRequested();
                 }
-
-                await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, new UpdateLobbyOptions()
-                {
-                    Data = new Dictionary<string, DataObject>
-                    {
-                    {"RelayJoinCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode)}
-                    }
-                });
-
-                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(allocation, connectionType));
-
-                if (!NetworkManager.Singleton.StartHost())
-                {
-                    throw new Exception("Failed to start network host");
-                }
-
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
-            }
-            else
-            {
-                // Add timeout for waiting for relay join code
-                var timeout = 30f; // 30 second timeout
-                var startTime = Time.time;
-
-                while (!partyLobby.Data.ContainsKey("RelayJoinCode"))
-                {
-                    if (Time.time - startTime > timeout)
-                    {
-                        throw new Exception("Timeout waiting for relay join code from host");
-                    }
-                    await Task.Delay(100);
-                }
-
-                JoinAllocation joinAllocation = await JoinRelay(partyLobby.Data["RelayJoinCode"].Value);
-                if (joinAllocation.AllocationId == null)
-                {
-                    throw new Exception("Failed to join relay server");
-                }
-
-                NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(AllocationUtils.ToRelayServerData(joinAllocation, connectionType));
-
                 CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
+                ShowLobby();
+            }
+            finally
+            {
+                networkManager.OnClientStarted -= OnQuickJoinClientStarted;
+                if (loadingScreenShown && LoadingScreen.Instance != null)
+                    LoadingScreen.Instance.HideGenericLoadingScreen();
+            }
+        }, showMainMenuOnFailure: false, showLoadingScreen: false);
+    }
 
-                if (!NetworkManager.Singleton.StartClient())
+    private static List<FilterOption> GetBrowserFilters()
+    {
+        return new List<FilterOption>
+        {
+            new FilterOption(FilterField.AvailableSlots, "0", FilterOperation.Greater),
+            new FilterOption(FilterField.IsLocked, "0", FilterOperation.Equal),
+            new FilterOption(FilterField.StringIndex1, "sessions-v1", FilterOperation.Equal)
+        };
+    }
+
+    public async Task<QuerySessionsResults> GetOpenLobbies()
+    {
+        await authenticationTask;
+        return await MultiplayerService.Instance.QuerySessionsAsync(new QuerySessionsOptions
+        {
+            Count = 25,
+            FilterOptions = GetBrowserFilters()
+        });
+    }
+
+    private async Task ActivateSessionAsync(ISession activeSession)
+    {
+        session = activeSession;
+        partyLobby = new GameSessionView();
+        gamePlayers.Clear();
+        session.Changed += OnSessionChanged;
+        session.RemovedFromSession += OnSessionLost;
+        session.Deleted += OnSessionLost;
+        session.SessionHostChanged += OnSessionHostChanged;
+        SyncSession();
+        AttachSceneEvents();
+        await SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
+        {
+            ["OwnerID"] = MemberPlayerProperty(NetworkManager.Singleton.LocalClientId.ToString())
+        });
+        HandlePartyProperties();
+    }
+
+    private void UnsubscribeFromSession()
+    {
+        if (session == null) return;
+        session.Changed -= OnSessionChanged;
+        session.RemovedFromSession -= OnSessionLost;
+        session.Deleted -= OnSessionLost;
+        session.SessionHostChanged -= OnSessionHostChanged;
+    }
+
+    private void SyncSession()
+    {
+        if (session == null || partyLobby == null) return;
+        partyLobby.Apply(session, localPlayer, pendingPlayerProperties);
+        if (partyLobby.Data.TryGetValue("LobbyType", out var lobbyType) && Enum.TryParse(lobbyType.Value, out LobbyType parsed))
+            currentLobbyType = parsed;
+        onLobbyUpdate?.Invoke(partyLobby);
+        foreach (var player in partyLobby.Players)
+            onPlayerDataChanged?.Invoke(player);
+    }
+
+    private void OnSessionChanged()
+    {
+        SyncSession();
+        HandlePartyProperties();
+    }
+
+    private void ShowLobby()
+    {
+        lobbyUI?.ShowLobbyUI();
+        SyncSession();
+        if (isSearching) lobbyUI?.ShowMatchmakingBarUI(IsPartyLeader ? CancelMatchmaking : null);
+    }
+
+    private void HandlePartyProperties()
+    {
+        if (session == null || isInMatchmakingGame) return;
+        if (partyLobby.Data.TryGetValue("MatchmakingStatus", out var status))
+        {
+            var searching = status.Value == "searching";
+            if (searching != isSearching)
+            {
+                isSearching = searching;
+                if (searching)
                 {
-                    throw new Exception("Failed to start network client");
+                    CaptureOriginalParty();
+                    lobbyUI?.ShowMatchmakingBarUI(IsPartyLeader ? CancelMatchmaking : null);
                 }
-
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
-                NetworkManager.Singleton.SceneManager.OnSceneEvent += OnSceneEvent;
+                else lobbyUI?.HideMatchmakingBarUI();
             }
-
-            lobbyUI.ShowLobbyUI();
-            onLobbyUpdate?.Invoke(partyLobby);
-
-            await Task.Delay(2500);
-
-            // Validate lobby is ready before starting game
-            if (partyLobby.HostId == Player.Id)
-            {
-                if (!ValidateMatchmakingLobbyReady())
+        }
+        if (!IsPartyLeader && partyLobby.Data.TryGetValue("RequestedTeam", out var requestedTeam) && IsStandardsLobby())
+        {
+            if (localPlayer.Data["PlayerTeam"].Value != requestedTeam.Value)
+                ObserveTask(SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
                 {
-                    throw new Exception("Matchmaking lobby validation failed - not all players joined successfully");
-                }
-                StartGame();
-            }
-
-            LoadingScreen.Instance.HideGenericLoadingScreen();
+                    ["PlayerTeam"] = MemberPlayerProperty(requestedTeam.Value)
+                }));
         }
-        catch (Exception ex)
+        if (!IsPartyLeader && partyLobby.Data.TryGetValue("PendingMatchId", out var match) &&
+            !string.IsNullOrEmpty(match.Value) && pendingMatchId != match.Value)
         {
-            HandleMatchmakingError("TryCreateOrLobbyJoin", ex);
-        }
-    }
-
-    private IEnumerator PollMatchmakerTicketRoutine()
-    {
-        while (isSearching && isPartyLeader)
-        {
-            Task searchTask = PollMatchmakerTicket();
-
-            yield return new WaitUntil(() => searchTask.IsCompleted);
-
-            yield return new WaitForSeconds(1.1f);
-        }
-        lobbyUI.HideMatchmakingBarUI();
-    }
-
-    public async void FindMatch()
-    {
-        if (isSearching)
-        {
-            Debug.Log("Matchmaking already in progress");
-            return;
-        }
-
-        if (!isPartyLeader)
-        {
-            Debug.Log("Solo il leader del party può avviare il matchmaking.");
-            return;
-        }
-
-        if (partyLobby == null)
-        {
-            Debug.LogError("Cannot start matchmaking - no party lobby");
-            return;
-        }
-
-        if (partyLobby.Players == null || partyLobby.Players.Count == 0)
-        {
-            Debug.LogError("Cannot start matchmaking - no players in lobby");
-            return;
-        }
-
-        Debug.Log($"Starting matchmaking with {partyLobby.Players.Count} players");
-
-        try
-        {
-            // Set searching state early to prevent double-execution
-            isSearching = true;
-
-            // Save original party information before matchmaking
-            originalPartyInfo = new OriginalPartyInfo
-            {
-                originalLeaderId = partyLobby.HostId,
-                originalMemberIds = partyLobby.Players.Select(p => p.Id).ToList(),
-                originalLobbyType = currentLobbyType,
-                originalLobbyData = new Dictionary<string, DataObject>(partyLobby.Data),
-                originalLobbyName = partyLobby.Name,
-                originalIsPrivate = partyLobby.IsPrivate,
-                originalMaxPlayers = partyLobby.MaxPlayers
-            };
-            expectedMatchmakingPlayers = partyLobby.Players.Count * 2; // Assuming we'll match against another team
-
-            originalPartyLobby = partyLobby;
-            isInMatchmakingGame = true; // Set to true when entering matchmaking
-
-            // Il leader sceglie il team e lo scrive nella lobby data
-            string assignedTeam = UnityEngine.Random.value < 0.5f ? "Blue" : "Orange";
-            Debug.Log($"Assigned team: {assignedTeam}");
-
-            // Aggiorna il PlayerTeam del leader
-            UpdatePlayerOptions updatePlayerOptions = new UpdatePlayerOptions();
-            updatePlayerOptions.Data = new Dictionary<string, PlayerDataObject>(localPlayer.Data);
-            if (updatePlayerOptions.Data.ContainsKey("PlayerTeam"))
-                updatePlayerOptions.Data["PlayerTeam"].Value = assignedTeam;
-            else
-                updatePlayerOptions.Data.Add("PlayerTeam", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, assignedTeam));
-            await LobbyService.Instance.UpdatePlayerAsync(partyLobby.Id, localPlayer.Id, updatePlayerOptions);
-
-            var updateOptions = new UpdateLobbyOptions();
-            updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
-            updateOptions.Data["RequestedTeam"] = new DataObject(DataObject.VisibilityOptions.Member, assignedTeam);
-            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, updateOptions);
-
-            // Attendi che tutti i player abbiano aggiornato il proprio PlayerTeam con timeout
-            await WaitForAllPlayersToUpdateTeam(assignedTeam);
-
-            var matchmakerPlayers = GetMatchmakerPlayersWithTeam();
-
-            if (matchmakerPlayers.Count == 0)
-            {
-                throw new Exception("No players available for matchmaking");
-            }
-
-            Debug.Log($"Creating matchmaking ticket with {matchmakerPlayers.Count} players");
-            createTicketResponse = await MatchmakerService.Instance.CreateTicketAsync(matchmakerPlayers, new CreateTicketOptions("StandardsQueue"));
-            
-            if (createTicketResponse == null || string.IsNullOrEmpty(createTicketResponse.Id))
-            {
-                throw new Exception("Failed to create matchmaking ticket - response is null or empty");
-            }
-
-            partyMatchmakerTicketId = createTicketResponse.Id;
-            Debug.Log($"Matchmaking ticket created successfully: {partyMatchmakerTicketId}");
-
-            // Update lobby data to notify all players that matchmaking has started
-            var matchmakingUpdateOptions = new UpdateLobbyOptions();
-            matchmakingUpdateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
-            matchmakingUpdateOptions.Data["MatchmakingStatus"] = new DataObject(DataObject.VisibilityOptions.Member, "searching");
-            await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, matchmakingUpdateOptions);
-
-            lobbyUI.ShowMatchmakingBarUI(CancelMatchmaking);
-
-            StartCoroutine(PollMatchmakerTicketRoutine());
-            
-            Debug.Log("Matchmaking initialization completed successfully");
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Error in FindMatch: {ex.Message}");
-            HandleMatchmakingError("FindMatch initialization", ex);
-        }
-    }
-
-    // Attende che tutti i player abbiano aggiornato il proprio PlayerTeam
-    private async Task WaitForAllPlayersToUpdateTeam(string assignedTeam)
-    {
-        var timeout = 30f; // 30 second timeout
-        var startTime = Time.time;
-        bool allUpdated = false;
-
-        while (!allUpdated)
-        {
-            if (Time.time - startTime > timeout)
-            {
-                throw new Exception($"Timeout waiting for all players to update team to {assignedTeam}");
-            }
-
-            allUpdated = true;
-            foreach (var player in partyLobby.Players)
-            {
-                if (!player.Data.ContainsKey("PlayerTeam") || player.Data["PlayerTeam"].Value != assignedTeam)
-                {
-                    allUpdated = false;
-                    break;
-                }
-            }
-
-            if (!allUpdated)
-                await Task.Delay(100);
-        }
-
-        Debug.Log($"All players successfully updated to team: {assignedTeam}");
-    }
-
-    public async void CancelMatchmaking()
-    {
-        if (!isSearching)
-        {
-            return;
-        }
-
-        if (!isPartyLeader)
-        {
-            Debug.Log("Only the party leader can cancel matchmaking");
-            // TODO: Show user message: "Only the party leader can cancel matchmaking"
-            return;
-        }
-
-        Debug.Log("Cancelling matchmaking initiated by party leader");
-
-        try
-        {
-            // Always reset searching state first to prevent UI issues
+            pendingMatchId = match.Value;
+            CaptureOriginalParty();
             isSearching = false;
+            ObserveTask(TransitionToMatchAsync(match.Value));
+        }
+    }
 
-            // Delete the matchmaking ticket
-            await DeleteMatchmakingTicket();
+    private async Task SetLocalPlayerPropertiesAsync(Dictionary<string, PlayerProperty> changes)
+    {
+        if (localPlayer == null) return;
+        var targetSession = session;
+        foreach (var change in changes)
+        {
+            localPlayer.Data[change.Key] = change.Value;
+            if (targetSession != null) pendingPlayerProperties[change.Key] = change.Value;
+        }
+        // Local properties can be edited before a session exists (name, clothes, held items).
+        if (targetSession == null) return;
+        SyncSession();
+        await playerWriteGate.WaitAsync(lifetimeCancellation.Token);
+        try
+        {
+            if (session != targetSession || !targetSession.IsMember) return;
+            targetSession.CurrentPlayer.SetProperties(changes);
+            await SaveSessionChangesAsync(targetSession.SaveCurrentPlayerDataAsync);
+        }
+        finally
+        {
+            foreach (var change in changes)
+                if (pendingPlayerProperties.TryGetValue(change.Key, out var pending) && ReferenceEquals(pending, change.Value))
+                    pendingPlayerProperties.Remove(change.Key);
+            playerWriteGate.Release();
+            if (session == targetSession) SyncSession();
+        }
+    }
 
-            // Reset leader-specific state
-            createTicketResponse = null;
-            isInMatchmakingGame = false;
-
-            // Remove RequestedTeam field
-            if (partyLobby != null && partyLobby.Data.ContainsKey("RequestedTeam"))
+    private async Task UpdateHostAsync(Action<IHostSession> update, int? capacity = null)
+    {
+        var targetSession = session;
+        if (targetSession == null || !targetSession.IsHost) return;
+        await hostWriteGate.WaitAsync(lifetimeCancellation.Token);
+        try
+        {
+            if (session != targetSession || !targetSession.IsMember) return;
+            if (capacity.HasValue)
             {
-                try
-                {
-                    var updateOptions = new UpdateLobbyOptions();
-                    updateOptions.Data = new Dictionary<string, DataObject>(partyLobby.Data);
-                    updateOptions.Data.Remove("RequestedTeam");
-                    await LobbyService.Instance.UpdateLobbyAsync(partyLobby.Id, updateOptions);
-                    Debug.Log("Removed RequestedTeam from lobby data");
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"Error removing RequestedTeam from lobby: {ex.Message}");
-                }
+                if (capacity.Value > GetRelayCapacity()) throw new InvalidOperationException("Requested capacity exceeds the Relay allocation.");
+                await SessionCapacityAdapter.SetCapacityAsync(targetSession, capacity.Value);
             }
+            var host = targetSession.AsHost();
+            update(host);
+            await SaveSessionChangesAsync(host.SavePropertiesAsync);
+            SyncSession();
+        }
+        finally { hostWriteGate.Release(); }
+    }
 
-            // Update lobby status to stop matchmaking for all players
-            await UpdateLobbyMatchmakingStatus("stopped");
-
-            // Hide matchmaking UI
+    private async Task SaveSessionChangesAsync(Func<Task> save)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            lifetimeCancellation.Token.ThrowIfCancellationRequested();
             try
             {
-                lobbyUI?.HideMatchmakingBarUI();
+                await save();
+                return;
             }
-            catch (Exception uiEx)
+            catch (SessionException exception) when (exception.Error == SessionError.RateLimitExceeded && attempt < 2)
             {
-                Debug.LogWarning($"Error hiding matchmaking UI: {uiEx.Message}");
-            }
-
-            Debug.Log("Matchmaking cancelled successfully by party leader");
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Error cancelling matchmaking: {ex.Message}");
-
-            // Ensure state is reset even if cleanup fails
-            isSearching = false;
-            createTicketResponse = null;
-            partyMatchmakerTicketId = null;
-            isInMatchmakingGame = false;
-
-            // Try to hide UI even if other operations failed
-            try
-            {
-                lobbyUI?.HideMatchmakingBarUI();
-            }
-            catch (Exception uiEx)
-            {
-                Debug.LogWarning($"Error hiding matchmaking UI during error recovery: {uiEx.Message}");
+                await Task.Delay(1100, lifetimeCancellation.Token);
             }
         }
     }
 
-public void CheckIfShouldChangePos(int maxTeamSize)
-{
-    var map = CharactersList.Instance.GetCurrentLobbyMap();
-    var teams = map.availableTeams;
-    HashSet<string> usedPositions = new HashSet<string>();
-
-    foreach (var player in partyLobby.Players)
+    private void SetPlayerProperty(string key, string value, VisibilityPropertyOptions visibility = VisibilityPropertyOptions.Member)
     {
-        string playerTeam = player.Data["PlayerTeam"].Value;
-        string playerPos = NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value).ToString();
-        usedPositions.Add(playerTeam + playerPos);
-    }
-
-    string localTeam = localPlayer.Data["PlayerTeam"].Value;
-    short localPos = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
-
-    // Se il proprio slot è già occupato da qualcun altro, trova il primo slot libero
-    bool slotOccupiedByOther = partyLobby.Players.Any(p =>
-        p.Id != localPlayer.Id &&
-        p.Data["PlayerTeam"].Value == localTeam &&
-        NumberEncoder.FromBase64<short>(p.Data["PlayerPos"].Value) == localPos);
-
-    if (localPos >= maxTeamSize)
-    {
-        localPos = (short)(maxTeamSize - 1);
-        UpdatePlayerTeamAndPos(TeamMember.GetTeamFromString(localTeam), localPos);
-    }
-
-    if (slotOccupiedByOther)
-    {
-        foreach (var team in teams)
-        {
-            for (short pos = 0; pos < maxTeamSize; pos++)
-            {
-                if (!usedPositions.Contains(team.ToString() + pos.ToString()))
-                {
-                    UpdatePlayerTeamAndPos(team, pos);
-                    return;
-                }
-            }
-        }
-    }
-}
-
-    private async void UpdatePlayerData(UpdatePlayerOptions options)
-    {
-        if (Lobby == null || localPlayer == null)
-        {
-            return;
-        }
-
-        try
-        {
-            await LobbyService.Instance.UpdatePlayerAsync(Lobby.Id, localPlayer.Id, options);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogError(e);
-        }
-    }
-
-    private async void UpdateLobbyData(UpdateLobbyOptions options)
-    {
-        if (Lobby == null)
-        {
-            return;
-        }
-
-        try
-        {
-            await LobbyService.Instance.UpdateLobbyAsync(Lobby.Id, options);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogError(e);
-        }
-    }
-
-    private async Task<string> GetRelayJoinCode(Allocation allocation)
-    {
-        try
-        {
-            var relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            Debug.Log($"Relay join code: {relayJoinCode}");
-            return relayJoinCode;
-        }
-        catch (RelayServiceException e)
-        {
-            Debug.LogError(e);
-            return default;
-        }
-    }
-
-    public async void KickPlayer(string playerID)
-    {
-        if (partyLobby.HostId != localPlayer.Id)
-        {
-            return;
-        }
-
-        await RemoveFromParty(playerID);
-    }
-
-    public void PlayerSwitchTeam()
-    {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-
-        if (options.Data["PlayerTeam"].Value == "Blue")
-        {
-            options.Data["PlayerTeam"].Value = "Orange";
-        }
-        else
-        {
-            options.Data["PlayerTeam"].Value = "Blue";
-        }
-
-        UpdatePlayerData(options);
-
-        Debug.Log($"Switched team to {localPlayer.Data["PlayerTeam"].Value}");
-    }
-
-    public void UpdatePlayerTeamAndPos(Team team, short pos)
-    {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["PlayerTeam"].Value = team.ToString();
-        options.Data["PlayerPos"].Value = NumberEncoder.ToBase64(pos);
-        Debug.Log($"Changed team to {options.Data["PlayerTeam"].Value} and pos to {options.Data["PlayerPos"].Value}");
-
-        UpdatePlayerData(options);
-    }
-
-    public void UpdatePlayerClothes(PlayerClothesInfo clothesInfo)
-    {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["ClothingInfo"].Value = clothesInfo.Serialize();
-        Debug.Log($"Changed clothes to {options.Data["ClothingInfo"].Value}");
-
-        localPlayer.Data = options.Data;
-
-        UpdatePlayerData(options);
-    }
-
-    public void UpdatePlayerHeldItems(string heldItems)
-    {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["HeldItems"].Value = heldItems;
-        Debug.Log($"Changed held items to {options.Data["HeldItems"].Value}");
-
-        UpdatePlayerData(options);
-    }
-
-    public void UpdatePlayerRank()
-    {
-        if (RankedManager.Instance == null)
-        {
-            Debug.LogWarning("RankedManager instance not found, cannot update player rank");
-            return;
-        }
-
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["PlayerRank"].Value = RankedManager.Instance.GetPlayerRankSerialized();
-        Debug.Log($"Updated player rank to {RankedManager.Instance.GetRankDisplayString()}");
-
-        UpdatePlayerData(options);
-    }
-
-    private IEnumerator UpdatePlayerOwnerID(ulong id)
-    {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["OwnerID"].Value = id.ToString();
-
-        Debug.Log($"Changed owner ID to {options.Data["OwnerID"].Value}");
-        yield return null;
-        UpdatePlayerData(options);
-    }
-
-    public void UpdatePlayerItemsPokemonAndBattleItem(string heldItems, short characterID, string battleItemID)
-    {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["HeldItems"].Value = heldItems;
-        options.Data["SelectedCharacter"].Value = NumberEncoder.ToBase64(characterID);
-        options.Data["BattleItem"].Value = battleItemID;
-        Debug.Log($"Changed held items to {options.Data["HeldItems"].Value}, character to {options.Data["SelectedCharacter"].Value}, and battle item to {options.Data["BattleItem"].Value}");
-
-        UpdatePlayerData(options);
-    }
-
-    public void ChangePlayerCharacter(short characterID)
-    {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["SelectedCharacter"].Value = NumberEncoder.ToBase64(characterID);
-        Debug.Log($"Changed character to {options.Data["SelectedCharacter"].Value}");
-
-        UpdatePlayerData(options);
-    }
-
-    public void ChangePlayerBattleItem(string battleItemID)
-    {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["BattleItem"].Value = battleItemID;
-        Debug.Log($"Changed Battle Item to {options.Data["BattleItem"].Value}");
-
-        UpdatePlayerData(options);
+        if (localPlayer == null) return;
+        if (localPlayer.Data.TryGetValue(key, out var previous) && previous.Value == value) return;
+        ObserveTask(SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty> { [key] = new PlayerProperty(value, visibility) }));
     }
 
     public void ChangePlayerName(string newName)
     {
-        UpdatePlayerOptions options = new UpdatePlayerOptions();
-        options.Data = localPlayer.Data;
-        options.Data["PlayerName"].Value = newName;
-        Debug.Log($"Changed name to {options.Data["PlayerName"].Value}");
-
-        UpdatePlayerData(options);
+        SetPlayerProperty("PlayerName", newName, VisibilityPropertyOptions.Public);
+        if (IsPartyLeader) ObserveTask(UpdateHostAsync(host => host.SetProperty("HostDisplayName", new SessionProperty(newName))));
     }
-
-    public void ChangeLobbyVisibility(bool isPrivate)
+    public void UpdatePlayerClothes(PlayerClothesInfo clothesInfo) => SetPlayerProperty("ClothingInfo", clothesInfo.Serialize(), VisibilityPropertyOptions.Public);
+    public void UpdatePlayerHeldItems(string heldItems) => SetPlayerProperty("HeldItems", heldItems);
+    public void ChangePlayerCharacter(short characterID) => SetPlayerProperty("SelectedCharacter", NumberEncoder.ToBase64(characterID));
+    public void ChangePlayerBattleItem(string battleItemID) => SetPlayerProperty("BattleItem", battleItemID);
+    public void UpdatePlayerRank()
     {
-        if (partyLobby.HostId != localPlayer.Id)
-        {
-            return;
-        }
-
-        UpdateLobbyOptions options = new UpdateLobbyOptions();
-        options.Data = partyLobby.Data;
-        options.MaxPlayers = partyLobby.MaxPlayers;
-        options.HostId = partyLobby.HostId;
-        options.Name = partyLobby.Name;
-        options.IsLocked = partyLobby.IsLocked;
-        options.IsPrivate = isPrivate;
-
-        UpdateLobbyData(options);
+        if (RankedManager.Instance != null)
+            SetPlayerProperty("PlayerRank", RankedManager.Instance.GetPlayerRankSerialized(), VisibilityPropertyOptions.Public);
     }
 
-    public void SetLobbyLockedAndPrivate(bool isLocked)
+    public void UpdatePlayerItemsPokemonAndBattleItem(string heldItems, short characterID, string battleItemID)
     {
-        if (partyLobby.HostId != localPlayer.Id)
+        ObserveTask(SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
         {
-            return;
-        }
-
-        UpdateLobbyOptions options = new UpdateLobbyOptions();
-        options.Data = partyLobby.Data;
-        options.MaxPlayers = partyLobby.MaxPlayers;
-        options.HostId = partyLobby.HostId;
-        options.Name = partyLobby.Name;
-        options.IsPrivate = isLocked;
-        options.IsLocked = isLocked;
-
-        UpdateLobbyData(options);
+            ["HeldItems"] = MemberPlayerProperty(heldItems),
+            ["SelectedCharacter"] = MemberPlayerProperty(NumberEncoder.ToBase64(characterID)),
+            ["BattleItem"] = MemberPlayerProperty(battleItemID)
+        }));
     }
 
-    public void SetLobbyLocked(bool isLocked)
+    public void PlayerSwitchTeam()
     {
-        if (partyLobby.HostId != localPlayer.Id)
-        {
-            return;
-        }
-
-        UpdateLobbyOptions options = new UpdateLobbyOptions();
-        options.Data = partyLobby.Data;
-        options.MaxPlayers = partyLobby.MaxPlayers;
-        options.HostId = partyLobby.HostId;
-        options.Name = partyLobby.Name;
-        options.IsPrivate = partyLobby.IsPrivate;
-        options.IsLocked = isLocked;
-
-        UpdateLobbyData(options);
+        UpdatePlayerTeamAndPos(GetLocalPlayerTeam() == Team.Blue ? Team.Orange : Team.Blue,
+            NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value));
     }
+
+    public void UpdatePlayerTeamAndPos(Team team, short pos)
+    {
+        if (localPlayer.Data["PlayerTeam"].Value == team.ToString() &&
+            localPlayer.Data["PlayerPos"].Value == NumberEncoder.ToBase64(pos)) return;
+        ObserveTask(SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
+        {
+            ["PlayerTeam"] = MemberPlayerProperty(team.ToString()),
+            ["PlayerPos"] = MemberPlayerProperty(NumberEncoder.ToBase64(pos))
+        }));
+    }
+
+    public void CheckIfShouldChangePos(int maxTeamSize)
+    {
+        if (partyLobby == null || maxTeamSize <= 0) return;
+        var teams = CharactersList.Instance.GetCurrentLobbyMap().availableTeams;
+        var team = GetLocalPlayerTeam();
+        var position = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
+        bool Occupied(Team candidateTeam, short candidatePosition) => partyLobby.Players.Any(player =>
+            player.Id != localPlayer.Id && player.Data["PlayerTeam"].Value == candidateTeam.ToString() &&
+            NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value) == candidatePosition);
+        if (teams.Contains(team) && position >= 0 && position < maxTeamSize && !Occupied(team, position)) return;
+        foreach (var candidateTeam in teams)
+            for (short candidatePosition = 0; candidatePosition < maxTeamSize; candidatePosition++)
+                if (!Occupied(candidateTeam, candidatePosition))
+                {
+                    UpdatePlayerTeamAndPos(candidateTeam, candidatePosition);
+                    return;
+                }
+    }
+
+    public void ChangeLobbyVisibility(bool isPrivate) => ObserveTask(UpdateHostAsync(host => host.IsPrivate = isPrivate));
+    public void SetLobbyLocked(bool isLocked) => ObserveTask(UpdateHostAsync(host => host.IsLocked = isLocked));
+    public void SetLobbyLockedAndPrivate(bool isLocked) => ObserveTask(UpdateHostAsync(host =>
+    {
+        host.IsLocked = isLocked;
+        host.IsPrivate = isLocked;
+    }));
 
     public void ChangeLobbyMap(MapInfo map)
     {
-        if (partyLobby.HostId != localPlayer.Id)
-        {
-            return;
-        }
-
-        // Check for invalid teams and reassign if needed
-        var validTeams = map.availableTeams;
-        foreach (var player in partyLobby.Players)
-        {
-            Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
-            if (!validTeams.Contains(playerTeam))
-            {
-                // Assign to first valid team and position 0 (or next available)
-                Team newTeam = validTeams.Count > 0 ? validTeams[0] : Team.Neutral;
-                UpdatePlayerOptions playerOptions = new UpdatePlayerOptions();
-                playerOptions.Data = new Dictionary<string, PlayerDataObject>(player.Data);
-                playerOptions.Data["PlayerTeam"].Value = newTeam.ToString();
-                playerOptions.Data["PlayerPos"].Value = NumberEncoder.ToBase64((short)0);
-                _ = LobbyService.Instance.UpdatePlayerAsync(partyLobby.Id, player.Id, playerOptions);
-            }
-        }
-
-        UpdateLobbyOptions lobbyOptions = new UpdateLobbyOptions();
-        lobbyOptions.Data = partyLobby.Data;
-        lobbyOptions.MaxPlayers = map.maxTeamSize * map.availableTeams.Count;
-        lobbyOptions.HostId = partyLobby.HostId;
-        lobbyOptions.Name = partyLobby.Name;
-        lobbyOptions.IsPrivate = partyLobby.IsPrivate;
-        lobbyOptions.IsLocked = partyLobby.IsLocked;
-        lobbyOptions.Data["SelectedMap"] = new DataObject(DataObject.VisibilityOptions.Public, NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)));
-
-        UpdateLobbyData(lobbyOptions);
+        if (!IsPartyLeader || isSearching) return;
+        var capacity = currentLobbyType == LobbyType.Standards ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
+        ObserveTask(UpdateHostAsync(host => host.SetProperty("SelectedMap", new SessionProperty(
+            NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)))), capacity));
+        // Each member fixes its own team/slot on the resulting session event;
+        // this avoids unauthorized writes to another player's properties.
     }
 
-    private async Task<Allocation> AllocateRelay()
+    public void ChangeLobbyType(LobbyType newType)
     {
+        if (!IsPartyLeader || isSearching || currentLobbyType == newType) return;
+        var map = CharactersList.Instance.GetCurrentLobbyMap();
+        var capacity = newType == LobbyType.Standards ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
+        ObserveTask(UpdateHostAsync(host =>
+        {
+            host.SetProperty("LobbyType", new SessionProperty(newType.ToString()));
+            host.SetProperty("MatchmakingStatus", null);
+            host.SetProperty("RequestedTeam", null);
+            host.SetProperty("PendingMatchId", null);
+        }, capacity));
+    }
+
+    public bool IsCustomLobby() => currentLobbyType == LobbyType.Custom;
+    public bool IsStandardsLobby() => currentLobbyType == LobbyType.Standards;
+    public int GetMaxPartyMembers()
+    {
+        var map = CharactersList.Instance.GetCurrentLobbyMap();
+        return IsStandardsLobby() ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
+    }
+
+    public async void KickPlayer(string playerID)
+    {
+        if (!IsPartyLeader || playerID == localPlayer.Id) return;
+        try { await session.AsHost().RemovePlayerAsync(playerID); }
+        catch (Exception exception) { Debug.LogException(exception); }
+    }
+
+    private void CaptureOriginalParty()
+    {
+        if (partyLobby == null || isInMatchmakingGame) return;
+        originalPartyInfo = new OriginalPartyInfo
+        {
+            LeaderId = partyLobby.HostId,
+            ReturnSessionId = partyLobby.Data.TryGetValue("ReturnPartyId", out var returnId) ? returnId.Value : null,
+            Type = currentLobbyType,
+            IsPrivate = partyLobby.IsPrivate,
+            Properties = new Dictionary<string, SessionProperty>(partyLobby.Data.Where(property =>
+                property.Key == "SelectedMap" || property.Key == "LobbyType"))
+        };
+    }
+
+    public List<Unity.Services.Matchmaker.Models.Player> GetMatchmakerPlayersWithTeam()
+    {
+        return partyLobby.Players.Select(player => new Unity.Services.Matchmaker.Models.Player(player.Id,
+            new Dictionary<string, string> { ["Team"] = player.Data["PlayerTeam"].Value })).ToList();
+    }
+
+    public async void FindMatch()
+    {
+        if (!IsPartyLeader || isSearching || lobbyOperationInProgress) return;
+        isSearching = true;
+        var sourceSession = session;
+        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetimeCancellation.Token);
+        matchmakingCancellation = cancellation;
         try
         {
-            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPartyMembers - 1);
-
-            return allocation;
+            var assignedTeam = UnityEngine.Random.value < 0.5f ? Team.Blue : Team.Orange;
+            await SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
+            {
+                ["PlayerTeam"] = MemberPlayerProperty(assignedTeam.ToString())
+            });
+            await UpdateHostAsync(host =>
+            {
+                host.SetProperty("ReturnPartyId", MemberSessionProperty(Guid.NewGuid().ToString()));
+                host.SetProperty("PendingMatchId", null);
+                host.SetProperty("RequestedTeam", MemberSessionProperty(assignedTeam.ToString()));
+                host.SetProperty("MatchmakingStatus", MemberSessionProperty("searching"));
+                host.IsLocked = true;
+            });
+            CaptureOriginalParty();
+            lobbyUI?.ShowMatchmakingBarUI(CancelMatchmaking);
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (partyLobby.Players.Any(player => player.Data["PlayerTeam"].Value != assignedTeam.ToString()))
+            {
+                cancellation.Token.ThrowIfCancellationRequested();
+                if (DateTime.UtcNow > deadline) throw new TimeoutException("Party members did not confirm their teams.");
+                await Task.Delay(100, cancellation.Token);
+            }
+            var matchId = await partyMatchmaker.FindMatchAsync(GetMatchmakerPlayersWithTeam(), "StandardsQueue", cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (session != sourceSession) return;
+            pendingMatchId = matchId;
+            await UpdateHostAsync(host => host.SetProperty("PendingMatchId", MemberSessionProperty(matchId)));
+            isSearching = false;
+            await TransitionToMatchAsync(matchId);
         }
-        catch (RelayServiceException e)
+        catch (OperationCanceledException) { }
+        catch (Exception exception)
         {
-            Debug.LogError(e);
+            Debug.LogError($"Party matchmaking failed: {exception.Message}");
+            if (session == sourceSession) await StopPartySearchAsync();
+        }
+        finally
+        {
+            if (matchmakingCancellation == cancellation)
+            {
+                matchmakingCancellation = null;
+                if (session == sourceSession) await StopPartySearchAsync();
+            }
+            cancellation.Dispose();
+        }
+    }
 
-            return default;
+    private async Task StopPartySearchAsync()
+    {
+        isSearching = false;
+        try
+        {
+            await UpdateHostAsync(host =>
+            {
+                host.SetProperty("MatchmakingStatus", MemberSessionProperty("stopped"));
+                host.SetProperty("RequestedTeam", null);
+                host.SetProperty("PendingMatchId", null);
+                host.IsLocked = false;
+            });
+        }
+        catch (Exception exception) { Debug.LogWarning($"Could not reset party search: {exception.Message}"); }
+        lobbyUI?.HideMatchmakingBarUI();
+    }
+
+    public async void CancelMatchmaking()
+    {
+        if (!IsPartyLeader || matchmakingCancellation == null) return;
+        matchmakingCancellation.Cancel();
+        // FindMatch owns ticket cleanup. Keep searching locked until its finally
+        // block completes so a new search cannot be cancelled by the old one.
+        await Task.Yield();
+    }
+
+    private async Task TransitionToMatchAsync(string matchId)
+    {
+        await RunLobbyOperationAsync(async () =>
+        {
+            CaptureOriginalParty();
+            isInMatchmakingGame = true;
+            isSearching = false;
+            var results = await partyMatchmaker.GetResultsAsync(matchId, lifetimeCancellation.Token);
+            var roster = new MatchRoster(results.MatchProperties, CharactersList.Instance.GetMapFromID(0).maxTeamSize);
+            expectedMatchPlayerIds = roster.Players.Keys.ToArray();
+            if (!roster.Players.TryGetValue(localPlayer.Id, out var assignment))
+                throw new InvalidOperationException("The local player is not in the assigned match roster.");
+
+            // Acknowledge the handoff before leaving. The party host keeps Relay
+            // alive until every remaining member has received the match ID.
+            await SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
+            {
+                ["MatchReady"] = MemberPlayerProperty(matchId)
+            });
+            if (IsPartyLeader)
+            {
+                var handoffDeadline = DateTime.UtcNow.AddSeconds(30);
+                while (partyLobby.Players.Any(player => player.Id != localPlayer.Id &&
+                    (!player.Data.TryGetValue("MatchReady", out var ready) || ready.Value != matchId)))
+                {
+                    if (DateTime.UtcNow > handoffDeadline) throw new TimeoutException("Party members did not acknowledge the match handoff.");
+                    await Task.Delay(100, lifetimeCancellation.Token);
+                }
+            }
+
+            await LeaveCurrentSessionAsync();
+            localPlayer.Data.Remove("MatchReady");
+            await SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
+            {
+                ["PlayerTeam"] = MemberPlayerProperty(assignment.Team),
+                ["PlayerPos"] = MemberPlayerProperty(NumberEncoder.ToBase64(assignment.Position))
+            });
+            var options = BuildSessionOptions(LobbyType.Custom);
+            options.MaxPlayers = Math.Max(GetRelayCapacity(), expectedMatchPlayerIds.Length);
+            options.Name = $"MATCH_{matchId}";
+            options.SessionProperties["IsMatchmakingLobby"] = MemberSessionProperty("true");
+            var matched = await MultiplayerService.Instance.CreateOrJoinSessionAsync(matchId, options, lifetimeCancellation.Token);
+            await ActivateSessionAsync(matched);
+            lobbyUI?.HideMatchmakingBarUI();
+            // Every client must have the complete session roster before the host
+            // changes scenes: character selection builds its UI from that roster.
+            var rosterDeadline = DateTime.UtcNow.AddSeconds(45);
+            while (expectedMatchPlayerIds.Any(playerId => !matched.HasPlayer(playerId)))
+            {
+                if (session != matched) throw new OperationCanceledException();
+                if (DateTime.UtcNow > rosterDeadline) throw new TimeoutException("The assigned match roster did not arrive.");
+                await Task.Delay(100, lifetimeCancellation.Token);
+            }
+            await SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
+            {
+                ["MatchReady"] = MemberPlayerProperty(matchId)
+            });
+            if (matched.IsHost)
+            {
+                var deadline = DateTime.UtcNow.AddSeconds(45);
+                while (!ValidateMatchmakingLobbyReady())
+                {
+                    lifetimeCancellation.Token.ThrowIfCancellationRequested();
+                    if (session != matched) throw new OperationCanceledException();
+                    if (DateTime.UtcNow > deadline) throw new TimeoutException("Not all assigned players connected to the match.");
+                    await Task.Delay(100, lifetimeCancellation.Token);
+                }
+                StartGame();
+            }
+        });
+    }
+
+    private bool ValidateMatchmakingLobbyReady()
+    {
+        if (session == null || !NetworkManager.Singleton.IsHost) return false;
+        var owners = new HashSet<ulong>();
+        foreach (var playerId in expectedMatchPlayerIds)
+        {
+            var player = partyLobby.Players.Find(member => member.Id == playerId);
+            if (player == null || !player.Data.TryGetValue("MatchReady", out var ready) || ready.Value != pendingMatchId ||
+                !player.Data.TryGetValue("OwnerID", out var owner) ||
+                !ulong.TryParse(owner.Value, out var ownerId) || !owners.Add(ownerId) ||
+                !NetworkManager.Singleton.ConnectedClientsIds.Contains(ownerId)) return false;
+        }
+        return expectedMatchPlayerIds.Length > 0;
+    }
+
+    private async Task LeaveCurrentSessionAsync()
+    {
+        var leaving = session ?? sessionAwaitingCleanup;
+        sessionAwaitingCleanup = leaving;
+        UnsubscribeFromSession();
+        DetachSceneEvents();
+        // Drain writes while the session handle is still valid, then give its
+        // network module sole responsibility for shutting NGO down.
+        await playerWriteGate.WaitAsync();
+        await hostWriteGate.WaitAsync();
+        try
+        {
+            session = null;
+            pendingPlayerProperties.Clear();
+            if (leaving != null)
+            {
+                if (MultiplayerService.Instance.Sessions.Values.Contains(leaving) && leaving.IsMember)
+                    await leaving.LeaveAsync();
+                // Kicks/deletions are cleaned up asynchronously by MPS. Do not
+                // reuse a session type or NetworkManager until that has finished.
+                var deadline = DateTime.UtcNow.AddSeconds(15);
+                while (MultiplayerService.Instance.Sessions.Values.Contains(leaving))
+                {
+                    if (DateTime.UtcNow > deadline) throw new TimeoutException("The previous session has not finished shutting down.");
+                    await Task.Delay(100, lifetimeCancellation.Token);
+                }
+            }
+            sessionAwaitingCleanup = null;
+        }
+        finally
+        {
+            playerWriteGate.Release();
+            hostWriteGate.Release();
+            partyLobby = null;
+            playerNetworkManagers.Clear();
+            PlayerClothesPreloader.Instance?.ClearAllModels();
         }
     }
 
     public async void LeaveLobby()
     {
-        LoadingScreen.Instance.ShowGenericLoadingScreen();
-        await RemoveFromParty(localPlayer.Id);
-        partyLobby = null;
-        PlayerClothesPreloader.Instance.ClearAllModels();
-        NetworkManager.Singleton.Shutdown();
-
-        playerNetworkManagers.Clear();
-
-        lobbyUI.ShowMainMenuUI();
-        LoadingScreen.Instance.HideGenericLoadingScreen();
+        matchmakingCancellation?.Cancel();
+        isSearching = false;
+        await RunLobbyOperationAsync(async () =>
+        {
+            await LeaveCurrentSessionAsync();
+            ResetMatchState();
+            lobbyUI?.ShowMainMenuUI();
+        });
     }
 
-    private async void LeaveLobbyNoGUI()
+    private void ResetMatchState()
     {
-        await RemoveFromParty(localPlayer.Id);
-        partyLobby = null;
-        PlayerClothesPreloader.Instance.ClearAllModels();
-        NetworkManager.Singleton.Shutdown();
-        playerNetworkManagers.Clear();
+        isSearching = false;
+        isInMatchmakingGame = false;
+        pendingMatchId = null;
+        expectedMatchPlayerIds = Array.Empty<string>();
+        localPlayer?.Data.Remove("MatchReady");
+        originalPartyInfo = null;
+        gamePlayers.Clear();
     }
 
-    private async Task RemoveFromParty(string playerID)
+    private void OnSessionLost() => ObserveTask(HandleSessionLossAsync());
+    private void OnSessionHostChanged(string hostId)
     {
+        // Session ownership migration is not gameplay state migration. Until the
+        // game implements the latter, do not resume a match on a new NGO host.
+        if (!transitioningNetwork) OnSessionLost();
+    }
+
+    private async Task HandleSessionLossAsync()
+    {
+        if (transitioningNetwork || handlingSessionLoss || session == null) return;
+        handlingSessionLoss = true;
+        matchmakingCancellation?.Cancel();
+        isSearching = false;
         try
         {
-            await LobbyService.Instance.RemovePlayerAsync(partyLobby.Id, playerID);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.LogError(e);
-        }
-    }
-
-    public void StartGame()
-    {
-        if (partyLobby.HostId != localPlayer.Id)
-        {
-            return;
-        }
-
-        if (IsStandardsLobby())
-        {
-            FindMatch();
-            return;
-        }
-
-        SetLobbyLockedAndPrivate(true);
-
-        string mapMode = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType switch
-        {
-            CharacterSelectType.BlindPick => "CharacterSelect",
-            CharacterSelectType.Draft => "DraftSelect",
-            CharacterSelectType.PsyduckRacing => "RacingReadyScreen",
-            _ => "CharacterSelect",
-        };
-
-        NetworkManager.Singleton.SceneManager.LoadScene(mapMode, LoadSceneMode.Single);
-    }
-
-    public void LoadGameMap()
-    {
-        if (partyLobby.HostId != localPlayer.Id)
-        {
-            return;
-        }
-        MapInfo selectedMap = CharactersList.Instance.GetMapFromID(NumberEncoder.FromBase64<short>(partyLobby.Data["SelectedMap"].Value));
-        NetworkManager.Singleton.SceneManager.LoadScene(selectedMap.sceneName, LoadSceneMode.Single);
-    }
-
-    public void LoadResultsScreen()
-    {
-        if (partyLobby.HostId != localPlayer.Id)
-        {
-            return;
-        }
-
-        SetLobbyLocked(false);
-
-        LoadingScreen.Instance.ShowGenericLoadingScreen();
-
-        NetworkManager.Singleton.SceneManager.LoadScene("LobbyScene", LoadSceneMode.Single);
-    }
-
-    private IEnumerator LoadResultsScreenAsync()
-    {
-        var task = SceneManager.LoadSceneAsync(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene, LoadSceneMode.Additive);
-        while (!task.isDone)
-        {
-            yield return null;
-        }
-
-        lobbyUI.DisableLobbyScene();
-    }
-
-    public void ReturnToLobby(bool leaveLobby)
-    {
-        if (leaveLobby) LeaveLobbyNoGUI();
-        StartCoroutine(LoadLobbyAsync());
-    }
-
-    public void ReturnToHomeWithoutLeavingLobby()
-    {
-        StartCoroutine(ReturnToHomeWithoutLeavingLobbyAsync());
-    }
-
-    private IEnumerator ReturnToHomeWithoutLeavingLobbyAsync()
-    {
-        LoadingScreen.Instance.ShowGenericLoadingScreen();
-
-        var loadTask = SceneManager.UnloadSceneAsync(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene);
-
-        yield return loadTask;
-
-        lobbyUI.EnableLobbyScene();
-
-        yield return new WaitForSeconds(0.1f);
-
-        // Check if we're returning from a matchmaking game
-        if (isInMatchmakingGame && originalPartyInfo != null)
-        {
-            // Trigger the party recreation process
-            ReturnToOriginalLobbyAfterMatch();
-            yield break;
-        }
-
-        lobbyUI.ShowLobbyUI();
-
-        LoadingScreen.Instance.HideGenericLoadingScreen();
-    }
-
-    private void OnSceneEvent(SceneEvent sceneEvent)
-    {
-        switch (sceneEvent.SceneEventType)
-        {
-            case SceneEventType.LoadComplete:
-                if (sceneEvent.SceneName == "LobbyScene" && loadResultsScreen)
-                {
-                    StartCoroutine(LoadResultsScreenAsync());
-                    loadResultsScreen = false;
-                }
-                break;
-        }
-    }
-
-    public Player GetPlayerByID(string playerID)
-    {
-        foreach (var player in partyLobby.Players)
-        {
-            if (player.Id == playerID)
+            await RunLobbyOperationAsync(async () =>
             {
-                return player;
-            }
+                await LeaveCurrentSessionAsync();
+                ResetMatchState();
+                if (SceneManager.GetActiveScene().name != "LobbyScene")
+                    await SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
+                lobbyUI?.ShowMainMenuUI();
+            });
         }
-
-        return null;
-    }
-
-    public Player[] GetTeamPlayers(Team team)
-    {
-        List<Player> teamPlayers = new List<Player>();
-        foreach (var player in partyLobby.Players)
-        {
-            if (TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value) == team)
-            {
-                teamPlayers.Add(player);
-            }
-        }
-
-        teamPlayers.Sort((p1, p2) =>
-        {
-            short pos1 = NumberEncoder.FromBase64<short>(p1.Data["PlayerPos"].Value);
-            short pos2 = NumberEncoder.FromBase64<short>(p2.Data["PlayerPos"].Value);
-            return pos1.CompareTo(pos2);
-        });
-
-        return teamPlayers.ToArray();
-    }
-
-    public Team GetLocalPlayerTeam()
-    {
-        string teamStr = localPlayer.Data["PlayerTeam"].Value;
-        return TeamMember.GetTeamFromString(teamStr);
-    }
-
-    public bool IsPlayerInResultScreen(Player player)
-    {
-        foreach (var playerNetworkManager in playerNetworkManagers)
-        {
-            if (playerNetworkManager.LocalPlayer.Id == player.Id)
-            {
-                return playerNetworkManager.IsInResultScreen;
-            }
-        }
-
-        return false;
-    }
-
-    public bool IsAnyPlayerInResultScreen()
-    {
-        foreach (var playerNetworkManager in playerNetworkManagers)
-        {
-            if (playerNetworkManager.IsInResultScreen)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public List<Unity.Services.Matchmaker.Models.Player> GetMatchmakerPlayersWithTeam()
-    {
-        List<Unity.Services.Matchmaker.Models.Player> players = new List<Unity.Services.Matchmaker.Models.Player>();
-        foreach (var player in partyLobby.Players)
-        {
-            string team = player.Data.ContainsKey("PlayerTeam") ? player.Data["PlayerTeam"].Value : "Blue";
-            var customData = new Dictionary<string, string>
-            {
-                { "Team", team }
-            };
-            players.Add(new Unity.Services.Matchmaker.Models.Player(player.Id, customData));
-        }
-        return players;
-    }
-
-    public void ChangeLobbyType(LobbyType newType)
-    {
-        if (partyLobby == null || partyLobby.HostId != localPlayer.Id)
-            return;
-
-        if (currentLobbyType == newType)
-            return;
-
-        currentLobbyType = newType;
-
-        UpdateLobbyOptions options = new UpdateLobbyOptions();
-        options.Data = partyLobby.Data;
-        options.MaxPlayers = (newType == LobbyType.Standards)
-            ? CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize
-            : CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * CharactersList.Instance.GetCurrentLobbyMap().availableTeams.Count;
-        options.HostId = partyLobby.HostId;
-        options.Name = partyLobby.Name;
-        options.IsPrivate = partyLobby.IsPrivate;
-        options.IsLocked = partyLobby.IsLocked;
-
-        if (options.Data.ContainsKey("LobbyType"))
-            options.Data["LobbyType"] = new DataObject(DataObject.VisibilityOptions.Public, newType.ToString());
-        else
-            options.Data.Add("LobbyType", new DataObject(DataObject.VisibilityOptions.Public, newType.ToString()));
-
-        // Se si passa a Custom, rimuovi MatchmakingStatus per evitare che la UI di matchmaking venga riattivata
-        if (newType == LobbyType.Custom && options.Data.ContainsKey("MatchmakingStatus"))
-        {
-            options.Data.Remove("MatchmakingStatus");
-        }
-
-        UpdateLobbyData(options);
-
-        Debug.Log($"Changed lobby type to {newType}");
-    }
-
-    private void SyncLobbyTypeFromLobby()
-    {
-        if (partyLobby != null && partyLobby.Data != null && partyLobby.Data.ContainsKey("LobbyType"))
-        {
-            if (Enum.TryParse<LobbyType>(partyLobby.Data["LobbyType"].Value, out var parsedType))
-            {
-                currentLobbyType = parsedType;
-            }
-        }
-    }
-
-    public bool IsCustomLobby()
-    {
-        return currentLobbyType == LobbyType.Custom;
-    }
-
-    public bool IsStandardsLobby()
-    {
-        return currentLobbyType == LobbyType.Standards;
-    }
-
-    public int GetMaxPartyMembers()
-    {
-        if (IsStandardsLobby())
-            return CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize;
-        else
-            return CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * CharactersList.Instance.GetCurrentLobbyMap().availableTeams.Count;
+        finally { handlingSessionLoss = false; }
     }
 
     private void OnClientDisconnectFromServer(ulong clientId)
     {
-        if (clientId == NetworkManager.Singleton.LocalClientId) return;
+        if (NetworkManager.Singleton != null && clientId == NetworkManager.Singleton.LocalClientId &&
+            !NetworkManager.Singleton.IsHost && !transitioningNetwork) OnSessionLost();
+    }
 
-        if (NetworkManager.Singleton.IsClient && clientId == (ulong.TryParse(GetPlayerByID(Lobby.HostId).Data["OwnerID"].Value, out ulong localPlayerId) ? localPlayerId : 69420))
+    private void OnClientConnected(ulong clientId)
+    {
+        if (clientId != NetworkManager.Singleton.LocalClientId) return;
+        AttachSceneEvents();
+        if (session != null) SetPlayerProperty("OwnerID", clientId.ToString());
+    }
+
+    private void AttachSceneEvents()
+    {
+        var sceneManager = NetworkManager.Singleton.SceneManager;
+        if (sceneManager == null || subscribedSceneManager == sceneManager) return;
+        DetachSceneEvents();
+        subscribedSceneManager = sceneManager;
+        subscribedSceneManager.OnSceneEvent += LoadingScreen.Instance.OnSceneEvent;
+        subscribedSceneManager.OnSceneEvent += OnSceneEvent;
+    }
+
+    private void DetachSceneEvents()
+    {
+        if (subscribedSceneManager == null) return;
+        if (LoadingScreen.Instance != null) subscribedSceneManager.OnSceneEvent -= LoadingScreen.Instance.OnSceneEvent;
+        subscribedSceneManager.OnSceneEvent -= OnSceneEvent;
+        subscribedSceneManager = null;
+    }
+
+    private void OnUnitySceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "LobbyScene") lobbyUI = FindFirstObjectByType<MainMenuUI>();
+        if (scene.name == "CharacterSelect" || scene.name == "DraftSelect" || scene.name == "RacingReadyScreen")
         {
-            ReturnToLobby(true);
+            gamePlayers.Clear();
+            if (partyLobby != null)
+                foreach (var player in partyLobby.Players) gamePlayers[player.Id] = player;
         }
     }
+
+    public async void StartGame()
+    {
+        if (!IsPartyLeader || startingGame) return;
+        if (IsStandardsLobby()) { FindMatch(); return; }
+        startingGame = true;
+        var targetSession = session;
+        try
+        {
+            await UpdateHostAsync(host => { host.IsLocked = true; host.IsPrivate = true; });
+            if (session != targetSession || !session.IsHost) return;
+            var mapMode = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType switch
+            {
+                CharacterSelectType.Draft => "DraftSelect",
+                CharacterSelectType.PsyduckRacing => "RacingReadyScreen",
+                _ => "CharacterSelect"
+            };
+            NetworkManager.Singleton.SceneManager.LoadScene(mapMode, LoadSceneMode.Single);
+        }
+        catch (Exception exception) { Debug.LogException(exception); }
+        finally { startingGame = false; }
+    }
+
+    public void LoadGameMap()
+    {
+        if (!IsPartyLeader) return;
+        NetworkManager.Singleton.SceneManager.LoadScene(CharactersList.Instance.GetCurrentLobbyMap().sceneName, LoadSceneMode.Single);
+    }
+
+    public async void LoadResultsScreen()
+    {
+        if (!IsPartyLeader) return;
+        try
+        {
+            await UpdateHostAsync(host => host.IsLocked = false);
+            if (session == null) return;
+            LoadingScreen.Instance.ShowGenericLoadingScreen();
+            NetworkManager.Singleton.SceneManager.LoadScene("LobbyScene", LoadSceneMode.Single);
+        }
+        catch (Exception exception) { Debug.LogException(exception); }
+    }
+
+    private IEnumerator LoadLobbyAsync()
+    {
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+        yield return SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
+        LoadingScreen.Instance.HideGenericLoadingScreen();
+    }
+
+    private IEnumerator LoadResultsScreenAsync()
+    {
+        yield return SceneManager.LoadSceneAsync(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene, LoadSceneMode.Additive);
+        lobbyUI.DisableLobbyScene();
+    }
+
+    public async void ReturnToLobby(bool leaveLobby)
+    {
+        if (!leaveLobby) { StartCoroutine(LoadLobbyAsync()); return; }
+        matchmakingCancellation?.Cancel();
+        isSearching = false;
+        await RunLobbyOperationAsync(async () =>
+        {
+            await LeaveCurrentSessionAsync();
+            ResetMatchState();
+            await SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
+            lobbyUI?.ShowMainMenuUI();
+        });
+    }
+
+    public void ReturnToHomeWithoutLeavingLobby() => StartCoroutine(ReturnToHomeWithoutLeavingLobbyAsync());
+
+    private IEnumerator ReturnToHomeWithoutLeavingLobbyAsync()
+    {
+        LoadingScreen.Instance.ShowGenericLoadingScreen();
+        yield return SceneManager.UnloadSceneAsync(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene);
+        lobbyUI.EnableLobbyScene();
+        if (isInMatchmakingGame && originalPartyInfo != null)
+        {
+            ReturnToOriginalLobbyAfterMatch();
+            yield break;
+        }
+        lobbyUI.ShowLobbyUI();
+        LoadingScreen.Instance.HideGenericLoadingScreen();
+    }
+
+    public async void ReturnToOriginalLobbyAfterMatch()
+    {
+        if (!isInMatchmakingGame || originalPartyInfo == null) return;
+        var original = originalPartyInfo;
+        await RunLobbyOperationAsync(async () =>
+        {
+            await LeaveCurrentSessionAsync();
+            ResetMatchState();
+            if (string.IsNullOrEmpty(original.ReturnSessionId))
+            {
+                lobbyUI?.ShowMainMenuUI();
+                return;
+            }
+            ISession restored;
+            if (original.LeaderId == localPlayer.Id)
+            {
+                var options = BuildSessionOptions(original.Type, original.Properties);
+                restored = await MultiplayerService.Instance.CreateOrJoinSessionAsync(original.ReturnSessionId, options, lifetimeCancellation.Token);
+            }
+            else
+            {
+                var deadline = DateTime.UtcNow.AddSeconds(30);
+                while (true)
+                {
+                    try
+                    {
+                        restored = await MultiplayerService.Instance.JoinSessionByIdAsync(original.ReturnSessionId, BuildJoinOptions(), lifetimeCancellation.Token);
+                        break;
+                    }
+                    catch (SessionException exception) when (exception.Error == SessionError.SessionNotFound && DateTime.UtcNow < deadline)
+                    {
+                        await Task.Delay(1100, lifetimeCancellation.Token);
+                    }
+                }
+            }
+            await ActivateSessionAsync(restored);
+            if (restored.IsHost)
+                await UpdateHostAsync(host => host.IsPrivate = original.IsPrivate, GetMaxPartyMembers());
+            CheckIfShouldChangePos(CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize);
+            ShowLobby();
+        });
+    }
+
+    public void OnMatchmakingGameEnded() => ReturnToOriginalLobbyAfterMatch();
+
+    private void OnSceneEvent(SceneEvent sceneEvent)
+    {
+        if (sceneEvent.SceneEventType == SceneEventType.LoadComplete && sceneEvent.SceneName == "LobbyScene" && loadResultsScreen)
+        {
+            StartCoroutine(LoadResultsScreenAsync());
+            loadResultsScreen = false;
+        }
+    }
+
+    public GameSessionPlayer GetPlayerByID(string playerID)
+    {
+        return partyLobby?.Players.Find(player => player.Id == playerID) ??
+            (gamePlayers.TryGetValue(playerID, out var saved) ? saved : localPlayer?.Id == playerID ? localPlayer : null);
+    }
+
+    public GameSessionPlayer[] GetTeamPlayers(Team team)
+    {
+        var players = partyLobby?.Players ?? new List<GameSessionPlayer>();
+        return players.Where(player => player.Data.TryGetValue("PlayerTeam", out var property) && property.Value == team.ToString())
+            .OrderBy(player => NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value)).ToArray();
+    }
+
+    public Team GetLocalPlayerTeam() => TeamMember.GetTeamFromString(localPlayer.Data["PlayerTeam"].Value);
+    public bool IsPlayerInResultScreen(GameSessionPlayer player) => playerNetworkManagers.Any(manager => manager.LocalPlayer?.Id == player.Id && manager.IsInResultScreen);
+    public bool IsAnyPlayerInResultScreen() => playerNetworkManagers.Any(manager => manager.IsInResultScreen);
 }

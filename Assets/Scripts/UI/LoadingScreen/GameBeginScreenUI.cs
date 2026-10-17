@@ -230,8 +230,8 @@ public class GameBeginScreenUI : MonoBehaviour
 
     private IEnumerator InitializePlayerModels()
     {
-        Unity.Services.Lobbies.Models.Player[] blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Blue);
-        Unity.Services.Lobbies.Models.Player[] orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Orange);
+        Unite.Multiplayer.GameSessionPlayer[] blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Blue);
+        Unite.Multiplayer.GameSessionPlayer[] orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Orange);
 
         for (int i = 0; i < blueTeamPlayers.Length; i++)
         {

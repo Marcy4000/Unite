@@ -36,11 +36,11 @@ public class UniteRoyaleResultsManager : MonoBehaviour
 
         gameResults = LobbyController.Instance.UniteRoyaleGameResults;
 
-        List<Unity.Services.Lobbies.Models.Player> players = new();
+        List<Unite.Multiplayer.GameSessionPlayer> players = new();
 
         foreach (var playerInfo in gameResults.PlayerStats)
         {
-            Unity.Services.Lobbies.Models.Player player = LobbyController.Instance.GetPlayerByID(playerInfo.PlayerStats.playerId.ToString());
+            Unite.Multiplayer.GameSessionPlayer player = LobbyController.Instance.GetPlayerByID(playerInfo.PlayerStats.playerId.ToString());
             players.Add(player);
 
             if (player.Id == LobbyController.Instance.Player.Id)

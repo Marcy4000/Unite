@@ -22,7 +22,7 @@ public class UniteRoyalePositionUI : MonoBehaviour
     {
         this.playerNetworkManager = playerNetworkManager;
         player = playerNetworkManager.Player;
-        Unity.Services.Lobbies.Models.Player lobbyPlayer = playerNetworkManager.LocalPlayer;
+        Unite.Multiplayer.GameSessionPlayer lobbyPlayer = playerNetworkManager.LocalPlayer;
 
         playerName.text = $"0 | {lobbyPlayer.Data["PlayerName"].Value}";
 

@@ -23,6 +23,11 @@ public class LoadingManagerTracker : NetworkBehaviour
     {
         set
         {
+            if (value == null)
+            {
+                Debug.LogWarning("[LoadingProgress] Cannot track a null scene load operation.", this);
+                return;
+            }
             m_IsLoading = true;
             LocalProgress = 0;
             m_LocalLoadOperation = value;
@@ -38,6 +43,11 @@ public class LoadingManagerTracker : NetworkBehaviour
     {
         set
         {
+            if (!value.IsValid())
+            {
+                Debug.LogWarning("[LoadingProgress] Cannot track an invalid Addressables operation.", this);
+                return;
+            }
             m_IsLoading = true;
             LocalProgress = 0;
             m_LocalLoadOperation = null;
@@ -51,6 +61,7 @@ public class LoadingManagerTracker : NetworkBehaviour
     float m_LocalProgress;
 
     bool m_IsLoading;
+    NetworkManager m_SubscribedNetworkManager;
 
     /// <summary>
     /// This event is invoked each time the dictionary of progress trackers is updated (if one is removed or added, for example.)
@@ -58,44 +69,76 @@ public class LoadingManagerTracker : NetworkBehaviour
     public event Action onTrackersUpdated;
 
     /// <summary>
-    /// The current loading progress for the local client. Handled by a local field if not in a networked session,
-    /// or by a progress tracker from the dictionary.
+    /// The current loading progress for the local client, buffered even before its tracker spawns.
     /// </summary>
     public float LocalProgress
     {
-        get => IsSpawned && ProgressTrackers.ContainsKey(NetworkManager.LocalClientId) ?
-            ProgressTrackers[NetworkManager.LocalClientId].Progress.Value : m_LocalProgress;
+        get => m_LocalProgress;
         private set
         {
             // Always update local progress first
             m_LocalProgress = value;
             
             // Then sync to network if available
-            if (IsSpawned && ProgressTrackers.ContainsKey(NetworkManager.LocalClientId) && ProgressTrackers[NetworkManager.LocalClientId].IsSpawned)
+            if (IsSpawned && NetworkManager != null &&
+                ProgressTrackers.TryGetValue(NetworkManager.LocalClientId, out var tracker) &&
+                tracker != null && tracker.IsSpawned && tracker.IsOwner)
             {
-                ProgressTrackers[NetworkManager.LocalClientId].Progress.Value = value;
+                tracker.Progress.Value = value;
             }
         }
     }
 
     public override void OnNetworkSpawn()
     {
+        NetworkedLoadingProgressTracker.Spawned += RegisterTracker;
+        NetworkedLoadingProgressTracker.Despawned += UnregisterTracker;
+
+        // Initial scene synchronization can spawn trackers before this manager.
+        // Subsequent arrivals register themselves, rather than relying on RPC timing.
+        foreach (var tracker in FindObjectsByType<NetworkedLoadingProgressTracker>(FindObjectsSortMode.None))
+        {
+            RegisterTracker(tracker);
+        }
+
         if (IsServer)
         {
-            NetworkManager.OnClientConnectedCallback += AddTracker;
-            NetworkManager.OnClientDisconnectCallback += RemoveTracker;
-            AddTracker(NetworkManager.LocalClientId);
+            m_SubscribedNetworkManager = NetworkManager;
+            m_SubscribedNetworkManager.OnClientConnectedCallback += AddTracker;
+            m_SubscribedNetworkManager.OnClientDisconnectCallback += RemoveTracker;
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+                AddTracker(clientId);
+            }
         }
     }
     public override void OnNetworkDespawn()
     {
-        if (IsServer)
-        {
-            NetworkManager.OnClientConnectedCallback -= AddTracker;
-            NetworkManager.OnClientDisconnectCallback -= RemoveTracker;
-        }
+        UnsubscribeNetworkEvents();
+        m_IsLoading = false;
+        m_LocalLoadOperation = null;
+        m_LocalAddressableOperation = null;
+        m_LocalProgress = 0;
         ProgressTrackers.Clear();
         onTrackersUpdated?.Invoke();
+    }
+
+    public override void OnDestroy()
+    {
+        UnsubscribeNetworkEvents();
+        base.OnDestroy();
+    }
+
+    void UnsubscribeNetworkEvents()
+    {
+        NetworkedLoadingProgressTracker.Spawned -= RegisterTracker;
+        NetworkedLoadingProgressTracker.Despawned -= UnregisterTracker;
+        if (m_SubscribedNetworkManager != null)
+        {
+            m_SubscribedNetworkManager.OnClientConnectedCallback -= AddTracker;
+            m_SubscribedNetworkManager.OnClientDisconnectCallback -= RemoveTracker;
+            m_SubscribedNetworkManager = null;
+        }
     }
 
     void Update()
@@ -116,6 +159,13 @@ public class LoadingManagerTracker : NetworkBehaviour
             }
             else if (m_LocalAddressableOperation.HasValue)
             {
+                if (!m_LocalAddressableOperation.Value.IsValid())
+                {
+                    Debug.LogWarning("[LoadingProgress] The tracked Addressables operation was released before completion.", this);
+                    m_IsLoading = false;
+                    m_LocalAddressableOperation = null;
+                    return;
+                }
                 if (m_LocalAddressableOperation.Value.IsDone)
                 {
                     m_IsLoading = false;
@@ -129,52 +179,76 @@ public class LoadingManagerTracker : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
-    void ClientUpdateTrackersRpc()
+    void RegisterTracker(NetworkedLoadingProgressTracker tracker)
     {
-        if (!IsHost)
+        if (!IsSpawned || tracker == null || !tracker.IsSpawned || tracker.NetworkManager != NetworkManager)
         {
-            ProgressTrackers.Clear();
-            foreach (var tracker in FindObjectsByType<NetworkedLoadingProgressTracker>(FindObjectsSortMode.None))
+            return;
+        }
+
+        if (ProgressTrackers.TryGetValue(tracker.OwnerClientId, out var existing) && existing != null && existing.IsSpawned)
+        {
+            if (existing != tracker)
             {
-                // If a tracker is despawned but not destroyed yet, don't add it
-                if (tracker.IsSpawned)
-                {
-                    ProgressTrackers[tracker.OwnerClientId] = tracker;
-                    // Sync any accumulated local progress to the network tracker
-                    if (tracker.OwnerClientId == NetworkManager.LocalClientId && m_LocalProgress > 0)
-                    {
-                        tracker.Progress.Value = m_LocalProgress;
-                    }
-                }
+                Debug.LogWarning($"[LoadingProgress] Ignoring duplicate tracker for client {tracker.OwnerClientId}.", tracker);
             }
+            return;
+        }
+
+        ProgressTrackers[tracker.OwnerClientId] = tracker;
+        if (tracker.IsOwner)
+        {
+            // Zero is meaningful too: it resets progress left over from the previous load.
+            tracker.Progress.Value = m_LocalProgress;
         }
         onTrackersUpdated?.Invoke();
     }
 
+    void UnregisterTracker(NetworkedLoadingProgressTracker tracker)
+    {
+        // A late despawn must not remove a replacement for the same owner.
+        if (ProgressTrackers.TryGetValue(tracker.OwnerClientId, out var existing) && ReferenceEquals(existing, tracker))
+        {
+            ProgressTrackers.Remove(tracker.OwnerClientId);
+            onTrackersUpdated?.Invoke();
+        }
+    }
+
     void AddTracker(ulong clientId)
     {
-        if (IsServer)
+        if (!IsServer || !IsSpawned)
         {
-            var tracker = Instantiate(m_ProgressTrackerPrefab);
-            var networkObject = tracker.GetComponent<NetworkObject>();
-            networkObject.SpawnWithOwnership(clientId);
-            ProgressTrackers[clientId] = tracker.GetComponent<NetworkedLoadingProgressTracker>();
-            ClientUpdateTrackersRpc();
+            return;
         }
+
+        // Host startup also fires OnClientConnectedCallback after OnNetworkSpawn.
+        if (ProgressTrackers.TryGetValue(clientId, out var existing) && existing != null && existing.IsSpawned)
+        {
+            return;
+        }
+
+        if (m_ProgressTrackerPrefab == null ||
+            !m_ProgressTrackerPrefab.TryGetComponent<NetworkObject>(out _) ||
+            !m_ProgressTrackerPrefab.TryGetComponent<NetworkedLoadingProgressTracker>(out _))
+        {
+            Debug.LogError("[LoadingProgress] Progress tracker prefab requires a NetworkObject and NetworkedLoadingProgressTracker.", this);
+            return;
+        }
+
+        var tracker = Instantiate(m_ProgressTrackerPrefab);
+        tracker.GetComponent<NetworkObject>().SpawnWithOwnership(clientId);
     }
 
     void RemoveTracker(ulong clientId)
     {
-        if (IsServer)
+        if (IsServer && ProgressTrackers.TryGetValue(clientId, out var tracker))
         {
-            if (ProgressTrackers.ContainsKey(clientId))
+            ProgressTrackers.Remove(clientId);
+            if (tracker != null && tracker.IsSpawned)
             {
-                var tracker = ProgressTrackers[clientId];
-                ProgressTrackers.Remove(clientId);
                 tracker.NetworkObject.Despawn();
-                ClientUpdateTrackersRpc();
             }
+            onTrackersUpdated?.Invoke();
         }
     }
 }

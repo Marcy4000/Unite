@@ -36,18 +36,25 @@ public class FindLobbyMenuUI : MonoBehaviour
 
             yield return new WaitUntil(() => lobbies.IsCompleted);
 
+            if (lobbies.IsFaulted || lobbies.IsCanceled)
+            {
+                if (lobbies.Exception != null) Debug.LogWarning(lobbies.Exception.GetBaseException().Message);
+                yield return new WaitForSeconds(5f);
+                continue;
+            }
+
             foreach (Transform child in lobbyListContent)
             {
                 Destroy(child.gameObject);
             }
 
-            foreach (var lobby in lobbies.Result.Results)
+            foreach (var lobby in lobbies.Result.Sessions)
             {
                 var lobbyItem = Instantiate(lobbyItemPrefab, lobbyListContent).GetComponent<LobbyItemUI>();
                 lobbyItem.Initialize(lobby);
             }
 
-            noLobbiesText.SetActive(lobbies.Result.Results.Count == 0);
+            noLobbiesText.SetActive(lobbies.Result.Sessions.Count == 0);
 
             yield return new WaitForSeconds(5f);
         }

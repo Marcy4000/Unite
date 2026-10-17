@@ -1,5 +1,5 @@
 using TMPro;
-using Unity.Services.Lobbies.Models;
+using Player = Unite.Multiplayer.GameSessionPlayer;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,8 +16,40 @@ public class LoadingScreenPlayer : MonoBehaviour
     [SerializeField] private Sprite[] rankedFrameSprites;
 
     private Player currentPlayer;
+    private NetworkedLoadingProgressTracker progressTracker;
 
     public Player CurrentPlayer => currentPlayer;
+    public bool HasProgressTracker => progressTracker != null && progressTracker.IsSpawned;
+
+    public void BindProgressTracker(NetworkedLoadingProgressTracker tracker)
+    {
+        if (!ReferenceEquals(progressTracker, tracker))
+        {
+            UnbindProgressTracker();
+            progressTracker = tracker;
+            if (progressTracker != null)
+            {
+                progressTracker.Progress.OnValueChanged += UpdateProgressBar;
+            }
+        }
+
+        UpdateProgressBar(0, progressTracker != null ? progressTracker.Progress.Value : 0);
+    }
+
+    public void UnbindProgressTracker()
+    {
+        // Unsubscribe from the actual bound instance, not a possibly replaced dictionary entry.
+        if (!ReferenceEquals(progressTracker, null))
+        {
+            progressTracker.Progress.OnValueChanged -= UpdateProgressBar;
+        }
+        progressTracker = null;
+    }
+
+    private void OnDestroy()
+    {
+        UnbindProgressTracker();
+    }
 
     public void SetPlayerData(Player player)
     {
