@@ -15,8 +15,7 @@ public class DuraBasicAtk : BasicAttackBase
     private DuraBoostedObj boostedObjInstance;
 
     private bool isInCannonMode = false;
-    private float cannonModeStartTime;
-    private StatChange attackSpeedBuff = new StatChange(100, Stat.AtkSpeed, 5f, true, true, true, 0);
+    private StatChange attackSpeedBuff = new StatChange(100, Stat.AtkSpeed, 0f, false, true, true, 8848);
     private float cannonTimer = 2.5f;
     private Coroutine cannonModeCoroutine;
 
@@ -24,6 +23,8 @@ public class DuraBasicAtk : BasicAttackBase
     private float cannonRange = 11.5f;
 
     public bool IsInCannonMode => isInCannonMode;
+    public DuraBoostedObj Combat => boostedObjInstance != null && boostedObjInstance.IsInitialized ? boostedObjInstance : null;
+    private bool cannonRestrictionApplied;
     public event System.Action onExitCannonMode;
 
     public override void Initialize(PlayerManager manager)
@@ -34,7 +35,7 @@ public class DuraBasicAtk : BasicAttackBase
         proprieties |= DamageProprieties.CanCrit;
         normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical, proprieties);
         boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.35f, 0, 0, DamageType.Physical, proprieties);
-        cannonDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.05f, 3, 120, DamageType.Physical, DamageProprieties.CanCrit);
+        cannonDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.16f, 3, 132, DamageType.Physical, proprieties);
 
         playerManager.MovesController.onObjectSpawned += (obj) =>
         {
@@ -46,19 +47,7 @@ public class DuraBasicAtk : BasicAttackBase
         };
 
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(boostedAttackPrefab, playerManager.OwnerClientId);
-        playerManager.Pokemon.OnDamageDealt += OnDamageDealt;
-    }
-
-    private void OnDamageDealt(ulong targetID, DamageInfo damage)
-    {
-        if ((damage.proprieties & DamageProprieties.IsBasicAttack) != 0 && (damage.proprieties & DamageProprieties.IsMuscleBand) == 0)
-        {
-            if (isInCannonMode)
-            {
-                Pokemon target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].GetComponent<Pokemon>();
-                target.TakeDamageRPC(cannonDmg);
-            }
-        }
+        playerManager.Pokemon.OnDeath += _ => ExitCannonMode();
     }
 
     public override void Perform(bool wildPriority)
@@ -69,6 +58,8 @@ public class DuraBasicAtk : BasicAttackBase
 
         if (closestEnemy != null)
         {
+            if (Combat == null) return;
+            Combat.BeginBasicAttackRPC();
             if (isInCannonMode)
             {
                 cannonTimer = 2.5f;
@@ -87,7 +78,7 @@ public class DuraBasicAtk : BasicAttackBase
             playerManager.transform.LookAt(closestEnemy.transform);
             playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
 
-            DamageInfo currentDmg = charge == 2 ? boostedDmg : normalDmg;
+            DamageInfo currentDmg = isInCannonMode ? cannonDmg : normalDmg;
 
             if (charge == 2)
             {
@@ -117,11 +108,13 @@ public class DuraBasicAtk : BasicAttackBase
 
     public void EnterCannonMode()
     {
+        if (isInCannonMode) return;
         isInCannonMode = true;
-        cannonModeStartTime = Time.time;
+        range = cannonRange;
         cannonTimer = 2.5f;
         playerManager.Pokemon.AddStatChange(attackSpeedBuff);
         playerManager.PlayerMovement.AddMovementRestriction();
+        cannonRestrictionApplied = true;
         cannonModeCoroutine = playerManager.StartCoroutine(CannonModeRoutine());
         playerManager.AnimationManager.PlayAnimation("ani_spell1a1_bat_0884");
 
@@ -133,10 +126,19 @@ public class DuraBasicAtk : BasicAttackBase
     private IEnumerator CannonModeRoutine()
     {
         float totalTime = 0f;
+        int previousSpeed = 100;
         while (totalTime < 6f && cannonTimer > 0f)
         {
             cannonTimer -= Time.deltaTime;
             totalTime += Time.deltaTime;
+            int speed = Mathf.Max(0, 100 - Mathf.FloorToInt(totalTime) * 20);
+            if (speed != previousSpeed)
+            {
+                playerManager.Pokemon.RemoveStatChangeWithIDRPC(attackSpeedBuff.ID);
+                attackSpeedBuff.Amount = (short)speed;
+                if (speed > 0) playerManager.Pokemon.AddStatChange(attackSpeedBuff);
+                previousSpeed = speed;
+            }
             playerManager.HPBar.UpdateGenericGuageValue(cannonTimer, 2.5f);
             yield return null;
         }
@@ -145,12 +147,13 @@ public class DuraBasicAtk : BasicAttackBase
 
     public void ExitCannonMode()
     {
+        if (!isInCannonMode) return;
         isInCannonMode = false;
-        if (Time.time < cannonModeStartTime + 5f)
-        {
-            playerManager.Pokemon.RemoveStatChangeRPC(attackSpeedBuff);
-        }
-        playerManager.PlayerMovement.RemoveMovementRestriction();   
+        range = baseRange;
+        playerManager.Pokemon.RemoveStatChangeWithIDRPC(attackSpeedBuff.ID);
+        attackSpeedBuff.Amount = 100;
+        if (cannonRestrictionApplied) playerManager.PlayerMovement.RemoveMovementRestriction();
+        cannonRestrictionApplied = false;
         if (cannonModeCoroutine != null)
         {
             playerManager.StopCoroutine(cannonModeCoroutine);
@@ -160,5 +163,26 @@ public class DuraBasicAtk : BasicAttackBase
         playerManager.HPBar.ShowGenericGuage(false);
         CameraController.Instance.ResetZoom();
         onExitCannonMode?.Invoke();
+    }
+
+    public void DashBackwards(Vector3 direction)
+    {
+        playerManager.StartCoroutine(BackwardsDash(direction));
+    }
+
+    private IEnumerator BackwardsDash(Vector3 direction)
+    {
+        if (cannonRestrictionApplied)
+        {
+            playerManager.PlayerMovement.RemoveMovementRestriction();
+            cannonRestrictionApplied = false;
+        }
+        playerManager.PlayerMovement.StartDash(-direction, 2.5f, 0.25f);
+        yield return new WaitForSeconds(0.25f);
+        if (isInCannonMode && !cannonRestrictionApplied)
+        {
+            playerManager.PlayerMovement.AddMovementRestriction();
+            cannonRestrictionApplied = true;
+        }
     }
 }

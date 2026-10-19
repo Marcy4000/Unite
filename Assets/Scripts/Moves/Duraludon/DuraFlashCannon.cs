@@ -3,7 +3,7 @@ using UnityEngine;
 public class DuraFlashCannon : MoveBase
 {
     private float range = 11.5f;
-    private DamageInfo damageInfo = new DamageInfo(0, 0.52f, 2, 60, DamageType.Physical);
+    private DamageInfo damageInfo = new DamageInfo(0, 0.58f, 2, 66, DamageType.Physical);
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Duraludon/DuraFlashCannonObject.prefab";
 
@@ -18,7 +18,7 @@ public class DuraFlashCannon : MoveBase
     public DuraFlashCannon()
     {
         Name = "Flash Cannon";
-        Cooldown = 5f;
+        Cooldown = 6f;
     }
 
     public override void Start(PlayerManager controller)
@@ -33,7 +33,10 @@ public class DuraFlashCannon : MoveBase
         }
 
         if (!isInCannonMode)
+        {
             Aim.Instance.InitializeSkillshotAim(range);
+            direction = Aim.Instance.SkillshotAim();
+        }
 
         damageInfo.attackerId = playerManager.NetworkObjectId;
     }
@@ -52,20 +55,22 @@ public class DuraFlashCannon : MoveBase
     {
         if (IsActive && direction.magnitude != 0 && !isInCannonMode)
         {
+            Vector3 castDirection = direction;
+            Vector3 castPosition = playerManager.transform.position;
             playerManager.MovesController.onObjectSpawned += (obj) =>
             {
                 if (obj.TryGetComponent(out DuraFlashCannonObj projectile))
                 {
                     flashCannonInstance = projectile;
-                    projectile.InitializeRPC(direction, playerManager.transform.position, playerManager.CurrentTeam.Team, damageInfo, IsUpgraded);
+                    projectile.InitializeRPC(castDirection, castPosition, playerManager.CurrentTeam.Team, damageInfo, IsUpgraded);
+                    if (!isInCannonMode) projectile.DestroySelfRPC();
                 }
             };
 
-            playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
-
             playerManager.transform.rotation = Quaternion.LookRotation(direction);
-            duraBasicAtk.EnterCannonMode();
             isInCannonMode = true;
+            duraBasicAtk.EnterCannonMode();
+            playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
 
             BattleUIManager.instance.ShowMoveSecondaryCooldown(0, 6f);
 
@@ -73,7 +78,8 @@ public class DuraFlashCannon : MoveBase
         } else if (IsActive && isInCannonMode)
         {
             duraBasicAtk.ExitCannonMode();
-            wasMoveSuccessful = true;
+            Aim.Instance.HideSkillshotAim();
+            return; // OnExitCannonMode already finished and started cooldown.
         }
         Aim.Instance.HideSkillshotAim();
         base.Finish();
@@ -101,6 +107,6 @@ public class DuraFlashCannon : MoveBase
 
     public override void ResetMove()
     {
-        duraBasicAtk.ExitCannonMode();
+        duraBasicAtk?.ExitCannonMode();
     }
 }

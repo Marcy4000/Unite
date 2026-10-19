@@ -189,9 +189,9 @@ public class BattleUIManager : MonoBehaviour
         goalStateUI.UpdateGoalState(orangeTeam);
     }
 
-    public void InitializeMoveUI(MoveAsset move)
+    public void InitializeMoveUI(MoveAsset move, MoveBase runtimeMove = null)
     {
-        currentUI.InitializeMoveUI(move);
+        currentUI.InitializeMoveUI(move, runtimeMove);
     }
 
     public void InitializeBattleItemUI(BattleItemAsset battleItem)

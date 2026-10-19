@@ -90,12 +90,12 @@ public class MovesController : NetworkBehaviour
         SelectBattleItem();
         battleItemStatus.OnStatusChange += UpdateBattleItemUI;
 
-        LearnMove(lockedMove);
-
         for (int i = 0; i < moves.Length; i++)
         {
             moveStatuses[i] = new BattleActionStatus(0);
         }
+
+        LearnMove(lockedMove);
 
         uniteMoveCharge = 0;
         uniteMoveStatus.AddStatus(ActionStatusType.Cooldown);
@@ -126,6 +126,11 @@ public class MovesController : NetworkBehaviour
         {
             return;
         }
+
+        // Resource recovery is independent of aiming/execution and continues
+        // while dead. Stored moves do not need their own Update implementation.
+        for (int i = 0; i < moves.Length; i++)
+            if (moves[i].IsStoredMove) SynchronizeStoredMove(i);
 
         if (playerManager.PlayerState == PlayerState.Alive)
         {
@@ -207,6 +212,7 @@ public class MovesController : NetworkBehaviour
 
         for (int i = 0; i < moveStatuses.Length; i++)
         {
+            if (moves[i].IsStoredMove) continue;
             if (moveStatuses[i].Cooldown > 0)
             {
                 moveStatuses[i].Cooldown -= Time.deltaTime;
@@ -333,11 +339,12 @@ public class MovesController : NetworkBehaviour
 
     public void TryUsingMove(int index)
     {
-        if (index > moves.Length)
+        if (index < 0 || index >= moves.Length)
         {
             return;
         }
 
+        if (moves[index].IsStoredMove) SynchronizeStoredMove(index);
         if (!moveStatuses[index].HasStatus(ActionStatusType.None))
             return;
 
@@ -370,7 +377,7 @@ public class MovesController : NetworkBehaviour
 
     public void TryFinishingMove(int index)
     {
-        if (index > moves.Length)
+        if (index < 0 || index >= moves.Length)
         {
             return;
         }
@@ -396,19 +403,25 @@ public class MovesController : NetworkBehaviour
             return;
         }
 
-        if (move.Cooldown > 0)
+        for (int i = 0; i < moves.Length; i++)
         {
-            for (int i = 0; i < moves.Length; i++)
+            if (moves[i] != move) continue;
+            if (move.IsStoredMove)
             {
-                if (moves[i] == move)
-                {
-                    moveStatuses[i].AddStatus(ActionStatusType.Cooldown);
-                    moveStatuses[i].Cooldown = GetMoveCooldown(move);
-                    UpdateMoveUI(i);
-                }
+                // MoveBase.Finish has already spent the successful use.
+                SynchronizeStoredMove(i);
             }
+            else if (move.Cooldown > 0)
+            {
+                moveStatuses[i].AddStatus(ActionStatusType.Cooldown);
+                moveStatuses[i].Cooldown = GetMoveCooldown(move);
+                UpdateMoveUI(i);
+            }
+            onMovePerformed?.Invoke(move);
+            return;
         }
-        else
+
+        if (move == uniteMove)
         {
             uniteMoveStatus.AddStatus(ActionStatusType.Cooldown);
             uniteMoveCharge = 0;
@@ -420,6 +433,22 @@ public class MovesController : NetworkBehaviour
     private float GetMoveCooldown(MoveBase move)
     {
         return move.Cooldown - (move.Cooldown * (pokemon.GetCDR() / 100f));
+    }
+
+    private void SynchronizeStoredMove(int index)
+    {
+        MoveBase move = moves[index];
+        move.UpdateStoredUses(Time.time, pokemon.GetCDR());
+        BattleActionStatus status = moveStatuses[index];
+        bool wasCoolingDown = status.HasStatus(ActionStatusType.Cooldown);
+        status.Cooldown = move.StoredUseCooldownRemaining;
+        if (status.Cooldown > 0 && !wasCoolingDown)
+            status.AddStatus(ActionStatusType.Cooldown);
+        else if (status.Cooldown <= 0 && wasCoolingDown)
+        {
+            status.RemoveStatus(ActionStatusType.Cooldown);
+            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_CDOver);
+        }
     }
 
     private void OnBattleItemOver()
@@ -456,7 +485,7 @@ public class MovesController : NetworkBehaviour
         bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned) || moveStatuses[index].HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetMoveLock(index, showLock);
 
-        if (moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
+        if (!moves[index].IsStoredMove && moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
         {
             BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown, GetMoveCooldown(moves[index]));
         }
@@ -524,6 +553,7 @@ public class MovesController : NetworkBehaviour
 
     public void LearnMove(MoveAsset move)
     {
+        MoveBase previousMove = GetMove(move.moveType);
         switch (move.moveType)
         {
             case MoveType.MoveA:
@@ -568,7 +598,20 @@ public class MovesController : NetworkBehaviour
             AudioManager.PlaySound(DefaultAudioSounds.Play_UI_LearnSkill);
         }
 
-        BattleUIManager.instance.InitializeMoveUI(move);
+        MoveBase learnedMove = GetMove(move.moveType);
+        learnedMove?.UpdateStoredUses(Time.time, pokemon.GetCDR());
+        BattleUIManager.instance.InitializeMoveUI(move, learnedMove);
+        int slot = move.moveType == MoveType.MoveA ? 0 : move.moveType == MoveType.MoveB ? 1 : -1;
+        if (slot >= 0)
+        {
+            if (learnedMove.IsStoredMove) SynchronizeStoredMove(slot);
+            else if (previousMove != null && previousMove.IsStoredMove)
+            {
+                moveStatuses[slot].Cooldown = 0;
+                moveStatuses[slot].RemoveStatus(ActionStatusType.Cooldown);
+            }
+            UpdateMoveUI(slot);
+        }
 
         if (IsOwner)
         {
@@ -609,19 +652,16 @@ public class MovesController : NetworkBehaviour
 
     public void ReduceMoveCooldown(MoveType moveType, float amount)
     {
-        switch (moveType)
+        int index = moveType == MoveType.MoveA ? 0 : moveType == MoveType.MoveB ? 1 : -1;
+        if (index < 0) return;
+        if (moves[index].IsStoredMove)
         {
-            case MoveType.MoveA:
-                moveStatuses[0].Cooldown -= amount;
-                UpdateMoveUI(0);
-                break;
-            case MoveType.MoveB:
-                moveStatuses[1].Cooldown -= amount;
-                UpdateMoveUI(1);
-                break;
-            default:
-                break;
+            // Recharge reduction must not bypass the independent cast interval.
+            moves[index].ReduceStoredRecharge(amount, Time.time, pokemon.GetCDR());
+            SynchronizeStoredMove(index);
         }
+        else moveStatuses[index].Cooldown -= amount;
+        UpdateMoveUI(index);
     }
 
     public void AddMoveStatus(int index, ActionStatusType statusType)

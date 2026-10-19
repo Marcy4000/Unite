@@ -1,7 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class DuraBoostedObj : NetworkBehaviour
+public partial class DuraBoostedObj : NetworkBehaviour
 {
     [SerializeField] private GameObject beamObject, beamObjectCannon;
     [SerializeField] private BoxCollider beamCollider, beamColliderCannon;
@@ -12,15 +12,20 @@ public class DuraBoostedObj : NetworkBehaviour
     private PlayerManager duraludon;
     private DamageInfo damageInfo;
 
-    [Rpc(SendTo.Owner)]
+    public bool IsInitialized => initialized;
+
+    [Rpc(SendTo.Everyone)]
     public void InitializeRPC(DamageInfo dmgInfo, ulong playerID)
     {
         damageInfo = dmgInfo;
         duraludon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerID].gameObject.GetComponent<PlayerManager>();
         beamObject.SetActive(false);
         beamObjectCannon.SetActive(false);
+        beamCollider.enabled = false;
+        beamColliderCannon.enabled = false;
 
         initialized = true;
+        InitializeCombat();
     }
 
     void Update()
@@ -34,7 +39,7 @@ public class DuraBoostedObj : NetworkBehaviour
         transform.rotation = duraludon.transform.rotation;
     }
 
-    [Rpc(SendTo.Everyone)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
     public void CastRPC(bool cannonMode)
     {
         if (!initialized)
@@ -47,57 +52,51 @@ public class DuraBoostedObj : NetworkBehaviour
 
     private System.Collections.IEnumerator CastRoutine(bool cannonMode)
     {
-        if (cannonMode)
-        {
-            beamColliderCannon.enabled = true;
-            beamObjectCannon.SetActive(true);
-        }
-        else
-        {
-            beamCollider.enabled = true;
-            beamObject.SetActive(true);
-        }
-        yield return new WaitForSeconds(0.05f);
-        
         isCasting = true;
-        if (IsOwner)
+        Vector3 origin = duraludon.transform.position;
+        Quaternion rotation = duraludon.transform.rotation;
+        ShowBoostedBeamRPC(cannonMode, origin, rotation);
+        BoxCollider hitbox = cannonMode ? beamColliderCannon : beamCollider;
+        int ticks = cannonMode ? 3 : 1;
+        for (int i = 0; i < ticks; i++)
         {
-            BoxCollider currentCollider = cannonMode ? beamColliderCannon : beamCollider;
-            foreach (var hit in Physics.OverlapBox(currentCollider.bounds.center, currentCollider.bounds.extents, currentCollider.transform.rotation))
+            var targets = new System.Collections.Generic.HashSet<Pokemon>();
+            Vector3 center = origin + rotation * hitbox.center;
+            foreach (var hit in Physics.OverlapBox(center, hitbox.size * 0.5f, rotation))
             {
-                if (hit.TryGetComponent(out Pokemon pokemon))
+                if (hit.TryGetComponent(out Pokemon pokemon) && CanHit(pokemon) && targets.Add(pokemon))
                 {
-                    if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, duraludon.CurrentTeam.Team, true))
-                    {
-                        pokemon.TakeDamageRPC(damageInfo);
-                        if (cannonMode)
-                            pokemon.AddStatChange(new StatChange(60, Stat.Speed, 1f, true, false, true, 0));
-
-                        short damageAmount = (short)Mathf.RoundToInt(pokemon.GetMaxHp() * 0.015f);
-
-                        if (pokemon.Type == PokemonType.Wild || pokemon.Type == PokemonType.Objective)
-                        {
-                            damageAmount = (short)Mathf.Min(damageAmount, 500);
-                        }
-
-                        pokemon.TakeDamageRPC(new DamageInfo(duraludon.NetworkObjectId, 0f, 0, damageAmount, DamageType.True, DamageProprieties.None));
-                    }
+                    DamageInfo hitDamage = cannonMode
+                        ? new DamageInfo(duraludon.NetworkObjectId, 0.58f, 2, 66, DamageType.Physical, damageInfo.proprieties)
+                        : damageInfo;
+                    if (i > 0) hitDamage.proprieties = DamageProprieties.CanCrit | SecondaryDamage;
+                    pokemon.TakeDamageRPC(hitDamage);
+                    if (cannonMode) RefreshSlow(pokemon, 60, 1f, 8847);
+                    int extra = Mathf.RoundToInt(pokemon.GetMaxHp() * (cannonMode ? 0.005f : 0.015f));
+                    if (pokemon.Type == PokemonType.Wild || pokemon.Type == PokemonType.Objective) extra = Mathf.Min(extra, 500);
+                    pokemon.TakeDamageRPC(new DamageInfo(duraludon.NetworkObjectId, 0f, 0, (short)Mathf.Min(extra, short.MaxValue),
+                        DamageType.True, DamageProprieties.CanCrit | SecondaryDamage));
                 }
             }
+            if (cannonMode) yield return new WaitForSeconds(0.08f);
         }
+        isCasting = false;
+    }
 
-        yield return new WaitForSeconds(0.25f);
+    [Rpc(SendTo.Everyone)]
+    private void ShowBoostedBeamRPC(bool cannonMode, Vector3 origin, Quaternion rotation)
+    {
+        isCasting = true;
+        transform.SetPositionAndRotation(origin, rotation);
+        GameObject beam = cannonMode ? beamObjectCannon : beamObject;
+        beam.SetActive(true);
+        StartCoroutine(HideBoostedBeam(beam));
+    }
 
-        if (cannonMode)
-        {
-            beamColliderCannon.enabled = false;
-            beamObjectCannon.SetActive(false);
-        }
-        else
-        {
-            beamCollider.enabled = false;
-            beamObject.SetActive(false);
-        }
+    private System.Collections.IEnumerator HideBoostedBeam(GameObject beam)
+    {
+        yield return new WaitForSeconds(0.3f);
+        beam.SetActive(false);
         isCasting = false;
     }
 }

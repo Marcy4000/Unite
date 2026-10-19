@@ -12,11 +12,33 @@ public abstract class MoveBase
 
     public bool wasMoveSuccessful = false;
 
+    // Normal moves need no additional configuration. Stored moves declare the
+    // type, capacity and cast interval; Cooldown remains the recharge duration.
+    public virtual MoveUseType UseType => MoveUseType.SingleUse;
+    public virtual int MaxStoredUses => 1;
+    public virtual float StoredUseInterval => 0f;
+    public bool IsStoredMove => UseType == MoveUseType.StoredUses;
+    private readonly MoveUseState useState = new MoveUseState();
+    public int StoredUses => useState.IsInitialized ? useState.Count : Mathf.Max(1, MaxStoredUses);
+    public float StoredRechargeDuration => useState.RechargeDuration;
+    public float StoredRechargeRemaining => useState.GetRechargeRemaining(Time.time);
+    public float StoredUseCooldownRemaining => useState.GetUseCooldown(Time.time);
+
     public event Action<MoveBase> onMoveOver;
 
     public virtual void Start(PlayerManager controller)
     {
         playerManager = controller;
+        if (IsStoredMove)
+        {
+            UpdateStoredUses(Time.time, controller != null ? controller.Pokemon.GetCDR() : 0f);
+            if (StoredUses == 0 || StoredUseCooldownRemaining > 0)
+            {
+                IsActive = false;
+                wasMoveSuccessful = false;
+                return;
+            }
+        }
         IsActive = true;
         wasMoveSuccessful = false;
         Debug.Log("Executing move: " + Name);
@@ -25,6 +47,11 @@ public abstract class MoveBase
     public abstract void Update();
 
     public virtual void Finish(){
+        if (wasMoveSuccessful && IsStoredMove)
+        {
+            UpdateStoredUses(Time.time, playerManager != null ? playerManager.Pokemon.GetCDR() : 0f);
+            wasMoveSuccessful = useState.TrySpend(Time.time, StoredUseInterval);
+        }
         onMoveOver?.Invoke(this);
         IsActive = false;
         wasMoveSuccessful = false;
@@ -35,6 +62,20 @@ public abstract class MoveBase
     }
 
     public abstract void ResetMove();
+
+    // Called by MovesController, independently of the derived move's Update or
+    // ResetMove. Cancelling, upgrading or dying never refills spent reserves.
+    public void UpdateStoredUses(float now, float cooldownReduction = 0f)
+    {
+        if (IsStoredMove)
+            useState.Tick(now, MaxStoredUses, Cooldown * Mathf.Max(0.01f, 1f - cooldownReduction / 100f));
+    }
+
+    public void ReduceStoredRecharge(float amount, float now, float cooldownReduction = 0f)
+    {
+        UpdateStoredUses(now, cooldownReduction);
+        useState.ReduceRecharge(amount, now);
+    }
 }
 
 public static class MoveDatabase
@@ -229,6 +270,14 @@ public static class MoveDatabase
                 return new DuraMetalClaw();
             case AvailableMoves.DuraFlashCannon:
                 return new DuraFlashCannon();
+            case AvailableMoves.DuraDragonPulse:
+                return new DuraDragonPulse();
+            case AvailableMoves.DuraDragonTail:
+                return new DuraDragonTail();
+            case AvailableMoves.DuraStelthRock:
+                return new DuraStealthRock();
+            case AvailableMoves.DuraludonUnite:
+                return new DuraludonUnite();
 
             default:
                 return null;

@@ -77,15 +77,15 @@ public class MovesHolderUI : MonoBehaviour
         energyUI.UpdateScoreGauge(currTime, maxTime);
     }
 
-    public void InitializeMoveUI(MoveAsset move)
+    public void InitializeMoveUI(MoveAsset move, MoveBase runtimeMove = null)
     {
         switch (move.moveType)
         {
             case MoveType.MoveA:
-                moveUIs[0].Initialize(move);
+                moveUIs[0].Initialize(move, runtimeMove);
                 break;
             case MoveType.MoveB:
-                moveUIs[1].Initialize(move);
+                moveUIs[1].Initialize(move, runtimeMove);
                 break;
             case MoveType.UniteMove:
                 uniteMoveUI.Initialize(move);
