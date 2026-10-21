@@ -47,9 +47,9 @@ public class MovesHolderUI : MonoBehaviour
         battleItemUI.StartCooldown(time, maxCdDuration);
     }
 
-    public void UpdateUniteMoveCooldown(int currCharge, int maxCharge)
+    public void UpdateUniteMoveCooldown(int currCharge, int maxCharge, bool recastAvailable = false)
     {
-        uniteMoveUI.UpdateUI(currCharge, maxCharge);
+        uniteMoveUI.UpdateUI(currCharge, maxCharge, recastAvailable);
     }
 
     public void SetUniteMoveDisabledLock(bool visible)

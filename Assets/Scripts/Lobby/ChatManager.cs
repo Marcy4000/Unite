@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using Unity.Netcode;
@@ -24,20 +23,49 @@ public class ChatManager : MonoBehaviour
     [SerializeField] private GameObject chatContainer;
     [SerializeField] private TMP_InputField chatInputField;
 
+    [Header("Unread Messages")]
+    [SerializeField] private GameObject unreadBadge;
+    [SerializeField] private TMP_Text unreadCountText;
+    [SerializeField] private GameObject messageNotification;
+    [SerializeField] private TMP_Text notificationSenderText;
+    [SerializeField] private TMP_Text notificationMessageText;
+    [SerializeField, Min(0.1f)] private float notificationDuration = 6f;
+
     private ChatMessageReciever chatMessageReciever;
+    private Unite.Multiplayer.GameSessionView currentLobby;
+    private float notificationHideTime;
+
+    public int UnreadMessageCount { get; private set; }
 
     private List<ChatMessageUI> chatMessages = new List<ChatMessageUI>();
 
-    private void Start()
+    private void OnEnable()
+    {
+        SyncLobby();
+        CloseChat();
+    }
+
+    private void OnDisable()
     {
         CloseChat();
+    }
 
-        chatMessages.Clear();
+    private void OnDestroy()
+    {
+        if (chatMessageReciever != null)
+            chatMessageReciever.OnMessageRecieved -= RecieveMessageRPC;
     }
 
     private void Update()
     {
-        if (NetworkManager.Singleton.IsServer)
+        SyncLobby();
+        if (messageNotification != null && messageNotification.activeSelf && Time.unscaledTime >= notificationHideTime)
+            messageNotification.SetActive(false);
+
+        var networkManager = NetworkManager.Singleton;
+        if (currentLobby == null || networkManager == null) return;
+
+        if (networkManager.IsServer)
         {
             if (chatMessageReciever == null)
             {
@@ -46,7 +74,7 @@ public class ChatManager : MonoBehaviour
                 chatMessageReciever.OnMessageRecieved += RecieveMessageRPC;
             }
         }
-        else if (NetworkManager.Singleton.IsClient)
+        else if (networkManager.IsClient)
         {
             if (chatMessageReciever == null)
             {
@@ -63,12 +91,15 @@ public class ChatManager : MonoBehaviour
 
     public void OpenChat()
     {
+        SyncLobby();
         chatContainer.SetActive(true);
+        MarkMessagesRead();
     }
 
     public void CloseChat()
     {
-        chatContainer.SetActive(false);
+        if (chatContainer != null) chatContainer.SetActive(false);
+        if (messageNotification != null) messageNotification.SetActive(false);
     }
 
     public void ClearChat()
@@ -78,11 +109,14 @@ public class ChatManager : MonoBehaviour
             Destroy(chatMessage.gameObject);
         }
         chatMessages.Clear();
+        MarkMessagesRead();
     }
 
     public void SendChatMessage()
     {
-        if (chatInputField.text.Length > 0)
+        if (chatMessageReciever != null && chatMessageReciever.IsSpawned &&
+            LobbyController.Instance?.Lobby != null && LobbyController.Instance.Player != null &&
+            !string.IsNullOrWhiteSpace(chatInputField.text))
         {
             ChatMessage message = new ChatMessage
             {
@@ -96,8 +130,44 @@ public class ChatManager : MonoBehaviour
 
     public void RecieveMessageRPC(ChatMessage message)
     {
-        ChatMessageUI chatMessageUI = Instantiate(message.senderID == LobbyController.Instance.Player.Id ? chatMessagePrefabSelf : chatMessagePrefabOther, chatMessageContainer).GetComponent<ChatMessageUI>();
+        SyncLobby();
+        if (currentLobby == null || LobbyController.Instance.Player == null || string.IsNullOrWhiteSpace(message.message)) return;
+
+        bool isOwnMessage = message.senderID == LobbyController.Instance.Player.Id;
+        ChatMessageUI chatMessageUI = Instantiate(isOwnMessage ? chatMessagePrefabSelf : chatMessagePrefabOther, chatMessageContainer).GetComponent<ChatMessageUI>();
         chatMessageUI.SetMessage(message);
         chatMessages.Add(chatMessageUI);
+
+        if (isOwnMessage || chatContainer.activeInHierarchy) return;
+
+        UnreadMessageCount++;
+        if (unreadBadge != null) unreadBadge.SetActive(true);
+        if (unreadCountText != null)
+            unreadCountText.text = UnreadMessageCount > 99 ? "99+" : UnreadMessageCount.ToString();
+
+        var sender = currentLobby.Players.Find(player => player.Id == message.senderID);
+        if (notificationSenderText != null)
+            notificationSenderText.text = sender != null && sender.Data.TryGetValue("PlayerName", out var name)
+                ? name.Value : "Party member";
+        if (notificationMessageText != null) notificationMessageText.text = message.message;
+        notificationHideTime = Time.unscaledTime + notificationDuration;
+        if (messageNotification != null) messageNotification.SetActive(isActiveAndEnabled);
+    }
+
+    private void SyncLobby()
+    {
+        var lobby = LobbyController.Instance?.Lobby;
+        if (ReferenceEquals(currentLobby, lobby)) return;
+        currentLobby = lobby;
+        ClearChat();
+        CloseChat();
+    }
+
+    private void MarkMessagesRead()
+    {
+        UnreadMessageCount = 0;
+        if (unreadBadge != null) unreadBadge.SetActive(false);
+        if (unreadCountText != null) unreadCountText.text = "0";
+        if (messageNotification != null) messageNotification.SetActive(false);
     }
 }

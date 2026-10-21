@@ -1,71 +1,58 @@
 using UnityEngine;
 
+// Serialized factory name retained for compatibility with existing licenses.
 public class MarshadwPassive : PassiveBase
 {
-    // This ability is raises your Phy.Atk, basic attack speed, and life steal every time the user uses a move, stacking up to 3 times.
-
-    private int buffStacks = 0;
-
-    private float buffTimer = 3;
-
-    private StatChange atkBuff = new StatChange(5, Stat.Attack, 0f, false, true, true, 14);
-    private StatChange atkSpeedBuff = new StatChange(5, Stat.AtkSpeed, 0f, false, true, true, 15);
-    private StatChange lifeStealBuff = new StatChange(5, Stat.LifeSteal, 0f, false, true, true, 16);
-
-    private MoveAsset normalUnite;
-
-    private MoveBase tempUniteMove;
-
+    private readonly MarshadowStackState stacks = new MarshadowStackState();
+    private int effect;
+    public int BuffStacks => stacks.Count;
     public override void Start(PlayerManager controller)
     {
+        if (playerManager != null)
+        {
+            playerManager.Pokemon.OnDeath -= OnDeath;
+            playerManager.MovesController.onMovePerformed -= OnMovePerformed;
+        }
         base.Start(controller);
+        controller.Pokemon.OnDeath += OnDeath;
         controller.MovesController.onMovePerformed += OnMovePerformed;
-        normalUnite = playerManager.Pokemon.BaseStats.GetUniteMove();
     }
-
     private void OnMovePerformed(MoveBase move)
     {
-        if (buffStacks < 3)
+        // Reworked moves commit at cast start, not again when recasts expire.
+        if (!(move is MarshadowMoveBase) && !(move is MarshadowShadowSneak) && !(move is MarshadowUnite)) OnMoveCommitted();
+    }
+    public void OnMoveCommitted()
+    {
+        if (playerManager.Pokemon.CurrentHp <= 0) return;
+        stacks.Gain(Time.time); Apply();
+    }
+    public void OnBoostedHit() { OnMoveCommitted(); }
+    private void Apply()
+    {
+        RemoveStats();
+        if (stacks.Count > 0)
         {
-            buffStacks++;
-            playerManager.Pokemon.AddStatChange(atkBuff);
-            playerManager.Pokemon.AddStatChange(atkSpeedBuff);
-            playerManager.Pokemon.AddStatChange(lifeStealBuff);
-        }
-
-        if (move == tempUniteMove && tempUniteMove != null)
-        {
-            playerManager.MovesController.LearnMove(normalUnite);
-            tempUniteMove = null;
+            short amount = (short)(5 * stacks.Count);
+            playerManager.Pokemon.AddStatChange(new StatChange(amount, Stat.Attack, MarshadowMoveRules.PassiveDuration, true, true, true, MarshadowMoveRules.AttackBuff));
+            playerManager.Pokemon.AddStatChange(new StatChange(amount, Stat.AtkSpeed, MarshadowMoveRules.PassiveDuration, true, true, false, MarshadowMoveRules.AttackSpeedBuff));
+            playerManager.Pokemon.AddStatChange(new StatChange(amount, Stat.LifeSteal, MarshadowMoveRules.PassiveDuration, true, true, false, MarshadowMoveRules.LifeStealBuff));
+            MarshadowMoveRuntime.EndEffect(playerManager, ref effect);
+            effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.Passive, MarshadowMoveRules.PassiveDuration, stage: stacks.Count);
         }
     }
-
+    private void RemoveStats()
+    {
+        playerManager.Pokemon.RemoveAllStatChangeWithIDRPC(MarshadowMoveRules.AttackBuff);
+        playerManager.Pokemon.RemoveAllStatChangeWithIDRPC(MarshadowMoveRules.AttackSpeedBuff);
+        playerManager.Pokemon.RemoveAllStatChangeWithIDRPC(MarshadowMoveRules.LifeStealBuff);
+    }
     public override void Update()
     {
-        if (buffStacks > 0)
-        {
-            buffTimer -= Time.deltaTime;
-            if (buffTimer <= 0)
-            {
-                buffStacks = 0;
-                playerManager.Pokemon.RemoveAllStatChangeWithIDRPC(atkBuff.ID);
-                playerManager.Pokemon.RemoveAllStatChangeWithIDRPC(atkSpeedBuff.ID);
-                playerManager.Pokemon.RemoveAllStatChangeWithIDRPC(lifeStealBuff.ID);
-                
-                buffTimer = 3;
-            }
-        }
+        if (stacks.Tick(Time.time)) { RemoveStats(); MarshadowMoveRuntime.EndEffect(playerManager, ref effect); }
     }
-
-    public void LearnNewTempUnite(MoveAsset newUnite)
+    private void OnDeath(DamageInfo _)
     {
-        if (newUnite == null)
-        {
-            return;
-        }
-
-        playerManager.MovesController.LearnMove(newUnite);
-        tempUniteMove = playerManager.MovesController.GetMove(MoveType.UniteMove);
-        playerManager.MovesController.IncrementUniteCharge(newUnite.uniteEnergyCost);
+        stacks.Clear(); RemoveStats(); MarshadowMoveRuntime.EndEffect(playerManager, ref effect);
     }
 }

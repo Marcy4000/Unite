@@ -1,102 +1,19 @@
-using System.Collections;
 using UnityEngine;
 
-public class MarshadowDrainPunch : MoveBase
+public class MarshadowDrainPunch : MarshadowMoveBase
 {
-    // The user strikes in an area dealing damage and healing the user.
-    private DamageInfo damage = new DamageInfo(0, 1.15f, 6, 265, DamageType.Physical);
-    private float range = 2.9f;
-
-    private Vector3 direction;
-
-    private Coroutine damageRoutine;
-
-    public MarshadowDrainPunch()
-    {
-        Name = "Drain Punch";
-        Cooldown = 6f;
-    }
-
-    public override void Start(PlayerManager controller)
-    {
-        base.Start(controller);
-        damage.attackerId = playerManager.NetworkObjectId;
-        Aim.Instance.InitializeSkillshotAim(range);
-    }
-
-    public override void Update()
-    {
-        if (!IsActive)
-        {
-            return;
-        }
-
-        direction = Aim.Instance.SkillshotAim();
-    }
-
+    private bool struck;
+    public MarshadowDrainPunch() { Name = "Drain Punch"; Cooldown = 6f; }
     public override void Finish()
     {
-        if (IsActive && direction.magnitude != 0)
-        {
-            damageRoutine = playerManager.StartCoroutine(DamageRoutine());
-            wasMoveSuccessful = true;
-        }
-        Aim.Instance.HideSkillshotAim();
-        base.Finish();
+        if (!IsActive || executing) return;
+        Begin(); struck = false;
+        MarshadowMoveRuntime.PlayAction(playerManager, "pm0883_ba20_buturi01", 2.12f);
+        effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.DrainPunch, 0.5f);
     }
-
-    private IEnumerator DamageRoutine()
+    protected override void Advance()
     {
-        playerManager.MovesController.LockEveryAction();
-        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-        playerManager.AnimationManager.PlayAnimation("pm0883_ba20_buturi01");
-        playerManager.StopMovementForTime(1f, false);
-        playerManager.transform.rotation = Quaternion.LookRotation(direction);
-
-        yield return new WaitForSeconds(0.53f);
-
-        GameObject[] hitColliders = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position + (direction * 1.377f * (range / 2.5f)), 1f * (range / 2.5f), AimTarget.NonAlly);
-
-        int healAmount = 0;
-
-        foreach (var hitCollider in hitColliders)
-        {
-            Pokemon targetPokemon = hitCollider.GetComponent<Pokemon>();
-
-            if (targetPokemon == null)
-            {
-                continue;
-            }
-
-            targetPokemon.TakeDamageRPC(damage);
-            healAmount += Mathf.FloorToInt(targetPokemon.CalculateDamage(damage) * 0.1f);
-        }
-
-        if (healAmount > 0)
-        {
-            DamageInfo heal = new DamageInfo(playerManager.NetworkObjectId, 0, 0, (short)healAmount, DamageType.Special);
-            playerManager.Pokemon.HealDamageRPC(heal);
-        }
-
-        yield return new WaitForSeconds(0.475f);
-
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-    }
-
-    public override void Cancel()
-    {
-        Aim.Instance.HideSkillshotAim();
-        base.Cancel();
-    }
-
-    public override void ResetMove()
-    {
-        if (damageRoutine != null)
-        {
-            playerManager.StopCoroutine(damageRoutine);
-        }
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        if (!struck && elapsed >= 0.25f) { struck = true; Hit(MarshadowHit.DrainPunch); }
+        if (elapsed >= 0.43f) Complete();
     }
 }

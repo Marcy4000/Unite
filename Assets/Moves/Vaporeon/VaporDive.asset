@@ -18,12 +18,16 @@ MonoBehaviour:
   cooldown: 10
   uniteEnergyCost: 0
   moveName: Dive
-  description: Dive into the ground, becoming invincible for up to 5s. When the user
-    resurfaces it deals damage and pushes back enemies in range.
+  description: 'Submerge for up to 3s, becoming invincible while moving along the
+    ground. Recast after 0.25s to resurface early. Other actions are unavailable
+    underwater. After a brief 0.25s warning, resurface to damage nearby enemies,
+    briefly incapacitate them and push them back slightly. Cooldown starts on resurfacing.
+    Upgrade: cooldown is reduced to 9s.'
   icon: {fileID: 21300000, guid: 9dc9ebdabfba7914b8924eec2da34175, type: 3}
   preview:
     m_AssetGUID: d1c9c46f6f2163544b3f2a6ea117ab85
     m_SubObjectName: 
     m_SubObjectType: 
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   isUpgraded: 0

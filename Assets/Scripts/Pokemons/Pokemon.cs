@@ -6,7 +6,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Pokemon : NetworkBehaviour
+public partial class Pokemon : NetworkBehaviour
 {
     [SerializeField] private GameObject damagePrefab;
     private PokemonBase baseStats;

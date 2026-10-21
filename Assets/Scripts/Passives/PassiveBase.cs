@@ -25,6 +25,8 @@ public static class PassiveDatabase
                 return new GlaceonPassive();
             case AvailablePassives.SylveonPassive:
                 return new SylvPassive();
+            case AvailablePassives.VaporeonPassive:
+                return new VaporeonPassive();
             case AvailablePassives.JolteonPassive:
                 return new JoltPassive();
             case AvailablePassives.FlygonPassive:

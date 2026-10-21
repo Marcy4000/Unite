@@ -68,7 +68,7 @@ public class EmboarReversal : MoveBase
         Vector2 direction2D = new Vector2(direction.x, direction.z);
         playerManager.MovesController.onObjectSpawned += (obj) =>
         {
-            if (obj.TryGetComponent(out CresseliaPsybeamProjectile projectile))
+            if (obj.TryGetComponent(out EmboarReversalProjectile projectile))
             {
                 DamageInfo actualDamage = damageInfo;
                 actualDamage.baseDmg = (short)Mathf.RoundToInt(actualDamage.baseDmg + (playerManager.Pokemon.GetMissingHp() / 100f));

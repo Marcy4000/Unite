@@ -35,7 +35,7 @@ public class UniteMoveUI : MonoBehaviour
         disabledLock.SetActive(visible);
     }
 
-    public void UpdateUI(int uniteMoveCharge, int uniteMaxCharge)
+    public void UpdateUI(int uniteMoveCharge, int uniteMaxCharge, bool recastAvailable = false)
     {
         if (uniteMaxCharge > 0)
         {
@@ -44,7 +44,7 @@ public class UniteMoveUI : MonoBehaviour
             chargeIndicator.fillAmount = chargePercentage;
         }
 
-        if (uniteMoveCharge == uniteMaxCharge)
+        if (uniteMoveCharge == uniteMaxCharge || recastAvailable)
         {
             lockIcon.SetActive(false);
             cdText.gameObject.SetActive(false);

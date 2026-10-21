@@ -1,215 +1,117 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
 public class JolteonUnite : MoveBase
 {
-    public float dashSpeed = 25f;
-    public float dashDuration = 3.5f;
-    public float bounceFactor = 0.8f; // Factor for bouncing off obstacles
-    public float sphereCastRadius = 1f; // Radius for the sphere cast
-    public float turningFactor = 5f; // Factor for smoothing out direction changes
+    public float dashSpeed = JoltMoveRules.BlitzSpeed;
+    public float dashDuration = JoltMoveRules.BlitzDuration;
+    public float sphereCastRadius = 0.65f;
+    public float turningFactor = 2.5f;
+    private readonly JoltActionLock actionLock = new JoltActionLock();
+    private readonly Dictionary<ulong, float> nextHit = new Dictionary<ulong, float>();
+    private Vector3 direction;
+    private float remaining;
+    private int effect;
+    private bool dashing;
+    public bool IsDashing => dashing;
 
-    private float dashTimeRemaining;
-    private bool isDashing;
-    private Vector3 dashDirection;
-    private Vector3 currentVelocity;
-
-    private List<Pokemon> recentlyHitPokemon = new List<Pokemon>();
-    private float invincibilityDuration = 0.7f; // Duration for which a Pokemon can't be hit again
-
-    private GameObject trailObject;
-
-    private string trailPath = "Assets/Prefabs/Objects/Moves/Jolteon/JolteonTrail.prefab";
-
-    RaycastHit[] hits = new RaycastHit[15];
-
-    private DamageInfo dashDamage = new DamageInfo(0, 1.8f, 6, 300, DamageType.Physical);
-    private StatChange speedDebuff = new StatChange(20, Stat.Speed, 2f, true, false, true, 0);
-
-    public JolteonUnite()
-    {
-        Name = "Lightning Blitz";
-        Cooldown = 0f;
-    }
-
+    public JolteonUnite() { Name = "Lightning Blitz"; Cooldown = 0; }
     public override void Start(PlayerManager controller)
     {
+        if (dashing) return;
         base.Start(controller);
-        dashDamage.attackerId = playerManager.NetworkObjectId;
         Aim.Instance.InitializeDashAim(5f);
+        direction = Aim.Instance.DashAim();
     }
 
     public override void Update()
     {
-        if (isDashing)
-        {
-            DashUpdate();
-        }
+        if (IsActive) direction = Aim.Instance.DashAim();
+        if (!dashing) return;
+        float delta = Mathf.Min(Time.deltaTime, remaining);
+        // Movement input steers on keyboard and controller, preserving the
+        // current control scheme and the established wall-bounce behaviour.
+        Vector2 input = playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>();
+        Vector3 steer = new Vector3(input.x, 0, input.y);
+        if (steer.sqrMagnitude > 0.05f)
+            direction = Vector3.RotateTowards(direction, steer.normalized, turningFactor * delta, 0).normalized;
 
-        if (!IsActive)
+        Vector3 from = playerManager.transform.position;
+        float distance = dashSpeed * delta;
+        RaycastHit nearest = default;
+        bool wall = false;
+        foreach (var hit in Physics.SphereCastAll(from + Vector3.up, sphereCastRadius, direction, distance + 0.05f))
         {
-            return;
+            if (!hit.collider.CompareTag("Wall") || (wall && hit.distance >= nearest.distance)) continue;
+            nearest = hit;
+            wall = true;
         }
+        if (wall)
+        {
+            float toWall = Mathf.Max(0, nearest.distance - 0.03f);
+            MoveAndHit(direction * Mathf.Min(toWall, distance));
+            direction = JoltMoveRules.Reflect(direction, nearest.normal);
+            MoveAndHit(direction * Mathf.Max(0, distance - toWall));
+        }
+        else
+        {
+            Vector3 moved = MoveAndHit(direction * distance);
+            // A walkmesh edge without a Wall collider must not pin the rush.
+            if (distance > 0 && moved.sqrMagnitude < distance * distance * 0.01f) direction = -direction;
+        }
+        playerManager.transform.rotation = Quaternion.LookRotation(direction);
+        remaining -= delta;
+        if (remaining <= 0) EndDash(true);
+    }
 
-        dashDirection = Aim.Instance.DashAim();
+    private Vector3 MoveAndHit(Vector3 displacement)
+    {
+        Vector3 from = playerManager.transform.position;
+        Vector3 moved = playerManager.PlayerMovement.MoveWithWalls(displacement);
+        foreach (Pokemon target in JoltMoveRuntime.Sweep(playerManager, from, playerManager.transform.position, 1f))
+        {
+            if (nextHit.TryGetValue(target.NetworkObjectId, out float until) && Time.time < until) continue;
+            nextHit[target.NetworkObjectId] = Time.time + 0.7f;
+            target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 1.8f, 6, 300, DamageType.Physical, DamageProprieties.IsUniteMove));
+            JoltMoveRuntime.RefreshStat(target, new StatChange(20, Stat.Speed, 2f, true, false, true, JoltMoveRules.BlitzSlow));
+        }
+        return moved;
     }
 
     public override void Finish()
     {
-        if (IsActive && dashDirection.magnitude != 0)
-        {
-            StartDash();
-        }
+        if (!IsActive || dashing) return;
         Aim.Instance.HideDashAim();
+        if (direction.sqrMagnitude > 0.001f)
+        {
+            direction.Normalize();
+            remaining = dashDuration;
+            nextHit.Clear();
+            dashing = true;
+            actionLock.Acquire(playerManager);
+            playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, dashDuration, true, JoltMoveRules.BlitzUnstoppable));
+            playerManager.AnimationManager.SetBool("Walking", true);
+            effect = JoltMoveRuntime.Effect(playerManager, JoltEffect.LightningBlitz);
+            // Commit energy now, not after surviving the entire rush.
+            wasMoveSuccessful = true;
+        }
         base.Finish();
     }
 
-    void StartDash()
+    private void EndDash(bool reward)
     {
-        isDashing = true;
-        dashTimeRemaining = dashDuration;
-        playerManager.PlayerMovement.CanMove = false;
-
-        playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, 3.5f, true, 0));
-        playerManager.AnimationManager.SetBool("Walking", true);
-
-        playerManager.MovesController.onObjectSpawned += (obj) =>
-        {
-            trailObject = obj;
-        };
-
-        playerManager.MovesController.SpawnNetworkObjectFromStringRPC(trailPath, playerManager.OwnerClientId);
-
-        playerManager.MovesController.AddMoveStatus(0, ActionStatusType.Disabled);
-        playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
-        playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
-        playerManager.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
-        playerManager.MovesController.BattleItemStatus.AddStatus(ActionStatusType.Disabled);
-        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-
-        // If no direction is input, use forward direction
-        if (dashDirection == Vector3.zero)
-        {
-            dashDirection = playerManager.transform.forward;
-        }
+        if (!dashing) return;
+        dashing = false;
+        actionLock.Release();
+        JoltMoveRuntime.EndEffect(playerManager, ref effect);
+        playerManager.Pokemon.RemoveStatusEffectWithID(JoltMoveRules.BlitzUnstoppable);
+        nextHit.Clear();
+        if (!reward || playerManager.PlayerState == PlayerState.Dead || playerManager.Pokemon.CurrentHp <= 0) return;
+        JoltMoveRuntime.RefreshStat(playerManager.Pokemon, new StatChange(80, Stat.Speed, 6f, true, true, true, JoltMoveRules.OverchargeSpeed));
+        playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.2f), 135, 0, 6f, true));
+        (playerManager.PassiveController.Passive as JoltPassive)?.UniteFillCharge(5f);
     }
 
-    void DashUpdate()
-    {
-        if (dashTimeRemaining > 0)
-        {
-            dashTimeRemaining -= Time.deltaTime;
-
-            // Move Jolteon
-            currentVelocity = dashDirection * dashSpeed;
-            playerManager.PlayerMovement.CharacterController.Move(currentVelocity * Time.deltaTime);
-
-            float adjustDirectionX = playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>().x;
-            float adjustDirectionZ = playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>().y;
-            Vector3 adjustDirection = new Vector3(adjustDirectionX, 0, adjustDirectionZ).normalized;
-            if (adjustDirection != Vector3.zero)
-            {
-                dashDirection = Vector3.Lerp(dashDirection, adjustDirection, Time.deltaTime * turningFactor); // Smoothly adjust direction
-            }
-
-            if (trailObject != null)
-            {
-                trailObject.transform.position = playerManager.transform.position + new Vector3(0, 1f, 0);
-            }
-
-            playerManager.transform.rotation = Quaternion.LookRotation(dashDirection);
-
-            // Check for collisions
-            HandleCollisions();
-        }
-        else
-        {
-            // End dash
-            isDashing = false;
-            playerManager.PlayerMovement.CanMove = true;
-
-            playerManager.Pokemon.AddStatChange(new StatChange(80, Stat.Speed, 6f, true, true, true, 0));
-            playerManager.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.20f), 0, 0, 6f, true));
-
-            playerManager.MovesController.DespawnNetworkObjectRPC(trailObject.GetComponent<NetworkObject>().NetworkObjectId);
-            trailObject = null;
-
-            JoltPassive passive = playerManager.PassiveController.Passive as JoltPassive;
-            if (passive != null)
-            {
-                passive.UniteFillCharge(5f);
-            }
-
-            playerManager.MovesController.RemoveMoveStatus(0, ActionStatusType.Disabled);
-            playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
-            playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
-            playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
-            playerManager.MovesController.BattleItemStatus.RemoveStatus(ActionStatusType.Disabled);
-            playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-
-            wasMoveSuccessful = true;
-            Finish();
-        }
-    }
-
-    void HandleCollisions()
-    {
-        if (dashDirection.sqrMagnitude > 0.001f)
-        {
-            dashDirection.Normalize();
-        }
-        int hitCount = Physics.SphereCastNonAlloc(playerManager.transform.position + new Vector3(0f, 1f, 0f), sphereCastRadius, dashDirection, hits, currentVelocity.magnitude * Time.deltaTime);
-
-        for (int i = 0; i < hitCount; i++)
-        {
-            RaycastHit hit = hits[i];
-
-            if (hit.collider.CompareTag("Wall"))
-            {
-                // Handle bouncing off obstacles
-                Vector3 reflectDir = Vector3.Reflect(dashDirection, hit.normal);
-                reflectDir = new Vector3(reflectDir.x, 0, reflectDir.z).normalized;
-                dashDirection = reflectDir * bounceFactor;
-                continue;
-            }
-
-            if (Aim.Instance.CanPokemonBeTargeted(hit.collider.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam))
-            {
-                if (hit.collider.TryGetComponent(out Pokemon pokemon))
-                {
-                    if (recentlyHitPokemon.Contains(pokemon))
-                    {
-                        continue;
-                    }
-
-                    pokemon.TakeDamageRPC(dashDamage);
-                    pokemon.AddStatChange(speedDebuff);
-                    recentlyHitPokemon.Add(pokemon);
-                    playerManager.StartCoroutine(RemoveFromRecentlyHit(pokemon));
-                }
-            }
-        }
-    }
-
-    private IEnumerator RemoveFromRecentlyHit(Pokemon pokemon)
-    {
-        yield return new WaitForSeconds(invincibilityDuration);
-        recentlyHitPokemon.Remove(pokemon);
-    }
-
-    public override void ResetMove()
-    {
-        if (trailObject != null)
-        {
-            playerManager.MovesController.DespawnNetworkObjectRPC(trailObject.GetComponent<NetworkObject>().NetworkObjectId);
-            trailObject = null;
-        }
-        isDashing = false;
-        recentlyHitPokemon.Clear();
-
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-    }
+    public override void Cancel() { if (IsActive) Aim.Instance.HideDashAim(); base.Cancel(); }
+    public override void ResetMove() { Cancel(); EndDash(false); }
 }

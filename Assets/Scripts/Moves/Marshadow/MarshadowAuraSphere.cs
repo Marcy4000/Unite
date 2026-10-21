@@ -1,189 +1,107 @@
-using DG.Tweening;
-using DG.Tweening.Core;
-using DG.Tweening.Plugins.Options;
-using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-public class MarshadowAuraSphere : MoveBase
+public class MarshadowAuraSphere : MarshadowMoveBase
 {
-    private float range = 5.5f;
-
-    private Vector3 direction;
-
-    private DamageInfo sphereDamage = new DamageInfo(0, 1.12f, 7, 210, DamageType.Physical);
-
-    private string assetPath = "Assets/Prefabs/Objects/Moves/Marshadow/AuraSphere.prefab";
-
+    private enum Phase { Idle, Casting, Projectile, Marked, Lunging, Recovery }
+    private Phase phase;
     private Pokemon target;
-    private Coroutine jumpRoutine;
-    private Coroutine cancelRoutine;
-    TweenerCore<Vector3, Vector3, VectorOptions> sequence;
-
-    public MarshadowAuraSphere()
-    {
-        Name = "Aura Sphere";
-        Cooldown = 9f;
-    }
+    private float deadline;
+    private int markEffect;
+    public int LastCast => cast;
+    protected override float AimRange => MarshadowMoveRules.AuraRange;
+    protected override bool RequiresMovement => phase == Phase.Lunging;
+    public MarshadowAuraSphere() { Name = "Aura Sphere"; Cooldown = 9f; }
 
     public override void Start(PlayerManager controller)
     {
+        if (phase == Phase.Projectile || executing) return;
+        if (phase == Phase.Marked)
+        {
+            if (controller.Pokemon.HasStatusEffect(StatusType.Immobilized)) return;
+            if (!ValidTarget() || Time.time >= deadline) { Complete(); return; }
+            playerManager = controller; IsActive = true; return;
+        }
         base.Start(controller);
-        sphereDamage.attackerId = playerManager.NetworkObjectId;
-        if (target == null)
-        {
-            Aim.Instance.InitializeSkillshotAim(range);
-        }
     }
-
-    public override void Update()
-    {
-        if (!IsActive)
-        {
-            return;
-        }
-
-        if (target == null)
-        {
-            direction = Aim.Instance.SkillshotAim();
-        }
-    }
-
     public override void Finish()
     {
-        if (IsActive)
+        if (!IsActive || executing) return;
+        if (phase == Phase.Marked)
         {
-            if (target == null)
-            {
-                playerManager.StartCoroutine(SpawnSphere());
-            }
-            else
-            {
-                jumpRoutine = playerManager.StartCoroutine(JumpToTarget());
-                playerManager.StopCoroutine(cancelRoutine);
-                BattleUIManager.instance.ShowMoveSecondaryCooldown(0, 0);
-                wasMoveSuccessful = true;
-            }
-
+            if (!ValidTarget() || Time.time >= deadline) { Complete(); return; }
+            direction = MarshadowMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward);
+            Begin(); phase = Phase.Lunging;
+            MarshadowMoveRuntime.ShowWindow(0, 0);
+            MarshadowMoveRuntime.EndEffect(playerManager, ref markEffect);
+            effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.Rush, 0.45f, stage: 2);
         }
-        Aim.Instance.HideSkillshotAim();
-        base.Finish();
-    }
-
-    private IEnumerator SpawnSphere()
-    {
-        playerManager.MovesController.LockEveryAction();
-        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-        playerManager.PlayerMovement.CanMove = false;
-        playerManager.AnimationManager.PlayAnimation("pm0883_ba21_tokusyu01");
-        playerManager.transform.rotation = Quaternion.LookRotation(this.direction);
-
-        yield return new WaitForSeconds(0.416f);
-
-        Vector2 direction = new Vector2(this.direction.x, this.direction.z);
-        playerManager.MovesController.onObjectSpawned += (obj) =>
+        else if (phase == Phase.Idle)
         {
-            AuraSphereProjectile auraSphereProjectile = obj.GetComponent<AuraSphereProjectile>();
-            auraSphereProjectile.SetDirection(playerManager.transform.position, direction, sphereDamage, range);
-            auraSphereProjectile.OnMoveHit += OnProjectileHit;
-        };
-
-        playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
-
-        yield return new WaitForSeconds(0.9f);
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-        playerManager.MovesController.UnlockEveryAction();
-
-        playerManager.PlayerMovement.CanMove = true;
-    }
-
-    public override void Cancel()
-    {
-        Aim.Instance.HideSkillshotAim();
-        base.Cancel();
-    }
-
-    private IEnumerator JumpToTarget()
-    {
-        playerManager.MovesController.LockEveryAction();
-        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-        playerManager.PlayerMovement.CanMove = false;
-        playerManager.transform.LookAt(target.transform);
-        playerManager.transform.rotation = Quaternion.Euler(0, playerManager.transform.rotation.eulerAngles.y, 0);
-
-        sequence = playerManager.transform.DOMove(target.transform.position, 0.6f);
-
-        yield return sequence.WaitForCompletion();
-
-        playerManager.PlayerMovement.CanMove = true;
-        if (Aim.Instance.CanPokemonBeTargeted(target.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam))
-        {
-            target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.RoundToInt(250 + (target.GetMissingHp()*0.2f)), DamageType.Physical));
-        }
-        target = null;
-
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-
-        playerManager.MovesController.ReduceMoveCooldown(MoveType.MoveB, playerManager.MovesController.GetMove(MoveType.MoveB).Cooldown * 0.3f);
-    }
-
-    private void CancelJump(DamageInfo info)
-    {
-        playerManager.PlayerMovement.CanMove = true;
-        sequence.Kill();
-        playerManager.StopCoroutine(jumpRoutine);
-        try
-        {
-            target.OnDeath -= CancelJump;
-        }
-        catch (System.Exception)
-        {
-
-        }
-        target = null;
-    }
-
-    private void OnProjectileHit(ulong hitId)
-    {
-        try
-        {
-            target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[hitId].gameObject.GetComponent<Pokemon>();
-            target.OnDeath += CancelJump;
-            cancelRoutine = playerManager.StartCoroutine(SecondHitCooldown());
-        }
-        catch (System.Exception)
-        {
-            wasMoveSuccessful = true;
-            target = null;
-            Finish();
+            Begin(); phase = Phase.Casting;
+            MarshadowMoveRuntime.PlayAction(playerManager, "pm0883_ba21_tokusyu01", 1.733f);
         }
     }
-
-    private IEnumerator SecondHitCooldown()
+    public override void Update()
     {
-        BattleUIManager.instance.ShowMoveSecondaryCooldown(0, 5f);
-        yield return new WaitForSeconds(5f);
-        wasMoveSuccessful = true;
-        BattleUIManager.instance.ShowMoveSecondaryCooldown(0, 0);
-        target = null;
-        Finish();
+        base.Update();
+        if ((phase == Phase.Marked && (!ValidTarget() || Time.time >= deadline)) || (phase == Phase.Projectile && Time.time >= deadline)) Complete();
     }
-
-    public override void ResetMove()
+    protected override void Advance()
     {
-        if (jumpRoutine != null)
+        switch (phase)
         {
-            playerManager.StopCoroutine(jumpRoutine);
+            case Phase.Casting:
+                if (elapsed < 0.24f) return;
+                phase = Phase.Projectile; executing = false;
+                ActionLock.Release(); MarshadowMoveRuntime.ReturnToLocomotion(playerManager);
+                deadline = Time.time + 3f;
+                playerManager.MovesController.LaunchMarshadowAuraRPC(cast, playerManager.transform.position, direction);
+                break;
+            case Phase.Lunging:
+                if (!ValidTarget()) { Complete(); return; }
+                Vector3 offset = target.transform.position - playerManager.transform.position; offset.y = 0;
+                if (offset.magnitude <= 1f)
+                {
+                    Hit(MarshadowHit.AuraFollowup, target: target.NetworkObjectId);
+                    // A host-side KO can synchronously invoke OnTargetDeath.
+                    // Do not resurrect the completed sequence after its cleanup.
+                    if (phase == Phase.Lunging) { phase = Phase.Recovery; elapsed = 0; }
+                    return;
+                }
+                direction = offset.normalized;
+                playerManager.transform.rotation = Quaternion.LookRotation(direction);
+                float requested = Mathf.Min(offset.magnitude - 0.8f, 19f * Time.deltaTime);
+                Vector3 movement = playerManager.PlayerMovement.MoveWithWalls(direction * requested);
+                if (elapsed >= 0.6f || movement.sqrMagnitude < requested * requested * 0.01f) Complete();
+                break;
+            case Phase.Recovery:
+                if (elapsed >= 0.15f) Complete();
+                break;
         }
-        if (cancelRoutine != null)
-        {
-            playerManager.StopCoroutine(cancelRoutine);
-        }
-        if (sequence != null)
-        {
-            sequence.Kill();
-        }
-        target = null;
+    }
+    public void ProjectileResult(int id, bool hit, ulong targetId)
+    {
+        if (id != cast || phase != Phase.Projectile || playerManager.Pokemon.CurrentHp <= 0) return;
+        if (!hit || !NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(targetId, out var obj)
+            || !obj.TryGetComponent(out target) || !ValidTarget()) { Complete(); return; }
+        phase = Phase.Marked; deadline = Time.time + MarshadowMoveRules.AuraWindow;
+        target.OnDeath += OnTargetDeath;
+        markEffect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.AuraMark, MarshadowMoveRules.AuraWindow, targetId);
+        MarshadowMoveRuntime.ShowWindow(0, MarshadowMoveRules.AuraWindow);
+    }
+    private bool ValidTarget() => MarshadowMoveRuntime.CanHit(playerManager, target)
+        && (target.transform.position - playerManager.transform.position).sqrMagnitude <= 100f;
+    private void OnTargetDeath(DamageInfo _) { Complete(); }
+    protected override void Complete()
+    {
+        if (target != null) target.OnDeath -= OnTargetDeath;
+        target = null; phase = Phase.Idle;
+        MarshadowMoveRuntime.ShowWindow(0, 0);
+        MarshadowMoveRuntime.EndEffect(playerManager, ref markEffect);
+        // Also invalidates a pending local projectile presentation; server-side
+        // projectile lifetime is independently cancelled by caster death.
+        if (playerManager != null && playerManager.IsSpawned && cast != 0) playerManager.MovesController.CancelMarshadowCastRPC(cast);
+        base.Complete();
     }
 }

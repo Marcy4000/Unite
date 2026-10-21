@@ -14,19 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   move: 24
   moveType: 0
-  moveLabel: 4
+  moveLabel: 9
   cooldown: 12
   uniteEnergyCost: 0
   moveName: Aqua Ring
-  description: Create a protective ring around yourself or a nearby ally within range,
-    granting a shield equal to 20% of their max HP and boosting their Attack and
-    Sp. Attack by 45% for 4.5s. While active, the ring periodically heals the target
-    every 0.7s for 6s. If the shield is broken, the ring ends prematurely. If no
-    ally is within range, the move targets yourself instead.
+  description: 'Protect an ally within 8m, or yourself if no ally is selected, with
+    a shield worth 20% of their max HP for 6s. Grant +25% Attack and Sp. Attack for
+    up to 4.5s and eight healing pulses, starting shortly after casting. If the shield
+    breaks, the ring and its remaining effects end. Recasting replaces your ring
+    on that target. Upgrade: shield increases to 25% max HP.'
   icon: {fileID: 21300000, guid: e541418fe9c768f4c8fc8f8d23009d7d, type: 3}
   preview:
     m_AssetGUID: 89066711bc8a2564ab7a0283f7439934
     m_SubObjectName: 
     m_SubObjectType: 
+    m_SubObjectGUID:
     m_EditorAssetChanged: 0
   isUpgraded: 0

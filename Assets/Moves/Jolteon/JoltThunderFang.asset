@@ -18,11 +18,12 @@ MonoBehaviour:
   cooldown: 7
   uniteEnergyCost: 0
   moveName: Thunder Fang
-  description: "Dash a short distance in the designated direction, biting enemies
-    upon impact dealing damage (more damage if empowered by the user's passive) and
-    stunning them for 0.5s. If at least one enemy is hit, the user gains a 60% movement
-    speed boost for 1.5s. If the move is empowered, it can be reused within 4s for
-    a second bite, and the cooldown begins after the second use.\r"
+  description: "After a brief windup, lunge in the designated direction, biting
+    enemies along the path and stunning them for 0.5s. Hitting an enemy grants
+    60% movement speed for 1.5s. Full Volt Absorb is consumed to empower both bites
+    and grant one second use within 4s after the first lunge. The cooldown starts
+    after the second use or when that window expires. Walls stop the lunge.
+    Upgrade extends the on-hit movement-speed boost to 2s."
   icon: {fileID: 21300000, guid: 3e827934eee816e49a332ca19fb1e6c9, type: 3}
   preview:
     m_AssetGUID: 9cac4fc0391e1cb409eececb6ace3a4b

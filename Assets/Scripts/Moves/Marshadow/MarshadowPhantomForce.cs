@@ -1,129 +1,65 @@
-using System.Collections;
 using UnityEngine;
 
-public class MarshadowPhantomForce : MoveBase
+public class MarshadowPhantomForce : MarshadowMoveBase
 {
-    /*the user becomes ghostly and is invulnerable for a limited amount of time.
-    If the user activates the move again the user will
-    unleash a powerful kick throwing opponents away and stunning them if
-    they collide to terrain.*/
-
-    private StatusEffect invulnerableEffect = new StatusEffect(StatusType.Invincible, 0, false, 6);
-    private StatusEffect invisibleEffect = new StatusEffect(StatusType.Invisible, 0, false, 7);
-    private DamageInfo damage = new DamageInfo(0, 1.76f, 9, 520, DamageType.Physical);
-
-    private float range = 2.9f;
-
-    private float secondUseTimer = 4f;
-    private bool isSecondUse;
-
-    private bool isFinishing;
-
-    private Coroutine damageRoutine;
-
-    public MarshadowPhantomForce()
-    {
-        Name = "Phantom Force";
-        Cooldown = 10f;
-    }
-
+    private bool ghostly, struck;
+    private float deadline;
+    private int ghostEffect;
+    public bool IsGhostly => ghostly;
+    public MarshadowPhantomForce() { Name = "Phantom Force"; Cooldown = 10f; }
     public override void Start(PlayerManager controller)
     {
+        if (ghostly && Time.time >= deadline) { BreakStealth(); return; }
         base.Start(controller);
-        damage.attackerId = playerManager.NetworkObjectId;
     }
-
-    public override void Update()
-    {
-        if (isSecondUse)
-        {
-            if (secondUseTimer >= 0)
-            {
-                secondUseTimer -= Time.deltaTime;
-            }
-
-            if (secondUseTimer <= 0 && !isFinishing)
-            {
-                IsActive = true;
-                Finish();
-                isFinishing = true;
-            }
-        }
-    }
-
     public override void Finish()
     {
-        if (IsActive)
+        if (!IsActive || executing) return;
+        if (!ghostly)
         {
-            if (!isSecondUse)
-            {
-                secondUseTimer = 4f;
-                BattleUIManager.instance.ShowMoveSecondaryCooldown(1, secondUseTimer);
-                playerManager.Pokemon.AddStatusEffect(invulnerableEffect);
-                playerManager.Pokemon.AddStatusEffect(invisibleEffect);
-                playerManager.SetPlayerVisibilityRPC(false);
-                isFinishing = false;
-                isSecondUse = true;
-            }
-            else
-            {
-                isFinishing = true;
-                isSecondUse = false;
-                wasMoveSuccessful = true;
-                BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
-                playerManager.Pokemon.RemoveStatusEffectWithID(invulnerableEffect.ID);
-                damageRoutine = playerManager.StartCoroutine(DoKick());
-            }
+            HideAim(); IsActive = false;
+            committed = true; cast = MarshadowMoveRules.NextCast();
+            (playerManager.PassiveController.Passive as MarshadwPassive)?.OnMoveCommitted();
+            ghostly = true; deadline = Time.time + 4f;
+            playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, 0.22f, true, MarshadowMoveRules.PhantomInvincible));
+            playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invisible, 4.1f, true, MarshadowMoveRules.PhantomInvisible));
+            ghostEffect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.PhantomForce, 4f);
+            MarshadowMoveRuntime.ShowWindow(1, 4f);
         }
-        base.Finish();
+        else
+        {
+            EndGhost(); Begin(); struck = false;
+            MarshadowMoveRuntime.PlayAction(playerManager, "pm0883_ba20_buturi02", IsUpgraded ? 2.864f : 2.25f);
+            effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.Kick, 0.5f, stage: IsUpgraded ? 1 : 0);
+        }
     }
-
-    private IEnumerator DoKick()
+    public override void Update()
     {
-        playerManager.MovesController.LockEveryAction();
-        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-        playerManager.PlayerMovement.CanMove = false;
-        playerManager.AnimationManager.PlayAnimation("pm0883_ba20_buturi02");
-
-        playerManager.Pokemon.RemoveStatusEffectWithID(invisibleEffect.ID);
-
-        yield return new WaitForSeconds(0.63f);
-
-        GameObject[] hitColliders = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position + (playerManager.transform.forward * 1.377f * (range / 2.5f)), 1f * (range / 2.5f), AimTarget.NonAlly);
-
-        foreach (var hitCollider in hitColliders)
-        {
-            Pokemon targetPokemon = hitCollider.GetComponent<Pokemon>();
-
-            if (targetPokemon == null)
-            {
-                continue;
-            }
-
-            targetPokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, 0));
-            targetPokemon.ApplyKnockbackRPC(playerManager.transform.forward, 15f);
-
-            targetPokemon.TakeDamageRPC(damage);
-        }
-
-        yield return new WaitForSeconds(0.97f);
-
-        playerManager.PlayerMovement.CanMove = true;
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        base.Update();
+        if (ghostly && Time.time >= deadline) BreakStealth();
     }
-
+    protected override void Advance()
+    {
+        float startup = IsUpgraded ? 0.22f : 0.28f;
+        if (!struck && elapsed >= startup) { struck = true; Hit(MarshadowHit.Kick); }
+        if (elapsed >= startup + (IsUpgraded ? 0.13f : 0.2f)) Complete();
+    }
+    private void EndGhost()
+    {
+        ghostly = false;
+        playerManager.Pokemon.RemoveStatusEffectWithID(MarshadowMoveRules.PhantomInvincible);
+        playerManager.Pokemon.RemoveStatusEffectWithID(MarshadowMoveRules.PhantomInvisible);
+        MarshadowMoveRuntime.EndEffect(playerManager, ref ghostEffect);
+        MarshadowMoveRuntime.ShowWindow(1, 0);
+    }
+    public void BreakStealth()
+    {
+        if (!ghostly) return;
+        EndGhost(); Cancel(); Complete();
+    }
     public override void ResetMove()
     {
-        if (damageRoutine != null)
-        {
-            playerManager.StopCoroutine(damageRoutine);
-        }
-        isSecondUse = false;
-        isFinishing = false;
-        BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
-        playerManager.Pokemon.RemoveStatusEffectWithID(invulnerableEffect.ID);
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        if (playerManager != null) EndGhost();
+        base.ResetMove();
     }
 }

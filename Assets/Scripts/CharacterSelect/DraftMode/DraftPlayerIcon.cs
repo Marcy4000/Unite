@@ -61,6 +61,10 @@ public class DraftPlayerIcon : MonoBehaviour
         SetConfirmButton(false);
         SetRequestButton(false);
         playerHead.InitializeHead(PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value));
+        // Session events report changes, not the initial snapshot. Populate the
+        // loadout now instead of leaving the prefab icons until a later update.
+        UpdateBattleItem(CharactersList.Instance.GetBattleItemByID(int.Parse(player.Data["BattleItem"].Value)));
+        UpdateHeldItems(HeldItemDatabase.DeserializeHeldItems(player.Data["HeldItems"].Value));
         UpdateIconState(DraftPlayerState.Idle);
     }
 

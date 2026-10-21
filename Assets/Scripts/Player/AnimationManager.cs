@@ -97,6 +97,11 @@ public class AnimationManager : NetworkBehaviour
     {
         if (IsAnimatorNull())
             return;
+        // A supported Mirror Shadow adapter may reuse a character-independent
+        // effect prefab. Never request that character's missing model clip.
+        if (!animator.HasState(0, hash) && TryGetComponent(out Pokemon pokemon)
+            && pokemon.BaseStats != null && pokemon.BaseStats.Passive == AvailablePassives.MarshadowPassive)
+            hash = Animator.StringToHash("pm0883_ba21_tokusyu02");
         animator.Play(hash);
     }
 }

@@ -18,14 +18,7 @@ MonoBehaviour:
   cooldown: 9
   uniteEnergyCost: 0
   moveName: Aura Sphere
-  description: 'Marshadow shoots a speedy projectile dealing damage.
-
-    If the
-    user activates the move again they will lunge at the target dealin damage based
-    on their missing hp.
-
-    Once the target is hit the cooldown for the other move
-    is reduced by 30%'
+  description: 'Fire a fast projectile. If it hits, recast within 5s to pursue the marked opponent, dealing physical damage based on their missing HP on contact. A successful follow-up reduces the other move cooldown by 30% of its base duration. Pursuit respects walls and fails if the target escapes. Cooldown begins when the sequence ends. Upgrade: stronger missing-HP damage. Execute damage against wild Pokemon is capped.'
   icon: {fileID: 21300000, guid: b0da49ce5a63500438c0cd141ef69321, type: 3}
   preview:
     m_AssetGUID: 74108f313100abf48baebc783c5ca19e

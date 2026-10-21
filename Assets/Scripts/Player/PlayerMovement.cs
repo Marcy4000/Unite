@@ -3,7 +3,7 @@ using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerMovement : NetworkBehaviour
+public partial class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private float moveSpeed = 4.1f;
     [SerializeField] private float dashDistance = 5f; // Set your desired dash distance
@@ -410,6 +410,25 @@ public class PlayerMovement : NetworkBehaviour
     public void StartDash()
     {
         StartDash(transform.forward, dashDistance, dashDuration);
+    }
+
+    // For driven movement that must respect walls (unlike StartDash's wall-crossing dash).
+    // Returns actual displacement so a blocked move cannot count fictitious travel.
+    public Vector3 MoveWithWalls(Vector3 displacement)
+    {
+        Vector3 start = transform.position;
+        // Walkmesh validation checks endpoints. Substeps prevent a fast drive
+        // from skipping a thin wall whose far side is also a valid endpoint.
+        int steps = Mathf.Clamp(Mathf.CeilToInt(displacement.magnitude / 0.2f), 1, 128);
+        Vector3 step = displacement / steps;
+        for (int i = 0; i < steps; i++)
+        {
+            Vector3 before = transform.position;
+            Vector3 destination = ClampMovementToWalkmesh(before, before + step);
+            characterController.Move(destination - before);
+            if ((transform.position - before).sqrMagnitude < step.sqrMagnitude * 0.01f) break;
+        }
+        return transform.position - start;
     }
 
     public void StartDash(Vector3 direction)

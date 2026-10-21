@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-public class MovesController : NetworkBehaviour
+public partial class MovesController : NetworkBehaviour
 {
     [SerializeField] private MoveAsset lockedMove;
     public Transform projectileSpawnPoint;
@@ -122,6 +122,8 @@ public class MovesController : NetworkBehaviour
 
     private void Update()
     {
+        UpdateCresseliaServer();
+        UpdateVaporeonRuntime();
         if (!IsOwner)
         {
             return;
@@ -181,10 +183,16 @@ public class MovesController : NetworkBehaviour
             moves[1].Update();
             uniteMove.Update();
 
+            ProcessMarshadowBufferedInput();
+            ProcessCresseliaBufferedInput();
+            ProcessVaporeonBufferedInput();
+
             battleItem.Update();
 
             if (controls.Movement.CancelMove.WasPressedThisFrame())
             {
+                ClearMarshadowBufferedInput();
+                ClearVaporeonBufferedInput();
                 moves[0].Cancel();
                 moves[1].Cancel();
                 uniteMove.Cancel();
@@ -346,14 +354,19 @@ public class MovesController : NetworkBehaviour
 
         if (moves[index].IsStoredMove) SynchronizeStoredMove(index);
         if (!moveStatuses[index].HasStatus(ActionStatusType.None))
+        {
+            BufferMarshadowInput(index, false);
+            BufferCresseliaInput(index, false);
+            BufferVaporeonInput(index, false);
             return;
+        }
 
         moves[index].Start(playerManager);
     }
 
     public void TryUsingUniteMove()
     {
-        if (!uniteMoveStatus.HasStatus(ActionStatusType.None))
+        if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastCresseliaUnite)
             return;
 
         uniteMove.Start(playerManager);
@@ -369,7 +382,7 @@ public class MovesController : NetworkBehaviour
 
     public void TryFinishingUniteMove()
     {
-        if (!uniteMoveStatus.HasStatus(ActionStatusType.None))
+        if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastCresseliaUnite)
             return;
 
         uniteMove.Finish();
@@ -383,7 +396,12 @@ public class MovesController : NetworkBehaviour
         }
 
         if (!moveStatuses[index].HasStatus(ActionStatusType.None))
+        {
+            BufferMarshadowInput(index, true);
+            BufferCresseliaInput(index, true);
+            BufferVaporeonInput(index, true);
             return;
+        }
 
         moves[index].Finish();
     }
@@ -542,7 +560,7 @@ public class MovesController : NetworkBehaviour
         bool showLock = uniteMoveStatus.HasStatus(ActionStatusType.Disabled) || uniteMoveStatus.HasStatus(ActionStatusType.Stunned) || uniteMoveStatus.HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetUniteMoveDisabledLock(showLock);
 
-        BattleUIManager.instance.UpdateUniteMoveCooldown(uniteMoveCharge, uniteMoveMaxCharge);
+        BattleUIManager.instance.UpdateUniteMoveCooldown(uniteMoveCharge, uniteMoveMaxCharge, CanRecastCresseliaUnite);
     }
 
     public void LearnBasicAttack(BasicAttackBase basicAttack)
@@ -554,6 +572,20 @@ public class MovesController : NetworkBehaviour
     public void LearnMove(MoveAsset move)
     {
         MoveBase previousMove = GetMove(move.moveType);
+        if (!move.isUpgraded && (previousMove is CresseliaMoveBase || previousMove is CresseliaUnite))
+        {
+            ClearCresseliaBufferedInput();
+            previousMove.ResetMove();
+        }
+        // A level-up replacement must not orphan an active Marshadow phase.
+        // Copied Unites restore their own slot after cleanup; resetting those
+        // here would recursively restore the same slot again.
+        if (!move.isUpgraded && (previousMove is MarshadowShadowSneak
+            || (previousMove is MarshadowMoveBase && !(previousMove is MarshadowCopiedUnite))))
+        {
+            ClearMarshadowBufferedInput();
+            previousMove.ResetMove();
+        }
         switch (move.moveType)
         {
             case MoveType.MoveA:
@@ -622,6 +654,7 @@ public class MovesController : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void OnMoveLearnedRPC(AvailableMoves moveType)
     {
+        RecordVaporeonMove(moveType);
         OnMoveLearned?.Invoke(CharactersList.Instance.GetMoveAsset(moveType));
     }
 
@@ -645,6 +678,9 @@ public class MovesController : NetworkBehaviour
 
     public void ResetAllMoves()
     {
+        ClearMarshadowBufferedInput();
+        ClearCresseliaBufferedInput();
+        ClearVaporeonBufferedInput();
         moves[0].ResetMove();
         moves[1].ResetMove();
         uniteMove.ResetMove();
@@ -850,6 +886,8 @@ public class MovesController : NetworkBehaviour
 
     public override void OnDestroy()
     {
+        DisposeCresseliaRuntime();
+        DisposeVaporeonRuntime();
         MoveLearnPanel.onSelectedMove -= OnMoveSelectedFromPanel;
         base.OnDestroy();
     }

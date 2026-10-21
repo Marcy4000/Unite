@@ -1,141 +1,41 @@
-using DG.Tweening;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using Unity.Netcode;
 
-public class MarshadowSpectralThief : MoveBase
+public class MarshadowSpectralThief : MarshadowMoveBase
 {
-    private float range = 4f;
-
-    private Vector3 dashDirection;
-
-    private DamageInfo damage = new DamageInfo(0, 1.65f, 6, 510, DamageType.Physical);
-    private StatusEffect stun = new StatusEffect(StatusType.Incapacitated, 0.6f, true, 0);
-    private string assetPath = "Assets/Prefabs/Objects/Moves/Marshadow/MarshSpectralThiefArea.prefab";
-
-    private GameObject warningObject;
-
-    private Coroutine attackRoutine;
-
-    public MarshadowSpectralThief()
-    {
-        Name = "Spectral Thief";
-        Cooldown = 8f;
-    }
-
-    public override void Start(PlayerManager controller)
-    {
-        base.Start(controller);
-        Aim.Instance.InitializeDashAim(range);
-        damage.attackerId = playerManager.NetworkObjectId;
-    }
-
-    public override void Update()
-    {
-        if (!IsActive)
-        {
-            return;
-        }
-
-        dashDirection = Aim.Instance.DashAim();
-    }
-
+    protected override bool UsesDashAim => true;
+    protected override bool RequiresMovement => true;
+    protected override float AimRange => MarshadowMoveRules.SpectralRange;
+    private readonly MarshadowWallDash dash = new MarshadowWallDash();
+    private bool struck;
+    public MarshadowSpectralThief() { Name = "Spectral Thief"; Cooldown = 8f; }
     public override void Finish()
     {
-        if (IsActive)
-        {
-            wasMoveSuccessful = true;
-            playerManager.PlayerMovement.CanMove = false;
-            playerManager.transform.rotation = Quaternion.LookRotation(dashDirection, Vector3.up);
-            playerManager.AnimationManager.PlayAnimation("pm0883_kw36_mad01");
-            playerManager.MovesController.LockEveryAction();
-            playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-            playerManager.transform.DOMove(playerManager.transform.position + dashDirection * range, 0.4f).OnComplete(() =>
-            {
-                playerManager.AnimationManager.SetTrigger("Transition");
-                attackRoutine = playerManager.StartCoroutine(AttackRoutine());
-            });
-
-            playerManager.MovesController.onObjectSpawned += (obj) =>
-            {
-                warningObject = obj;
-
-                Vector3 pos = playerManager.transform.position + dashDirection * range;
-                pos.y = 1.5f;
-                obj.transform.position = pos;
-            };
-
-            playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
-            Aim.Instance.HideDashAim();
-        }
-        base.Finish();
+        if (!IsActive || executing) return;
+        Begin(); struck = false;
+        dash.Begin(playerManager.PlayerMovement, direction, AimRange);
+        playerManager.AnimationManager.PlayAnimation("pm0883_kw36_mad01");
+        effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.SpectralThief, 0.5f,
+            origin: dash.Destination);
     }
-
-    private IEnumerator AttackRoutine()
+    protected override void Advance()
     {
-        GameObject[] enemiesHit = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position, 1.5f, AimTarget.NonAlly, playerManager.CurrentTeam);
-
-        foreach (GameObject enemy in enemiesHit)
+        if (!struck)
         {
-            if (enemy.TryGetComponent(out Pokemon pokemon))
+            dash.Advance(AimRange / 0.28f * Time.deltaTime);
+            if (dash.Finished || elapsed >= 0.28f)
             {
-                pokemon.TakeDamageRPC(damage);
-                pokemon.AddStatusEffect(stun);
-                pokemon.ApplyKnockupRPC(2f, 0.6f);
-
-                if (Vector3.Distance(playerManager.transform.position, enemy.transform.position) < 0.6f)
-                {
-                    List<StatChange> buffsToSteal = new List<StatChange>();
-
-                    foreach (var change in pokemon.StatChanges)
-                    {
-                        if (change.IsBuff && change.IsTimed)
-                        {
-                            buffsToSteal.Add(change);
-                        }
-                    }
-
-                    foreach (var buff in buffsToSteal)
-                    {
-                        pokemon.RemoveStatChangeRPC(buff);
-                        playerManager.Pokemon.AddStatChange(buff);
-                    }
-                }
+                dash.End();
+                struck = true; elapsed = 0;
+                Hit(MarshadowHit.SpectralThief);
+                MarshadowMoveRuntime.EndEffect(playerManager, ref effect);
+                MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.SpectralThief, 0.25f);
             }
         }
-
-        yield return new WaitForSeconds(0.75f);
-        playerManager.PlayerMovement.CanMove = true;
-
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-
-        playerManager.MovesController.DespawnNetworkObjectRPC(warningObject.GetComponent<NetworkObject>().NetworkObjectId);
-        warningObject = null;
+        else if (elapsed >= 0.18f) Complete();
     }
-
-    public override void Cancel()
+    protected override void Complete()
     {
-        Aim.Instance.HideDashAim();
-        base.Cancel();
-    }
-
-    public override void ResetMove()
-    {
-        if (warningObject != null)
-        {
-            playerManager.MovesController.DespawnNetworkObjectRPC(warningObject.GetComponent<NetworkObject>().NetworkObjectId);
-            warningObject = null;
-        }
-
-        if (attackRoutine != null)
-        {
-            playerManager.StopCoroutine(attackRoutine);
-        }
-
-        playerManager.transform.DOKill();
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        dash.End();
+        base.Complete();
     }
 }

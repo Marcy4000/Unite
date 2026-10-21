@@ -1,93 +1,191 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MarshadowUnite : MoveBase
+public class MarshadowUnite : MarshadowMoveBase
 {
-    private MarshadwPassive passive;
-
-    public MarshadowUnite()
-    {
-        Name = "Mirror Shadow";
-        Cooldown = 0f;
-    }
-
+    private MoveAsset borrowed;
+    public MarshadowUnite() { Name = "Mirror Shadow"; Cooldown = 0; }
     public override void Start(PlayerManager controller)
     {
-        base.Start(controller);
-        passive = playerManager.PassiveController.Passive as MarshadwPassive;
+        if (executing) return;
+        // Mirror Shadow has no directional cast and does not touch shared aim.
+        playerManager = controller; IsActive = true; wasMoveSuccessful = false;
+        direction = controller.transform.forward;
     }
-
-    public override void Update()
-    {
-        
-    }
-
     public override void Finish()
     {
-        if (IsActive)
-        {
-            playerManager.StartCoroutine(LearnNewUnite());
-        }
-        base.Finish();
+        if (!IsActive || executing) return;
+        var candidates = new List<MoveAsset>();
+        if (GameManager.Instance != null)
+            foreach (PlayerManager enemy in GameManager.Instance.Players)
+            {
+                if (enemy == null || enemy == playerManager || enemy.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam)) continue;
+                MoveAsset source = enemy.Pokemon.BaseStats.GetUniteMove();
+                if (source != null && MarshadowCopyRules.Supports(source.move)) candidates.Add(source);
+            }
+        if (candidates.Count == 0) { Cancel(); return; }
+        borrowed = candidates[Random.Range(0, candidates.Count)];
+        Begin();
+        MarshadowMoveRuntime.PlayAction(playerManager, "pm0883_ba21_tokusyu02");
+        effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.MirrorShadow, 2f);
+        // Pay once at commitment; replacing the slot after the channel is not
+        // another activation and must not spend or refill Mirror's resource.
+        playerManager.MovesController.SpendMarshadowUnite();
     }
-
-    private IEnumerator LearnNewUnite()
+    protected override void Advance()
     {
-        playerManager.AnimationManager.PlayAnimation("pm0883_ba21_tokusyu02");
-        playerManager.PlayerMovement.CanMove = false;
-        playerManager.MovesController.LockEveryAction();
-        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-
-        yield return new WaitForSeconds(0.9f);
-
-        PlayerManager randomPokemon = GetRandonEnemy();
-
-        passive.LearnNewTempUnite(randomPokemon.Pokemon.BaseStats.GetUniteMove());
-
-        yield return new WaitForSeconds(1.1f);
-        
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-        playerManager.PlayerMovement.CanMove = true;
+        if (elapsed < 2f) return;
+        MoveAsset source = borrowed;
+        borrowed = null; committed = false;
+        base.Complete();
+        playerManager.MovesController.InstallMarshadowCopy(source);
     }
-
-    private PlayerManager GetRandonEnemy()
-    {
-        PlayerManager randomPokemon;
-
-        List<PlayerManager> enemies = new List<PlayerManager>();
-
-        GameManager.Instance.Players.ForEach(player =>
-        {
-            if (!player.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam))
-            {
-                enemies.Add(player);
-            }
-        });
-
-        bool found = false;
-
-        do
-        {
-            randomPokemon = GameManager.Instance.Players[Random.Range(0, GameManager.Instance.Players.Count)];
-            if (GameManager.Instance.Players.Count < 2)
-            {
-                break;
-            }
-
-            if (!enemies.Contains(randomPokemon) && enemies.Count > 0)
-            {
-                continue;
-            }
-
-            found = true;
-        } while (!found);
-
-        return randomPokemon;
-    }
-
     public override void ResetMove()
     {
+        borrowed = null; committed = false; base.ResetMove();
+    }
+}
+
+// Explicit adapters, not foreign MoveBase instances with missing passives,
+// model bones, or basic-attack components. New licenses opt in deliberately.
+public static class MarshadowCopyRules
+{
+    public static bool Supports(AvailableMoves move)
+    {
+        switch (move)
+        {
+            case AvailableMoves.BlazingBycicleKick:
+            case AvailableMoves.GlaceonUnite:
+            case AvailableMoves.SylveonUnite:
+            case AvailableMoves.VaporeonUnite:
+            case AvailableMoves.EmboarUnite:
+            case AvailableMoves.FlareonUnite:
+            case AvailableMoves.DuraludonUnite: return true;
+            default: return false;
+        }
+    }
+    public static bool Targeted(AvailableMoves move) => move == AvailableMoves.BlazingBycicleKick || move == AvailableMoves.FlareonUnite;
+    public static float Radius(AvailableMoves move) => move == AvailableMoves.VaporeonUnite || move == AvailableMoves.DuraludonUnite ? 6f : 5f;
+    public static string Description(AvailableMoves move)
+    {
+        switch (move)
+        {
+            case AvailableMoves.BlazingBycicleKick: return "Launch a homing physical strike at the selected opponent.";
+            case AvailableMoves.GlaceonUnite: return "Leap forward and create a slowing shadow field for 5s. Deals physical damage on landing; does not generate icicles.";
+            case AvailableMoves.SylveonUnite: return "Release a shadow burst, then gain 50 percentage points of lifesteal and spell vamp for 6s.";
+            case AvailableMoves.VaporeonUnite: return "Release a shadow tempest that damages enemies, reduces their defenses and heals allies. Uses Marshadow's Attack.";
+            case AvailableMoves.EmboarUnite: return "Gain 20% Attack, 30 attack-speed points and 30 cooldown-reduction points for 10s. Does not copy Reckless or Emboar's basic attacks.";
+            case AvailableMoves.FlareonUnite: return "Rush to the selected opponent and burst, burning nearby enemies and gaining a shield.";
+            default: return "Recreate Revolving Ruin's sweeping beam, final shove and burning ring, using Marshadow's Attack.";
+        }
+    }
+}
+
+public class MarshadowCopiedUnite : MarshadowMoveBase
+{
+    public readonly MoveAsset Source;
+    private Pokemon target;
+    private bool released;
+    private Vector3 start;
+    private readonly float expiresAt;
+    private bool copyReady;
+    protected override float AimRange => MarshadowCopyRules.Targeted(Source.move) ? 8f : MarshadowCopyRules.Radius(Source.move);
+    protected override bool RequiresMovement => Source.move == AvailableMoves.GlaceonUnite || Source.move == AvailableMoves.FlareonUnite;
+    public MarshadowCopiedUnite(MoveAsset source)
+    {
+        Source = source; Name = "Shadow Copy: " + source.moveName; Cooldown = 0; expiresAt = Time.time + 15f;
+    }
+    public override void Start(PlayerManager controller)
+    {
+        if (executing) return;
+        base.Start(controller);
+        if (MarshadowCopyRules.Targeted(Source.move))
+        {
+            Aim.Instance.HideSkillshotAim(); Aim.Instance.InitializeAutoAim(AimRange, 90f, AimTarget.NonAlly);
+            target = Aim.Instance.SureHitAim()?.GetComponent<Pokemon>();
+        }
+    }
+    public override void Update()
+    {
+        if (!executing && Time.time >= expiresAt) { Expire(); return; }
+        base.Update();
+        if (IsActive && MarshadowCopyRules.Targeted(Source.move)) target = Aim.Instance.SureHitAim()?.GetComponent<Pokemon>();
+    }
+    public override void Finish()
+    {
+        if (!IsActive || executing) return;
+        if (MarshadowCopyRules.Targeted(Source.move) && !MarshadowMoveRuntime.CanHit(playerManager, target)) { Cancel(); return; }
+        Aim.Instance.HideAutoAim();
+        Begin(); released = false; start = playerManager.transform.position;
+        playerManager.MovesController.SpendMarshadowUnite();
+        MarshadowMoveRuntime.PlayAction(playerManager, "pm0883_ba21_tokusyu02");
+        effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.MirrorShadow, 0.5f);
+        if (Source.move == AvailableMoves.DuraludonUnite)
+        {
+            released = true;
+            playerManager.MovesController.CastMarshadowCopyRPC(Source.move, cast, start, direction, 0);
+        }
+    }
+    protected override void Advance()
+    {
+        if (Source.move == AvailableMoves.DuraludonUnite && !copyReady)
+        {
+            if (elapsed >= 4f)
+            {
+                playerManager.MovesController.CancelMarshadowCastRPC(cast);
+                Complete();
+            }
+            return;
+        }
+        if (Source.move == AvailableMoves.FlareonUnite && !released)
+        {
+            if (!MarshadowMoveRuntime.CanHit(playerManager, target)) { Complete(); return; }
+            Vector3 delta = target.transform.position - playerManager.transform.position; delta.y = 0;
+            direction = MarshadowMoveRules.Direction(delta, direction);
+            if (elapsed >= 0.2f && delta.magnitude > 1f)
+            {
+                playerManager.PlayerMovement.MoveWithWalls(direction * Mathf.Min(Mathf.Max(0, delta.magnitude - 0.8f), 20f * Time.deltaTime));
+                playerManager.transform.rotation = Quaternion.LookRotation(direction);
+            }
+            if (delta.magnitude > 1.3f && elapsed < 0.7f) return;
+            if (delta.magnitude > 1.3f) { Complete(); return; }
+        }
+        if (Source.move == AvailableMoves.GlaceonUnite && !released && elapsed < 0.3f)
+            playerManager.PlayerMovement.MoveWithWalls(direction * Mathf.Min(3f, 10f * Time.deltaTime));
+        if (!released && elapsed >= 0.3f)
+        {
+            released = true;
+            playerManager.MovesController.CastMarshadowCopyRPC(Source.move, cast, playerManager.transform.position, direction, target != null ? target.NetworkObjectId : 0);
+        }
+        if (elapsed >= (Source.move == AvailableMoves.DuraludonUnite ? 2.1f : 0.55f)) Complete();
+    }
+    public void CopyReady(int id, bool success)
+    {
+        if (!executing || id != cast || Source.move != AvailableMoves.DuraludonUnite) return;
+        if (!success) { Complete(); return; }
+        copyReady = true; elapsed = 0;
+    }
+    protected override void Complete()
+    {
+        target = null;
+        // Mirror and the borrowed cast both pay at commitment, not completion.
+        committed = false; base.Complete();
+        if (playerManager != null) playerManager.MovesController.RestoreMarshadowUnite(this);
+    }
+    public override void Cancel()
+    {
+        if (IsActive) Aim.Instance.HideAutoAim();
+        base.Cancel();
+    }
+    private void Expire()
+    {
+        playerManager.MovesController.DiscardMarshadowUnite();
+        Cancel(); Complete();
+    }
+    public override void ResetMove()
+    {
+        // Death discards an unused borrowed use; it cannot refund a full Mirror.
+        playerManager.MovesController.DiscardMarshadowUnite();
+        base.ResetMove();
     }
 }

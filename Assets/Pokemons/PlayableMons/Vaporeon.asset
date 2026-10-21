@@ -13,7 +13,11 @@ MonoBehaviour:
   m_Name: Vaporeon
   m_EditorClassIdentifier: 
   pokemonName: Vaporeon
-  description: 
+  description: 'A durable ranged Supporter who protects allies and controls where
+    teams fight. Hydration: successfully protecting or healing another ally grants
+    Vaporeon 10% movement speed for 1.5s, once every 6s after evolving. Choose Aqua
+    Ring for focused protection or Rain Dance for an allied stronghold, then Dive
+    for personal safety or Whirlpool for ranged control.'
   maxHp: 4e0c0000170d0000f40d0000e70e0000f20f0000181100005c120000c11300004a150000fb160000d8180000e51a0000271d0000a31f000060220000
   attack: 960000009b000000a1000000a7000000ae000000b5000000bd000000c6000000d0000000db000000e7000000f4000000030100001301000025010000
   defense: 4600000052000000600000006f0000008000000092000000a6000000bc000000d4000000ef0000000d0100002e0100005201000079010000a4010000
@@ -55,7 +59,7 @@ MonoBehaviour:
   - 12.5
   - 12.5
   - 12.5
-  passive: 0
+  passive: 4
   learnableMoves:
   - moves:
     - {fileID: 11400000, guid: e1fd4880fed13e64e8be8b571faa82e2, type: 2}
@@ -74,6 +78,7 @@ MonoBehaviour:
     isUpgraded: 0
   - moves:
     - {fileID: 11400000, guid: 81d9560f70a8b754cad28e46825b4cf7, type: 2}
+    - {fileID: 11400000, guid: 276aa354e842397a5a424c12923e6b19, type: 2}
     level: 5
     isUpgraded: 0
   - moves:
@@ -87,6 +92,7 @@ MonoBehaviour:
     isUpgraded: 1
   - moves:
     - {fileID: 11400000, guid: 81d9560f70a8b754cad28e46825b4cf7, type: 2}
+    - {fileID: 11400000, guid: 276aa354e842397a5a424c12923e6b19, type: 2}
     level: 11
     isUpgraded: 1
   evolutions:

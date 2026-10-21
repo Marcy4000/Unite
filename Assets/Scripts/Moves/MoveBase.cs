@@ -134,6 +134,8 @@ public static class MoveDatabase
                 return new VaporRainDance();
             case AvailableMoves.VaporDive:
                 return new VaporDive();
+            case AvailableMoves.VaporWhirlpool:
+                return new VaporWhirlpool();
             case AvailableMoves.VaporAquaRing:
                 return new VaporAquaRing();
             case AvailableMoves.VaporeonUnite:
@@ -317,7 +319,7 @@ public enum AvailableMoves : uint
     VaporRainDance,
     VaporAquaRing,
     VaporDive,
-    VaporHaze,
+    VaporWhirlpool, // Formerly the unused VaporHaze; preserve serialized value 26.
     VaporeonUnite,
 
     JoltSwift,

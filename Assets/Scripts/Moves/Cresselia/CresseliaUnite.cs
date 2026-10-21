@@ -1,125 +1,124 @@
-using DG.Tweening;
 using UnityEngine;
 
 public class CresseliaUnite : MoveBase
 {
-    private StatusEffect invincible = new StatusEffect(StatusType.Invincible, 0f, false, 10);
-    private DamageInfo damage = new DamageInfo(0, 1.35f, 9, 840, DamageType.Special);
-
-    private const float maxUseCooldown = 5f;
-
-    private bool isInAir;
-    private float useCooldown;
-
-    private CresseliaUniteArea uniteArea;
-    private string assetPath = "Assets/Prefabs/Objects/Moves/Cresselia/CresseliaUniteWarning.prefab";
-
-    public CresseliaUnite()
-    {
-        Name = "Crescent Crash";
-        Cooldown = 0f;
-    }
+    private readonly CresseliaActionLock actionLock = new CresseliaActionLock();
+    private int phase;
+    private bool movementHeld, recastRequested;
+    private double started;
+    private Vector3 takeoff, landing, descent;
+    private bool oldSnap, oldFlying, oldKnockback;
+    private double Now => playerManager.NetworkManager.ServerTime.Time;
+    public bool CanRecast => phase == 1 && !recastRequested && Now >= started + CresseliaMoveRules.TakeoffDuration;
+    public CresseliaUnite() { Name = "Crescent Crash"; Cooldown = 0; }
 
     public override void Start(PlayerManager controller)
     {
+        if (phase != 0 && !CanRecast) return;
         base.Start(controller);
-        Aim.Instance.InitializeSimpleCircle(5.5f);
-        damage.attackerId = playerManager.NetworkObjectId;
+        Aim.Instance.InitializeSimpleCircle(CresseliaMoveRules.UniteRadius);
     }
-
-    public override void Update()
-    {
-        if (isInAir)
-        {
-            useCooldown -= Time.deltaTime;
-
-            if (useCooldown <= 0)
-            {
-                IsActive = true;
-                Finish();
-            }
-        }
-
-        if (uniteArea != null)
-        {
-            Vector3 position = playerManager.transform.position;
-            position.y = 0.11f;
-            uniteArea.transform.position = position;
-        }
-
-        if (!IsActive)
-        {
-            return;
-        }
-    }
-
     public override void Finish()
     {
-        if (IsActive)
+        if (!IsActive) return;
+        Aim.Instance.HideSimpleCircle();
+        if (phase == 0)
         {
-            if (!isInAir)
+            oldSnap = playerManager.PlayerMovement.SnapToGround;
+            oldFlying = playerManager.PlayerMovement.IsFlying;
+            oldKnockback = playerManager.PlayerMovement.CanBeKnockedBack;
+            takeoff = playerManager.transform.position;
+            phase = 1; started = Now; recastRequested = false;
+            actionLock.Acquire(playerManager, false, 2);
+            HoldMovement();
+            playerManager.PlayerMovement.SnapToGround = false;
+            playerManager.PlayerMovement.CanBeKnockedBack = false;
+            playerManager.AnimationManager.SetFloat("CresseliaActionSpeed", 1.5f);
+            playerManager.AnimationManager.PlayAnimation("pm0488_ba02_roar01");
+            BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(CresseliaMoveRules.FlightDuration);
+            wasMoveSuccessful = true;
+            base.Finish(); // Commit energy exactly once, at takeoff.
+            playerManager.MovesController.BeginCresseliaUniteRPC();
+        }
+        else if (CanRecast)
+        {
+            recastRequested = true;
+            playerManager.MovesController.RecastCresseliaUniteRPC();
+            IsActive = false;
+        }
+    }
+    public void ApplyServerPhase(int value, Vector3 point, double time)
+    {
+        if (value <= 0)
+        {
+            if (phase == 0) return;
+            if (value == 0 && playerManager.Pokemon.CurrentHp > 0) playerManager.transform.position = point;
+            Cleanup(); return;
+        }
+        if (phase == 0) return; // A reset/death must not resurrect a delayed flight RPC.
+        started = time;
+        if (value == 1) takeoff = point;
+        else
+        {
+            landing = point; descent = playerManager.transform.position;
+            HoldMovement();
+            playerManager.AnimationManager.SetFloat("CresseliaActionSpeed", 2);
+            playerManager.AnimationManager.PlayAnimation("pm0488_ba01_land01");
+        }
+        phase = value;
+        Update();
+    }
+    public override void Update()
+    {
+        if (phase == 0) return;
+        if (playerManager.Pokemon.CurrentHp <= 0) { ResetMove(); return; }
+        float elapsed = Mathf.Max(0, (float)(Now - started));
+        if (phase == 1)
+        {
+            Vector3 position = playerManager.transform.position;
+            position.y = Mathf.Max(position.y, takeoff.y + Mathf.SmoothStep(0, 3, elapsed / CresseliaMoveRules.TakeoffDuration));
+            playerManager.transform.position = position;
+            if (elapsed >= CresseliaMoveRules.TakeoffDuration && movementHeld)
             {
-                useCooldown = maxUseCooldown;
-                isInAir = true;
-
-                playerManager.MovesController.onObjectSpawned += (obj) =>
-                {
-                    uniteArea = obj.GetComponent<CresseliaUniteArea>();
-                    uniteArea.InitializeRPC(damage, playerManager.CurrentTeam.Team);
-                };
-                playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
-
-                playerManager.PlayerMovement.SnapToGround = false;
-                playerManager.PlayerMovement.CanMove = false;
-                playerManager.MovesController.LockEveryAction();
-                playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-                playerManager.transform.DOMoveY(3f, 0.2f).onComplete += () =>
-                {
-                    playerManager.PlayerMovement.CanMove = true;
-                    playerManager.PlayerMovement.IsFlying = true;
-                    playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
-                };
-
-                playerManager.Pokemon.AddStatusEffect(invincible);
-                BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(maxUseCooldown);
-            }
-            else
-            {
-                isInAir = false;
-                BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(0);
-                
-                playerManager.transform.DOJump(new Vector3(playerManager.transform.position.x, 0, playerManager.transform.position.z), 3f, 1, 0.3f).onComplete += () =>
-                {
-                    playerManager.PlayerMovement.CanMove = true;
-                    playerManager.PlayerMovement.SnapToGround = true;
-                    playerManager.PlayerMovement.IsFlying = false;
-                    playerManager.MovesController.UnlockEveryAction();
-                    playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-                };
-
-                uniteArea.DoDamageRPC();
-                playerManager.Pokemon.RemoveStatusEffectWithID(invincible.ID);
-                wasMoveSuccessful = true;
+                ReleaseMovement();
+                playerManager.PlayerMovement.IsFlying = true;
+                playerManager.AnimationManager.PlayAnimation("pm0488_ba10_waitB01");
             }
         }
-        Aim.Instance.HideSimpleCircle();
-        base.Finish();
+        else playerManager.transform.position = Vector3.Lerp(descent, landing, Mathf.Clamp01(elapsed / CresseliaMoveRules.LandingDuration));
     }
-
+    private void HoldMovement()
+    {
+        if (movementHeld) return;
+        movementHeld = true; playerManager.PlayerMovement.AddMovementRestriction();
+    }
+    private void ReleaseMovement()
+    {
+        if (!movementHeld) return;
+        movementHeld = false; playerManager.PlayerMovement.RemoveMovementRestriction();
+    }
+    private void Cleanup()
+    {
+        if (IsActive && Aim.Instance != null) Aim.Instance.HideSimpleCircle();
+        phase = 0; recastRequested = false; IsActive = false;
+        ReleaseMovement(); actionLock.Release();
+        playerManager.PlayerMovement.SnapToGround = oldSnap;
+        playerManager.PlayerMovement.IsFlying = oldFlying;
+        playerManager.PlayerMovement.CanBeKnockedBack = oldKnockback;
+        if (playerManager.Pokemon.CurrentHp <= 0) playerManager.PlayerMovement.CanMove = false;
+        BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(0);
+        CresseliaMoveRuntime.ReturnToLocomotion(playerManager);
+    }
     public override void Cancel()
     {
-        base.Cancel();
-        Aim.Instance.HideSimpleCircle();
+        if (IsActive && Aim.Instance != null) Aim.Instance.HideSimpleCircle();
+        base.Cancel(); // Cancel aiming, not an already committed Unite.
     }
-
     public override void ResetMove()
     {
-        playerManager.PlayerMovement.SnapToGround = true;
-        isInAir = false;
-        useCooldown = 0;
-        if (uniteArea != null)
-        {
-            uniteArea.DespawnRPC();
-        }
+        Cancel();
+        if (phase == 0 || playerManager == null) return;
+        if (playerManager.IsSpawned) playerManager.MovesController.CancelCresseliaUniteRPC();
+        Cleanup();
     }
 }

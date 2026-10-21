@@ -154,9 +154,9 @@ public class BattleUIManager : MonoBehaviour
         currentUI.ShowBattleItemCooldown(time, maxCdDuration);
     }
 
-    public void UpdateUniteMoveCooldown(int currCharge, int maxCharge)
+    public void UpdateUniteMoveCooldown(int currCharge, int maxCharge, bool recastAvailable = false)
     {
-        currentUI.UpdateUniteMoveCooldown(currCharge, maxCharge);
+        currentUI.UpdateUniteMoveCooldown(currCharge, maxCharge, recastAvailable);
     }
 
     public void SetUniteMoveDisabledLock(bool visible)
