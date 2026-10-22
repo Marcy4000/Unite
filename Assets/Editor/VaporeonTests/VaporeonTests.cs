@@ -287,4 +287,43 @@ public class VaporeonTests
         foreach (string name in new[] { "Armature_pm0134_00_ba21_tokusyu01_gfbanm", "Armature_pm0134_00_ba21_tokusyu02_gfbanm", "Armature_pm0134_00_ba02_roar01_gfbanm" })
             Assert.That(controller.layers[0].stateMachine.states.First(s => s.state.name == name).state.speedParameterActive, Is.True);
     }
+    [Test]
+    public void SwiftUsesSharedEeveeStarsInsteadOfWaterSpray()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Objects/Moves/Vaporeon/Rework/VaporSwift.prefab");
+        var sharedStar = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/MoveIcons/Jolteon/JoltStar.png");
+        var view = new SerializedObject(prefab.GetComponent(GameType("VaporVisual")));
+        var stars = view.FindProperty("swiftStars"); Assert.That(stars.arraySize, Is.EqualTo(4));
+        for (int i = 0; i < stars.arraySize; i++)
+        {
+            var star = (SpriteRenderer)stars.GetArrayElementAtIndex(i).objectReferenceValue;
+            Assert.That(star.sprite, Is.SameAs(sharedStar));
+            Assert.That(star.GetComponent(GameType("LookAtCamera")), Is.Not.Null);
+        }
+        Assert.That(prefab.GetComponentsInChildren<ParticleSystem>(true), Is.Empty);
+        foreach (MeshRenderer renderer in prefab.GetComponentsInChildren<MeshRenderer>(true))
+            Assert.That(renderer.sharedMaterial.name, Does.StartWith("Swift"));
+        Assert.That(prefab.GetComponent<AudioSource>().clip.name, Is.EqualTo("SwiftChime"));
+    }
+    [Test]
+    public void SwiftStarsFallAndRestartOnTheExistingVolleyInterval()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Objects/Moves/Vaporeon/Rework/VaporSwift.prefab");
+        var instance = UnityEngine.Object.Instantiate(prefab);
+        try
+        {
+            var type = GameType("VaporVisual"); var view = instance.GetComponent(type);
+            var elapsed = type.GetField("elapsed", Private); var animate = type.GetMethod("ApplySwiftStars", Private);
+            var stars = (SpriteRenderer[])type.GetField("swiftStars", Private).GetValue(view);
+            elapsed.SetValue(view, 0.05f); animate.Invoke(view, null);
+            Vector3 start = stars[0].transform.localPosition;
+            elapsed.SetValue(view, 0.65f); animate.Invoke(view, null);
+            Assert.That(stars[0].transform.localPosition.y, Is.LessThan(start.y - 1.5f));
+            Assert.That(stars[0].transform.localPosition.x, Is.EqualTo(start.x));
+            Assert.That(stars[0].transform.localPosition.z, Is.EqualTo(start.z));
+            elapsed.SetValue(view, 0.75f); animate.Invoke(view, null);
+            Assert.That(stars[0].transform.localPosition.y, Is.EqualTo(start.y).Within(0.001f));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(instance); }
+    }
 }

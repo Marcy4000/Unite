@@ -22,6 +22,7 @@ public class PassiveController : NetworkBehaviour
             return;
         }
 
+        passive?.Dispose();
         passive = PassiveDatabase.GetPassive(pokemon.BaseStats.Passive);
         passive.Start(playerManager);
     }
@@ -34,5 +35,12 @@ public class PassiveController : NetworkBehaviour
         }
 
         passive.Update();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        passive?.Dispose();
+        passive = null;
+        base.OnNetworkDespawn();
     }
 }

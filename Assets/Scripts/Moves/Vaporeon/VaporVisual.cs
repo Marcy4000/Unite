@@ -9,6 +9,7 @@ public class VaporVisual : MonoBehaviour
     [SerializeField] private GameObject graphics, enemyTeeth;
     [SerializeField] private Transform accent, rotating, progress;
     [SerializeField] private AudioSource sound;
+    [SerializeField] private SpriteRenderer[] swiftStars = Array.Empty<SpriteRenderer>();
     private PlayerManager actor;
     private Pokemon target;
     private VaporEffect effect;
@@ -29,9 +30,10 @@ public class VaporVisual : MonoBehaviour
         bool friendly = actor.IsOwner || (local != null && actor.CurrentTeam.IsOnSameTeam(local.CurrentTeam));
         if (enemyTeeth != null) enemyTeeth.SetActive(!friendly);
         var block = new MaterialPropertyBlock();
-        block.SetColor("_BaseColor", friendly ? new Color(0.16f, 0.8f, 1) : new Color(1, 0.3f, 0.25f));
+        bool swift = effect == VaporEffect.Swift || (effect == VaporEffect.Aim && detail == (int)VaporCast.Swift);
+        block.SetColor("_BaseColor", friendly ? swift ? new Color(1, 0.82f, 0.3f) : new Color(0.16f, 0.8f, 1) : new Color(1, 0.3f, 0.25f));
         foreach (MeshRenderer renderer in graphics.GetComponentsInChildren<MeshRenderer>(true))
-            if (renderer.name.Contains("Boundary")) renderer.SetPropertyBlock(block);
+            if (renderer.name.Contains("Boundary") || (swift && effect == VaporEffect.Aim)) renderer.SetPropertyBlock(block);
         Apply(0);
         if (sound != null && age < 0.18f && effect != VaporEffect.Aim && effect != VaporEffect.BoostReady) sound.Play();
     }
@@ -73,7 +75,14 @@ public class VaporVisual : MonoBehaviour
             if (direction.sqrMagnitude > 0.001f) transform.rotation = Quaternion.LookRotation(direction);
             return;
         }
-        if (effect == VaporEffect.Whirlpool || effect == VaporEffect.Rain || effect == VaporEffect.Swift || effect == VaporEffect.Aim
+        if (effect == VaporEffect.Swift)
+        {
+            accent.localScale = new Vector3(size, 1, size);
+            ApplySwiftStars();
+            if (progress != null) progress.localScale = Vector3.one * (1 - normalized);
+            return;
+        }
+        if (effect == VaporEffect.Whirlpool || effect == VaporEffect.Rain || effect == VaporEffect.Aim
             || effect == VaporEffect.DiveWake || effect == VaporEffect.DiveWarning || effect == VaporEffect.TempestWarning)
         {
             accent.localScale = new Vector3(size, 1, size);
@@ -97,6 +106,21 @@ public class VaporVisual : MonoBehaviour
             float scale = effect == VaporEffect.Collapse ? Mathf.Lerp(1, 0.12f, normalized) : Mathf.Lerp(0.2f, 1, Mathf.Clamp01(normalized * 1.7f));
             accent.localScale = new Vector3(size * scale, 1, size * scale);
             if (progress != null) progress.localScale = Vector3.one * (1 - normalized);
+        }
+    }
+    private void ApplySwiftStars()
+    {
+        // Swift belongs to Eevee: the same camera-facing yellow stars as the
+        // other Eevees, falling once per existing 0.7s damage volley, not water.
+        float phase = Mathf.Repeat(elapsed, 0.7f) / 0.7f;
+        foreach (var star in swiftStars)
+        {
+            if (star == null) continue;
+            Vector3 position = star.transform.localPosition;
+            position.y = Mathf.Lerp(2.2f, 0.16f, phase);
+            star.transform.localPosition = position;
+            star.transform.localScale = Vector3.one * Mathf.Lerp(1.05f, 1.25f, phase);
+            star.color = new Color(1, 1, 1, Mathf.Clamp01(phase / 0.06f));
         }
     }
     private void OnDestroy()

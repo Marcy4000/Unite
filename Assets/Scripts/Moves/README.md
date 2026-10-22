@@ -52,3 +52,17 @@ available for temporary modes such as Flash Cannon; they are not reserve timers.
 
 Tests: `Assets/Editor/MoveTests` (`Unite.Moves.Tests`), plus the existing
 `Unite.Duraludon.Tests` regression tests.
+
+## Authored server-owned effects
+
+`PrefabMove` is an optional `MoveBase` adapter for moves whose gameplay lives in
+an authored network prefab. Declare `MoveId`, `PrefabPath`, `AimStyle`, and
+`Range`; normal aiming, cancellation, successful completion and cooldown UI
+still use the existing move flow. `MovesController.PrefabMoves` validates the
+learned move and target, handles independent asynchronous loads, and spawns a
+`PrefabMoveEffect`. Effects supply `Execute()` and optional presentation/cleanup
+hooks, retaining the asset handle and cleaning up on caster death/despawn.
+
+`HomingMoveEffect` is a configurable sure-hit damage/stat projectile. The older
+`HomingProjectile` also supports optional attacker-on-impact stat changes for
+basic attacks. See `Sylveon/README.md` for examples and prefab-authoring details.

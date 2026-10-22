@@ -67,8 +67,8 @@ public partial class PlayerMovement : NetworkBehaviour
             return;
         }
         
-        // Use no-walls mesh when flying, walls mesh otherwise
-        activeWalkmesh = isFlying ? walkableNoWalls : walkableWithWalls;
+        // Dive owns its own traversal mode; never borrow or clear IsFlying.
+        activeWalkmesh = isFlying || vaporeonDiveTraversal ? walkableNoWalls : walkableWithWalls;
     }
 
     public void AddMovementRestriction()
@@ -348,7 +348,8 @@ public partial class PlayerMovement : NetworkBehaviour
         
         // Calculate the actual movement after validation
         Vector3 validatedMovement = (validatedPosition - transform.position) / Time.deltaTime;
-        characterController.Move(validatedMovement * Time.deltaTime);
+        if (vaporeonDiveTraversal) MoveVaporeonDive(validatedMovement * Time.deltaTime);
+        else characterController.Move(validatedMovement * Time.deltaTime);
 
         currentMovement = Vector3.zero; // Reset current movement at the start of each frame
 
@@ -363,7 +364,9 @@ public partial class PlayerMovement : NetworkBehaviour
         }
 
         ValidatePlayerPosition();
-        SnapPlayerToGround();
+        // Keep the gameplay root at ground height under terrain; the model
+        // supplies Dive's sinking effect. Do not snap onto subterranean meshes.
+        if (!vaporeonDiveTraversal) SnapPlayerToGround();
     }
     
     private void ValidatePlayerPosition()

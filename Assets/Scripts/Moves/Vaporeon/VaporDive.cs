@@ -24,6 +24,7 @@ public class VaporDive : MoveBase
         }
         submerged = true; emerging = false; acknowledged = false; elapsed = 0;
         actionLock.Acquire(playerManager, false, 1);
+        playerManager.PlayerMovement.BeginVaporeonDiveTraversal();
         playerManager.MovesController.BeginVaporeonDiveRPC();
         VaporMoveRuntime.Animate(playerManager, "Armature_pm0134_00_ba01_landA01_gfbanm", speed: 3);
         BattleUIManager.instance.ShowMoveSecondaryCooldown(1, VaporMoveRules.DiveDuration);
@@ -46,7 +47,8 @@ public class VaporDive : MoveBase
         emerging = true; emergeElapsed = 0;
         recastLock = playerManager.MovesController.AcquireMoveStatus(1, ActionStatusType.Disabled);
         playerManager.PlayerMovement.AddMovementRestriction();
-        playerManager.MovesController.EndVaporeonDiveRPC(true);
+        Vector3 exit = playerManager.PlayerMovement.EndVaporeonDiveTraversal();
+        playerManager.MovesController.EndVaporeonDiveRPC(true, exit);
         VaporMoveRuntime.Animate(playerManager, "Armature_pm0134_00_ba01_landC01_gfbanm", speed: 3);
         BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
         Cooldown = VaporMoveRules.DiveCooldown(IsUpgraded);
@@ -54,6 +56,7 @@ public class VaporDive : MoveBase
     }
     private void Complete()
     {
+        if (playerManager != null) playerManager.PlayerMovement.EndVaporeonDiveTraversal();
         if (emerging && playerManager != null) playerManager.PlayerMovement.RemoveMovementRestriction();
         recastLock?.Dispose(); recastLock = null; actionLock.Dispose();
         submerged = false; emerging = false; acknowledged = false; IsActive = false;
@@ -62,8 +65,9 @@ public class VaporDive : MoveBase
     public override void Cancel() { base.Cancel(); } // Cancel aim, not an already committed submerge.
     public override void ResetMove()
     {
+        Vector3 exit = playerManager != null ? playerManager.PlayerMovement.EndVaporeonDiveTraversal() : Vector3.zero;
         if (submerged && playerManager != null && playerManager.IsSpawned)
-            playerManager.MovesController.EndVaporeonDiveRPC(false);
+            playerManager.MovesController.EndVaporeonDiveRPC(false, exit);
         if (submerged && BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
         Complete(); elapsed = 0; wasMoveSuccessful = false;
     }

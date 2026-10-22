@@ -9,6 +9,7 @@ public abstract class PassiveBase
     }
 
     public abstract void Update();
+    public virtual void Dispose() { }
 }
 
 public static class PassiveDatabase

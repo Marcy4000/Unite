@@ -1,12 +1,13 @@
 using UnityEngine;
-using Cinemachine;
+using Unity.Cinemachine;
 using System.Collections;
 
 public class CameraController : MonoBehaviour
 {
     public static CameraController Instance;
 
-    [SerializeField] private CinemachineVirtualCamera virtualCamera;
+    // Keep the base type so the Cinemachine upgrader can preserve the serialized reference.
+    [SerializeField] private CinemachineVirtualCameraBase virtualCamera;
     [SerializeField] private float panSpeed = 10f;
 
     private Vector2 moveInput;
@@ -15,7 +16,7 @@ public class CameraController : MonoBehaviour
     private Transform cameraTransform;
     private Transform playerTransform;
 
-    public CinemachineVirtualCamera VirtualCamera => virtualCamera;
+    public CinemachineCamera VirtualCamera => virtualCamera as CinemachineCamera;
     public bool IsPanning => isPanning;
 
     private Coroutine superJumpCameraCoroutine;
@@ -89,21 +90,22 @@ public class CameraController : MonoBehaviour
 
     private IEnumerator SmoothZoomTransition(float targetFOV, Vector3 targetOffset, float duration)
     {
-        var trasposer = virtualCamera.GetCinemachineComponent<CinemachineTransposer>();
-        float initialFOV = virtualCamera.m_Lens.FieldOfView;
-        Vector3 initialOffset = trasposer.m_FollowOffset;
+        var camera = VirtualCamera;
+        var follow = camera.GetComponent<CinemachineFollow>();
+        float initialFOV = camera.Lens.FieldOfView;
+        Vector3 initialOffset = follow.FollowOffset;
         float elapsedTime = 0f;
 
         while (elapsedTime < duration)
         {
-            virtualCamera.m_Lens.FieldOfView = Mathf.Lerp(initialFOV, targetFOV, elapsedTime / duration);
-            trasposer.m_FollowOffset = Vector3.Lerp(initialOffset, targetOffset, elapsedTime / duration);
+            camera.Lens.FieldOfView = Mathf.Lerp(initialFOV, targetFOV, elapsedTime / duration);
+            follow.FollowOffset = Vector3.Lerp(initialOffset, targetOffset, elapsedTime / duration);
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        virtualCamera.m_Lens.FieldOfView = targetFOV;
-        trasposer.m_FollowOffset = targetOffset;
+        camera.Lens.FieldOfView = targetFOV;
+        follow.FollowOffset = targetOffset;
 
         superJumpCameraCoroutine = null;
     }

@@ -17,6 +17,7 @@ public enum DamageProprieties : byte
     Unused_1 = 1 << 7
 }
 
+[Serializable]
 public struct DamageInfo : INetworkSerializable
 {
     public ulong attackerId;
@@ -25,6 +26,8 @@ public struct DamageInfo : INetworkSerializable
     public short baseDmg;
     public DamageType type;
     public DamageProprieties proprieties;
+    // Zero is treated as one for legacy/default-initialized damage records.
+    public float multiplier;
 
     public DamageInfo(ulong attackerId, float ratio, short slider, short baseDmg, DamageType type, DamageProprieties proprieties = DamageProprieties.None)
     {
@@ -34,6 +37,7 @@ public struct DamageInfo : INetworkSerializable
         this.baseDmg = baseDmg;
         this.type = type;
         this.proprieties = proprieties;
+        multiplier = 1f;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -44,5 +48,6 @@ public struct DamageInfo : INetworkSerializable
         serializer.SerializeValue(ref baseDmg);
         serializer.SerializeValue(ref type);
         serializer.SerializeValue(ref proprieties);
+        serializer.SerializeValue(ref multiplier);
     }
 }

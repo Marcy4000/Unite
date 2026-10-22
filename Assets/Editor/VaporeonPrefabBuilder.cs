@@ -50,6 +50,7 @@ public static class VaporeonPrefabBuilder
     {
         string path = VaporMoveRules.EffectPath(effect);
         if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null) return;
+        if (effect == VaporEffect.Swift) { CreateSwiftStars(); return; }
         var root = Node("Vapor" + effect); var view = root.AddComponent<VaporVisual>();
         var graphics = Node("Graphics", root.transform);
         var accent = Node("Accent", graphics.transform);
@@ -81,11 +82,6 @@ public static class VaporeonPrefabBuilder
                 Primitive("CompressedWater", accent.transform, PrimitiveType.Sphere, water, Vector3.zero, new Vector3(boosted ? 0.4f : 0.22f, boosted ? 0.4f : 0.22f, boosted ? 0.65f : 0.4f));
                 Primitive("FoamTip", accent.transform, PrimitiveType.Sphere, foam, Vector3.forward * 0.15f, Vector3.one * (boosted ? 0.22f : 0.1f));
                 Trail(accent.transform, boosted ? foam : water, boosted ? 0.23f : 0.1f); break;
-            case VaporEffect.Swift:
-                for (int i = 0; i < 4; i++)
-                    MeshNode("FallingStar" + i, rotating.transform, ribbon, foam,
-                        new Vector3(Mathf.Sin(i * 1.7f) * 0.65f, 0.15f, Mathf.Cos(i * 1.7f) * 0.65f), Vector3.one * 0.25f);
-                Droplets(rotating.transform, false, 1, 24); break;
             case VaporEffect.AquaRing:
                 for (int i = 0; i < 3; i++)
                 {
@@ -158,6 +154,55 @@ public static class VaporeonPrefabBuilder
             Set(view, "sound", audio);
         }
         PrefabUtility.SaveAsPrefabAsset(root, path); Object.DestroyImmediate(root);
+    }
+    [MenuItem("Tools/Vaporeon/Update Swift Star Visuals")]
+    public static void UpdateSwiftStars()
+    {
+        // Explicit, Swift-only migration. Keep its GUID/Addressable key and all
+        // other move assets/layouts; Build() still preserves existing prefabs.
+        EnsureFolder(Folder + "Art"); EnsureFolder(Materials.TrimEnd('/'));
+        ring = Bake("FoamRing", 0); ribbon = Bake("WaterRibbon", 2);
+        preview = EditorSceneManager.NewPreviewScene();
+        try { CreateSwiftStars(); }
+        finally { EditorSceneManager.ClosePreviewScene(preview); }
+        AssetDatabase.SaveAssets();
+    }
+    private static void CreateSwiftStars()
+    {
+        var starPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Objects/Moves/Flareon/FlareSwiftStar.prefab");
+        if (starPrefab == null) throw new InvalidOperationException("The shared Eevee Swift star prefab is required.");
+        var gold = Material("SwiftGold", new Color(1, 0.78f, 0.22f));
+        var cream = Material("SwiftCream", new Color(1, 0.95f, 0.62f));
+        var root = Node("VaporSwift"); var view = root.AddComponent<VaporVisual>();
+        var graphics = Node("Graphics", root.transform); var accent = Node("Accent", graphics.transform);
+        var stars = Node("FallingStars", accent.transform);
+        Set(view, "graphics", graphics); Set(view, "accent", accent.transform); Set(view, "rotating", stars.transform);
+        MeshNode("AreaBoundary", accent.transform, ring, gold, Vector3.up * 0.08f, Vector3.one);
+        var timer = MeshNode("RemainingDuration", accent.transform, ring, cream, Vector3.up * 0.09f, Vector3.one * 0.85f);
+        Set(view, "progress", timer.transform);
+        var hostile = Node("HostileTeeth", accent.transform); Set(view, "enemyTeeth", hostile);
+        for (int i = 0; i < 8; i++)
+        {
+            float angle = i * Mathf.PI / 4;
+            MeshNode("WarningTooth" + i, hostile.transform, ribbon, cream,
+                new Vector3(Mathf.Sin(angle), 0.1f, Mathf.Cos(angle)), new Vector3(0.06f, 1, 0.12f))
+                .transform.localRotation = Quaternion.Euler(0, i * 45, 0);
+        }
+        var serialized = new SerializedObject(view); var references = serialized.FindProperty("swiftStars"); references.arraySize = 4;
+        for (int i = 0; i < 4; i++)
+        {
+            var star = (GameObject)PrefabUtility.InstantiatePrefab(starPrefab, preview);
+            star.name = "FallingStar" + i; star.transform.SetParent(stars.transform, false);
+            float angle = i * Mathf.PI / 2 + Mathf.PI / 4;
+            star.transform.localPosition = new Vector3(Mathf.Sin(angle) * 0.6f, 2.2f, Mathf.Cos(angle) * 0.6f);
+            star.transform.localScale = Vector3.one * 1.05f;
+            references.GetArrayElementAtIndex(i).objectReferenceValue = star.GetComponent<SpriteRenderer>();
+        }
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        var audio = root.AddComponent<AudioSource>(); audio.playOnAwake = false; audio.spatialBlend = 1;
+        audio.minDistance = 2; audio.maxDistance = 20; audio.volume = 0.14f; audio.clip = Sound("SwiftChime");
+        Set(view, "sound", audio);
+        PrefabUtility.SaveAsPrefabAsset(root, VaporMoveRules.EffectPath(VaporEffect.Swift)); Object.DestroyImmediate(root);
     }
     private static GameObject Node(string name, Transform parent = null)
     {
@@ -239,7 +284,8 @@ public static class VaporeonPrefabBuilder
                 for (int i = 0; i < count; i++)
                 {
                     double t = i / (double)count, phase = i * 2 * Math.PI / rate;
-                    double wave = name == "WaterChime" ? Math.Sin(phase * 740) * 0.3 + Math.Sin(phase * 1110) * 0.14
+                    double wave = name == "SwiftChime" ? Math.Sin(phase * 1046) * 0.28 + Math.Sin(phase * 1568) * 0.12 + Math.Sin(phase * 2093) * 0.08
+                        : name == "WaterChime" ? Math.Sin(phase * 740) * 0.3 + Math.Sin(phase * 1110) * 0.14
                         : Math.Sin(phase * (name == "WaterCrash" ? 130 - 60 * t : 320 + 160 * t)) * 0.25 + (random.NextDouble() * 2 - 1) * 0.2;
                     writer.Write((short)(wave * Math.Sin(Math.PI * t) * Math.Exp(-t * 3) * 24000));
                 }
@@ -286,7 +332,7 @@ public static class VaporeonPrefabBuilder
         ConfigureMove("VaporHelpingHand", "Grant a designated ally +35% Attack and Sp. Attack for 3.5s. Can be cast while moving. If no ally is selected, the move has no effect and does not go on cooldown.");
         ConfigureMove("VaporAquaRing", "Protect an ally within 8m, or yourself if no ally is selected, with a shield worth 20% of their max HP for 6s. Grant +25% Attack and Sp. Attack for up to 4.5s and eight healing pulses, starting shortly after casting. If the shield breaks, the ring and its remaining effects end. Recasting replaces your ring on that target. Upgrade: shield increases to 25% max HP.");
         ConfigureMove("VaporRainDance", "Hop up to 4m to a nearby reachable location, then summon rain in a 3m radius for 10s. Allies inside gain +55% Defense and Sp. Defense and are healed every 1.2s. Enemies inside are slowed by 20%. Effects end when leaving the rain; overlapping Vaporeon field slows do not stack. Upgrade: defensive bonuses increase to 65%.");
-        ConfigureMove("VaporDive", "Submerge for up to 3s, becoming invincible while moving along the ground. Recast after 0.25s to resurface early. Other actions are unavailable underwater. After a brief 0.25s warning, resurface to damage nearby enemies, briefly incapacitate them and push them back slightly. Cooldown starts on resurfacing. Upgrade: cooldown is reduced to 9s.");
+        ConfigureMove("VaporDive", "Submerge for up to 3s, becoming invincible and able to pass through walls without leaving the map. Recast after 0.25s to resurface early. If inside terrain, emerge at a nearby safe location or your last clear position. Other actions are unavailable underwater. After a brief 0.25s warning, resurface to damage nearby enemies, briefly incapacitate them and push them back slightly. Cooldown starts on resurfacing. Upgrade: cooldown is reduced to 9s.");
         ConfigureMove("VaporeonUnite", "Gather water for 0.6s, then release a 6m-radius tempest at the cast location. Damage enemies and reduce both defenses by 35% for 5s; significantly heal living allies, including yourself. Movement and other actions are restricted during the cast. Hindrances can interrupt the windup.");
         var registry = new SerializedObject(AssetDatabase.LoadAssetAtPath<MoveAssetRegistry>("Assets/Moves/MoveAssetRegistry.asset"));
         var entries = registry.FindProperty("moveEntries"); int index = -1;

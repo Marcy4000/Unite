@@ -121,8 +121,12 @@ public static class MoveDatabase
                 return new SylvBabyDollEyes();
             case AvailableMoves.SylvHyperVoice:
                 return new SylvHyperVoice();
+            case AvailableMoves.SylvMysticalCringe:
+                return new SylvMysticalFire();
             case AvailableMoves.SylvCalmMind:
                 return new SylvCalmMind();
+            case AvailableMoves.SylvDrainingKiss:
+                return new SylvDrainingKiss();
             case AvailableMoves.SylveonUnite:
                 return new SylvUnite();
 

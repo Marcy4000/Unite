@@ -16,6 +16,8 @@ public partial class MovesController
     private VaporScope vaporRain, vaporWhirlpool, vaporDive;
     private double vaporNextBasic, vaporLastBasic, vaporHydrationReady, vaporDiveStarted;
     private bool vaporBound, vaporEmergeRequested;
+    private bool vaporDiveHasExit;
+    private Vector3 vaporDiveExit;
     private double VaporNow => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.timeAsDouble;
     private bool IsLivingVaporeon => pokemon != null && pokemon.BaseStats != null && pokemon.BaseStats.PokemonName == "Vaporeon" && pokemon.CurrentHp > 0;
     public int VaporeonAttackCharge => vaporAttackCharge.Value == 2 ? 3 : vaporAttackCharge.Value;
@@ -313,29 +315,52 @@ public partial class MovesController
             || VaporNow + 0.3 < vaporNextCast[1] || pokemon.HasAnyStatusEffect(VaporMoveRules.Interrupts)) return;
         vaporDiveStarted = VaporNow; vaporDiveEnds.Value = VaporNow + VaporMoveRules.DiveDuration + VaporMoveRules.DiveWarning;
         vaporEmergeRequested = false;
+        vaporDiveHasExit = false;
         var scope = new VaporScope(this); vaporDive = scope;
         RunVaporeon(scope, VaporeonSubmerge(scope));
     }
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    public void EndVaporeonDiveRPC(bool attack)
+    public void EndVaporeonDiveRPC(bool attack, Vector3 requestedExit)
     {
         if (vaporDive == null) return;
         if (!attack)
         {
             vaporDive.Dispose(); vaporDive = null; vaporDiveEnds.Value = 0; return;
         }
-        if (VaporNow - vaporDiveStarted >= VaporMoveRules.DiveMinimum) vaporEmergeRequested = true;
+        if (VaporNow - vaporDiveStarted >= VaporMoveRules.DiveMinimum)
+        {
+            vaporEmergeRequested = true;
+            // The owner has already resolved its exit. Accept a nearby report
+            // before transform replication catches up, but validate it on server.
+            Vector3 offset = requestedExit - transform.position; offset.y = 0;
+            if (VaporMoveRules.Finite(requestedExit) && offset.sqrMagnitude <= 9f
+                && playerManager.PlayerMovement.IsVaporeonDiveLandingValid(requestedExit))
+            {
+                requestedExit.y = transform.position.y;
+                vaporDiveExit = requestedExit; vaporDiveHasExit = true;
+            }
+        }
     }
     private IEnumerator VaporeonSubmerge(VaporScope scope)
     {
+        var movement = playerManager.PlayerMovement;
+        movement.BeginVaporeonDiveTraversal();
+        scope.Own(new VaporCleanup(() => { if (movement != null) movement.EndVaporeonDiveTraversal(movement.IsOwner); }));
         ushort invincible = VaporEffectIds.Acquire();
         pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, VaporMoveRules.DiveDuration + 0.5f, true, invincible));
         scope.Own(new VaporCleanup(() => { if (pokemon != null && pokemon.IsSpawned) pokemon.RemoveStatusEffectWithID(invincible); VaporEffectIds.Release(invincible); }));
         scope.Visual(VaporEffect.DiveWake, transform.position, VaporMoveRules.DiveDuration + VaporMoveRules.DiveWarning, NetworkObjectId, VaporMoveRules.DiveRadius);
-        while (scope.Live && !vaporEmergeRequested && VaporNow - vaporDiveStarted < VaporMoveRules.DiveDuration) yield return null;
+        while (scope.Live && !vaporEmergeRequested && VaporNow - vaporDiveStarted < VaporMoveRules.DiveDuration)
+        {
+            movement.TrackVaporeonDivePosition();
+            yield return null;
+        }
         if (scope.Live)
         {
             Vector3 center = transform.position;
+            if (movement.TryVaporeonDiveExit(vaporDiveHasExit ? vaporDiveExit : center, out var safeExit)) center = safeExit;
+            movement.EndVaporeonDiveTraversal(false);
+            movement.VaporeonDiveExitRPC(center);
             scope.Visual(VaporEffect.DiveWarning, center, VaporMoveRules.DiveWarning, size: VaporMoveRules.DiveRadius);
             vaporNextCast[1] = VaporNow + VaporMoveRules.DiveCooldown(pokemon.CurrentLevel >= 11) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
             yield return VaporeonWait(scope, VaporMoveRules.DiveWarning);
@@ -348,7 +373,7 @@ public partial class MovesController
                     target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0.7f, 6, 200, DamageType.Special));
                     if (!VaporMoveRuntime.Living(target) || target.Type == PokemonType.Objective) continue;
                     target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.25f, true, 0));
-                    if (target.TryGetComponent(out PlayerMovement movement)) movement.VaporeonDisplaceRPC(center, 0.6f, false);
+                    if (target.TryGetComponent(out PlayerMovement enemyMovement)) enemyMovement.VaporeonDisplaceRPC(center, 0.6f, false);
                 }
             }
         }

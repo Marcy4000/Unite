@@ -92,6 +92,10 @@ public partial class Pokemon : NetworkBehaviour
     public event Action OnPokemonInitialized;
 
     public event Action<ulong, DamageInfo> OnDamageDealt;
+    // Server-only extension points. Block before shields/HP, and report real HP
+    // lost after shields/overkill rather than re-evaluating a damage formula.
+    public event Func<DamageInfo, bool> BeforeDamage;
+    public event Action<Pokemon, DamageInfo, int> OnHealthDamageDealt;
     public event Action<ulong> OnOtherPokemonKilled;
 
     public event Action<NetworkListEvent<StatChange>> OnStatChange;
@@ -1071,9 +1075,14 @@ public partial class Pokemon : NetworkBehaviour
 
         lastHit = damage;
 
-        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[damage.attackerId].GetComponent<Pokemon>();
+        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(damage.attackerId, out var attackerObject)
+            || !attackerObject.TryGetComponent(out Pokemon attacker)) return;
+        if (BeforeDamage != null)
+            foreach (Func<DamageInfo, bool> block in BeforeDamage.GetInvocationList())
+                if (block(damage)) return;
 
-        int localHp = currentHp.Value;
+        int previousHp = currentHp.Value;
+        int localHp = previousHp;
         List<ShieldInfo> localShields = shields.AsNativeArray().ToList();
 
         if (damage.proprieties.HasFlag(DamageProprieties.CanCrit))
@@ -1111,6 +1120,7 @@ public partial class Pokemon : NetworkBehaviour
 
         currentHp.Value = localHp;
 
+        attacker.OnHealthDamageDealt?.Invoke(this, damage, Mathf.Max(0, previousHp - localHp));
         ClientDamageRPC(actualDamage, damage);
         attacker.OnDamageDealtRPC(NetworkObjectId, damage);
     }
@@ -1181,7 +1191,7 @@ public partial class Pokemon : NetworkBehaviour
 
         float finalDamage = (float)attackDamage * 600 / (600 + defStat);
 
-        return Mathf.FloorToInt(finalDamage * (1f-GetDamageReduction()));
+        return Mathf.FloorToInt(finalDamage * (1f-GetDamageReduction()) * (damage.multiplier > 0 ? damage.multiplier : 1f));
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)

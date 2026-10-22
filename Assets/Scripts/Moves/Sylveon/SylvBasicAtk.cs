@@ -8,8 +8,6 @@ public class SylvBasicAtk : BasicAttackBase
 
     private float cooldown;
 
-    private StatChange speedBuff = new StatChange(75, Stat.Speed, 1f, true, true, true, 0);
-
     private DamageInfo normalDmg;
     private DamageInfo boostedDmg;
 
@@ -17,9 +15,9 @@ public class SylvBasicAtk : BasicAttackBase
     {
         base.Initialize(manager);
         range = 5f;
-        attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
-        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.35f, 10, 180, DamageType.Special, DamageProprieties.IsBasicAttack);
+        attackPrefab = SylvMoveRules.Folder + "SylvBasicAttack.prefab";
+        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
+        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.35f, 10, 180, DamageType.Special, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
     }
 
     public override void Perform(bool wildPriority)
@@ -32,18 +30,14 @@ public class SylvBasicAtk : BasicAttackBase
         {
             DamageInfo damage = charge == 2 ? boostedDmg : normalDmg;
 
-            playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damage, attackPrefab);
-            playerManager.AnimationManager.PlayAnimation($"ani_atk{charge + 4}_bat_0133");
+            bool evolved = playerManager.Pokemon.CurrentLevel >= 3;
+            string prefab = charge == 2 && evolved ? SylvMoveRules.Folder + "SylvBoostedAttack.prefab" : attackPrefab;
+            playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damage, prefab);
+            playerManager.AnimationManager.PlayAnimation(evolved ? $"ani_atk{charge + 1}_bat_0700" : $"ani_atk{charge + 4}_bat_0133");
             playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
             playerManager.transform.LookAt(closestEnemy.transform);
             playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
             cooldown = 4.5f;
-
-            if (charge == 2 && playerManager.Pokemon.CurrentLevel >= 3)
-            {
-                speedBuff.Duration = 1f + (0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
-                playerManager.Pokemon.AddStatChange(speedBuff);
-            }
 
             charge++;
         }

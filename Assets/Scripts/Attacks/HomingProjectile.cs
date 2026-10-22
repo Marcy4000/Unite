@@ -1,18 +1,30 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class HomingProjectile : NetworkBehaviour
 {
     public float speed = 5f;
     public float rotationSpeed = 5f;
+    [SerializeField] private StatChange[] attackerOnHitStats;
 
     private Transform target;
     private DamageInfo damageInfo;
+    private AsyncOperationHandle<GameObject> assetHandle;
+    private bool holdsAsset;
+
+    public void HoldAsset(AsyncOperationHandle<GameObject> handle) { assetHandle = handle; holdsAsset = true; }
 
     [Rpc(SendTo.Server)]
     public void SetTargetRPC(ulong newTarget, DamageInfo info)
     {
-        target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[newTarget].transform;
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(newTarget, out var recipient))
+        {
+            NetworkObject.Despawn(true);
+            return;
+        }
+        target = recipient.transform;
         damageInfo = info;
     }
 
@@ -23,7 +35,7 @@ public class HomingProjectile : NetworkBehaviour
             return;
         }
 
-        if (target == null)
+        if (target == null || (target.TryGetComponent(out Pokemon recipient) && recipient.CurrentHp <= 0))
         {
             NetworkObject.Despawn(true);
             return;
@@ -34,13 +46,13 @@ public class HomingProjectile : NetworkBehaviour
 
         // Rotate towards the target
         Vector3 direction = (target.position - transform.position).normalized;
-        Quaternion lookRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
+        if (direction.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), rotationSpeed * Time.deltaTime);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer)
+        if (!IsServer || !IsSpawned)
         {
             return;
         }
@@ -53,10 +65,27 @@ public class HomingProjectile : NetworkBehaviour
         if (other.gameObject == target.gameObject)
         {
             // Deal damage to the target
-            target.GetComponent<Pokemon>().TakeDamageRPC(damageInfo);
+            var recipient = target.GetComponent<Pokemon>();
+            bool landed = recipient.CurrentHp > 0 && !recipient.HasStatusEffect(StatusType.Invincible)
+                && !recipient.HasStatusEffect(StatusType.Untargetable);
+            if (landed) recipient.TakeDamageRPC(damageInfo);
+            if (landed && attackerOnHitStats != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(damageInfo.attackerId, out var attackerObject)
+                && attackerObject.TryGetComponent(out Pokemon attacker) && attacker.CurrentHp > 0)
+                foreach (StatChange stat in attackerOnHitStats)
+                {
+                    attacker.RemoveAllStatChangeWithIDRPC(stat.ID);
+                    attacker.AddStatChange(stat);
+                }
 
             // Destroy the projectile
             NetworkObject.Despawn(true);
         }
+    }
+
+    public override void OnDestroy()
+    {
+        if (holdsAsset && assetHandle.IsValid()) Addressables.Release(assetHandle);
+        holdsAsset = false;
+        base.OnDestroy();
     }
 }

@@ -14,6 +14,8 @@ The asset and `Pokemon.CurrentLevel` use zero-based levels.
   charges expire after 4.5s without attacking. Gauge and owner-only ready halo.
   Server tracks charge, attack interval and hits. Correct Eevee/Vaporeon clips.
 - **Swift:** exactly four 1-unit-radius volleys, 0.7s apart. 7.5s cooldown.
+  Uses the same camera-facing yellow star artwork as Jolteon/Flareon, with falling
+  stars, a warm-gold boundary and a sparkle chime: no water spray while still Eevee.
 - **Helping Hand:** +35% Attack/Sp. Attack for 3.5s, ally only. 9s cooldown.
   No valid ally means no cast/cooldown. Support spells do not root Vaporeon.
 - **Aqua Ring:** target ally or self fallback, independent 20%-target-max-HP
@@ -30,8 +32,14 @@ The asset and `Pokemon.CurrentLevel` use zero-based levels.
 - **Dive:** 3s mobile invincibility, recast after 0.25s, then 0.25s resurfacing
   warning, damage/0.25s incapacitation/short 0.6-unit shove within 2 units.
   Other actions are locked, except the recast. Cooldown starts on emergence:
-  10s, upgraded 9s. Unlike the old implementation, movement remains grounded;
-  only the model sinks. It cannot cross walls or leave a flying/root-height state.
+  10s, upgraded 9s. While submerged, uses the no-walls walkmesh and direct movement
+  to cross both terrain and physical wall colliders, like the wall-crossing dashes.
+  Substeps prevent leaving map boundaries or skipping gaps in the no-walls mesh.
+  Only the model sinks; root height, flight, controller enabled state and shared
+  dash state are not changed. On emergence (manual or automatic), resolve a clear
+  footprint within 2 units, falling back to the last grounded point from this Dive.
+  The server validates the exit and uses that point for both the warning and hit.
+  Reset/death/despawn releases traversal and restores normal wall collision.
 - **Whirlpool:** 7-unit placement, 2.5-unit radius, 3s duration, 11s cooldown.
   Six pulses total **0.6 SpA + 6 x level + 198** before defense/rounding;
   this is the whole-cast budget. 25% slow; one inward pull at 0.9s, capped at
@@ -119,7 +127,10 @@ Manual host + remote-client acceptance:
    defenses, six damage pulses, one pull per field and shared pull immunity.
 4. Escape Whirlpool before collapse; test Unstoppable, Hindrance Resistance,
    invincibility and objectives. Pull/shove must stop at walls/map boundaries.
-5. Recast Dive early and wait for automatic emergence. Confirm action locks,
+5. Cross walls with Dive; test manual and automatic emergence inside thin and thick
+   terrain, map edges, interruptions and repeated casts. Verify a safe exit with
+   no permanent wall phasing. Rain/pulls/shoves must still stop at walls.
+   Confirm action locks,
    warning timing, short shove, cooldown and correct model/root restoration.
 6. Interrupt Rain during its hop and Tempest during anticipation; KO/despawn at
    every cast phase. Verify no ghost healing/damage, stale shields, move locks,

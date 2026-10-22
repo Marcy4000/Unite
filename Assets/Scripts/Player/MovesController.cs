@@ -654,6 +654,7 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void OnMoveLearnedRPC(AvailableMoves moveType)
     {
+        RecordPrefabMove(moveType);
         RecordVaporeonMove(moveType);
         OnMoveLearned?.Invoke(CharactersList.Instance.GetMoveAsset(moveType));
     }
@@ -757,23 +758,33 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info, string addressableKey)
     {
+        Pokemon source = pokemon;
+        if (source == null || source.CurrentHp <= 0) return;
+        bool cancelled = false;
+        Action<DamageInfo> onDeath = _ => cancelled = true;
+        source.OnDeath += onDeath;
         Addressables.LoadAssetAsync<GameObject>(addressableKey).Completed += handle =>
         {
+            if (source != null) source.OnDeath -= onDeath;
+            if (cancelled || this == null || !IsSpawned || source == null || source.CurrentHp <= 0)
+            {
+                Addressables.Release(handle);
+                return;
+            }
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
                 GameObject prefab = handle.Result;
                 GameObject homingProjectile = Instantiate(prefab, projectileSpawnPoint.position, projectileSpawnPoint.rotation);
-                homingProjectile.GetComponent<NetworkObject>().Spawn();
-
                 HomingProjectile homingScript = homingProjectile.GetComponent<HomingProjectile>();
-                if (homingScript != null)
-                {
-                    homingScript.SetTargetRPC(targetId, info);
-                }
+                if (homingScript == null) { Destroy(homingProjectile); Addressables.Release(handle); return; }
+                homingScript.HoldAsset(handle);
+                homingProjectile.GetComponent<NetworkObject>().Spawn();
+                homingScript.SetTargetRPC(targetId, info);
             }
             else
             {
                 Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+                Addressables.Release(handle);
             }
         };
     }
