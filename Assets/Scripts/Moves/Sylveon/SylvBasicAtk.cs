@@ -33,7 +33,7 @@ public class SylvBasicAtk : BasicAttackBase
             bool evolved = playerManager.Pokemon.CurrentLevel >= 3;
             string prefab = charge == 2 && evolved ? SylvMoveRules.Folder + "SylvBoostedAttack.prefab" : attackPrefab;
             playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damage, prefab);
-            playerManager.AnimationManager.PlayAnimation(evolved ? $"ani_atk{charge + 1}_bat_0700" : $"ani_atk{charge + 4}_bat_0133");
+            playerManager.AnimationManager.PlayAnimation(evolved ? $"" : $"ani_atk{charge + 4}_bat_0133");
             playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
             playerManager.transform.LookAt(closestEnemy.transform);
             playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);

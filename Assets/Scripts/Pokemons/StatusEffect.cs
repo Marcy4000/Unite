@@ -11,13 +11,26 @@ public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
 
     public ushort ID;
 
+    public PeriodicDamageInfo PeriodicDamage;
+
     public StatusEffect(StatusType type, float duration, bool isTimed, ushort id)
     {
         Type = type;
         Duration = duration;
         IsTimed = isTimed;
         ID = id;
+        PeriodicDamage = default;
     }
+
+    public static StatusEffect DamageOverTime(StatusType type, DamageInfo damage, float duration, float interval,
+        ushort id = 0, float targetMaxHpRatio = 0, short nonPlayerDamageCap = 0)
+    {
+        return new StatusEffect(type, duration, true, id)
+        { PeriodicDamage = new PeriodicDamageInfo(damage, interval, targetMaxHpRatio, nonPlayerDamageCap) };
+    }
+
+    public bool SamePeriodicSource(StatusEffect other) => PeriodicDamage.Enabled && other.PeriodicDamage.Enabled
+        && Type == other.Type && ID == other.ID && PeriodicDamage.Damage.attackerId == other.PeriodicDamage.Damage.attackerId;
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
@@ -25,6 +38,7 @@ public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
         serializer.SerializeValue(ref Duration);
         serializer.SerializeValue(ref IsTimed);
         serializer.SerializeValue(ref ID);
+        serializer.SerializeValue(ref PeriodicDamage);
     }
 
     public bool IsNegativeStatus()
@@ -34,7 +48,7 @@ public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
 
     public bool Equals(StatusEffect other)
     {
-        if (Type != other.Type || Duration != other.Duration || IsTimed != other.IsTimed || ID != other.ID)
+        if (Type != other.Type || Duration != other.Duration || IsTimed != other.IsTimed || ID != other.ID || !PeriodicDamage.Equals(other.PeriodicDamage))
         {
             return false;
         }

@@ -104,7 +104,6 @@ public class PlayerManager : NetworkBehaviour
 
     private AsyncOperationHandle<PokemonBase> pokemonLoadHandle;
 
-    private List<Coroutine> tickDamageCoroutines = new List<Coroutine>();
 
     private void Awake()
     {
@@ -246,9 +245,7 @@ public class PlayerManager : NetworkBehaviour
             { StatusType.Asleep, ApplyStun },
             { StatusType.Bound, ApplyStun },
             { StatusType.VisionObscuring, () => VisionController.IsBlinded = true },
-            { StatusType.Invisible, () => SetPlayerVisibilityRPC(false) },
-            { StatusType.Burned, StartTickDamage },
-            { StatusType.Poisoned, StartTickDamage }
+            { StatusType.Invisible, () => SetPlayerVisibilityRPC(false) }
             // Add other statuses
         };
 
@@ -260,9 +257,7 @@ public class PlayerManager : NetworkBehaviour
             { StatusType.Asleep, RemoveStun },
             { StatusType.Bound, RemoveStun },
             { StatusType.VisionObscuring, () => VisionController.IsBlinded = false },
-            { StatusType.Invisible, () => SetPlayerVisibilityRPC(true) },
-            { StatusType.Burned, StopTickDamage },
-            { StatusType.Poisoned, StopTickDamage }
+            { StatusType.Invisible, () => SetPlayerVisibilityRPC(true) }
             // Add other statuses
         };
     }
@@ -415,11 +410,6 @@ public class PlayerManager : NetworkBehaviour
 
         pokemon.RemoveAllStatChangesRPC();
         pokemon.RemoveAllStatusEffectsRPC();
-
-        foreach (var coroutine in tickDamageCoroutines)
-        {
-            StopCoroutine(coroutine);
-        }
 
         CameraController.Instance.ForcePan(true);
 
@@ -749,38 +739,8 @@ public class PlayerManager : NetworkBehaviour
         scoreStatus.RemoveStatus(ActionStatusType.Stunned);
     }
 
-    private void StartTickDamage()
-    {
-        Coroutine coroutine = StartCoroutine(TickDamage());
-        tickDamageCoroutines.Add(coroutine);
-    }
-
-    private IEnumerator TickDamage()
-    {
-        while (true)
-        {
-            pokemon.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0f, 0, (short)Mathf.FloorToInt(pokemon.GetMaxHp() * 0.05f), DamageType.Physical));
-            yield return new WaitForSeconds(0.75f);
-        }
-    }
-
-    private void StopTickDamage()
-    {
-        if (tickDamageCoroutines.Count == 0)
-        {
-            return;
-        }
-
-        Coroutine coroutineToStop = tickDamageCoroutines[tickDamageCoroutines.Count - 1];
-        StopCoroutine(coroutineToStop);
-
-        tickDamageCoroutines.RemoveAt(tickDamageCoroutines.Count - 1);
-    }
-
     private void OnPokemonStatusChange(StatusEffect effect, bool added)
     {
-        // Cinderace burns carry their own source-scaled, three-tick damage.
-        if (CinderMoveRules.ManagedBurn(effect)) return;
         // This is so incredibly stupid but it'll do for now
         // Update: no longer as stupid, still stupid
         Debug.Log("Status changed");

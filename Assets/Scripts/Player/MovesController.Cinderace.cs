@@ -32,8 +32,7 @@ public partial class MovesController
         public Pokemon Target;
         public readonly CinderStackState Stacks = new CinderStackState();
         public readonly ushort MarkId = CinderEffectIds.Acquire(), BurnId = CinderEffectIds.Acquire();
-        public int BurnTicks;
-        public float NextBurn, ReleaseAfter;
+        public float ReleaseAfter;
         public bool MarkVisual;
     }
 
@@ -58,18 +57,7 @@ public partial class MovesController
             var state = pair.Value; Pokemon target = state.Target;
             if (target == null || !target.IsSpawned || target.CurrentHp <= 0) { remove.Add(pair.Key); continue; }
             if (!target.HasStatusEffect(state.MarkId) || state.Stacks.Get(Time.time) == 0) state.Stacks.Clear();
-            if (state.BurnTicks > 0)
-            {
-                if (!target.HasStatusEffect(state.BurnId)) state.BurnTicks = 0;
-                else if (Time.time >= state.NextBurn)
-                {
-                    state.NextBurn += 1; state.BurnTicks--;
-                    // Periodic and flare damage never generate cinders or item basic procs.
-                    target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0.2f, 0, 0, DamageType.Physical, DamageProprieties.Unused_2));
-                    if (state.BurnTicks == 0) target.RemoveStatusEffectWithID(state.BurnId);
-                }
-            }
-            if (state.Stacks.Get(Time.time) == 0 && state.BurnTicks == 0 && Time.time > state.ReleaseAfter) remove.Add(pair.Key);
+            if (state.Stacks.Get(Time.time) == 0 && !target.HasDamageOverTime(StatusType.Burned, NetworkObjectId) && Time.time > state.ReleaseAfter) remove.Add(pair.Key);
         }
         foreach (ulong id in remove) ReleaseCinderTarget(id);
     }
@@ -85,7 +73,7 @@ public partial class MovesController
     public int GetCinderaceMarks(Pokemon target) => target != null && cinderTargets.TryGetValue(target.NetworkObjectId, out var state)
         && target.HasStatusEffect(state.MarkId) ? state.Stacks.Get(Time.time) : 0;
     public bool HasCinderaceBurn(Pokemon target) => target != null && cinderTargets.TryGetValue(target.NetworkObjectId, out var state)
-        && state.BurnTicks > 0 && target.HasStatusEffect(state.BurnId);
+        && target.HasDamageOverTime(StatusType.Burned, NetworkObjectId);
 
     private void OnCinderaceDamage(ulong targetId, DamageInfo damage)
     {
@@ -122,14 +110,12 @@ public partial class MovesController
     {
         if (!IsServer || !CinderMoveRules.CanHit(playerManager, target)) return;
         var state = CinderTarget(target);
-        bool fresh = state.BurnTicks == 0 || !target.HasStatusEffect(state.BurnId);
-        state.BurnTicks = 3; state.NextBurn = Time.time + 1; state.ReleaseAfter = Time.time + 5.1f;
-        target.RemoveStatusEffectWithID(state.BurnId);
-        target.AddStatusEffect(new StatusEffect(StatusType.Burned, 3.1f, true, state.BurnId));
+        state.ReleaseAfter = Time.time + 5.1f;
+        target.AddStatusEffect(StatusEffect.DamageOverTime(StatusType.Burned,
+            new DamageInfo(NetworkObjectId, 0.2f, 0, 0, DamageType.Physical), 3f, 1f, state.BurnId));
         target.RemoveAllStatChangeWithIDRPC(state.BurnId);
         target.AddStatChange(new StatChange(5, Stat.Attack, 2, true, false, true, state.BurnId));
         target.AddStatChange(new StatChange(5, Stat.SpAttack, 2, true, false, true, state.BurnId));
-        if (fresh) SpawnCinderObject(CinderCast.Burn, 0, transform.forward, target, false, false, false);
     }
     public void CinderBuff(ushort id, Stat stat, short amount, float duration, bool percentage)
     {

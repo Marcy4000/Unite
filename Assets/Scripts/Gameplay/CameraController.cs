@@ -9,10 +9,14 @@ public class CameraController : MonoBehaviour
     // Keep the base type so the Cinemachine upgrader can preserve the serialized reference.
     [SerializeField] private CinemachineVirtualCameraBase virtualCamera;
     [SerializeField] private float panSpeed = 10f;
+    [Tooltip("World units moved by a touch drag spanning the screen height.")]
+    [SerializeField, Min(0f)] private float touchPanSensitivity = 30f;
 
     private Vector2 moveInput;
     private bool isPanning;
     private bool forcePanning;
+    private bool keyboardPanning;
+    private bool touchPanning;
     private Transform cameraTransform;
     private Transform playerTransform;
 
@@ -37,7 +41,7 @@ public class CameraController : MonoBehaviour
     public void Initialize(Transform playerTransform)
     {
         this.playerTransform = playerTransform;
-        if (virtualCamera != null)
+        if (virtualCamera != null && !isPanning)
         {
             virtualCamera.Follow = playerTransform;
             virtualCamera.LookAt = playerTransform;
@@ -47,19 +51,48 @@ public class CameraController : MonoBehaviour
     public void ForcePan(bool value)
     {
         forcePanning = value;
+        if (!value)
+        {
+            keyboardPanning = false;
+            touchPanning = false;
+        }
+        SetPanning(forcePanning || keyboardPanning || touchPanning);
+    }
 
-        if (forcePanning)
-        {
-            isPanning = true;
-            virtualCamera.Follow = null;
-            virtualCamera.LookAt = null;
-        }
-        else
-        {
-            isPanning = false;
-            virtualCamera.Follow = playerTransform;
-            virtualCamera.LookAt = playerTransform;
-        }
+    public bool BeginTouchPan()
+    {
+        if (virtualCamera == null || playerTransform == null) return false;
+
+        cameraTransform = virtualCamera.transform;
+        touchPanning = true;
+        SetPanning(true);
+        return true;
+    }
+
+    public void DragTouchPan(Vector2 screenDelta)
+    {
+        if (!touchPanning || cameraTransform == null) return;
+
+        // Displacement, not velocity: independent of frame rate, DPI and resolution.
+        Vector2 movement = screenDelta * (touchPanSensitivity / Mathf.Max(1, Screen.height));
+        Vector3 right = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
+        Vector3 forward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
+        cameraTransform.position += right * movement.x + forward * movement.y;
+    }
+
+    public void EndTouchPan()
+    {
+        touchPanning = false;
+        SetPanning(forcePanning || keyboardPanning);
+    }
+
+    private void SetPanning(bool value)
+    {
+        isPanning = value;
+        if (virtualCamera == null) return;
+
+        virtualCamera.Follow = value ? null : playerTransform;
+        virtualCamera.LookAt = value ? null : playerTransform;
     }
 
     public void ZoomCamera(Vector3 targetOffset, float targetFOV = 25f, float duration = 1.0f)
@@ -112,23 +145,23 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
+        if (InputManager.Instance == null || InputManager.Instance.Controls == null) return;
+
         if (!forcePanning)
         {
             if (InputManager.Instance.Controls.PanCamera.ShouldPan.WasPressedThisFrame())
             {
-                isPanning = true;
-                virtualCamera.Follow = null;
-                virtualCamera.LookAt = null;
+                keyboardPanning = true;
+                SetPanning(true);
             }
             else if (InputManager.Instance.Controls.PanCamera.ShouldPan.WasReleasedThisFrame())
             {
-                isPanning = false;
-                virtualCamera.Follow = playerTransform;
-                virtualCamera.LookAt = playerTransform;
+                keyboardPanning = false;
+                SetPanning(touchPanning);
             }
         }
 
-        if (isPanning)
+        if (isPanning && !touchPanning)
         {
             moveInput = InputManager.Instance.Controls.PanCamera.CameraMove.ReadValue<Vector2>();
             PanCamera();

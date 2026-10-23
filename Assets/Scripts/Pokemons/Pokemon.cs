@@ -765,6 +765,12 @@ public partial class Pokemon : NetworkBehaviour
         return result;
     }
 
+    public bool HasStatChangeWithID(ushort id)
+    {
+        foreach (StatChange change in statChanges) if (change.ID == id) return true;
+        return false;
+    }
+
     public void AddStatusEffect(StatusEffect effect)
     {
         AddStatusEffectRPC(effect);
@@ -773,6 +779,19 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void AddStatusEffectRPC(StatusEffect effect)
     {
+        if (effect.PeriodicDamage.Enabled)
+        {
+            if (!effect.PeriodicDamage.IsValid || !effect.IsTimed || !float.IsFinite(effect.Duration) || effect.Duration <= 0
+                || CurrentHp <= 0 || HasStatusEffect(StatusType.Invincible)
+                || !NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(effect.PeriodicDamage.Damage.attackerId)) return;
+            for (int i = 0; i < statusEffects.Count; i++)
+                if (statusEffects[i].SamePeriodicSource(effect))
+                {
+                    statusEffects[i] = effect; statusTimers[i] = effect.Duration;
+                    RegisterPeriodicStatus(effect, true); return;
+                }
+            RegisterPeriodicStatus(effect);
+        }
         if (effect.IsNegativeStatus())
         {
             if (HasStatusEffect(StatusType.Unstoppable) || HasStatusEffect(StatusType.Invincible))
@@ -787,12 +806,12 @@ public partial class Pokemon : NetworkBehaviour
         }
         else if (effect.Type == StatusType.Unstoppable)
         {
-            foreach (var loopEffect in statusEffects)
+            for (int i = statusEffects.Count - 1; i >= 0; i--)
             {
+                var loopEffect = statusEffects[i];
                 if (loopEffect.IsNegativeStatus())
                 {
-                    statusTimers.RemoveAt(statusEffects.IndexOf(loopEffect));
-                    statusEffects.Remove(loopEffect);
+                    RemoveStatusEffectRPC(loopEffect);
                 }
             }
         }
@@ -870,11 +889,14 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void UpdateStatusEffectTimeRPC(StatusEffect status, float newTime)
     {
+        if (!float.IsFinite(newTime)) return;
         foreach (var effect in statusEffects)
         {
             if (effect.Equals(status))
             {
+                if (effect.PeriodicDamage.Enabled && newTime <= 0) { RemoveStatusEffectRPC(effect); return; }
                 statusTimers[statusEffects.IndexOf(effect)] = newTime;
+                if (effect.PeriodicDamage.Enabled) SetPeriodicTime(effect, newTime);
                 return;
             }
         }
@@ -957,8 +979,10 @@ public partial class Pokemon : NetworkBehaviour
 
     private void Update()
     {
+        UpdatePeriodicPresentation();
         if (IsServer)
         {
+            TickPeriodicStatuses();
             for (int i = statChanges.Count; i > 0; i--)
             {
                 int index = i - 1;
@@ -980,7 +1004,7 @@ public partial class Pokemon : NetworkBehaviour
                 StatusEffect effect = statusEffects[index];
                 if (effect.IsTimed)
                 {
-                    statusTimers[index] -= Time.deltaTime;
+                    statusTimers[index] = effect.PeriodicDamage.Enabled ? PeriodicTimeRemaining(effect) : statusTimers[index] - Time.deltaTime;
                     if (statusTimers[index] <= 0)
                     {
                         statusEffects.RemoveAt(index);
@@ -1244,9 +1268,12 @@ public partial class Pokemon : NetworkBehaviour
     private void ClientDamageRPC(int actualDamage, DamageInfo damage)
     {
         lastHit = damage;
-        Transform parent = activeModel == null ? transform : activeModel.transform;
-        DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, parent).GetComponent<DamageIndicator>();
-        indicator.ShowDamage(actualDamage, damage.type, damage.proprieties.HasFlag(DamageProprieties.WasCriticalHit));
+        if (IsClient && damagePrefab != null)
+        {
+            Transform parent = activeModel == null ? transform : activeModel.transform;
+            DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, parent).GetComponent<DamageIndicator>();
+            indicator.ShowDamage(actualDamage, damage.type, damage.proprieties.HasFlag(DamageProprieties.WasCriticalHit));
+        }
 
         if (IsServer)
         {
@@ -1259,6 +1286,7 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void ClientHealRpc(int actualHeal)
     {
+        if (!IsClient || damagePrefab == null) return;
         Transform parent = activeModel == null ? transform : activeModel.transform;
         DamageIndicator indicator = Instantiate(damagePrefab, new Vector3(transform.position.x, transform.position.y + 2, transform.position.z), Quaternion.identity, parent).GetComponent<DamageIndicator>();
         indicator.ShowHeal(actualHeal);

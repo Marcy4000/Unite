@@ -67,7 +67,7 @@ Current adapters:
 | Glaceon | Short grounded leap, physical landing hit and 5s slowing field; no icicles |
 | Sylveon | Physical burst and six seconds of 50-point lifesteal/spell vamp |
 | Vaporeon | Physical tempest, defense reductions and ally healing scaling with Attack |
-| Emboar | Ten-second Attack/attack-speed/CDR buffs; no Reckless or foreign basic attacks |
+| Emboar | Inferno Ringbreaker rush, radial slam and shield using Marshadow's Attack; no Reckless or foreign basic attacks |
 | Flareon | Collision-safe targeted rush, missing-HP burst, burn and shield |
 | Duraludon | Existing standalone Revolving Ruin effect object, with Marshadow animation fallback |
 

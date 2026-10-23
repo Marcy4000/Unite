@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 public class CameraMigrationTests
@@ -43,6 +44,27 @@ public class CameraMigrationTests
         Assert.That(brain.BlendUpdateMethod, Is.EqualTo(CinemachineBrain.BrainUpdateMethods.LateUpdate));
         Assert.That((brain.ChannelMask & camera.OutputChannel) != 0, Is.True);
         Assert.That(prefab.GetComponentsInChildren<MonoBehaviour>(true).All(component => component != null), Is.True);
+    }
+
+    [Test]
+    public void MobilePanAreaIsAuthoredInTheMobileHudBehindMoveButtons()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        var area = prefab.transform.Find("MobileControls/MovesHolderMobile/MoveButtons/CameraPanArea");
+        Assert.That(area, Is.Not.Null);
+        Assert.That(area.GetSiblingIndex(), Is.Zero);
+        var rect = area.GetComponent<RectTransform>();
+        Assert.That(rect.anchorMin, Is.EqualTo(new Vector2(0.65f, 0.48f)));
+        Assert.That(rect.anchorMax, Is.EqualTo(new Vector2(0.98f, 0.82f)));
+        var image = area.GetComponent<Image>();
+        Assert.That(image.raycastTarget, Is.True);
+        Assert.That(image.color.a, Is.Zero);
+        var handlerType = Type.GetType("MobileCameraPanArea, Assembly-CSharp", true);
+        var handler = area.GetComponent(handlerType);
+        Assert.That(handler, Is.Not.Null);
+        var controller = prefab.GetComponentInChildren(ControllerType, true);
+        Assert.That(new SerializedObject(handler).FindProperty("cameraController").objectReferenceValue, Is.EqualTo(controller));
+        Assert.That(new SerializedObject(controller).FindProperty("touchPanSensitivity").floatValue, Is.EqualTo(30f));
     }
 
     [TestCase("AuromaPark", 25f)]

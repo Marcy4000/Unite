@@ -6,6 +6,9 @@ using UnityEngine;
 public class PsyduckRaceDash : MoveBase
 {
     private PsyduckRacePassive psyduckRacePassive;
+    public override MoveUseType UseType => MoveUseType.StoredUses;
+    public override int MaxStoredUses => 2;
+    public override float StoredUseInterval => 1f;
 
     public PsyduckRaceDash()
     {

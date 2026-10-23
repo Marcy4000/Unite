@@ -128,18 +128,15 @@ public class CinderaceMoveTests
         Assert.That(Convert.ToInt32(Enum.Parse(type, "CinderBlazeKick")), Is.GreaterThan(Convert.ToInt32(Enum.Parse(type, "DuraludonUnite"))));
     }
     [Test]
-    public void ManagedBurnIdsAreDistinctAndReleasedForReuse()
+    public void EffectIdsAreDistinctAndReleasedForReuseWithoutCharacterSpecificBurnClassification()
     {
         Type ids = GameType("CinderEffectIds"); var acquire = ids.GetMethod("Acquire"); var release = ids.GetMethod("Release");
         object first = acquire.Invoke(null, null), second = acquire.Invoke(null, null);
         try
         {
             Assert.That(first, Is.Not.EqualTo(second));
-            object burned = Enum.Parse(GameType("StatusType"), "Burned");
-            object effect = Activator.CreateInstance(GameType("StatusEffect"), burned, 3f, true, first);
-            Assert.That(Rule("ManagedBurn", effect), Is.True);
-            effect = Activator.CreateInstance(GameType("StatusEffect"), burned, 3f, true, (ushort)0);
-            Assert.That(Rule("ManagedBurn", effect), Is.False, "Legacy burns must retain their previous behavior.");
+            Assert.That(GameType("CinderMoveRules").GetMethod("ManagedBurn"), Is.Null,
+                "Periodic damage is described by StatusEffect.PeriodicDamage, never by a character's reserved ID range.");
         }
         finally { release.Invoke(null, new[] { first }); release.Invoke(null, new[] { second }); }
     }

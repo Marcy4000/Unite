@@ -74,8 +74,6 @@ public static class CinderMoveRules
         direction.y = 0;
         return direction.sqrMagnitude > 0.001f ? direction.normalized : fallback;
     }
-    // Reserved pool: managed burns bypass PlayerManager's legacy generic DoT.
-    public static bool ManagedBurn(StatusEffect effect) => effect.Type == StatusType.Burned && effect.ID >= 15000 && effect.ID < 20000;
 }
 
 public sealed class CinderStackState

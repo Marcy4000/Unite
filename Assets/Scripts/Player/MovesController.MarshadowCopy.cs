@@ -48,10 +48,7 @@ public partial class MovesController
         if (source == AvailableMoves.DuraludonUnite) { StartCoroutine(SpawnMarshadowRuin(id, origin, direction)); return; }
         if (source == AvailableMoves.EmboarUnite)
         {
-            ApplyMarshadowCopyBuff(Stat.Attack, 20, true, 10f, 62100);
-            ApplyMarshadowCopyBuff(Stat.AtkSpeed, 30, false, 10f, 62101);
-            ApplyMarshadowCopyBuff(Stat.Cdr, 30, false, 10f, 62102);
-            PresentMarshadowEffectRPC(MarshadowEffect.MirrorShadow, -MarshadowMoveRules.NextCast(), origin, direction, 1f, 0, 3);
+            StartCoroutine(SpawnMarshadowRingbreaker(id, direction));
             return;
         }
         if (source == AvailableMoves.BlazingBycicleKick)
@@ -70,7 +67,7 @@ public partial class MovesController
                 : source == AvailableMoves.GlaceonUnite ? new DamageInfo(NetworkObjectId, 1f, 7, 320, DamageType.Physical, DamageProprieties.IsUniteMove)
                 : new DamageInfo(NetworkObjectId, 1.3f, 13, 750, DamageType.Physical, DamageProprieties.IsUniteMove);
             target.TakeDamageRPC(damage);
-            if (source == AvailableMoves.FlareonUnite) target.AddStatusEffect(new StatusEffect(StatusType.Burned, 3f, true, 62103));
+            if (source == AvailableMoves.FlareonUnite) FlareonMoveRules.Burn(target, NetworkObjectId, 3);
             if (source == AvailableMoves.VaporeonUnite)
             {
                 target.AddStatChange(new StatChange(35, Stat.Defense, 5f, true, false, true, 62104));
@@ -135,6 +132,37 @@ public partial class MovesController
         ruin.HoldAsset(handle); request.Instance = go.GetComponent<NetworkObject>(); request.Instance.Spawn(true);
         ruin.InitializeRPC(NetworkObjectId, origin, direction, 0, false, origin);
         MarshadowCopyReadyRPC(id, true);
+    }
+    private IEnumerator SpawnMarshadowRingbreaker(int id, Vector3 direction)
+    {
+        var request = ServerCast(id);
+        bool cancelled = false;
+        Action<DamageInfo> death = _ => cancelled = true;
+        pokemon.OnDeath += death;
+        var handle = Addressables.LoadAssetAsync<GameObject>(EmboarMoveRules.Path(EmboarCast.Unite));
+        yield return handle;
+        if (pokemon != null) pokemon.OnDeath -= death;
+        if (cancelled || request.Cancelled || !IsSpawned || pokemon.CurrentHp <= 0 || handle.Status != AsyncOperationStatus.Succeeded)
+        {
+            Addressables.Release(handle);
+            if (IsSpawned) MarshadowCopyReadyRPC(id, false);
+            yield break;
+        }
+        direction = EmboarMoveRules.Direction(direction, transform.forward);
+        GameObject go = Instantiate(handle.Result, transform.position, Quaternion.LookRotation(direction));
+        var slam = go.GetComponent<EmboarMoveObject>();
+        if (slam == null) { Destroy(go); Addressables.Release(handle); MarshadowCopyReadyRPC(id, false); yield break; }
+        slam.HoldAsset(handle); request.Instance = go.GetComponent<NetworkObject>(); request.Instance.Spawn(true);
+        slam.Initialize(this, playerManager, EmboarCast.Unite, 0, direction, transform.position + direction * 5, null, false, false);
+        MarshadowCopyReadyRPC(id, true);
+    }
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    public void MarshadowRingbreakerMovementRPC(int id, bool finished, Vector3 point)
+    {
+        if (!IsLivingMarshadow || !EmboarMoveRules.Finite(point)) return;
+        var request = ServerCast(id);
+        if (request.Cancelled || !request.CopyStarted || request.Instance == null) return;
+        if (request.Instance.TryGetComponent(out EmboarMoveObject slam)) slam.ReportMovement(finished, point);
     }
     [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
     private void MarshadowCopyReadyRPC(int id, bool success)

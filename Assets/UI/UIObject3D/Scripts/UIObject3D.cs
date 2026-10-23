@@ -16,6 +16,11 @@ namespace UI.ThreeDimensional
     [AddComponentMenu("UI/UIObject3D/UIObject3D")]
     public class UIObject3D : MonoBehaviour
     {
+        // Slot 1 in every quality-level URP asset is reserved for UI previews.
+        // The gameplay renderer's automatic decals use a broken screen-space
+        // Render Graph pass on Android when rendering directly to this texture.
+        private const int PreviewRendererIndex = 1;
+
         [Header("Target"), SerializeField]
         private Transform _ObjectPrefab = null;
         /// <summary>
@@ -1042,7 +1047,9 @@ namespace UI.ThreeDimensional
                 _targetCamera = cameraGO.AddComponent<Camera>();
                 _targetCamera.enabled = false;
                 _targetCamera.allowHDR = false;
-                _targetCamera.GetUniversalAdditionalCameraData().renderShadows = false;
+                var cameraData = _targetCamera.GetUniversalAdditionalCameraData();
+                cameraData.renderShadows = false;
+                cameraData.SetRenderer(PreviewRendererIndex);
 
                 cameraGO.AddComponent<UIObject3DCamera>();
             }

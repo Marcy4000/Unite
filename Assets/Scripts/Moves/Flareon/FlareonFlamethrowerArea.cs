@@ -12,7 +12,6 @@ public class FlareonFlamethrowerArea : NetworkBehaviour
 
     private float maxAngle = 30f;
 
-    private StatusEffect burn = new StatusEffect(StatusType.Burned, 3f, true, 0);
     private DamageInfo damageInfo;
 
     private Team orangeTeam;
@@ -78,7 +77,7 @@ public class FlareonFlamethrowerArea : NetworkBehaviour
                     continue;
                 }
 
-                pokemon.AddStatusEffect(burn);
+                FlareonMoveRules.Burn(pokemon, damageInfo.attackerId, 3);
                 pokemon.TakeDamageRPC(damageInfo);
 
                 hitPokemon.Add(pokemon);

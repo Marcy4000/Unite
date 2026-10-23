@@ -74,7 +74,7 @@ public static class MarshadowCopyRules
             case AvailableMoves.GlaceonUnite: return "Leap forward and create a slowing shadow field for 5s. Deals physical damage on landing; does not generate icicles.";
             case AvailableMoves.SylveonUnite: return "Release a shadow burst, then gain 50 percentage points of lifesteal and spell vamp for 6s.";
             case AvailableMoves.VaporeonUnite: return "Release a shadow tempest that damages enemies, reduces their defenses and heals allies. Uses Marshadow's Attack.";
-            case AvailableMoves.EmboarUnite: return "Gain 20% Attack, 30 attack-speed points and 30 cooldown-reduction points for 10s. Does not copy Reckless or Emboar's basic attacks.";
+            case AvailableMoves.EmboarUnite: return "Rush forward and slam the ground, launching nearby opponents and slowing enemies at the edge. Gain a shield. Uses Marshadow's Attack; does not copy Reckless.";
             case AvailableMoves.FlareonUnite: return "Rush to the selected opponent and burst, burning nearby enemies and gaining a shield.";
             default: return "Recreate Revolving Ruin's sweeping beam, final shove and burning ring, using Marshadow's Attack.";
         }
@@ -89,8 +89,9 @@ public class MarshadowCopiedUnite : MarshadowMoveBase
     private Vector3 start;
     private readonly float expiresAt;
     private bool copyReady;
+    private float nextRingbreakerReport;
     protected override float AimRange => MarshadowCopyRules.Targeted(Source.move) ? 8f : MarshadowCopyRules.Radius(Source.move);
-    protected override bool RequiresMovement => Source.move == AvailableMoves.GlaceonUnite || Source.move == AvailableMoves.FlareonUnite;
+    protected override bool RequiresMovement => Source.move == AvailableMoves.GlaceonUnite || Source.move == AvailableMoves.FlareonUnite || Source.move == AvailableMoves.EmboarUnite;
     public MarshadowCopiedUnite(MoveAsset source)
     {
         Source = source; Name = "Shadow Copy: " + source.moveName; Cooldown = 0; expiresAt = Time.time + 15f;
@@ -120,7 +121,7 @@ public class MarshadowCopiedUnite : MarshadowMoveBase
         playerManager.MovesController.SpendMarshadowUnite();
         MarshadowMoveRuntime.PlayAction(playerManager, "pm0883_ba21_tokusyu02");
         effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.MirrorShadow, 0.5f);
-        if (Source.move == AvailableMoves.DuraludonUnite)
+        if (Source.move == AvailableMoves.DuraludonUnite || Source.move == AvailableMoves.EmboarUnite)
         {
             released = true;
             playerManager.MovesController.CastMarshadowCopyRPC(Source.move, cast, start, direction, 0);
@@ -128,13 +129,27 @@ public class MarshadowCopiedUnite : MarshadowMoveBase
     }
     protected override void Advance()
     {
-        if (Source.move == AvailableMoves.DuraludonUnite && !copyReady)
+        if ((Source.move == AvailableMoves.DuraludonUnite || Source.move == AvailableMoves.EmboarUnite) && !copyReady)
         {
             if (elapsed >= 4f)
             {
                 playerManager.MovesController.CancelMarshadowCastRPC(cast);
                 Complete();
             }
+            return;
+        }
+        if (Source.move == AvailableMoves.EmboarUnite)
+        {
+            float previous = Mathf.Max(0, elapsed - Time.deltaTime);
+            float step = Mathf.Max(0, Mathf.Min(elapsed, 0.5f) - Mathf.Max(previous, 0.2f));
+            if (step > 0) playerManager.PlayerMovement.MoveWithWalls(direction * (5 / 0.3f) * step);
+            if (elapsed >= nextRingbreakerReport && nextRingbreakerReport < 100)
+            {
+                bool finished = elapsed >= 0.5f;
+                nextRingbreakerReport = finished ? 100 : elapsed + 0.05f;
+                playerManager.MovesController.MarshadowRingbreakerMovementRPC(cast, finished, playerManager.transform.position);
+            }
+            if (elapsed >= 0.78f) Complete();
             return;
         }
         if (Source.move == AvailableMoves.FlareonUnite && !released)
@@ -161,9 +176,9 @@ public class MarshadowCopiedUnite : MarshadowMoveBase
     }
     public void CopyReady(int id, bool success)
     {
-        if (!executing || id != cast || Source.move != AvailableMoves.DuraludonUnite) return;
+        if (!executing || id != cast || (Source.move != AvailableMoves.DuraludonUnite && Source.move != AvailableMoves.EmboarUnite)) return;
         if (!success) { Complete(); return; }
-        copyReady = true; elapsed = 0;
+        copyReady = true; elapsed = nextRingbreakerReport = 0;
     }
     protected override void Complete()
     {

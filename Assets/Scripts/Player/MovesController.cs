@@ -125,6 +125,8 @@ public partial class MovesController : NetworkBehaviour
         UpdateCresseliaServer();
         UpdateVaporeonRuntime();
         UpdateCinderaceRuntime();
+        UpdateEmboarRuntime();
+        UpdateFlareonRuntime();
         if (!IsOwner)
         {
             return;
@@ -188,6 +190,8 @@ public partial class MovesController : NetworkBehaviour
             ProcessCresseliaBufferedInput();
             ProcessVaporeonBufferedInput();
             ProcessFlygonBufferedInput();
+            ProcessEmboarBufferedInput();
+            ProcessFlareonBufferedInput();
 
             battleItem.Update();
 
@@ -196,6 +200,8 @@ public partial class MovesController : NetworkBehaviour
                 ClearMarshadowBufferedInput();
                 ClearVaporeonBufferedInput();
                 ClearFlygonBufferedInput();
+                ClearEmboarBufferedInput();
+                ClearFlareonBufferedInput();
                 moves[0].Cancel();
                 moves[1].Cancel();
                 uniteMove.Cancel();
@@ -356,12 +362,14 @@ public partial class MovesController : NetworkBehaviour
         }
 
         if (moves[index].IsStoredMove) SynchronizeStoredMove(index);
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index))
         {
             BufferMarshadowInput(index, false);
             BufferCresseliaInput(index, false);
             BufferVaporeonInput(index, false);
             BufferFlygonInput(index, false);
+            BufferEmboarInput(index, false);
+            BufferFlareonInput(index, false);
             return;
         }
 
@@ -399,12 +407,14 @@ public partial class MovesController : NetworkBehaviour
             return;
         }
 
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index))
         {
             BufferMarshadowInput(index, true);
             BufferCresseliaInput(index, true);
             BufferVaporeonInput(index, true);
             BufferFlygonInput(index, true);
+            BufferEmboarInput(index, true);
+            BufferFlareonInput(index, true);
             return;
         }
 
@@ -577,12 +587,21 @@ public partial class MovesController : NetworkBehaviour
     public void LearnMove(MoveAsset move)
     {
         MoveBase previousMove = GetMove(move.moveType);
+        if (!move.isUpgraded && previousMove is FlareonMoveBase)
+        {
+            ClearFlareonBufferedInput(); previousMove.ResetMove();
+        }
         if (!move.isUpgraded && previousMove is FlygonMoveBase)
         {
             ClearFlygonBufferedInput();
             previousMove.ResetMove();
         }
         if (!move.isUpgraded && previousMove is CinderMoveBase) previousMove.ResetMove();
+        if (!move.isUpgraded && previousMove is EmboarMoveBase)
+        {
+            ClearEmboarBufferedInput();
+            previousMove.ResetMove();
+        }
         if (!move.isUpgraded && (previousMove is CresseliaMoveBase || previousMove is CresseliaUnite))
         {
             ClearCresseliaBufferedInput();
@@ -694,6 +713,8 @@ public partial class MovesController : NetworkBehaviour
         ClearCresseliaBufferedInput();
         ClearVaporeonBufferedInput();
         ClearFlygonBufferedInput();
+        ClearEmboarBufferedInput();
+        ClearFlareonBufferedInput();
         moves[0].ResetMove();
         moves[1].ResetMove();
         uniteMove.ResetMove();
@@ -909,6 +930,8 @@ public partial class MovesController : NetworkBehaviour
 
     public override void OnDestroy()
     {
+        DisposeFlareonRuntime();
+        DisposeEmboarRuntime();
         DisposeFlygonRuntime();
         DisposeCinderaceRuntime();
         DisposeCresseliaRuntime();
