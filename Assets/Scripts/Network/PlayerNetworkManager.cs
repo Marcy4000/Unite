@@ -11,7 +11,11 @@ public class PlayerNetworkManager : NetworkBehaviour
 {
     [SerializeField] private GameObject playerPrefab;
     private PlayerManager playerManager;
-    public Player LocalPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
+    public Player LocalPlayer => LobbyController.Instance != null
+        ? LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()) : null;
+    private NetworkSceneManager subscribedSceneManager;
+    private LobbyController subscribedLobbyController;
+    private GameManager subscribedGameManager;
 
     private NetworkVariable<FixedString32Bytes> lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(writePerm: NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> isInResultScreen = new NetworkVariable<bool>(false, writePerm: NetworkVariableWritePermission.Owner);
@@ -38,8 +42,8 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        //GameManager.instance.onGameStateChanged += HandleGameStateChanged;
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+        subscribedSceneManager = NetworkManager.SceneManager;
+        subscribedSceneManager.OnLoadEventCompleted += HandleSceneLoaded;
 
         SceneManager.sceneLoaded += OnSceneLoaded;
         SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -49,38 +53,61 @@ public class PlayerNetworkManager : NetworkBehaviour
             playerStats.Value = new PlayerStats(LobbyController.Instance.Player.Id, 0, 0, 0, 0, 0, 0, 0);
             lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
         }
-        LobbyController.Instance.onLobbyUpdate += HandleLobbyUpdate;
+        subscribedLobbyController = LobbyController.Instance;
+        subscribedLobbyController.onLobbyUpdate += HandleLobbyUpdate;
         playerStats.OnValueChanged += HandlePlayerStatsChange;
-        deathTimer.OnValueChanged += (previous, updated) => OnDeathTimerChanged?.Invoke(updated);
-        playerStats.OnValueChanged += (previous, updated) => OnPlayerStatsChanged?.Invoke(updated);
+        deathTimer.OnValueChanged += HandleDeathTimerChange;
 
-        LobbyController.Instance.PlayerNetworkManagers.Add(this);
+        if (!subscribedLobbyController.PlayerNetworkManagers.Contains(this))
+            subscribedLobbyController.PlayerNetworkManagers.Add(this);
     }
 
     public override void OnNetworkDespawn()
     {
-        LobbyController.Instance.PlayerNetworkManagers.Remove(this);
+        UnsubscribeEvents();
     }
 
     public override void OnDestroy()
     {
-        try
-        {
-            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
-        }
-        catch (System.Exception)
-        {
-            // Do nothing
-        }
+        UnsubscribeEvents();
+        base.OnDestroy();
+    }
 
+    private void UnsubscribeEvents()
+    {
+        if (subscribedSceneManager != null)
+        {
+            subscribedSceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+            subscribedSceneManager = null;
+        }
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneUnloaded -= OnSceneUnloaded;
-        LobbyController.Instance.onLobbyUpdate -= HandleLobbyUpdate;
+        if (subscribedLobbyController != null)
+        {
+            subscribedLobbyController.onLobbyUpdate -= HandleLobbyUpdate;
+            subscribedLobbyController.PlayerNetworkManagers.Remove(this);
+            subscribedLobbyController = null;
+        }
+        if (subscribedGameManager != null)
+        {
+            subscribedGameManager.onGameStateChanged -= HandleGameStateChanged;
+            subscribedGameManager = null;
+        }
         playerStats.OnValueChanged -= HandlePlayerStatsChange;
+        deathTimer.OnValueChanged -= HandleDeathTimerChange;
 
         // Rimuovi la sottoscrizione all'evento OnRespawn se necessario
         if (playerManager != null)
         {
+            var pokemon = playerManager.Pokemon;
+            if (pokemon != null)
+            {
+                pokemon.OnDeath -= OnPlayerDeath;
+                pokemon.OnDamageTaken -= OnPlayerTakeDamage;
+                pokemon.OnDamageDealt -= OnPlayerDealDamage;
+                pokemon.OnOtherPokemonKilled -= OnOtherPokemonKilled;
+            }
+            playerManager.onGoalScored -= OnGoalScored;
             playerManager.OnRespawn -= OnPlayerRespawned;
 
             // Rimuovi la sottoscrizione all'evento OnMoveLearned se necessario
@@ -128,7 +155,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
         try
         {
-            if (LocalPlayer.Data.ContainsKey("PlayerTeam"))
+            if (LocalPlayer != null && LocalPlayer.Data.ContainsKey("PlayerTeam"))
             {
                 team = TeamMember.GetTeamFromString(LocalPlayer.Data["PlayerTeam"].Value);
             }
@@ -142,9 +169,13 @@ public class PlayerNetworkManager : NetworkBehaviour
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
         MapInfo selectedMap = CharactersList.Instance.GetCurrentLobbyMap();
-        if (sceneName.Equals(selectedMap.sceneName))
+        if (sceneName.Equals(selectedMap.sceneName) && GameManager.Instance != null &&
+            subscribedGameManager != GameManager.Instance)
         {
-            GameManager.Instance.onGameStateChanged += HandleGameStateChanged;
+            if (subscribedGameManager != null)
+                subscribedGameManager.onGameStateChanged -= HandleGameStateChanged;
+            subscribedGameManager = GameManager.Instance;
+            subscribedGameManager.onGameStateChanged += HandleGameStateChanged;
         }
     }
 
@@ -154,7 +185,10 @@ public class PlayerNetworkManager : NetworkBehaviour
         {
             playerManager.PlayerStats = updated;
         }
+        OnPlayerStatsChanged?.Invoke(updated);
     }
+
+    private void HandleDeathTimerChange(float previous, float updated) => OnDeathTimerChanged?.Invoke(updated);
 
     private void OnPlayerRespawned()
     {
@@ -194,7 +228,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             SpawnPlayerObject();
         }
 
-        if (state == GameState.Playing && !matchStarted)
+        if (state == GameState.Playing && !matchStarted && playerManager != null)
         {
             playerManager.PlayerMovement.CanMove = true;
             if (IsOwner)
@@ -204,7 +238,7 @@ public class PlayerNetworkManager : NetworkBehaviour
             matchStarted = true;
         }
 
-        if (state == GameState.Ended)
+        if (state == GameState.Ended && playerManager != null)
         {
             playerManager.PlayerMovement.CanMove = false;
         }

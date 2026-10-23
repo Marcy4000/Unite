@@ -29,6 +29,16 @@ public class LobbyController : MonoBehaviour
     private MainMenuUI lobbyUI;
     private ISession session;
     private ISession sessionAwaitingCleanup;
+    private Task sessionLeaveTask;
+    private readonly SessionFailureGuard failureGuard = new SessionFailureGuard();
+    private NetworkManager monitoredNetworkManager;
+    private Action sessionRemoved;
+    private Action sessionDeleted;
+    private Action<string> sessionHostChanged;
+    private Action<ulong> clientDisconnected;
+    private Action transportFailed;
+    private Action<bool> clientStopped;
+    private Action<bool> serverStopped;
     private GameSessionView partyLobby;
     private GameSessionPlayer localPlayer;
     private string localPlayerName;
@@ -81,11 +91,16 @@ public class LobbyController : MonoBehaviour
     public RaceGameResults RaceGameResults { get => raceGameResults; set => raceGameResults = value; }
     public UniteRoyaleGameResults UniteRoyaleGameResults { get => uniteRoyaleGameResults; set => uniteRoyaleGameResults = value; }
     public bool IsMatchmaking => isSearching;
+    public SessionFailureReason LastConnectionFailure { get; private set; }
+    public bool IsHandlingConnectionFailure => handlingSessionLoss;
     public LobbyType CurrentLobbyType => currentLobbyType;
     private bool IsPartyLeader => session != null && session.IsHost;
 
     public event Action<GameSessionView> onLobbyUpdate;
     public event Action<GameSessionPlayer> onPlayerDataChanged;
+    public event Action<SessionFailureReason> onConnectionFailure;
+
+    public void DismissConnectionFailure() => LastConnectionFailure = SessionFailureReason.None;
 
     private void Awake()
     {
@@ -96,6 +111,7 @@ public class LobbyController : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        if (GetComponent<ConnectionFailureNotice>() == null) gameObject.AddComponent<ConnectionFailureNotice>();
         localPlayerName = $"TestPlayer {UnityEngine.Random.Range(0, 1000)}";
         lobbyUI = FindFirstObjectByType<MainMenuUI>();
         SceneManager.sceneLoaded += OnUnitySceneLoaded;
@@ -105,7 +121,6 @@ public class LobbyController : MonoBehaviour
 
     private void Start()
     {
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectFromServer;
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
     }
 
@@ -114,12 +129,13 @@ public class LobbyController : MonoBehaviour
         if (Instance != this) return;
         lifetimeCancellation.Cancel();
         matchmakingCancellation?.Cancel();
+        failureGuard.BeginIntentionalLeave(failureGuard.Generation);
         UnsubscribeFromSession();
+        DetachNetworkFailureEvents();
         DetachSceneEvents();
         SceneManager.sceneLoaded -= OnUnitySceneLoaded;
         if (NetworkManager.Singleton != null)
         {
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectFromServer;
             NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
         }
         Instance = null;
@@ -253,19 +269,21 @@ public class LobbyController : MonoBehaviour
         bool showLoadingScreen = true,
         [System.Runtime.CompilerServices.CallerMemberName] string operationName = null)
     {
-        if (lobbyOperationInProgress || isSearching) return false;
+        if (lobbyOperationInProgress || isSearching || handlingSessionLoss) return false;
         lobbyOperationInProgress = true;
-        await lifecycleGate.WaitAsync();
-        transitioningNetwork = true;
-        if (showLoadingScreen) LoadingScreen.Instance.ShowGenericLoadingScreen();
+        var gateTaken = false;
         try
         {
+            await lifecycleGate.WaitAsync(lifetimeCancellation.Token);
+            gateTaken = true;
+            transitioningNetwork = true;
+            if (showLoadingScreen) LoadingScreen.Instance?.ShowGenericLoadingScreen();
             sessionOperationStage = "initializing authentication";
             await authenticationTask;
             lifetimeCancellation.Token.ThrowIfCancellationRequested();
             sessionOperationStage = "executing operation";
             await operation();
-            return true;
+            return failureGuard.PendingReason == SessionFailureReason.None;
         }
         catch (OperationCanceledException) { return false; }
         catch (Exception exception)
@@ -277,6 +295,10 @@ public class LobbyController : MonoBehaviour
                 $"{exception.GetType().FullName}: {exception}\n{exception.StackTrace}";
             if (showMainMenuOnFailure) Debug.LogError(details);
             else Debug.LogWarning(details);
+            // Preserve a queued transport/session failure for the dedicated
+            // failure path. Ordinary error cleanup would clear its generation
+            // and could leave an in-match scene visible without any notice.
+            if (session != null && failureGuard.PendingReason != SessionFailureReason.None) return false;
             try { await LeaveCurrentSessionAsync(); }
             catch (Exception cleanupException) { Debug.LogWarning($"Session cleanup failed: {cleanupException.Message}"); }
             ResetMatchState();
@@ -288,8 +310,9 @@ public class LobbyController : MonoBehaviour
             transitioningNetwork = false;
             lobbyOperationInProgress = false;
             sessionOperationStage = null;
-            lifecycleGate.Release();
-            if (showLoadingScreen) LoadingScreen.Instance.HideGenericLoadingScreen();
+            if (gateTaken) lifecycleGate.Release();
+            if (showLoadingScreen) LoadingScreen.Instance?.HideGenericLoadingScreen();
+            TryProcessSessionFailure();
         }
     }
 
@@ -409,12 +432,18 @@ public class LobbyController : MonoBehaviour
     private async Task ActivateSessionAsync(ISession activeSession)
     {
         session = activeSession;
+        var generation = failureGuard.Activate();
+        LastConnectionFailure = SessionFailureReason.None;
         partyLobby = new GameSessionView();
         gamePlayers.Clear();
+        sessionRemoved = () => ReportSessionFailure(generation, SessionFailureReason.RemovedFromSession);
+        sessionDeleted = () => ReportSessionFailure(generation, SessionFailureReason.SessionDeleted);
+        sessionHostChanged = _ => ReportSessionFailure(generation, SessionFailureReason.HostLost);
         session.Changed += OnSessionChanged;
-        session.RemovedFromSession += OnSessionLost;
-        session.Deleted += OnSessionLost;
-        session.SessionHostChanged += OnSessionHostChanged;
+        session.RemovedFromSession += sessionRemoved;
+        session.Deleted += sessionDeleted;
+        session.SessionHostChanged += sessionHostChanged;
+        AttachNetworkFailureEvents(generation);
         SyncSession();
         AttachSceneEvents();
         await SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
@@ -428,9 +457,12 @@ public class LobbyController : MonoBehaviour
     {
         if (session == null) return;
         session.Changed -= OnSessionChanged;
-        session.RemovedFromSession -= OnSessionLost;
-        session.Deleted -= OnSessionLost;
-        session.SessionHostChanged -= OnSessionHostChanged;
+        session.RemovedFromSession -= sessionRemoved;
+        session.Deleted -= sessionDeleted;
+        session.SessionHostChanged -= sessionHostChanged;
+        sessionRemoved = null;
+        sessionDeleted = null;
+        sessionHostChanged = null;
     }
 
     private void SyncSession()
@@ -867,35 +899,54 @@ public class LobbyController : MonoBehaviour
     {
         var leaving = session ?? sessionAwaitingCleanup;
         sessionAwaitingCleanup = leaving;
+        // Mark intentional before asking Sessions to stop NGO. Shutdown callbacks
+        // can arrive after IsHost/LocalClientId have already been reset.
+        failureGuard.BeginIntentionalLeave(failureGuard.Generation);
         UnsubscribeFromSession();
+        DetachNetworkFailureEvents();
         DetachSceneEvents();
-        // Drain writes while the session handle is still valid, then give its
-        // network module sole responsibility for shutting NGO down.
-        await playerWriteGate.WaitAsync();
-        await hostWriteGate.WaitAsync();
+        session = null;
+        pendingPlayerProperties.Clear();
+        using var cleanupCancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetimeCancellation.Token);
+        cleanupCancellation.CancelAfter(TimeSpan.FromSeconds(15));
+        var playerGateTaken = false;
+        var hostGateTaken = false;
         try
         {
-            session = null;
-            pendingPlayerProperties.Clear();
+            // In-flight writes can stall too. Bound the entire drain/leave wait,
+            // but never reuse a session or NetworkManager still owned by MPS.
+            await playerWriteGate.WaitAsync(cleanupCancellation.Token);
+            playerGateTaken = true;
+            await hostWriteGate.WaitAsync(cleanupCancellation.Token);
+            hostGateTaken = true;
             if (leaving != null)
             {
                 if (MultiplayerService.Instance.Sessions.Values.Contains(leaving) && leaving.IsMember)
-                    await leaving.LeaveAsync();
+                {
+                    // Do not issue a second LeaveAsync while the previous one is
+                    // still running after an earlier cleanup deadline expired.
+                    sessionLeaveTask ??= leaving.LeaveAsync();
+                    await SessionTaskTimeout.WaitAsync(sessionLeaveTask, TimeSpan.FromSeconds(15), cleanupCancellation.Token);
+                }
                 // Kicks/deletions are cleaned up asynchronously by MPS. Do not
                 // reuse a session type or NetworkManager until that has finished.
-                var deadline = DateTime.UtcNow.AddSeconds(15);
                 while (MultiplayerService.Instance.Sessions.Values.Contains(leaving))
                 {
-                    if (DateTime.UtcNow > deadline) throw new TimeoutException("The previous session has not finished shutting down.");
-                    await Task.Delay(100, lifetimeCancellation.Token);
+                    await Task.Delay(100, cleanupCancellation.Token);
                 }
             }
             sessionAwaitingCleanup = null;
+            sessionLeaveTask = null;
+        }
+        catch (OperationCanceledException) when (!lifetimeCancellation.IsCancellationRequested)
+        {
+            throw new TimeoutException("The previous session has not finished shutting down. Wait before joining another session.");
         }
         finally
         {
-            playerWriteGate.Release();
-            hostWriteGate.Release();
+            if (sessionLeaveTask != null && sessionLeaveTask.IsFaulted) sessionLeaveTask = null;
+            if (playerGateTaken) playerWriteGate.Release();
+            if (hostGateTaken) hostWriteGate.Release();
             partyLobby = null;
             playerNetworkManagers.Clear();
             PlayerClothesPreloader.Instance?.ClearAllModels();
@@ -925,38 +976,111 @@ public class LobbyController : MonoBehaviour
         gamePlayers.Clear();
     }
 
-    private void OnSessionLost() => ObserveTask(HandleSessionLossAsync());
-    private void OnSessionHostChanged(string hostId)
+    public void ReportSessionFailure(SessionFailureReason reason)
     {
-        // Session ownership migration is not gameplay state migration. Until the
-        // game implements the latter, do not resume a match on a new NGO host.
-        if (!transitioningNetwork) OnSessionLost();
+        ReportSessionFailure(failureGuard.Generation, reason);
     }
 
-    private async Task HandleSessionLossAsync()
+    private void ReportSessionFailure(int generation, SessionFailureReason reason)
     {
-        if (transitioningNetwork || handlingSessionLoss || session == null) return;
+        if (!failureGuard.Report(generation, reason)) return;
+        TryProcessSessionFailure();
+    }
+
+    private void TryProcessSessionFailure()
+    {
+        if (lifetimeCancellation.IsCancellationRequested || transitioningNetwork ||
+            lobbyOperationInProgress || handlingSessionLoss || session == null) return;
+        if (!failureGuard.TryBeginHandling(out var reason)) return;
+        // Set synchronously: multiple NGO/UGS callbacks in this frame must not
+        // schedule multiple scene loads or queue multiple lifecycle operations.
         handlingSessionLoss = true;
+        ObserveTask(HandleSessionLossAsync(reason));
+    }
+
+    private async Task HandleSessionLossAsync(SessionFailureReason reason)
+    {
         matchmakingCancellation?.Cancel();
         isSearching = false;
+        var gateTaken = false;
         try
         {
-            await RunLobbyOperationAsync(async () =>
+            await lifecycleGate.WaitAsync(lifetimeCancellation.Token);
+            gateTaken = true;
+            transitioningNetwork = true;
+            LoadingScreen.Instance?.ShowGenericLoadingScreen();
+            try { await LeaveCurrentSessionAsync(); }
+            catch (Exception exception) when (!(exception is OperationCanceledException))
             {
-                await LeaveCurrentSessionAsync();
-                ResetMatchState();
-                if (SceneManager.GetActiveScene().name != "LobbyScene")
-                    await SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
-                lobbyUI?.ShowMainMenuUI();
-            });
+                // A backend outage must not leave the player stranded in the
+                // match. The retained cleanup handle prevents unsafe reuse.
+                Debug.LogWarning($"Session cleanup is incomplete: {exception.GetType().Name}");
+            }
+            lifetimeCancellation.Token.ThrowIfCancellationRequested();
+            ResetMatchState();
+            loadResultsScreen = false;
+            gameResults = default;
+            raceGameResults = default;
+            uniteRoyaleGameResults = default;
+            LoadingScreen.Instance?.HideMatchLoadingScreen();
+            LoadingScreen.Instance?.HideGameBeginScreen();
+            if (SceneManager.GetActiveScene().name != "LobbyScene")
+                await SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
+            lobbyUI?.ShowMainMenuUI();
+            LastConnectionFailure = reason;
+            Debug.LogWarning($"Session ended unexpectedly: {reason}. No match result was generated.");
+            onConnectionFailure?.Invoke(reason);
         }
-        finally { handlingSessionLoss = false; }
+        finally
+        {
+            transitioningNetwork = false;
+            handlingSessionLoss = false;
+            if (gateTaken) lifecycleGate.Release();
+            LoadingScreen.Instance?.HideGenericLoadingScreen();
+        }
     }
 
-    private void OnClientDisconnectFromServer(ulong clientId)
+    private void AttachNetworkFailureEvents(int generation)
     {
-        if (NetworkManager.Singleton != null && clientId == NetworkManager.Singleton.LocalClientId &&
-            !NetworkManager.Singleton.IsHost && !transitioningNetwork) OnSessionLost();
+        DetachNetworkFailureEvents();
+        monitoredNetworkManager = NetworkManager.Singleton;
+        var localClientId = monitoredNetworkManager.LocalClientId;
+        var wasHost = monitoredNetworkManager.IsHost;
+        clientDisconnected = clientId =>
+        {
+            // A host losing a remote client must not tear down everybody's game.
+            if (!wasHost && clientId == localClientId)
+                ReportSessionFailure(generation, SessionFailureReason.ConnectionLost);
+        };
+        transportFailed = () => ReportSessionFailure(generation, SessionFailureReason.TransportFailure);
+        clientStopped = _ => ReportSessionFailure(generation, wasHost
+            ? SessionFailureReason.HostLost : SessionFailureReason.ConnectionLost);
+        serverStopped = _ => ReportSessionFailure(generation, SessionFailureReason.HostLost);
+        monitoredNetworkManager.OnClientDisconnectCallback += clientDisconnected;
+        monitoredNetworkManager.OnTransportFailure += transportFailed;
+        monitoredNetworkManager.OnClientStopped += clientStopped;
+        monitoredNetworkManager.OnServerStopped += serverStopped;
+        // MPS can return just as NGO stops, before this monitor is attached.
+        // Do not miss that activation-time failure because there is no later
+        // disconnect callback left to receive.
+        if (!monitoredNetworkManager.IsListening || !monitoredNetworkManager.IsConnectedClient)
+            ReportSessionFailure(generation, SessionFailureReason.ConnectionLost);
+    }
+
+    private void DetachNetworkFailureEvents()
+    {
+        if (monitoredNetworkManager == null) return;
+        monitoredNetworkManager.OnClientDisconnectCallback -= clientDisconnected;
+        monitoredNetworkManager.OnTransportFailure -= transportFailed;
+        monitoredNetworkManager.OnClientStopped -= clientStopped;
+        monitoredNetworkManager.OnServerStopped -= serverStopped;
+        monitoredNetworkManager = null;
+    }
+
+    private void OnApplicationQuit()
+    {
+        failureGuard.BeginIntentionalLeave(failureGuard.Generation);
+        lifetimeCancellation.Cancel();
     }
 
     private void OnClientConnected(ulong clientId)

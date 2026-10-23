@@ -2,6 +2,7 @@ using JSAM;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unite.Multiplayer;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -36,8 +37,14 @@ public class GameManager : NetworkBehaviour
 
     private NetworkVariable<bool> finalStretch = new NetworkVariable<bool>(false);
 
-    private Dictionary<ulong, bool> playerLoadedMap = new Dictionary<ulong, bool>();
-    private Dictionary<ulong, bool> playerLoadedPokemons = new Dictionary<ulong, bool>();
+    [SerializeField, Min(1f)] private float playerLoadingTimeoutSeconds = 120f;
+    private readonly ClientReadinessBarrier loadingBarrier = new ClientReadinessBarrier(ClientLoadStage.Map | ClientLoadStage.Pokemon);
+    private bool networkSceneLoaded;
+    private bool startScheduled;
+    private bool startRoutineStarted;
+    private int contentLoadGeneration;
+    private NetworkManager subscribedNetworkManager;
+    private NetworkSceneManager subscribedSceneManager;
 
     private List<PlayerManager> players = new List<PlayerManager>();
     private LaneManager[] lanes;
@@ -76,16 +83,24 @@ public class GameManager : NetworkBehaviour
     private void Awake()
     {
         Instance = this;
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
-        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
     }
 
     private void OnDisable()
     {
-        if (NetworkManager.Singleton != null)
+        DetachNetworkEvents();
+    }
+
+    private void DetachNetworkEvents()
+    {
+        if (subscribedSceneManager != null)
         {
-            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+            subscribedSceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+            subscribedSceneManager = null;
+        }
+        if (subscribedNetworkManager != null)
+        {
+            subscribedNetworkManager.OnClientDisconnectCallback -= OnClientDisconnect;
+            subscribedNetworkManager = null;
         }
     }
 
@@ -96,8 +111,13 @@ public class GameManager : NetworkBehaviour
             return;
         }
 
-        players.RemoveAll(player => player.OwnerClientId == clientId);
-        players.RemoveAll(player => player == null);
+        loadingBarrier.Remove(clientId);
+        for (var index = players.Count - 1; index >= 0; index--)
+        {
+            var player = players[index];
+            if (player == null) players.RemoveAt(index);
+            else if (player.OwnerClientId == clientId) RemovePlayer(player);
+        }
     }
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
@@ -105,16 +125,31 @@ public class GameManager : NetworkBehaviour
         MapInfo selectedMap = CharactersList.Instance.GetCurrentLobbyMap();
         if (sceneName.Equals(selectedMap.sceneName) && IsServer)
         {
-            StartCoroutine(WaitForPlayersToLoad());
+            if (clientsTimedOut.Count > 0)
+            {
+                LobbyController.Instance?.ReportSessionFailure(SessionFailureReason.LoadingTimedOut);
+                return;
+            }
+            networkSceneLoaded = true;
         }
     }
 
     private IEnumerator WaitForPlayersToLoad()
     {
-        while (playerLoadedMap.ContainsValue(false) || playerLoadedPokemons.ContainsValue(false))
+        var deadline = Time.realtimeSinceStartupAsDouble + playerLoadingTimeoutSeconds;
+        while (!networkSceneLoaded || !loadingBarrier.IsReady)
         {
+            if (!IsSpawned || !IsServer) yield break;
+            if (Time.realtimeSinceStartupAsDouble >= deadline)
+            {
+                Debug.LogWarning($"Match loading timed out; {loadingBarrier.PendingClients.Length} client(s) have not loaded required content.");
+                LobbyController.Instance?.ReportSessionFailure(SessionFailureReason.LoadingTimedOut);
+                yield break;
+            }
             yield return null;
         }
+        if (startScheduled || !IsSpawned || !IsServer) yield break;
+        startScheduled = true;
         StartGameRPC();
     }
 
@@ -142,12 +177,31 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void StartGameRPC()
     {
+        if (startRoutineStarted) return;
+        startRoutineStarted = true;
         StartCoroutine(StartGameDelayed());
     }
 
     public override void OnNetworkSpawn()
     {
         currentMap = CharactersList.Instance.GetCurrentLobbyMap();
+        var generation = ++contentLoadGeneration;
+        networkSceneLoaded = false;
+        startScheduled = false;
+        startRoutineStarted = false;
+        subscribedNetworkManager = NetworkManager;
+        subscribedSceneManager = NetworkManager.SceneManager;
+        subscribedSceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+        subscribedNetworkManager.OnClientDisconnectCallback += OnClientDisconnect;
+
+        // Register the expected roster before cached Addressables operations can
+        // complete and send readiness. Readiness is never inferred from an RPC
+        // count, and messages from departed clients cannot add entries again.
+        if (IsServer)
+        {
+            loadingBarrier.Reset(NetworkManager.ConnectedClientsIds);
+            StartCoroutine(WaitForPlayersToLoad());
+        }
 
         loadHandle = Addressables.LoadSceneAsync(currentMap.mapSceneKey, LoadSceneMode.Additive);
 
@@ -155,28 +209,30 @@ public class GameManager : NetworkBehaviour
 
         loadHandle.Completed += (handle) =>
         {
-            NotifyPlayerLoadedMapRPC(NetworkManager.Singleton.LocalClientId);
+            if (!IsSpawned || generation != contentLoadGeneration) return;
+            if (handle.Status != AsyncOperationStatus.Succeeded)
+            {
+                LobbyController.Instance?.ReportSessionFailure(SessionFailureReason.ContentLoadFailed);
+                return;
+            }
+            NotifyPlayerLoadedMapRPC(NetworkManager.LocalClientId);
         };
 
         pokemonHandle.Completed += (handle) =>
         {
-            NotifyPlayerLoadedPokemonsRPC(NetworkManager.Singleton.LocalClientId);
+            if (!IsSpawned || generation != contentLoadGeneration) return;
+            if (handle.Status != AsyncOperationStatus.Succeeded)
+            {
+                LobbyController.Instance?.ReportSessionFailure(SessionFailureReason.ContentLoadFailed);
+                return;
+            }
+            NotifyPlayerLoadedPokemonsRPC(NetworkManager.LocalClientId);
         };
 
         LoadingScreen.Instance.SetLoadingManagerOperation(loadHandle);
 
         gameState.OnValueChanged += GameStateChanged;
-        finalStretch.OnValueChanged += (prev, curr) =>
-        {
-            if (curr)
-            {
-                AudioManager.StopAllMusic();
-                AudioManager.PlayMusic(currentMap.finalStretchMusic, true);
-                AudioManager.PlaySound(DefaultAudioSounds.Final_Stretch_Begin);
-                AudioManager.PlaySound(DefaultAudioSounds.AnnouncerFinalStretch);
-                onFinalStretch?.Invoke();
-            }
-        };
+        finalStretch.OnValueChanged += OnFinalStretchChanged;
         lanes = FindObjectsByType<LaneManager>(FindObjectsSortMode.None);
 
         blueTeamScores = new List<ResultScoreInfo>();
@@ -184,18 +240,6 @@ public class GameManager : NetworkBehaviour
 
         if (IsServer)
         {
-            playerLoadedMap.Clear();
-            foreach (var player in NetworkManager.Singleton.ConnectedClientsList)
-            {
-                playerLoadedMap.Add(player.ClientId, false);
-            }
-
-            playerLoadedPokemons.Clear();
-            foreach (var player in NetworkManager.Singleton.ConnectedClientsList)
-            {
-                playerLoadedPokemons.Add(player.ClientId, false);
-            }
-
             if (surrenderManager != null)
             {
                 surrenderManager.onSurrenderVoteResult += OnTeamSurrendered;
@@ -212,15 +256,36 @@ public class GameManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void NotifyPlayerLoadedMapRPC(ulong clientId)
+    public void NotifyPlayerLoadedMapRPC(ulong clientId, RpcParams rpcParams = default)
     {
-        playerLoadedMap[clientId] = true;
+        loadingBarrier.MarkReady(rpcParams.Receive.SenderClientId, clientId, ClientLoadStage.Map);
     }
 
     [Rpc(SendTo.Server)]
-    public void NotifyPlayerLoadedPokemonsRPC(ulong clientId)
+    public void NotifyPlayerLoadedPokemonsRPC(ulong clientId, RpcParams rpcParams = default)
     {
-        playerLoadedPokemons[clientId] = true;
+        loadingBarrier.MarkReady(rpcParams.Receive.SenderClientId, clientId, ClientLoadStage.Pokemon);
+    }
+
+    private void OnFinalStretchChanged(bool previous, bool current)
+    {
+        if (!current) return;
+        AudioManager.StopAllMusic();
+        AudioManager.PlayMusic(currentMap.finalStretchMusic, true);
+        AudioManager.PlaySound(DefaultAudioSounds.Final_Stretch_Begin);
+        AudioManager.PlaySound(DefaultAudioSounds.AnnouncerFinalStretch);
+        onFinalStretch?.Invoke();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        contentLoadGeneration++;
+        DetachNetworkEvents();
+        StopAllCoroutines();
+        gameState.OnValueChanged -= GameStateChanged;
+        finalStretch.OnValueChanged -= OnFinalStretchChanged;
+        if (surrenderManager != null) surrenderManager.onSurrenderVoteResult -= OnTeamSurrendered;
+        if (startAnimationUI != null) startAnimationUI.OnAnimationComplete -= OnStartAnimationComplete;
     }
 
     private void GameStateChanged(GameState previous, GameState current)
@@ -255,14 +320,15 @@ public class GameManager : NetworkBehaviour
 
     public void AddPlayer(PlayerManager player)
     {
+        if (player == null || players.Contains(player)) return;
         players.Add(player);
         onUpdatePassiveExp += player.Pokemon.GainPassiveExp;
     }
 
     public void RemovePlayer(PlayerManager player)
     {
-        players.Remove(player);
-        onUpdatePassiveExp -= player.Pokemon.GainPassiveExp;
+        if (player == null || !players.Remove(player)) return;
+        if (player.Pokemon != null) onUpdatePassiveExp -= player.Pokemon.GainPassiveExp;
     }
 
     private void InitializePassiveExpQueue()
@@ -563,12 +629,19 @@ public class GameManager : NetworkBehaviour
 
     public override void OnDestroy()
     {
-        if (!loadHandle.Result.Scene.isLoaded)
+        contentLoadGeneration++;
+        DetachNetworkEvents();
+        if (Instance == this) Instance = null;
+        if (pokemonHandle.IsValid()) Addressables.Release(pokemonHandle);
+        // Disconnects can destroy this object before either operation completes.
+        // Never read Result on an invalid/failed operation or skip base cleanup.
+        if (loadHandle.IsValid())
         {
-            return;
+            if (loadHandle.Status == AsyncOperationStatus.Succeeded && loadHandle.Result.Scene.isLoaded)
+                Addressables.UnloadSceneAsync(loadHandle);
+            else
+                Addressables.Release(loadHandle);
         }
-        Addressables.Release(pokemonHandle);
-        Addressables.UnloadSceneAsync(loadHandle);
         base.OnDestroy();
     }
 

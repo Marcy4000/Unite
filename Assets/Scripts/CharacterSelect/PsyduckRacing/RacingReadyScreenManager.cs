@@ -1,6 +1,7 @@
 using JSAM;
 using System.Collections;
 using System.Collections.Generic;
+using Unite.Multiplayer;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,22 +11,80 @@ public class RacingReadyScreenManager : NetworkBehaviour
     [SerializeField] private CharacterInfo initialCharacter;
     [SerializeField] private TrainerModel trainerModel;
 
-    private Dictionary<ulong, bool> playerReady = new Dictionary<ulong, bool>();
+    [SerializeField, Min(1f)] private float readinessTimeoutSeconds = 120f;
+    private readonly ClientReadinessBarrier playerReady = new ClientReadinessBarrier(ClientLoadStage.Ready);
+    private NetworkManager subscribedNetworkManager;
+    private NetworkSceneManager subscribedSceneManager;
+    private bool placeholderStarted;
+    private bool transitionRequested;
 
-    private void OnEnable()
+    public override void OnNetworkSpawn()
     {
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+        placeholderStarted = false;
+        transitionRequested = false;
+        subscribedNetworkManager = NetworkManager;
+        subscribedSceneManager = NetworkManager.SceneManager;
+        subscribedSceneManager.OnLoadEventCompleted += HandleSceneLoaded;
+        if (IsServer)
+        {
+            playerReady.Reset(NetworkManager.ConnectedClientsIds);
+            subscribedNetworkManager.OnClientDisconnectCallback += OnClientDisconnect;
+            StartCoroutine(WatchReadinessDeadline());
+        }
     }
 
     private void OnDisable()
     {
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        DetachNetworkEvents();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        StopAllCoroutines();
+        DetachNetworkEvents();
+    }
+
+    private void DetachNetworkEvents()
+    {
+        if (subscribedSceneManager != null)
+        {
+            subscribedSceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+            subscribedSceneManager = null;
+        }
+        if (subscribedNetworkManager != null)
+        {
+            subscribedNetworkManager.OnClientDisconnectCallback -= OnClientDisconnect;
+            subscribedNetworkManager = null;
+        }
+    }
+
+    private void OnClientDisconnect(ulong clientId) => playerReady.Remove(clientId);
+
+    private IEnumerator WatchReadinessDeadline()
+    {
+        var deadline = Time.realtimeSinceStartupAsDouble + readinessTimeoutSeconds;
+        while (IsSpawned && !transitionRequested)
+        {
+            if (Time.realtimeSinceStartupAsDouble >= deadline)
+            {
+                LobbyController.Instance?.ReportSessionFailure(SessionFailureReason.LoadingTimedOut);
+                yield break;
+            }
+            yield return null;
+        }
     }
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
         if (sceneName == "RacingReadyScreen")
         {
+            if (IsServer && clientsTimedOut.Count > 0)
+            {
+                LobbyController.Instance?.ReportSessionFailure(SessionFailureReason.LoadingTimedOut);
+                return;
+            }
+            if (placeholderStarted) return;
+            placeholderStarted = true;
             StartCoroutine(PlaceholderStart());
             LoadingScreen.Instance.HideGameBeginScreen();
         }
@@ -33,15 +92,6 @@ public class RacingReadyScreenManager : NetworkBehaviour
 
     private IEnumerator Start()
     {
-        if (IsServer)
-        {
-            playerReady.Clear();
-            foreach (var player in NetworkManager.Singleton.ConnectedClientsList)
-            {
-                playerReady.TryAdd(player.ClientId, false);
-            }
-        }
-
         AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon, true);
 
@@ -79,30 +129,25 @@ public class RacingReadyScreenManager : NetworkBehaviour
 
         yield return new WaitForSeconds(1.5f);
 
+        if (!IsSpawned || !IsServer || !playerReady.IsReady) yield break;
+        transitionRequested = true;
         ShowLoadingScreenRpc();
         LobbyController.Instance.LoadGameMap();
     }
 
     private IEnumerator WaitForAllPlayersReady()
     {
-        while (playerReady.ContainsValue(false))
+        while (IsSpawned && !playerReady.IsReady)
         {
             yield return null;
         }
     }
 
     [Rpc(SendTo.Server)]
-    private void NotifyPlayerReadyRpc(ulong clientId)
+    private void NotifyPlayerReadyRpc(ulong clientId, RpcParams rpcParams = default)
     {
         if (!IsServer) return;
-        if (!playerReady.ContainsKey(clientId))
-        {
-            playerReady[clientId] = true;
-        }
-        else
-        {
-            playerReady[clientId] = true;
-        }
+        playerReady.MarkReady(rpcParams.Receive.SenderClientId, clientId, ClientLoadStage.Ready);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
