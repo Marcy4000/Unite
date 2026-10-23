@@ -1,106 +1,43 @@
+using System.Collections;
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
-public class SandstormArea : NetworkBehaviour
+public class SandstormArea : FlygonMoveObject
 {
-    private Team orangeTeam;
-    private StatusEffect blind = new StatusEffect(StatusType.VisionObscuring, 3f, true, 0);
-
-    private DamageInfo damageInfo;
-
-    private bool initialized = false;
-    private float stormDuration = 5f;
-    private float stormTick = 0.6f;
-
-    private List<Pokemon> pokemonInZone = new List<Pokemon>();
-    private List<Pokemon> pokemonBlinded = new List<Pokemon>();
-
-    [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, DamageInfo info, Team orangeTeam)
+    public override FlygonCast Kind => FlygonCast.Sandstorm;
+    protected override IEnumerator Execute()
     {
-        transform.position = position;
-        damageInfo = info;
-        this.orangeTeam = orangeTeam;
-
-        pokemonBlinded.Clear();
-
-        initialized = true;
-    }
-
-    private void Update()
-    {
-        if (!IsServer || !initialized)
+        transform.position = Destination;
+        yield return Wait(FlygonMoveRules.Windup(Kind), true);
+        if (!Live) yield break;
+        SetPhase(1);
+        var blinded = new HashSet<Pokemon>();
+        bool speedApplied = false;
+        float start = Time.time, tick = start + FlygonMoveRules.StormInterval;
+        while (Live && Time.time - start < FlygonMoveRules.StormDuration)
         {
-            return;
-        }
-
-        stormDuration -= Time.deltaTime;
-        stormTick -= Time.deltaTime;
-
-        if (stormTick <= 0)
-        {
-            foreach (Pokemon pokemon in pokemonInZone)
+            Vector3 offset = Actor.transform.position - transform.position; offset.y = 0;
+            bool inside = offset.sqrMagnitude <= FlygonMoveRules.StormRadius * FlygonMoveRules.StormRadius;
+            if (Upgraded && inside != speedApplied)
             {
-                if (pokemon == null)
-                {
-                    continue;
-                }
-
-                if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
-                {
-                    continue;
-                }
-
-                pokemon.TakeDamageRPC(damageInfo);
-
-                if (pokemonBlinded.Contains(pokemon))
-                {
-                    continue;
-                }
-
-                pokemon.AddStatusEffect(blind);
-                pokemonBlinded.Add(pokemon);
+                speedApplied = inside;
+                if (inside) RefreshStat(Actor.Pokemon, Stat.Speed, 15, 0, true);
+                else Actor.Pokemon.RemoveAllStatChangeWithIDRPC(EffectId);
             }
-
-            stormTick = 0.6f;
-        }
-
-        if (stormDuration <= 0)
-        {
-            NetworkObject.Despawn(true);
+            if (Time.time >= tick)
+            {
+                tick += FlygonMoveRules.StormInterval;
+                foreach (Pokemon target in TargetsInArea())
+                {
+                    target.TakeDamageRPC(FlygonMoveRules.Damage(Actor.NetworkObjectId, Kind));
+                    if (CanControl(target) && blinded.Add(target)) target.AddStatusEffect(new StatusEffect(StatusType.VisionObscuring, 3, true, EffectId));
+                }
+            }
+            yield return null;
         }
     }
-
-    private void OnTriggerEnter(Collider other)
+    protected override void Cleanup()
     {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        if (other.TryGetComponent(out Pokemon pokemon))
-        {
-            if (!pokemonInZone.Contains(pokemon))
-            {
-                pokemonInZone.Add(pokemon);
-            }
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        if (other.TryGetComponent(out Pokemon pokemon))
-        {
-            if (pokemonInZone.Contains(pokemon))
-            {
-                pokemonInZone.Remove(pokemon);
-            }
-        }
+        if (IsServer && Actor != null && Actor.IsSpawned) Actor.Pokemon.RemoveAllStatChangeWithIDRPC(EffectId);
     }
 }

@@ -275,12 +275,8 @@ public class ClothingItemGeneratorNew : MonoBehaviour
             return false;
         }
 
-        AddressableAssetGroup group = settings.FindGroup("ClothingItems");
-        if (group == null)
-        {
-            Debug.LogError("ClothingItems group not found in Addressables!");
-            return false;
-        }
+        AddressableAssetGroup group = ClothingAddressablesOptimizer.GetModelGroup(settings);
+        AddressableAssetGroup iconGroup = ClothingAddressablesOptimizer.GetIconGroup(settings);
 
         foreach (string prefabPath in prefabPaths)
         {
@@ -312,7 +308,8 @@ public class ClothingItemGeneratorNew : MonoBehaviour
                 string iconGuid = AssetDatabase.AssetPathToGUID(iconPath);
                 if (!string.IsNullOrEmpty(iconGuid))
                 {
-                    AddressableAssetEntry iconEntry = settings.CreateOrMoveEntry(iconGuid, group);
+                    AddressableAssetEntry iconEntry = settings.CreateOrMoveEntry(iconGuid, iconGroup);
+                    ClothingAddressablesOptimizer.SetIconLabel(settings, iconEntry);
                     iconEntry.address = $"Assets/AddressableAssets/{Path.GetFileName(iconPath)}";
                     clothingItem.sprite = new AssetReferenceSprite(iconGuid);
                 }

@@ -4,70 +4,55 @@ using UnityEngine;
 
 public class FlygonPassive : PassiveBase
 {
-    private bool isEvolved = false;
-    private float damageCd = 3f;
+    private float damageReadyAt;
+    private Coroutine extraDamage;
+    private bool Evolved => playerManager != null && playerManager.Pokemon.CurrentLevel >= 3;
 
     public override void Start(PlayerManager controller)
     {
         base.Start(controller);
-        playerManager.Pokemon.OnEvolution += OnEvolution;
+        damageReadyAt = Time.time + 3;
         playerManager.Pokemon.OnDamageDealt += OnDamageDealt;
         playerManager.Pokemon.OnStatusChange += OnStatusChange;
+        playerManager.Pokemon.OnDeath += OnDeath;
     }
-
-    private void OnEvolution()
+    private void OnDamageDealt(ulong targetId, DamageInfo damage)
     {
-        isEvolved = true;
+        if (Evolved || Time.time < damageReadyAt || playerManager.Pokemon.CurrentHp <= 0
+            || (damage.proprieties & DamageProprieties.Unused_2) != 0
+            || !NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(targetId, out var body)
+            || !body.TryGetComponent(out Pokemon target) || target.CurrentHp <= 0
+            || Vector3.Distance(playerManager.transform.position, target.transform.position) > 4.5f) return;
+        damageReadyAt = Time.time + 3;
+        int amount = Mathf.FloorToInt(target.CalculateDamage(damage, playerManager.Pokemon) * 0.05f);
+        extraDamage = playerManager.StartCoroutine(ExtraDamage(target, amount));
     }
-
-    private void OnDamageDealt(ulong attackedId, DamageInfo damage)
-    {
-        if (!isEvolved)
-        {
-            Pokemon attackedPokemon = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackedId].GetComponent<Pokemon>();
-            if (Vector3.Distance(playerManager.transform.position, attackedPokemon.transform.position) > 4.5f || damageCd > 0)
-            {
-                return;
-            }
-
-            damageCd = 3f;
-            playerManager.StartCoroutine(ExtraDamage(attackedPokemon, attackedPokemon.CalculateDamage(damage, playerManager.Pokemon)));
-        }
-    }
-
-    private IEnumerator ExtraDamage(Pokemon attackedPokemon, int damage)
+    private IEnumerator ExtraDamage(Pokemon target, int amount)
     {
         yield return new WaitForSeconds(0.5f);
-
-        attackedPokemon.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0f, 0, (short)Mathf.FloorToInt(damage * 0.05f), DamageType.True));
+        extraDamage = null;
+        if (Evolved || target == null || !target.IsSpawned || target.CurrentHp <= 0 || playerManager.Pokemon.CurrentHp <= 0) yield break;
+        target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0, 0, (short)Mathf.Clamp(amount, 0, short.MaxValue), DamageType.True, DamageProprieties.Unused_2));
     }
-
-    private void OnStatusChange(StatusEffect statusEffect, bool added)
+    private void OnStatusChange(StatusEffect effect, bool added)
     {
-        if (!isEvolved)
-        {
-            return;
-        }
-
-        if (statusEffect.Type == StatusType.Immobilized || statusEffect.Type == StatusType.Asleep || statusEffect.Type == StatusType.Incapacitated || statusEffect.Type == StatusType.VisionObscuring || statusEffect.Type == StatusType.Frozen)
-        {
-            if (added && statusEffect.IsTimed)
-            {
-                playerManager.Pokemon.UpdateStatusEffectTimeRPC(statusEffect, statusEffect.Duration - (statusEffect.Duration * 0.30f));
-            }
-        }
+        if (!Evolved || !added || !effect.IsTimed) return;
+        if (effect.Type == StatusType.Immobilized || effect.Type == StatusType.Asleep || effect.Type == StatusType.Incapacitated
+            || effect.Type == StatusType.VisionObscuring || effect.Type == StatusType.Frozen)
+            playerManager.Pokemon.UpdateStatusEffectTimeRPC(effect, effect.Duration * 0.7f);
     }
-
-    public override void Update()
+    private void OnDeath(DamageInfo damage)
     {
-        if (damageCd > 0)
-        {
-            damageCd -= Time.deltaTime;
-        }
-
-        if (!isEvolved)
-        {
-            return;
-        }
+        if (extraDamage != null) playerManager.StopCoroutine(extraDamage);
+        extraDamage = null;
+    }
+    public override void Update() { }
+    public override void Dispose()
+    {
+        if (playerManager == null) return;
+        OnDeath(default);
+        playerManager.Pokemon.OnDamageDealt -= OnDamageDealt;
+        playerManager.Pokemon.OnStatusChange -= OnStatusChange;
+        playerManager.Pokemon.OnDeath -= OnDeath;
     }
 }

@@ -1,46 +1,46 @@
-using Unity.Netcode;
+using System.Collections;
 using UnityEngine;
 
-public class FlygonDigWarning : NetworkBehaviour
+public class FlygonDigWarning : FlygonMoveObject
 {
-    private Team orangeTeam;
-
-    private DamageInfo damageInfo;
-    private StatChange slow = new StatChange(15, Stat.Speed, 2f, true, false, true, 0);
-
-    [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 startPos, Team orangeTeam, DamageInfo damage)
+    private bool hasExit;
+    private Vector3 exit;
+    public override FlygonCast Kind => FlygonCast.Dig;
+    public void SetExit(Vector3 point)
     {
-        transform.position = startPos;
-        this.orangeTeam = orangeTeam;
-        damageInfo = damage;
+        if (!IsServer || Phase != 2 || (point - Actor.transform.position).sqrMagnitude > 9 || !Actor.PlayerMovement.IsFlygonLandingValid(point)) return;
+        hasExit = true; exit = point;
     }
-
-    [Rpc(SendTo.Server)]
-    public void DespawnRPC()
+    protected override IEnumerator Execute()
     {
-        NetworkObject.Despawn(true);
-    }
-
-    [Rpc(SendTo.Server)]
-    public void GiveDamageRPC()
-    {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, 1f);
-
-        foreach (Collider hit in colliders)
+        Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, 0, false, EffectId));
+        yield return Wait(FlygonMoveRules.DigEnter);
+        if (!Live) yield break;
+        RefreshStat(Actor.Pokemon, Stat.Speed, 40, 0);
+        SetPhase(1);
+        float until = Time.time + FlygonMoveRules.DigDuration;
+        while (Live && !EndRequested && Time.time < until) { transform.position = Actor.transform.position; yield return null; }
+        if (!Live) yield break;
+        SetPhase(2);
+        float timeout = Time.time + 0.5f;
+        while (Live && !hasExit && Time.time < timeout) yield return null;
+        if (!Live) yield break;
+        if (!hasExit) exit = Actor.PlayerMovement.IsFlygonLandingValid(Actor.transform.position) ? Actor.transform.position : Origin;
+        transform.position = exit;
+        Actor.PlayerMovement.FlygonExitPositionRPC(exit);
+        Actor.Pokemon.RemoveStatusEffectWithID(EffectId);
+        Actor.Pokemon.RemoveAllStatChangeWithIDRPC(EffectId);
+        foreach (Pokemon target in TargetsInArea())
         {
-            if (!Aim.Instance.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, orangeTeam))
-            {
-                continue;
-            }
-
-            if (hit.TryGetComponent(out Pokemon pokemon))
-            {
-                pokemon.TakeDamageRPC(damageInfo);
-                pokemon.AddStatChange(slow);
-            }
+            target.TakeDamageRPC(FlygonMoveRules.Damage(Actor.NetworkObjectId, Kind));
+            if (CanControl(target)) RefreshStat(target, Stat.Speed, 15, 2);
         }
-
-        NetworkObject.Despawn(true);
+        yield return Wait(FlygonMoveRules.DigExit);
+    }
+    protected override void Cleanup()
+    {
+        if (!IsServer || Actor == null || !Actor.IsSpawned) return;
+        Actor.Pokemon.RemoveStatusEffectWithID(EffectId);
+        Actor.Pokemon.RemoveAllStatChangeWithIDRPC(EffectId);
     }
 }

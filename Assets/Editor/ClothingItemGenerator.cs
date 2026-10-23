@@ -121,7 +121,7 @@ public class ClothingItemGenerator : MonoBehaviour
                             }
 
                             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-                            AddressableAssetGroup group = settings.FindGroup("ClothingItems");
+                            AddressableAssetGroup group = ClothingAddressablesOptimizer.GetModelGroup(settings);
                             string guid = AssetDatabase.AssetPathToGUID(prefabPath);
                             AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group);
                             entry.address = addressableName;
@@ -182,7 +182,8 @@ public class ClothingItemGenerator : MonoBehaviour
                                 if (Path.GetFileName(file).StartsWith(iconPath))
                                 {
                                     string guidIcon = AssetDatabase.AssetPathToGUID(file);
-                                    AddressableAssetEntry entryIcon = settings.CreateOrMoveEntry(guidIcon, group);
+                                    AddressableAssetEntry entryIcon = settings.CreateOrMoveEntry(guidIcon, ClothingAddressablesOptimizer.GetIconGroup(settings));
+                                    ClothingAddressablesOptimizer.SetIconLabel(settings, entryIcon);
                                     entryIcon.address = $"Assets/AddressableAssets/{Path.GetFileName(file)}";
 
                                     clothingItem.sprite = new AssetReferenceSprite(guidIcon);
@@ -254,7 +255,7 @@ public class ClothingItemGenerator : MonoBehaviour
             }
 
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            AddressableAssetGroup group = settings.FindGroup("ClothingItems");
+            AddressableAssetGroup group = ClothingAddressablesOptimizer.GetModelGroup(settings);
             string guid = AssetDatabase.AssetPathToGUID(prefabPath);
             AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group);
             entry.address = addressableName;
@@ -288,7 +289,7 @@ public class ClothingItemGenerator : MonoBehaviour
             }
 
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            AddressableAssetGroup group = settings.FindGroup("ClothingItems");
+            AddressableAssetGroup group = ClothingAddressablesOptimizer.GetModelGroup(settings);
             string guid = AssetDatabase.AssetPathToGUID(prefabPath);
             AddressableAssetEntry entry = settings.CreateOrMoveEntry(guid, group);
             entry.address = addressableName;

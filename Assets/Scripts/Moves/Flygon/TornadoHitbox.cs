@@ -1,97 +1,115 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
-public class TornadoHitbox : NetworkBehaviour
+public class TornadoHitbox : FlygonMoveObject
 {
-    [SerializeField] private LayerMask enemies;
-    private StatusEffect tornadoStun = new StatusEffect(StatusType.Incapacitated, 1f, true, 6);
-
-    private DamageInfo damageInfo;
-
-    private Team orangeTeam;
-    private bool initialized;
-
-    private Collider[] colliders = new Collider[15];
-
-    private List<Pokemon> stunnedPokemons = new List<Pokemon>();
-
-    [Rpc(SendTo.Server)]
-    public void InitializeRPC(DamageInfo damageInfo, Team isOrangeTeam)
+    private struct Landing
     {
-        this.damageInfo = damageInfo;
-        orangeTeam = isOrangeTeam;
-
-        initialized = true;
+        public Pokemon Target;
+        public float At;
+        public DamageInfo Damage;
     }
-
-    [Rpc(SendTo.Server)]
-    public void UpdateDamageRPC(DamageInfo damageInfo)
+    private readonly List<Landing> landings = new List<Landing>();
+    public override FlygonCast Kind => FlygonCast.Unite;
+    protected override void PresentPhase(byte value)
     {
-        this.damageInfo = damageInfo;
+        if (value == 5) RestoreActorAnimation();
     }
-
-    [Rpc(SendTo.Server)]
-    public void DespawnRPC()
+    private void RestoreActorAnimation()
     {
-        NetworkObject.Despawn(true);
+        if (Actor != null && Actor.AnimationManager != null) RestoreModelAnimation(Actor.AnimationManager.Animator);
     }
-
-    private void Update()
+    public static bool RestoreModelAnimation(Animator animator)
     {
-        if (!IsServer || !initialized)
+        if (animator == null || !animator.isInitialized || !animator.isActiveAndEnabled) return false;
+        int tornado = Animator.StringToHash("Tornado");
+        bool hidden = animator.GetCurrentAnimatorStateInfo(0).shortNameHash == tornado
+            || (animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).shortNameHash == tornado);
+        int recovery = Animator.StringToHash(FlygonMoveRules.UniteRecoveryAnimation);
+        // A late despawn must not interrupt a new move, or force fog-hidden renderers on.
+        if (!hidden || !animator.HasState(0, recovery)) return false;
+        animator.Play(recovery, 0, 0);
+        return true;
+    }
+    protected override IEnumerator Execute()
+    {
+        Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, FlygonMoveRules.UniteFormation, true, EffectId));
+        yield return Wait(FlygonMoveRules.UniteFormation);
+        if (!Live) yield break;
+        Actor.Pokemon.RemoveStatusEffectWithID(EffectId);
+        Actor.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(Actor.Pokemon.GetMaxHp() * 0.15f), EffectId, 0, FlygonMoveRules.UniteDuration, true));
+        Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.HindranceResistance, 0, false, EffectId));
+        var lifted = new HashSet<Pokemon>();
+        float start = Time.time, nextPull = start;
+        int oldStage = -1;
+        while (Live && !EndRequested && Time.time - start < FlygonMoveRules.UniteDuration)
         {
-            return;
-        }
-
-        int colliderCount = Physics.OverlapSphereNonAlloc(transform.position + new Vector3(0f, 0.3f, 0f), 4f, colliders, enemies);
-
-        for (int i = 0; i < colliderCount; i++)
-        {
-            if (colliders[i].TryGetComponent(out Pokemon pokemon))
+            transform.position = Actor.transform.position;
+            int stage = FlygonMoveRules.TornadoStage(Time.time - start);
+            if (stage != oldStage)
             {
-                if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam) || stunnedPokemons.Contains(pokemon))
+                oldStage = stage; SetPhase((byte)(stage + 1));
+                Actor.Pokemon.RemoveAllStatChangeWithIDRPC(EffectId);
+                short speed = FlygonMoveRules.TornadoSpeed(stage);
+                if (speed > 0) RefreshStat(Actor.Pokemon, Stat.Speed, speed, 0, true);
+            }
+            bool pull = Time.time >= nextPull;
+            if (pull) nextPull = Time.time + 0.1f;
+            foreach (Pokemon target in TargetsInArea())
+            {
+                bool controllable = CanControl(target) && !target.HasStatusEffect(StatusType.HindranceResistance);
+                Vector3 offset = target.transform.position - transform.position; offset.y = 0;
+                if (offset.magnitude <= FlygonMoveRules.UniteCore && lifted.Add(target))
                 {
-                    continue;
+                    float duration = controllable ? FlygonMoveRules.TornadoLift(stage) : 0;
+                    if (controllable)
+                    {
+                        target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, EffectId));
+                        target.ApplyKnockupRPC(2 * FlygonMoveRules.TornadoPower(stage), duration * 0.6f);
+                    }
+                    landings.Add(new Landing { Target = target, At = Time.time + duration * 0.6f, Damage = FlygonMoveRules.Damage(Actor.NetworkObjectId, Kind, stage) });
                 }
-
-                Vector3 direction = (transform.position - pokemon.transform.position).normalized;
-
-                pokemon.ApplyKnockbackRPC(direction, 0.1f);
+                else if (controllable && pull && !lifted.Contains(target) && target.TryGetComponent(out PlayerMovement movement))
+                    movement.FlygonDisplaceRPC(transform.position, 0.16f * FlygonMoveRules.TornadoPower(stage), true);
             }
+            ResolveLandings();
+            yield return null;
+        }
+        if (!Live) yield break;
+        Actor.Pokemon.RemoveStatusEffectWithID(EffectId);
+        Actor.Pokemon.RemoveShieldWithIDRPC(EffectId);
+        Actor.Pokemon.RemoveAllStatChangeWithIDRPC(EffectId);
+        RefreshStat(Actor.Pokemon, Stat.Speed, 25, 4, true);
+        SetPhase(5); // Release controls immediately; already launched enemies still take landing damage.
+        while (Live && landings.Count > 0) { ResolveLandings(); yield return null; }
+    }
+    private void ResolveLandings()
+    {
+        for (int i = landings.Count - 1; i >= 0; i--)
+        {
+            if (Time.time < landings[i].At) continue;
+            Landing landing = landings[i]; landings.RemoveAt(i);
+            if (CanHit(landing.Target)) landing.Target.TakeDamageRPC(landing.Damage);
         }
     }
-
-    private void OnTriggerEnter(Collider other)
+    protected override void Cleanup()
     {
-        if (!IsServer || !initialized)
-        {
-            return;
-        }
-
-        if (other.TryGetComponent(out Pokemon pokemon))
-        {
-            if (stunnedPokemons.Contains(pokemon) || !Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
-            {
-                return;
-            }
-
-            pokemon.AddStatusEffect(tornadoStun);
-            pokemon.ApplyKnockupRPC(2f, 0.6f);
-            stunnedPokemons.Add(pokemon);
-            pokemon.StartCoroutine(DamagePokemon(pokemon));
-        }
+        // Runs on every peer, including death/cancellation and immediate despawns
+        // where the final phase may not have reached the next replication tick.
+        RestoreActorAnimation();
+        if (!IsServer || Actor == null || !Actor.IsSpawned) return;
+        Actor.Pokemon.RemoveStatusEffectWithID(EffectId);
+        Actor.Pokemon.RemoveShieldWithIDRPC(EffectId);
+        // Keep the intended post-Unite timed speed boost, but never an indefinite mode modifier.
+        var remove = new List<StatChange>();
+        foreach (var change in Actor.Pokemon.StatChanges) if (change.ID == EffectId && !change.IsTimed) remove.Add(change);
+        foreach (var change in remove) Actor.Pokemon.RemoveStatChangeRPC(change);
+        landings.Clear();
     }
-
-    private IEnumerator DamagePokemon(Pokemon pokemon)
+    public override void OnDestroy()
     {
-        yield return new WaitForSeconds(0.6f);
-
-        pokemon.TakeDamageRPC(damageInfo);
-
-        yield return new WaitForSeconds(0.4f);
-
-        stunnedPokemons.Remove(pokemon);
+        RestoreActorAnimation();
+        base.OnDestroy();
     }
 }

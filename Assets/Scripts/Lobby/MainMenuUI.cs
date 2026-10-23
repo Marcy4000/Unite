@@ -187,10 +187,8 @@ public class MainMenuUI : MonoBehaviour
 
         trainerModel.InitializeClothes(clothesInfo);
 
-        yield return null;
-        yield return null;
-
-        PlayTrainerModelAnimation();
+        while (trainerModel != null && trainerModel.IsLoading) yield return null;
+        if (trainerModel != null && trainerModel.IsInitialized) PlayTrainerModelAnimation();
     }
 
     private void PlayTrainerModelAnimation()

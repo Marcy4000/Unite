@@ -136,12 +136,20 @@ public class Aim : NetworkBehaviour
 
     public void InitializeCircleAreaIndicator(float maxRadius)
     {
+        circleAreaIndicator.transform.localScale = Vector3.one;
         circleAreaIndicator.SetActive(true);
         circleIndicator.SetActive(true);
         circleIndicator.transform.localScale = new Vector3(maxRadius / 2.5f, 1, maxRadius / 2.5f);
         circleAreaIndicator.transform.position = new Vector3(playerTransform.position.x, circleAreaIndicator.transform.position.y, playerTransform.position.z);
         circleAimPosition = Vector3.zero;
         maxCircleAimRadius = maxRadius;
+    }
+
+    // The ground-area mesh has a one-unit radius, independent of the cast-range ring.
+    public void InitializeSizedCircleAreaIndicator(float castRange, float areaRadius)
+    {
+        InitializeCircleAreaIndicator(castRange);
+        circleAreaIndicator.transform.localScale = new Vector3(areaRadius, 1, areaRadius);
     }
 
     public void InitializeSimpleCircle(float radius)

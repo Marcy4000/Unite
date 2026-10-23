@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UI.ThreeDimensional;
 using UnityEngine;
@@ -20,7 +19,7 @@ public class ClothesSelector : MonoBehaviour
     [SerializeField] private FlexibleColorPicker hairColor, eyeColor;
     [SerializeField] private TMP_Dropdown skinColor;
 
-    private List<Toggle> menuToggles = new List<Toggle>();
+    private VirtualClothingList clothingList;
 
     private TrainerModel trainerModel;
 
@@ -113,60 +112,19 @@ public class ClothesSelector : MonoBehaviour
 
     private void InitializeMenuItems(bool isMale)
     {
-        foreach (var toggle in menuToggles)
+        if (clothingList == null)
         {
-            toggle.onValueChanged.RemoveAllListeners();
+            clothingList = gameObject.AddComponent<VirtualClothingList>();
+            clothingList.Initialize(scrollRect, selectionPrefab, selectionToggleGroup);
         }
-
-        foreach (Transform child in scrollRect.content)
-        {
-            Destroy(child.gameObject);
-        }
-
-        menuToggles.Clear();
-        scrollRect.verticalNormalizedPosition = 1;
-
-        foreach (var item in ClothesList.Instance.GetAvailableClothesOfType(currentMenu, isMale))
-        {
-            var selectionItem = Instantiate(selectionPrefab, scrollRect.content).GetComponent<ClothingSelectionItem>();
-            selectionItem.SetItem(item);
-            selectionItem.ItemToggle.group = selectionToggleGroup;
-            menuToggles.Add(selectionItem.ItemToggle);
-
-            if (ClothesList.Instance.GetClothingIndex(currentMenu, item, isMale) == localPlayerClothesInfo.GetClothingIndex(currentMenu))
-            {
-                selectionItem.ItemToggle.isOn = true;
-            }
-            else
-            {
-                selectionItem.ItemToggle.isOn = false;
-            }
-        }
-
-        foreach (var toggle in menuToggles)
-        {
-            toggle.onValueChanged.AddListener((value) =>
-            {
-                if (!value) return;
-                StartCoroutine(OnAnyToggleChanged());
-            });
-        }
+        clothingList.SetItems(ClothesList.Instance.GetAvailableClothesOfType(currentMenu, isMale),
+            localPlayerClothesInfo.GetClothingIndex(currentMenu), OnClothingSelected);
     }
 
-    private IEnumerator OnAnyToggleChanged()
+    private void OnClothingSelected(int index)
     {
-        yield return null;
-
-        foreach (var toggle in menuToggles)
-        {
-            if (toggle.isOn)
-            {
-                ClothingItem item = toggle.GetComponent<ClothingSelectionItem>().Item;
-                localPlayerClothesInfo.SetClothingItem(currentMenu, ClothesList.Instance.GetClothingIndex(currentMenu, item, localPlayerClothesInfo.IsMale));
-            }
-        }
-
-        trainerModel.InitializeClothes(localPlayerClothesInfo);
+        localPlayerClothesInfo.SetClothingItem(currentMenu, (ushort)index);
+        if (trainerModel != null) trainerModel.InitializeClothes(localPlayerClothesInfo);
     }
 
     private PlayerClothesInfo GetPlayerClothesInfo()

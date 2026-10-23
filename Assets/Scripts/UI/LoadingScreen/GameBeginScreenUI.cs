@@ -238,7 +238,11 @@ public class GameBeginScreenUI : MonoBehaviour
             if (i >= blueTeamObjects.Length)
                 break;
 
-            TrainerModel trainerModel = PlayerClothesPreloader.Instance.GetPlayerModel(blueTeamPlayers[i].Id).GetComponent<TrainerModel>();
+            var source = PlayerClothesPreloader.Instance.GetPlayerModel(blueTeamPlayers[i].Id);
+            if (source == null) continue;
+            TrainerModel trainerModel = source.GetComponent<TrainerModel>();
+            while (trainerModel != null && trainerModel.IsLoading) yield return null;
+            if (trainerModel == null || !trainerModel.IsInitialized) continue;
 
             if (trainerModel.IsMale)
             {
@@ -259,7 +263,11 @@ public class GameBeginScreenUI : MonoBehaviour
             if (i >= orangeTeamObjects.Length)
                 break;
 
-            TrainerModel trainerModel = PlayerClothesPreloader.Instance.GetPlayerModel(orangeTeamPlayers[i].Id).GetComponent<TrainerModel>();
+            var source = PlayerClothesPreloader.Instance.GetPlayerModel(orangeTeamPlayers[i].Id);
+            if (source == null) continue;
+            TrainerModel trainerModel = source.GetComponent<TrainerModel>();
+            while (trainerModel != null && trainerModel.IsLoading) yield return null;
+            if (trainerModel == null || !trainerModel.IsInitialized) continue;
 
             if (trainerModel.IsMale)
             {

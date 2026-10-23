@@ -93,6 +93,8 @@ public static class MoveDatabase
                 return new CinderLowSweep();
             case AvailableMoves.CinderPyroball:
                 return new CinderPyroball();
+            case AvailableMoves.CinderBlazeKick:
+                return new CinderBlazeKick();
             case AvailableMoves.CinderFlameCharge:
                 return new CinderFlameCharge();
             case AvailableMoves.CinderFeint:
@@ -403,5 +405,6 @@ public enum AvailableMoves : uint
     DuraDragonTail,
     DuraMetalClaw,
     DuraStelthRock,
-    DuraludonUnite
+    DuraludonUnite,
+    CinderBlazeKick // Append: existing serialized move values must not change.
 }

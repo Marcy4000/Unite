@@ -42,7 +42,9 @@ public class PartyPlayerModel : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
 
-        if (trainerModel.gameObject.activeSelf)
+        while (trainerModel != null && trainerModel.IsLoading) yield return null;
+
+        if (trainerModel != null && trainerModel.IsInitialized && trainerModel.gameObject.activeSelf)
         {
             int animIndex = Random.Range(0, trainerModel.PlayerClothesInfo.IsMale ? maleVictoryAnimations.Length : femaleVictoryAnimations.Length);
             trainerModel.ActiveAnimator.Play(trainerModel.PlayerClothesInfo.IsMale ? maleVictoryAnimations[animIndex] : femaleVictoryAnimations[animIndex]);

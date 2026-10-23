@@ -18,10 +18,11 @@ MonoBehaviour:
   cooldown: 11
   uniteEnergyCost: 0
   moveName: Sandstorm
-  description: 'Creates a circular sandstorm in a designated area, damaging enemies
-    over time and reducing their vision for 3s.
+  description: 'Creates a 4.5m sandstorm at the designated location for 5s. Damages
+    opponents every 0.6s, reducing each opponents vision for 3s on their first
+    damaging tick. Re-entering the same storm does not reapply vision reduction.
 
-    The storm lasts 5s'
+    Upgrade: Flygon gains 15% movement speed while inside its own sandstorm.'
   icon: {fileID: 21300000, guid: 9f6622decef83954cb0c3a6cec5f5e77, type: 3}
   preview:
     m_AssetGUID: ede3786100000c641a01cfcfa7d4e82f

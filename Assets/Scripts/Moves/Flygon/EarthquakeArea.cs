@@ -1,103 +1,53 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
-public class EarthquakeArea : NetworkBehaviour
+public class EarthquakeArea : FlygonMoveObject
 {
     [SerializeField] private ParticleSystem landParticles;
-    
-    private float maxRadius = 2.5f;
-    private DamageInfo firstWave;
-    private DamageInfo secondWave;
-    private DamageInfo thirdWave;
-
-    private StatusEffect stun = new StatusEffect(StatusType.Incapacitated, 1.2f, true, 0);
-    private StatChange normalSlow = new StatChange(20, Stat.Speed, 0.5f, true, false, true, 0);
-    private StatChange finalSlow = new StatChange(25, Stat.Speed, 3.2f, true, false, true, 0);
-
-    private Team orangeTeam;
-
-    private Dictionary<Pokemon, int> stackAmounts = new Dictionary<Pokemon, int>();
-
-    [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, DamageInfo first, DamageInfo second, DamageInfo third, Team orangeTeam)
+    private bool landed;
+    public override FlygonCast Kind => FlygonCast.Earthquake;
+    public void Land(Vector3 point)
     {
-        transform.position = position;
-        this.orangeTeam = orangeTeam;
-        firstWave = first;
-        secondWave = second;
-        thirdWave = third;
-        stackAmounts.Clear();
-
-        StartCoroutine(EarthquakeWaves());
+        if (!IsServer || landed || (point - Origin).sqrMagnitude > 16) return;
+        landed = true; Destination = point;
     }
-
-    [Rpc(SendTo.ClientsAndHost)]
-    private void PlayParticlesRPC()
+    protected override void PresentPhase(byte value)
     {
-        landParticles.Play();
+        if (value <= 0 || landParticles == null) return;
+        landParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        landParticles.Play(true);
     }
-
-    private IEnumerator EarthquakeWaves()
+    protected override IEnumerator Execute()
     {
-        for (int i = 0; i < 3; i++)
+        transform.position = Destination;
+        float timeout = Time.time + 2;
+        while (Live && !landed && Time.time < timeout)
         {
-            yield return new WaitForSeconds(0.6f);
-            PlayParticlesRPC();
-            Collider[] colliders = Physics.OverlapSphere(transform.position, maxRadius);
-
-            foreach (Collider col in colliders)
+            if (Actor.Pokemon.HasAnyStatusEffect(FlygonMoveRules.Interrupts)) yield break;
+            yield return null;
+        }
+        if (!Live || !landed) yield break;
+        transform.position = Destination;
+        var stacks = new Dictionary<Pokemon, int>();
+        for (int wave = 0; wave < 3 && Live; wave++)
+        {
+            SetPhase((byte)(wave + 1));
+            bool shield = false;
+            foreach (Pokemon target in TargetsInArea())
             {
-                if (!Aim.Instance.CanPokemonBeTargeted(col.gameObject, AimTarget.NonAlly, orangeTeam))
+                shield |= wave == 2 && target.Type == PokemonType.Player;
+                target.TakeDamageRPC(FlygonMoveRules.Damage(Actor.NetworkObjectId, Kind, wave));
+                if (!CanHit(target)) continue;
+                stacks.TryGetValue(target, out int count); stacks[target] = ++count;
+                if (CanControl(target))
                 {
-                    continue;
-                }
-
-                if (col.TryGetComponent(out Pokemon pokemon))
-                {
-                    if (stackAmounts.ContainsKey(pokemon))
-                    {
-                        stackAmounts[pokemon]++;
-                    }
-                    else
-                    {
-                        stackAmounts.Add(pokemon, 1);
-                    }
-
-                    DamageInfo damageInfo;
-                    switch (i)
-                    {
-                        case 0:
-                            damageInfo = firstWave;
-                            break;
-                        case 1:
-                            damageInfo = secondWave;
-                            break;
-                        case 2:
-                            damageInfo = thirdWave;
-                            break;
-                        default:
-                            damageInfo = firstWave;
-                            break;
-                    }
-
-                    pokemon.TakeDamageRPC(damageInfo);
-                    pokemon.AddStatChange(normalSlow);
-
-                    if (stackAmounts.TryGetValue(pokemon, out int stack))
-                    {
-                        if (stack == 3)
-                        {
-                            pokemon.AddStatusEffect(stun);
-                            pokemon.AddStatChange(finalSlow);
-                        }
-                    }
+                    RefreshStat(target, Stat.Speed, count == 3 ? (short)25 : (short)20, count == 3 ? 3.2f : 0.6f);
+                    if (count == 3 && !target.HasStatusEffect(StatusType.HindranceResistance)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1.2f, true, EffectId));
                 }
             }
+            if (Upgraded && shield) Actor.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(Actor.Pokemon.GetMaxHp() * 0.08f), EffectId, 0, 3, true));
+            yield return Wait(wave == 2 ? 0.45f : FlygonMoveRules.QuakeInterval);
         }
-
-        yield return new WaitForSeconds(0.5f);
-        NetworkObject.Despawn(true);
     }
 }

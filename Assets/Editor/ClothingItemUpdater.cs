@@ -39,7 +39,7 @@ public class ClothingItemUpdater : MonoBehaviour
         string[] genders = { "Male", "Female" };
 
         AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-        AddressableAssetGroup group = settings.FindGroup("ClothingItems");
+        AddressableAssetGroup group = ClothingAddressablesOptimizer.GetIconGroup(settings);
 
         foreach (string gender in genders)
         {
@@ -107,6 +107,7 @@ public class ClothingItemUpdater : MonoBehaviour
                         {
                             string guidIcon = AssetDatabase.AssetPathToGUID(file);
                             AddressableAssetEntry entryIcon = settings.CreateOrMoveEntry(guidIcon, group);
+                            ClothingAddressablesOptimizer.SetIconLabel(settings, entryIcon);
                             entryIcon.address = $"Assets/AddressableAssets/{Path.GetFileName(file)}";
 
                             clothingItem.sprite = new AssetReferenceSprite(guidIcon);

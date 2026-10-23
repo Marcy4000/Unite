@@ -25,11 +25,13 @@ public class ClothesList : MonoBehaviour
     {
         List<ClothingTypeList> clothesList = isMale ? maleClothes : femaleClothes;
 
+        if (clothesList == null) return null;
         foreach (var item in clothesList)
         {
             if (item.clothingType == clothingType)
             {
-                return item.clothingItems[index];
+                return item.clothingItems != null && index >= 0 && index < item.clothingItems.Count
+                    ? item.clothingItems[index] : null;
             }
         }
 

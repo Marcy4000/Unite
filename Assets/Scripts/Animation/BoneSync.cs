@@ -18,6 +18,12 @@ public class BoneSync : MonoBehaviour
 
     private TransformPair[] bonePairs = new TransformPair[0];
 
+    private void OnEnable()
+    {
+        // UIObject3D clones clothingRoots but not the runtime-only bonePairs cache.
+        RebuildSyncData();
+    }
+
     // Call this from your initialization script whenever clothingRoots changes.
     public void RebuildSyncData()
     {

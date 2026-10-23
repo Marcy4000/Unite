@@ -20,14 +20,19 @@ public class ClothingSelectionItem : MonoBehaviour
 
     public void SetItem(ClothingItem item)
     {
+        StopAllCoroutines();
+        ReleaseIcon();
         this.item = item;
-        itemName.text = item.itemName;
+        itemName.text = item != null ? item.itemName : "";
 
-        if (!item.sprite.RuntimeKeyIsValid())
-        {
-            return;
-        }
+        if (isActiveAndEnabled) StartIconLoad();
+    }
 
+    private void OnEnable() => StartIconLoad();
+
+    private void StartIconLoad()
+    {
+        if (iconHandle.IsValid() || item == null || item.sprite == null || !item.sprite.RuntimeKeyIsValid()) return;
         StartCoroutine(LoadIcon());
     }
 
@@ -40,14 +45,29 @@ public class ClothingSelectionItem : MonoBehaviour
         if (iconHandle.Status == AsyncOperationStatus.Succeeded)
         {
             itemIcon.sprite = iconHandle.Result;
+            itemIcon.enabled = itemIcon.sprite != null;
         }
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
+        StopAllCoroutines();
+        ReleaseIcon();
+    }
+
+    private void ReleaseIcon()
+    {
+        if (itemIcon != null)
+        {
+            itemIcon.sprite = null;
+            itemIcon.enabled = false;
+        }
         if (iconHandle.IsValid())
         {
             Addressables.Release(iconHandle);
         }
+        iconHandle = default;
     }
+
+    private void OnDestroy() => ReleaseIcon();
 }

@@ -779,6 +779,8 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonStatusChange(StatusEffect effect, bool added)
     {
+        // Cinderace burns carry their own source-scaled, three-tick damage.
+        if (CinderMoveRules.ManagedBurn(effect)) return;
         // This is so incredibly stupid but it'll do for now
         // Update: no longer as stupid, still stupid
         Debug.Log("Status changed");

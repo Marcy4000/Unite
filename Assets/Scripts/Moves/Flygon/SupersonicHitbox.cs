@@ -1,117 +1,38 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
-public class SupersonicHitbox : NetworkBehaviour
+public class SupersonicHitbox : FlygonMoveObject
 {
-    private StatusEffect confusionEffect = new StatusEffect(StatusType.Incapacitated, 1.2f, true, 0);
-    private StatChange speedReduction = new StatChange(20, Stat.Speed, 4.2f, true, false, true, 0);
-
-    private Team orangeTeam;
-    private bool initialized;
-
-    private float cooldown = 0.4f;
-
-    private List<Pokemon> pokemonInTrigger = new List<Pokemon>();
-    private List<Pokemon> stunnedPokemons = new List<Pokemon>();
-
-    [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 startPos, Vector3 startRot, Team orangeTeam)
+    [SerializeField] private ParticleSystem particles;
+    [SerializeField] private BoxCollider waveArea;
+    public override FlygonCast Kind => FlygonCast.Supersonic;
+    protected override void PresentPhase(byte value) { if (value == 1 && particles != null) particles.Play(true); }
+    protected override IEnumerator Execute()
     {
-        transform.position = startPos;
-        transform.rotation = Quaternion.LookRotation(startRot);
-        this.orangeTeam = orangeTeam;
-
-        stunnedPokemons.Clear();
-
-        initialized = true;
-
-        StartCoroutine(Despawn());
-    }
-
-    private IEnumerator Despawn()
-    {
-        yield return new WaitForSeconds(1.2f);
-        NetworkObject.Despawn(true);
-    }
-
-    private void Update()
-    {
-        if (!IsServer || !initialized)
+        yield return Wait(FlygonMoveRules.Windup(Kind), true);
+        if (!Live) yield break;
+        SetPhase(1);
+        var hit = new HashSet<Pokemon>();
+        float start = Time.time, previous = 0;
+        // The authored particles move at seven units/sec. Sweep the leading edge,
+        // not the entire seven-unit telegraph, and do not move the emitter twice.
+        while (Live && Time.time - start <= FlygonMoveRules.WaveRange / FlygonMoveRules.WaveSpeed + Time.deltaTime)
         {
-            return;
-        }
-
-        cooldown -= Time.deltaTime;
-
-        if (cooldown <= 0f)
-        {
-            for (int i = pokemonInTrigger.Count; i > 0; i--)
+            float distance = Mathf.Min(FlygonMoveRules.WaveRange, (Time.time - start) * FlygonMoveRules.WaveSpeed);
+            Vector3 center = Origin + Direction * ((previous + distance) * 0.5f) + Vector3.up * 0.5f;
+            float halfWidth = waveArea != null ? waveArea.size.x * 0.5f : FlygonMoveRules.WaveWidth * 0.5f;
+            foreach (Collider collider in Physics.OverlapBox(center, new Vector3(halfWidth, 1, Mathf.Max(0.1f, (distance - previous) * 0.5f)), Quaternion.LookRotation(Direction)))
             {
-                if (pokemonInTrigger[i - 1] == null)
-                {
-                    pokemonInTrigger.RemoveAt(i - 1);
-                    continue;
-                }
-
-                StunPokemon(pokemonInTrigger[i - 1]);
+                Pokemon target = collider.GetComponentInParent<Pokemon>();
+                if (!CanControl(target) || !hit.Add(target)) continue;
+                if (!target.HasStatusEffect(StatusType.HindranceResistance)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1, true, EffectId));
+                RefreshStat(target, Stat.Speed, FlygonMoveRules.SonicSlow(Upgraded), 4); // Three seconds remain after the stun.
             }
-
-            cooldown = 0.75f;
+            previous = distance;
+            if (distance >= FlygonMoveRules.WaveRange) break;
+            yield return null;
         }
-    }
-
-    private void StunPokemon(Pokemon pokemon)
-    {
-        if (stunnedPokemons.Contains(pokemon))
-        {
-            return;
-        }
-
-        if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
-        {
-            return;
-        }
-
-        stunnedPokemons.Add(pokemon);
-        pokemon.AddStatusEffect(confusionEffect);
-        pokemon.AddStatChange(speedReduction);
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        Pokemon pokemon;
-
-        if (other.TryGetComponent(out pokemon))
-        {
-            if (!pokemonInTrigger.Contains(pokemon))
-            {
-                pokemonInTrigger.Add(pokemon);
-            }
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        Pokemon pokemon;
-
-        if (other.TryGetComponent(out pokemon))
-        {
-            if (pokemonInTrigger.Contains(pokemon))
-            {
-                pokemonInTrigger.Remove(pokemon);
-            }
-        }
+        yield return Wait(0.3f);
     }
 }

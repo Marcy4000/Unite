@@ -308,6 +308,8 @@ public partial class MovesController
 
     public override void OnNetworkDespawn()
     {
+        DisposeFlygonRuntime();
+        DisposeCinderaceRuntime();
         OnVaporeonNetworkDespawn();
         if (pokemon != null && pokemon.BaseStats != null && pokemon.BaseStats.Passive == AvailablePassives.CresseliaPassive)
         {
