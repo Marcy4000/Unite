@@ -20,4 +20,4 @@ public class WildPokemonInfo : ScriptableObject
     public string KillNotification { get => killNotification; set => killNotification = value; }
 }
 
-public enum ObjectiveType { Zapdos, Drednaw, Rotom, Registeel, Regice, Regirock }
+public enum ObjectiveType { Zapdos, Drednaw, Rotom, Registeel, Regice, Regirock, Rayquaza }

@@ -108,6 +108,7 @@ public class PlayerManager : NetworkBehaviour
     private void Awake()
     {
         pokemon = GetComponent<Pokemon>();
+        gameObject.AddComponent<RayquazaShieldVisual>();
         movesController = GetComponent<MovesController>();
         aim = GetComponent<Aim>();
         playerMovement = GetComponent<PlayerMovement>();
@@ -181,13 +182,20 @@ public class PlayerManager : NetworkBehaviour
                 }
             };
 
-            pokemon.OnKnockback += playerMovement.Knockback;
-            pokemon.OnKnockup += playerMovement.Knockup;
+            pokemon.OnKnockback += (direction, force) =>
+            {
+                if (!IsRayquazaScoringProtected) playerMovement.Knockback(direction, force);
+            };
+            pokemon.OnKnockup += (force, duration) =>
+            {
+                if (!IsRayquazaScoringProtected) playerMovement.Knockup(force, duration);
+            };
 
             scoreStatus.OnStatusChange += () =>
             {
                 bool showLock = scoreStatus.HasStatus(ActionStatusType.Busy) || scoreStatus.HasStatus(ActionStatusType.Stunned);
-                if (showLock || scoreStatus.HasStatus(ActionStatusType.Disabled))
+                if (scoreStatus.HasStatus(ActionStatusType.Busy) || scoreStatus.HasStatus(ActionStatusType.Disabled)
+                    || (scoreStatus.HasStatus(ActionStatusType.Stunned) && !IsRayquazaScoringProtected))
                 {
                     EndScoring();
                 }
@@ -233,7 +241,7 @@ public class PlayerManager : NetworkBehaviour
                 {
                     playerMovement.AddMovementRestriction();
                     movesController.CancelAllMoves();
-                    EndScoring();
+                    if (!IsRayquazaScoringProtected) EndScoring();
                     movesController.AddMoveStatus(0, ActionStatusType.Stunned);
                     movesController.AddMoveStatus(1, ActionStatusType.Stunned);
                     movesController.AddMoveStatus(2, ActionStatusType.Stunned);
@@ -391,7 +399,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonDamage(DamageInfo info)
     {
-        if (isScoring)
+        if (isScoring && !pokemon.LastDamageProtectedScoring)
         {
             EndScoring();
         }
@@ -399,6 +407,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonDeath(DamageInfo info)
     {
+        EndScoring();
         SpawnEnergyOnDeathRPC(currentEnergy.Value);
         ResetEnergyRPC();
         pokemon.GiveExpRpc(info.attackerId, transform.position, GetBaseExp());
@@ -561,6 +570,8 @@ public class PlayerManager : NetworkBehaviour
         BattleUIManager.instance.SetRecallBarActive(true);
     }
 
+    private bool IsRayquazaScoringProtected => isScoring && pokemon.HasRayquazaShield;
+
     private void StartScoring()
     {
         if (!scoreStatus.HasStatus(ActionStatusType.None) || currentEnergy.Value == 0)
@@ -590,6 +601,17 @@ public class PlayerManager : NetworkBehaviour
         {
             return;
         }
+
+        // A hindrance may have started while protected and outlived the shield.
+        if (scoreStatus.HasStatus(ActionStatusType.Stunned) && !IsRayquazaScoringProtected)
+        {
+            EndScoring();
+            return;
+        }
+
+        // Releasing a hindrance's movement restriction must not release the
+        // scoring movement lock if Rayquaza allowed the channel to continue.
+        if (playerMovement.CanMove) playerMovement.CanMove = false;
 
         goalZone.GetAlliesInGoal(CurrentTeam.Team, out int alliesInGoal, out int enemiesInGoal);
         maxScoreTime = ScoringSystem.CalculateTrueScoreTime(alliesInGoal, GetScoreBuffs(), currentEnergy.Value);
@@ -719,7 +741,7 @@ public class PlayerManager : NetworkBehaviour
         playerMovement.AddMovementRestriction();
         animationManager.SetTrigger("Stun");
         movesController.CancelAllMoves();
-        EndScoring();
+        if (!IsRayquazaScoringProtected) EndScoring();
         CancelRecall();
         movesController.AddMoveStatus(0, ActionStatusType.Stunned);
         movesController.AddMoveStatus(1, ActionStatusType.Stunned);
@@ -850,6 +872,10 @@ public class PlayerManager : NetworkBehaviour
         foreach (ScoreBoost boost in goalBuffs)
         {
             buffs.Add(boost);
+        }
+        if (pokemon.HasRayquazaShield)
+        {
+            buffs.Add(new ScoreBoost(RayquazaBuff.ShieldId, ScoreSpeedFactor.Rayquaza, 0, false));
         }
         return buffs;
     }

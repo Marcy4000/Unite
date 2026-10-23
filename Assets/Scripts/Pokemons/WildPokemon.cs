@@ -186,6 +186,9 @@ public class WildPokemon : NetworkBehaviour
             case ObjectiveType.Zapdos:
                 HandleZapdos(attacker, info);
                 break;
+            case ObjectiveType.Rayquaza:
+                HandleRayquaza(attacker, info);
+                break;
             case ObjectiveType.Drednaw:
                 HandleDrednaw(attacker, info);
                 break;
@@ -238,6 +241,29 @@ public class WildPokemon : NetworkBehaviour
         foreach (var goalZone in opposingLane.GoalZones)
         {
             goalZone.WeaknenGoalZoneRPC(20f);
+        }
+
+        pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);
+        StartCoroutine(DumbDespawn());
+    }
+
+    private void HandleRayquaza(Pokemon attacker, DamageInfo info)
+    {
+        Team winningTeam = attacker.TeamMember.Team;
+        foreach (var player in GameManager.Instance.Players)
+        {
+            if (player == null || !player.CurrentTeam.IsOnSameTeam(winningTeam))
+            {
+                continue;
+            }
+
+            player.GainEnergyRPC(RayquazaBuff.EnergyReward(player.NetworkObjectId == info.attackerId));
+            if (player.PlayerState != PlayerState.Dead && player.Pokemon.CurrentHp > 0)
+            {
+                // Replace rather than stack if a capture is repeated in a custom match.
+                player.Pokemon.RemoveShieldWithIDRPC(RayquazaBuff.ShieldId);
+                player.Pokemon.AddShieldRPC(RayquazaBuff.CreateShield(player.Pokemon.GetMaxHp()));
+            }
         }
 
         pokemon.GiveExpRpc(info.attackerId, transform.position, ExpYield);

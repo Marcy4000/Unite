@@ -152,6 +152,14 @@ public class Aim : NetworkBehaviour
         circleAreaIndicator.transform.localScale = new Vector3(areaRadius, 1, areaRadius);
     }
 
+    // Positioning is shared with CircleAreaAim, but Meowstic supplies an authored
+    // square footprint instead of displaying a misleading circular hit area.
+    public void InitializeSquareAreaIndicator(float castRange)
+    {
+        InitializeCircleAreaIndicator(castRange);
+        circleAreaIndicator.SetActive(false);
+    }
+
     public void InitializeSimpleCircle(float radius)
     {
         circleIndicator.SetActive(true);

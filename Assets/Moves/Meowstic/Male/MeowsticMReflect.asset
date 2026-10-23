@@ -18,10 +18,7 @@ MonoBehaviour:
   cooldown: 8
   uniteEnergyCost: 0
   moveName: Reflect
-  description: Attaches a psychic shield to either an ally or yourself, reducing
-    incoming physical damage by 35%, then after 4s it explodes dealing damage equals
-    to 35% of the sum of the damage taken while the shield was active (capped at
-    2.5k)
+  description: "Protect an aimed ally, or yourself if no ally is selected, reducing physical damage by 35% for 4 seconds. Stores 35% of physical damage received after mitigation, including damage absorbed by shields (up to 2500). On expiry or the recipient's KO, the protection detonates in a 4m radius for the stored amount as true damage. Use again to detonate early; this ends the protection without restarting its cooldown. Upgrade: raises the stored-damage cap to 3000."
   icon: {fileID: 21300000, guid: 4c654a1774c190747b98cdbc069b7114, type: 3}
   preview:
     m_AssetGUID: 7b9c93170d9e3204a8ea5cbad8719d0c

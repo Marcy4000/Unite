@@ -34,7 +34,7 @@ public partial class Pokemon : NetworkBehaviour
     private NetworkList<StatusEffect> statusEffects;
     private List<float> statusTimers = new List<float>();
 
-    // This is so stupid, only implemented for meowstic's wonder room and likely has no other use otherwise
+    // Replicated offensive-scaling inversion; source ownership is tracked in Pokemon.Meowstic.
     private NetworkVariable<bool> flipAtkStat = new NetworkVariable<bool>();
 
     private float outOfCombatTimer = 0;
@@ -173,6 +173,10 @@ public partial class Pokemon : NetworkBehaviour
     {
         if (current <= 0)
         {
+            if (IsServer)
+            {
+                RemoveShieldWithIDRPC(RayquazaBuff.ShieldId);
+            }
             OnDeath?.Invoke(lastHit);
         }
         OnHpChange?.Invoke();
@@ -657,6 +661,7 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void AddStatChangeRPC(StatChange change)
     {
+        if (!InterceptMeowsticStat(ref change)) return;
         statChanges.Add(change);
         if (change.IsTimed)
         {
@@ -779,6 +784,7 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void AddStatusEffectRPC(StatusEffect effect)
     {
+        if (!InterceptMeowsticStatus(effect)) return;
         if (effect.PeriodicDamage.Enabled)
         {
             if (!effect.PeriodicDamage.IsValid || !effect.IsTimed || !float.IsFinite(effect.Duration) || effect.Duration <= 0
@@ -1142,10 +1148,11 @@ public partial class Pokemon : NetworkBehaviour
             attacker.OnKilledPokemonRPC(NetworkObjectId);
         }
 
+        OnResolvedDamage?.Invoke(damage, Mathf.Min(actualDamage, previousHp + (damage.type == DamageType.True ? 0 : localShields.Sum(shield => shield.Amount))));
         currentHp.Value = localHp;
 
         attacker.OnHealthDamageDealt?.Invoke(this, damage, Mathf.Max(0, previousHp - localHp));
-        ClientDamageRPC(actualDamage, damage);
+        ClientDamageRPC(actualDamage, damage, RayquazaBuff.ProtectsScoring(HasRayquazaShield, damage.type));
         attacker.OnDamageDealtRPC(NetworkObjectId, damage);
     }
 
@@ -1160,29 +1167,14 @@ public partial class Pokemon : NetworkBehaviour
     {
         int atkStat;
 
-        if (attacker.SwitchAtkStat)
-        {
-            switch (damage.type)
-            {
-                case DamageType.Physical:
-                    damage.type = DamageType.Special;
-                    break;
-                case DamageType.Special:
-                    damage.type = DamageType.Physical;
-                    break;
-                default:
-                    break;
-            }
-        }
-
         switch (damage.type)
         {
             case DamageType.True:
             case DamageType.Physical:
-                atkStat = attacker.GetAttack();
+                atkStat = damage.type == DamageType.Physical && attacker.SwitchAtkStat ? attacker.GetSpAttack() : attacker.GetAttack();
                 break;
             case DamageType.Special:
-                atkStat = attacker.GetSpAttack();
+                atkStat = attacker.SwitchAtkStat ? attacker.GetAttack() : attacker.GetSpAttack();
                 break;
             default:
                 atkStat = 0;
@@ -1215,7 +1207,9 @@ public partial class Pokemon : NetworkBehaviour
 
         float finalDamage = (float)attackDamage * 600 / (600 + defStat);
 
-        return Mathf.FloorToInt(finalDamage * (1f-GetDamageReduction()) * (damage.multiplier > 0 ? damage.multiplier : 1f));
+        float physicalReduction = damage.type == DamageType.Physical ? GetMeowsticPhysicalReduction() : 0;
+        return Mathf.FloorToInt(finalDamage * (1f-GetDamageReduction()) * (1f-physicalReduction) * (damage.multiplier > 0 ? damage.multiplier : 1f)
+            * GetRayquazaDamageMultiplier(attacker));
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)
@@ -1224,7 +1218,8 @@ public partial class Pokemon : NetworkBehaviour
         List<ShieldInfo> resultShields = new List<ShieldInfo>(shields);
 
         // Sort a copy of the shields array by priority in descending order
-        ShieldInfo[] sortedShields = shields.OrderByDescending(s => s.Priority).ToArray();
+        ShieldInfo[] sortedShields = shields.OrderByDescending(s => s.Priority)
+            .ThenByDescending(s => s.ID == RayquazaBuff.ShieldId).ToArray();
 
         // Iterate over the sorted shields and apply damage
         int remainingDamage = damage;
@@ -1265,9 +1260,10 @@ public partial class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Everyone)]
-    private void ClientDamageRPC(int actualDamage, DamageInfo damage)
+    private void ClientDamageRPC(int actualDamage, DamageInfo damage, bool protectedScoring)
     {
         lastHit = damage;
+        LastDamageProtectedScoring = protectedScoring;
         if (IsClient && damagePrefab != null)
         {
             Transform parent = activeModel == null ? transform : activeModel.transform;
