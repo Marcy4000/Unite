@@ -15,6 +15,9 @@ public abstract class BasicAttackBase
     public abstract void Perform(bool wildPriority);
 
     public abstract void Update();
+
+    public virtual void ResetAttack() { }
+    public virtual void Dispose() { }
 }
 
 public class EmptyBasicAtk : BasicAttackBase

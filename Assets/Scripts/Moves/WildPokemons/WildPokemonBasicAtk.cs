@@ -33,7 +33,7 @@ public class WildPokemonBasicAtk : BasicAttackBase
         {
             Pokemon targetPokemon = hitCollider.GetComponent<Pokemon>();
 
-            if (targetPokemon == null)
+            if (targetPokemon == null || !CombatTargeting.WithinMeleeRange(wildPokemonAI.transform.position, targetPokemon.transform.position, range))
             {
                 continue;
             }

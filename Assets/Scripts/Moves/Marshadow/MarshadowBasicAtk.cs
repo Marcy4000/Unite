@@ -43,7 +43,8 @@ public class MarshadowBasicAtk : BasicAttackBase
         {
             Pokemon targetPokemon = hitCollider.GetComponent<Pokemon>();
 
-            if (!MarshadowMoveRuntime.CanHit(playerManager, targetPokemon) || !unique.Add(targetPokemon))
+            if (!MarshadowMoveRuntime.CanHit(playerManager, targetPokemon)
+                || !CombatTargeting.WithinMeleeRange(playerManager.transform.position, targetPokemon.transform.position, range) || !unique.Add(targetPokemon))
             {
                 continue;
             }

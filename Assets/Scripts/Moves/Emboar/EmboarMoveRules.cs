@@ -40,6 +40,8 @@ public static class EmboarMoveRules
         return origin + Vector3.ClampMagnitude(delta, range);
     }
     public static float BasicRange(int level) => level >= 6 ? 3.5f : level >= 4 ? 3 : 2.5f;
+    public static bool InBasicRange(Vector3 origin, Vector3 target, float range) => Finite(origin) && Finite(target)
+        && float.IsFinite(range) && range > 0 && (target - origin).sqrMagnitude <= (range + 0.5f) * (range + 0.5f);
     public static float ChargeSpeed(float age, bool empowered) => Mathf.Lerp(5, 9, empowered ? 1 : Mathf.Clamp01(age / ChargeRamp));
     public static bool CanHit(PlayerManager actor, Pokemon target) => actor != null && target != null && target.IsSpawned && target.CurrentHp > 0
         && !target.TeamMember.IsOnSameTeam(actor.CurrentTeam) && !target.HasStatusEffect(StatusType.Invincible) && !target.HasStatusEffect(StatusType.Untargetable);
@@ -49,6 +51,9 @@ public static class EmboarMoveRules
         var result = new HashSet<Pokemon>();
         foreach (Collider collider in colliders)
         {
+            // Vision sensors are large child triggers, not hurtboxes. Resolving their
+            // parent Pokemon would let every overlapping sensor damage its owner.
+            if (collider == null || collider.GetComponentInParent<VisionController>() != null) continue;
             Pokemon target = collider.GetComponentInParent<Pokemon>();
             if (target != null) result.Add(target);
         }

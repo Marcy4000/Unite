@@ -210,37 +210,56 @@ public class CameraControllerPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator TransparentPanAreaOnlyRaycastsInsideItsBoundsAndYieldsToButtons()
+    public IEnumerator TransparentPanAreaOnlyRaycastsInsideItsBoundsAndYieldsToOtherCanvases()
     {
-        var canvasObject = new GameObject("Pan area raycast test", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
+        var canvasObject = new GameObject("Mobile controls canvas", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
         canvasObject.transform.SetParent(root.transform);
         canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
-        GameObject area = CreatePanArea();
-        area.transform.SetParent(canvasObject.transform, false);
+        canvasObject.GetComponent<Canvas>().sortingOrder = 1;
+        GameObject area = CreatePanArea(canvasObject.transform);
+        var areaRect = area.GetComponent<RectTransform>();
+        var eventSystemObject = new GameObject("Pan raycast event system", typeof(EventSystem));
+        eventSystemObject.transform.SetParent(root.transform);
+        var eventSystem = eventSystemObject.GetComponent<EventSystem>();
+        eventSystem.enabled = false; // Only query raycasts; do not process live editor input.
         yield return null;
 
-        var pointer = new PointerEventData(null) { position = new Vector2(Screen.width * 0.8f, Screen.height * 0.65f) };
+        Vector2 inside = RectTransformUtility.WorldToScreenPoint(null, areaRect.TransformPoint(areaRect.rect.center));
+        var pointer = new PointerEventData(eventSystem) { position = inside };
         var hits = new List<RaycastResult>();
-        var raycaster = canvasObject.GetComponent<GraphicRaycaster>();
-        raycaster.Raycast(pointer, hits);
+        eventSystem.RaycastAll(pointer, hits);
         Assert.That(hits.Count, Is.EqualTo(1));
         Assert.That(hits[0].gameObject, Is.EqualTo(area));
 
-        hits.Clear();
-        pointer.position = new Vector2(Screen.width * 0.1f, Screen.height * 0.1f);
-        raycaster.Raycast(pointer, hits);
+        pointer.position = new Vector2(-100f, -100f);
+        eventSystem.RaycastAll(pointer, hits);
         Assert.That(hits, Is.Empty);
 
-        var button = new GameObject("Overlapping move button", typeof(RectTransform), typeof(Image));
-        button.transform.SetParent(canvasObject.transform, false);
-        var buttonRect = button.GetComponent<RectTransform>();
-        buttonRect.anchorMin = area.GetComponent<RectTransform>().anchorMin;
-        buttonRect.anchorMax = area.GetComponent<RectTransform>().anchorMax;
-        buttonRect.offsetMin = buttonRect.offsetMax = Vector2.zero;
-        yield return null;
-        pointer.position = new Vector2(Screen.width * 0.8f, Screen.height * 0.65f);
-        raycaster.Raycast(pointer, hits);
-        Assert.That(hits[0].gameObject, Is.EqualTo(button));
+        // Match the base HUD, mobile HUD and scoreboard sorting orders. A base
+        // HUD button must win even though the pan area's parent sorts above it.
+        foreach (int order in new[] { 0, 1, 2 })
+        {
+            var hud = new GameObject("Overlapping HUD canvas", typeof(RectTransform), typeof(Canvas), typeof(GraphicRaycaster));
+            hud.transform.SetParent(root.transform);
+            hud.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            hud.GetComponent<Canvas>().sortingOrder = order;
+            var button = new GameObject("Overlapping HUD button", typeof(RectTransform), typeof(Image), typeof(Button));
+            button.transform.SetParent(hud.transform, false);
+            var buttonRect = button.GetComponent<RectTransform>();
+            buttonRect.anchorMin = areaRect.anchorMin;
+            buttonRect.anchorMax = areaRect.anchorMax;
+            buttonRect.pivot = areaRect.pivot;
+            buttonRect.anchoredPosition = areaRect.anchoredPosition;
+            buttonRect.sizeDelta = areaRect.sizeDelta;
+            yield return null;
+
+            pointer.position = inside;
+            eventSystem.RaycastAll(pointer, hits);
+            Assert.That(hits[0].gameObject, Is.EqualTo(button), "HUD sorting order " + order);
+            hud.SetActive(false);
+            eventSystem.RaycastAll(pointer, hits);
+            Assert.That(hits[0].gameObject, Is.EqualTo(area));
+        }
     }
 
     [TestCase("OnApplicationFocus", false)]
@@ -261,12 +280,12 @@ public class CameraControllerPlayModeTests
         Assert.That(camera.Follow, Is.EqualTo(target));
     }
 
-    private GameObject CreatePanArea()
+    private GameObject CreatePanArea(Transform parent = null)
     {
 #if UNITY_EDITOR
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/DefaultObjects.prefab");
         var handlerType = Type.GetType("MobileCameraPanArea, Assembly-CSharp", true);
-        var area = UnityEngine.Object.Instantiate(prefab.GetComponentInChildren(handlerType, true).gameObject, root.transform);
+        var area = UnityEngine.Object.Instantiate(prefab.GetComponentInChildren(handlerType, true).gameObject, parent != null ? parent : root.transform);
         handlerType.GetField("cameraController", PrivateInstance).SetValue(area.GetComponent(handlerType), controller);
         return area;
 #else

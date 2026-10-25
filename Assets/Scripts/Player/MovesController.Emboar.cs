@@ -135,15 +135,19 @@ public partial class MovesController
             || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(primaryId, out var obj) || !obj.TryGetComponent(out Pokemon primary)
             || !EmboarMoveRules.CanHit(playerManager, primary)) return;
         float range = EmboarMoveRules.BasicRange(pokemon.CurrentLevel);
-        if ((primary.transform.position - transform.position).sqrMagnitude > (range + 0.5f) * (range + 0.5f)) return;
-        direction = EmboarMoveRules.Direction(primary.transform.position - transform.position, direction);
+        Vector3 origin = transform.position;
+        if (!EmboarMoveRules.InBasicRange(origin, primary.transform.position, range)) return;
+        direction = EmboarMoveRules.Direction(primary.transform.position - origin, direction);
         emboarNextBasic = EmboarNow + GetAtkSpeedCooldown();
         bool boosted = emboarAttacks.Boosted(EmboarNow), launcher = emboarAttacks.Launcher(EmboarNow), connected = false;
-        Vector3 center = transform.position + direction * range * 0.52f + Vector3.up * 0.6f;
+        Vector3 center = origin + direction * range * 0.52f + Vector3.up * 0.6f;
         var targets = EmboarMoveRules.Targets(Physics.OverlapSphere(center, range * 0.5f));
         targets.Add(primary);
         foreach (Pokemon target in targets)
         {
+            // A broad-phase overlap can retain an old collider pose after a teleport.
+            // Validate every victim, not just the requested primary, against its current root.
+            if (target == null || !EmboarMoveRules.InBasicRange(origin, target.transform.position, range)) continue;
             if (!HitEmboarTarget(target, EmboarMoveRules.Damage(NetworkObjectId, EmboarCast.Impact, boosted ? 1 : 0))) continue;
             connected = true;
             if (launcher && EmboarMoveRules.CanControl(playerManager, target))

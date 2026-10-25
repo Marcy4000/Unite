@@ -22,9 +22,8 @@ public class SupersonicHitbox : FlygonMoveObject
             float distance = Mathf.Min(FlygonMoveRules.WaveRange, (Time.time - start) * FlygonMoveRules.WaveSpeed);
             Vector3 center = Origin + Direction * ((previous + distance) * 0.5f) + Vector3.up * 0.5f;
             float halfWidth = waveArea != null ? waveArea.size.x * 0.5f : FlygonMoveRules.WaveWidth * 0.5f;
-            foreach (Collider collider in Physics.OverlapBox(center, new Vector3(halfWidth, 1, Mathf.Max(0.1f, (distance - previous) * 0.5f)), Quaternion.LookRotation(Direction)))
+            foreach (Pokemon target in CombatTargeting.BoxTargets(center, new Vector3(halfWidth, 1, Mathf.Max(0.1f, (distance - previous) * 0.5f)), Quaternion.LookRotation(Direction)))
             {
-                Pokemon target = collider.GetComponentInParent<Pokemon>();
                 if (!CanControl(target) || !hit.Add(target)) continue;
                 if (!target.HasStatusEffect(StatusType.HindranceResistance)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1, true, EffectId));
                 RefreshStat(target, Stat.Speed, FlygonMoveRules.SonicSlow(Upgraded), 4); // Three seconds remain after the stun.

@@ -124,7 +124,7 @@ public partial class MovesController
         if (!IsFlareon || pokemon.CurrentHp <= 0 || FlareonNow < flareonActionUntil || FlareonNow + 0.04 < flareonNextBasic
             || pokemon.HasAnyStatusEffect(FlareonMoveRules.Interrupts) || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetId, out var obj)
             || !obj.TryGetComponent(out Pokemon primary) || !FlareonMoveRules.CanHit(playerManager, primary)
-            || (primary.transform.position - transform.position).sqrMagnitude > 9) return;
+            || !CombatTargeting.WithinMeleeRange(transform.position, primary.transform.position, FlareonMoveRules.BasicRange)) return;
         flareonCombo.Tick(FlareonNow); SyncFlareonCombo();
         bool boosted = flareonCombo.AttackCharge == 2;
         Vector3 direction = FlareonMoveRules.Direction(primary.transform.position - transform.position, transform.forward);
@@ -138,9 +138,11 @@ public partial class MovesController
         yield return new WaitForSeconds(0.1f);
         if (!IsFlareon || !IsSpawned || pokemon.CurrentHp <= 0 || generation != flareonGeneration || pokemon.HasAnyStatusEffect(FlareonMoveRules.Interrupts)) yield break;
         bool connected = false;
-        var targets = FlareonMoveRules.Targets(Physics.OverlapSphere(transform.position + direction * 1.35f + Vector3.up * 0.5f, 1.15f));
+        Vector3 origin = transform.position;
+        var targets = CombatTargeting.SphereTargets(origin + direction * 1.35f + Vector3.up * 0.5f, 1.15f);
         foreach (Pokemon target in targets)
         {
+            if (target == null || !CombatTargeting.WithinMeleeRange(origin, target.transform.position, FlareonMoveRules.BasicRange)) continue;
             if (!HitFlareonTarget(target, FlareonMoveRules.Damage(NetworkObjectId, FlareonCast.Basic, boosted: boosted))) continue;
             connected = true;
             if (boosted && pokemon.CurrentLevel >= 3) target.RefreshDamageOverTime(StatusType.Burned, NetworkObjectId, 2);

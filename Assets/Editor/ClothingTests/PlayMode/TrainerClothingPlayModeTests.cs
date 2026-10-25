@@ -29,6 +29,45 @@ public class TrainerClothingPlayModeTests
         .GetField(field, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).SetValue(target, value);
     private static object Property(object target, string name) => target.GetType().GetProperty(name).GetValue(target);
     private void Initialize() => model.GetType().GetMethod("InitializeClothes").Invoke(model, new[] { info });
+    private static object Call(object target, string name, params object[] args) => target.GetType()
+        .GetMethod(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Invoke(target, args);
+
+    private Component CreateTrainerCard(bool male)
+    {
+#if UNITY_EDITOR
+        info.GetType().GetProperty("IsMale").SetValue(info, male);
+        var cardPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/TrainerModels/TrainerCard.prefab");
+        var configured = cardPrefab.GetComponentInChildren(GameType("TrainerCardUI"), true);
+        var cardObject = new GameObject("Card animation regression", typeof(RectTransform));
+        cardObject.SetActive(false);
+        cardObject.transform.SetParent(root.transform, false);
+        var card = cardObject.AddComponent(GameType("TrainerCardUI"));
+        var previewObject = new GameObject("Inactive render stub", typeof(RectTransform));
+        previewObject.SetActive(false);
+        previewObject.transform.SetParent(cardObject.transform, false);
+        var preview = previewObject.AddComponent(GameType("UI.ThreeDimensional.UIObject3D"));
+        // Exercise the actual card lifecycle without rendering or loading card artwork.
+        // This preview already targets the fixture's real trainer and controllers.
+        Set(preview, "_target", model.transform);
+        Set(card, "trainerObject", preview);
+        Set(card, "maleAnimations", Get(configured, "maleAnimations"));
+        Set(card, "femaleAnimations", Get(configured, "femaleAnimations"));
+        Set(card, "currentClothes", info);
+        cardObject.SetActive(true); // OnEnable runs SetupTrainerModelUI, as in the reported stack trace.
+        return card;
+#else
+        throw new NotSupportedException();
+#endif
+    }
+
+    private void AssertCardPose(Component card, bool male, int index)
+    {
+        var animator = (Animator)Property(model, "ActiveAnimator");
+        string pose = ((string[])Get(card, male ? "maleAnimations" : "femaleAnimations"))[index];
+        Assert.That((bool)Property(model, "IsMale"), Is.EqualTo(male));
+        Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName(pose), Is.True, "Expected pose: " + pose);
+        LogAssert.NoUnexpectedReceived();
+    }
 
     [UnitySetUp]
     public IEnumerator SetUp()
@@ -114,6 +153,8 @@ public class TrainerClothingPlayModeTests
         Set(info, "Shirt", (ushort)1);
         Initialize();
         Assert.That(Holder(1).GetChild(0), Is.SameAs(hair), "Existing outfit must stay visible during loading.");
+        Assert.That((bool)Property(model, "IsInitialized"), Is.False,
+            "The previous outfit must not make a pending request appear initialized for one frame.");
         Assert.That(((GameObject)Get(model, "loadingText")).activeSelf, Is.False);
         yield return null;
         Assert.That(((GameObject)Get(model, "loadingText")).activeSelf, Is.False,
@@ -234,6 +275,110 @@ public class TrainerClothingPlayModeTests
         Assert.That(Holder(1).childCount, Is.Zero);
         Assert.That(Holder(1, false).childCount, Is.EqualTo(1));
         Assert.That((bool)Property(model, "IsMale"), Is.False);
+    }
+
+    [UnityTest]
+    public IEnumerator FemaleTrainerCardWaitsForFemaleAnimatorBeforePlayingPose()
+    {
+        var card = CreateTrainerCard(false);
+        Assert.That((bool)Property(model, "IsMale"), Is.True, "The default prefab is still male while loading.");
+        yield return WaitForInitialization();
+        AssertCardPose(card, false, 0);
+    }
+
+    [UnityTest]
+    public IEnumerator MaleTrainerCardStillPlaysItsConfiguredPose()
+    {
+        var card = CreateTrainerCard(true);
+        yield return WaitForInitialization();
+        AssertCardPose(card, true, 0);
+    }
+
+    [UnityTest]
+    public IEnumerator TrainerCardUsesLatestPoseSelectedWhileLoading()
+    {
+        var card = CreateTrainerCard(false);
+        var metadata = Get(info, "TrainerCardInfo");
+        metadata.GetType().GetProperty("TrainerAnimation").SetValue(metadata, (byte)1);
+        Call(card, "UpdateCardPlayer", metadata);
+        yield return WaitForInitialization();
+        AssertCardPose(card, false, 1);
+    }
+
+    [UnityTest]
+    public IEnumerator TrainerCardCanSwitchFromFemaleBackToMaleWithoutPlayingOnOldAnimator()
+    {
+        var card = CreateTrainerCard(false);
+        yield return WaitForInitialization();
+        card.gameObject.SetActive(false);
+        info.GetType().GetProperty("IsMale").SetValue(info, true);
+        Set(card, "currentClothes", info);
+        card.gameObject.SetActive(true);
+        Assert.That((bool)Property(model, "IsMale"), Is.False, "Keep the previous appearance until commit.");
+        yield return WaitForInitialization();
+        AssertCardPose(card, true, 0);
+    }
+
+    [UnityTest]
+    public IEnumerator TrainerCardReenableDoesNotAccumulateCallbacksOrReplaceOtherObservers()
+    {
+        int completions = 0;
+        Set(model, "onClothesInitialized", (Action)(() => completions++));
+        var card = CreateTrainerCard(false);
+        yield return WaitForInitialization();
+        Assert.That(completions, Is.EqualTo(1));
+        card.gameObject.SetActive(false);
+        Assert.That(((Delegate)Get(model, "onClothesInitialized")).GetInvocationList().Length, Is.EqualTo(1));
+        card.gameObject.SetActive(true);
+        yield return WaitForInitialization();
+        Assert.That(completions, Is.EqualTo(2));
+        Assert.That(((Delegate)Get(model, "onClothesInitialized")).GetInvocationList().Length, Is.EqualTo(2));
+        AssertCardPose(card, false, 0);
+    }
+
+    [UnityTest]
+    public IEnumerator TeamResultsWaitForCommittedFemaleAnimator()
+    {
+        yield return AssertResultsWaitForFemaleAnimator(false);
+    }
+
+    [UnityTest]
+    public IEnumerator RacingResultsWaitForCommittedFemaleAnimator()
+    {
+        yield return AssertResultsWaitForFemaleAnimator(true);
+    }
+
+    private IEnumerator AssertResultsWaitForFemaleAnimator(bool racing)
+    {
+        var resultsObject = new GameObject("Results animation regression");
+        resultsObject.transform.SetParent(root.transform, false);
+        var results = resultsObject.AddComponent(GameType(racing ? "RacingResultsPlayer" : "SettlementTeamModels"));
+        const string femalePose = "ani_body01_lob_female";
+        Set(results, "maleVictoryAnimations", new[] { "ani_body01_40350_lob_male" });
+        Set(results, "femaleVictoryAnimations", new[] { femalePose });
+        if (racing)
+        {
+            Set(results, "trainerModel", model);
+            var holder = new GameObject("Empty Pokemon holder");
+            holder.transform.SetParent(resultsObject.transform, false);
+            Set(results, "psyduckPosition", holder.transform);
+        }
+        else
+        {
+            var models = Array.CreateInstance(GameType("TrainerModel"), 1);
+            models.SetValue(model, 0);
+            Set(results, "trainerModels", models);
+            Set(results, "trainerPokemonPositions", new Transform[0]);
+        }
+        info.GetType().GetProperty("IsMale").SetValue(info, false);
+        Initialize();
+        Call(results, racing ? "PlayVictoryAnimation" : "PlayVictoryAnimations");
+        yield return WaitForInitialization();
+        yield return null;
+        var animator = (Animator)Property(model, "ActiveAnimator");
+        animator.Update(0f);
+        Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName(femalePose), Is.True);
+        LogAssert.NoUnexpectedReceived();
     }
 
     [UnityTearDown]

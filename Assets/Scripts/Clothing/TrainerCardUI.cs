@@ -48,12 +48,13 @@ public class TrainerCardUI : MonoBehaviour
             StopCoroutine(setupCoroutine);
             setupCoroutine = null;
         }
-        trainerModel = null;
+        DetachTrainerModel();
         SetImageAlpha(0f);
     }
 
     private void OnDestroy()
     {
+        DetachTrainerModel();
         if (backgroundHandle.IsValid())
         {
             Addressables.Release(backgroundHandle);
@@ -106,18 +107,34 @@ public class TrainerCardUI : MonoBehaviour
             yield return null;
         }
 
+        DetachTrainerModel();
         trainerModel = trainerObject.TargetGameObject.GetComponent<TrainerModel>();
-
-        string animName = clothes.IsMale ? maleAnimations[currentAnimationIndex] : femaleAnimations[currentAnimationIndex];
-        
-        PlayModelAnimation(animName, triggerRender: false);
-
-        trainerModel.onClothesInitialized = () =>
-        {
-            PlayModelAnimation(animName, triggerRender: true);
-        };
-
+        // The prefab can still be using the other gender's animator until the
+        // asynchronous outfit commit. Never play the requested pose before that.
+        trainerModel.onClothesInitialized += OnTrainerClothesInitialized;
         trainerModel.InitializeClothes(clothes);
+    }
+
+    private void DetachTrainerModel()
+    {
+        if (trainerModel != null) trainerModel.onClothesInitialized -= OnTrainerClothesInitialized;
+        trainerModel = null;
+    }
+
+    private void OnTrainerClothesInitialized()
+    {
+        PlayCurrentModelAnimation();
+    }
+
+    private void PlayCurrentModelAnimation()
+    {
+        if (!isActiveAndEnabled || trainerModel == null || !trainerModel.IsInitialized
+            || !currentClothes.HasValue || trainerModel.IsMale != currentClothes.Value.IsMale) return;
+
+        // Resolve at completion, not when loading started: the pose may have been
+        // edited while the new outfit was still loading.
+        string animation = trainerModel.IsMale ? maleAnimations[currentAnimationIndex] : femaleAnimations[currentAnimationIndex];
+        PlayModelAnimation(animation);
     }
 
     public void UpdateCardPlayer(TrainerCardInfo cardInfo)
@@ -131,18 +148,16 @@ public class TrainerCardUI : MonoBehaviour
         trainerObject.CameraDistance = actualCameraDistance;
         currentAnimationIndex = cardInfo.TrainerAnimation;
 
-        if (trainerModel != null && currentClothes.HasValue)
-        {
-            string animName = currentClothes.Value.IsMale ? maleAnimations[cardInfo.TrainerAnimation] : femaleAnimations[cardInfo.TrainerAnimation];
-            PlayModelAnimation(animName, triggerRender: true);
-        }
-        
         if (currentClothes.HasValue)
         {
             var updatedClothes = currentClothes.Value;
             updatedClothes.TrainerCardInfo = cardInfo;
             currentClothes = updatedClothes;
         }
+
+        // While loading, the completion callback will apply this pose to the
+        // committed animator rather than the old visible outfit's animator.
+        if (trainerModel != null && !trainerModel.IsLoading) PlayCurrentModelAnimation();
     }
 
     public async void UpdateCardFrame(TrainerCardInfo cardInfo)
@@ -196,6 +211,7 @@ public class TrainerCardUI : MonoBehaviour
     private IEnumerator RenderDelayed()
     {
         yield return new WaitForEndOfFrame();
+        if (!isActiveAndEnabled || trainerModel == null || !trainerModel.IsInitialized) yield break;
         
         trainerObject.Render();
         

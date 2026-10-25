@@ -1,3 +1,4 @@
+using System.Collections;
 using Player = Unite.Multiplayer.GameSessionPlayer;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -42,8 +43,7 @@ public class SettlementTeamModels : MonoBehaviour
         {
             if (trainerModel.gameObject.activeSelf)
             {
-                int animIndex = Random.Range(0, trainerModel.PlayerClothesInfo.IsMale ? maleVictoryAnimations.Length : femaleVictoryAnimations.Length);
-                trainerModel.ActiveAnimator.Play(trainerModel.PlayerClothesInfo.IsMale ? maleVictoryAnimations[animIndex] : femaleVictoryAnimations[animIndex]);
+                StartCoroutine(PlayVictoryAnimationWhenReady(trainerModel));
             }
         }
     }
@@ -55,9 +55,17 @@ public class SettlementTeamModels : MonoBehaviour
 
         if (trainerModels[trainerIndex].gameObject.activeSelf)
         {
-            int animIndex = Random.Range(0, trainerModels[trainerIndex].PlayerClothesInfo.IsMale ? maleVictoryAnimations.Length : femaleVictoryAnimations.Length);
-            trainerModels[trainerIndex].ActiveAnimator.Play(trainerModels[trainerIndex].PlayerClothesInfo.IsMale ? maleVictoryAnimations[animIndex] : femaleVictoryAnimations[animIndex]);
+            StartCoroutine(PlayVictoryAnimationWhenReady(trainerModels[trainerIndex]));
         }
+    }
+
+    private IEnumerator PlayVictoryAnimationWhenReady(TrainerModel model)
+    {
+        while (model != null && model.IsLoading) yield return null;
+        if (model == null || !model.IsInitialized || !model.gameObject.activeInHierarchy) yield break;
+        var animations = model.IsMale ? maleVictoryAnimations : femaleVictoryAnimations;
+        if (animations == null || animations.Length == 0) yield break;
+        model.ActiveAnimator.Play(animations[Random.Range(0, animations.Length)]);
     }
 
     private void OnDestroy()

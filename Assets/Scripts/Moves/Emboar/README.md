@@ -8,6 +8,9 @@ move enum entries and the `EmboarReversal` internal Flamethrower identity remain
 Basic attacks intentionally have **no animation integration**: the current model
 has no usable basic-attack animations. The server still resolves their forward
 area, natural third-hit boost and Fire Pledge's confirmed-swing charges.
+Vision-controller colliders are excluded from combat queries. Every basic-attack
+victim is range-checked at its current root position, including secondary cleave
+targets, so stale physics poses after death/teleport cannot damage a remote player.
 
 - **Fire Pledge:** 5s of +25% movement speed and +20 attack-speed points. Three
   connected swings are boosted, with a 0.55s third-swing launcher on all targets.
@@ -63,6 +66,9 @@ It does not replace or save the user's open scene.
 
 EditMode suite: `EmboarTests`, plus Duraludon, Marshadow and Cresselia regressions.
 PlayMode suite: `EmboarLifecycleTests` verifies scoped-lock and visual-lift cleanup.
+`EmboarBasicDedicatedServerTests` and `EmboarBasicHostTests` exercise the real basic
+RPC/damage pipeline with overlapping vision sensors, stale post-respawn colliders,
+out-of-range primary IDs, legitimate melee cleaves and Pledge charge consumption.
 Before balance sign-off, host + remote-client playtests should cover:
 
 1. Pledge → Charge → early brake → three connected attacks; no charge loss on air.

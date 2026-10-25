@@ -70,9 +70,8 @@ public abstract class FlygonMoveObject : NetworkBehaviour
     protected HashSet<Pokemon> Targets(Vector3 center, float radius)
     {
         var result = new HashSet<Pokemon>();
-        foreach (var collider in Physics.OverlapSphere(center + Vector3.up * 0.5f, radius))
+        foreach (Pokemon target in CombatTargeting.SphereTargets(center + Vector3.up * 0.5f, radius))
         {
-            Pokemon target = collider.GetComponentInParent<Pokemon>();
             if (CanHit(target)) result.Add(target);
         }
         return result;

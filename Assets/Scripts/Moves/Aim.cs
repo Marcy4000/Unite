@@ -223,6 +223,8 @@ public class Aim : NetworkBehaviour
 
     public GameObject AimInCircle(float attackRadius, PokemonType priority = PokemonType.Player)
     {
+        if (!CombatTargeting.Finite(transform.position) || !float.IsFinite(attackRadius) || attackRadius < 0) return null;
+        if (collidersBuffer == null) collidersBuffer = new Collider[MAX_ENEMIES];
         // Find enemies within the attack radius using OverlapSphereNonAlloc
         int numEnemies = Physics.OverlapSphereNonAlloc(transform.position, attackRadius, collidersBuffer, targetMask);
 
@@ -237,25 +239,26 @@ public class Aim : NetworkBehaviour
         for (int i = 0; i < numEnemies; i++)
         {
             // Skip the player character's collider
-            if (collidersBuffer[i] == playerCollider || collidersBuffer[i].CompareTag("VisionController"))
+            if (collidersBuffer[i] == playerCollider || !CombatTargeting.TryGetPokemon(collidersBuffer[i], out Pokemon pokemon)
+                || !CombatTargeting.OverlapsSphereNow(collidersBuffer[i], transform.position, attackRadius))
                 continue;
 
-            if (!CanPokemonBeTargeted(collidersBuffer[i].gameObject, AimTarget.NonAlly, TeamToIgnore, false))
+            if (!CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, TeamToIgnore, false))
             {
                 continue;
             }
 
-            float distance = Vector3.Distance(transform.position, collidersBuffer[i].transform.position);
+            float distance = Vector3.Distance(transform.position, pokemon.transform.position);
 
             // Check if the target matches the priority
-            if ((priority == PokemonType.Player && collidersBuffer[i].CompareTag("Player")) ||
-                (priority == PokemonType.Wild && collidersBuffer[i].CompareTag("WildPokemon")))
+            if ((priority == PokemonType.Player && pokemon.CompareTag("Player")) ||
+                (priority == PokemonType.Wild && pokemon.CompareTag("WildPokemon")))
             {
                 // Update highest priority target if closer
                 if (distance < highestPriorityDistance)
                 {
                     highestPriorityDistance = distance;
-                    highestPriorityTarget = collidersBuffer[i].gameObject;
+                    highestPriorityTarget = pokemon.gameObject;
                 }
             }
             else
@@ -264,7 +267,7 @@ public class Aim : NetworkBehaviour
                 if (distance < closestDistance)
                 {
                     closestDistance = distance;
-                    closestEnemy = collidersBuffer[i].gameObject;
+                    closestEnemy = pokemon.gameObject;
                 }
             }
         }
@@ -287,16 +290,14 @@ public class Aim : NetworkBehaviour
     {
         List<GameObject> foundTargets = new List<GameObject>();
 
-        Collider[] hitColliders = Physics.OverlapSphere(position, radius);
-
-        foreach (var hitCollider in hitColliders)
+        foreach (Pokemon pokemon in CombatTargeting.SphereTargets(position, radius))
         {
-            if (!CanPokemonBeTargeted(hitCollider.gameObject, target, teamToIgnore, canHitInvisTargets))
+            if (!CanPokemonBeTargeted(pokemon.gameObject, target, teamToIgnore, canHitInvisTargets))
             {
                 continue;
             }
 
-            foundTargets.Add(hitCollider.gameObject);
+            foundTargets.Add(pokemon.gameObject);
         }
 
         return foundTargets.ToArray();
@@ -494,7 +495,7 @@ public class Aim : NetworkBehaviour
     {
         if (pokemonObject.TryGetComponent(out Pokemon pokemon))
         {
-            if (pokemon.HasAnyStatusEffect(invulnerableStatuses))
+            if (pokemon.CurrentHp <= 0 || pokemon.HasAnyStatusEffect(invulnerableStatuses))
             {
                 return false;
             }

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -43,11 +44,16 @@ public class RacingResultsPlayer : MonoBehaviour
 
     public void PlayVictoryAnimation()
     {
-        if (trainerModel.gameObject.activeSelf)
-        {
-            int animIndex = Random.Range(0, trainerModel.PlayerClothesInfo.IsMale ? maleVictoryAnimations.Length : femaleVictoryAnimations.Length);
-            trainerModel.ActiveAnimator.Play(trainerModel.PlayerClothesInfo.IsMale ? maleVictoryAnimations[animIndex] : femaleVictoryAnimations[animIndex]);
-        }
+        StartCoroutine(PlayVictoryAnimationWhenReady());
+    }
+
+    private IEnumerator PlayVictoryAnimationWhenReady()
+    {
+        while (trainerModel != null && trainerModel.IsLoading) yield return null;
+        if (trainerModel == null || !trainerModel.IsInitialized || !trainerModel.gameObject.activeInHierarchy) yield break;
+        var animations = trainerModel.IsMale ? maleVictoryAnimations : femaleVictoryAnimations;
+        if (animations == null || animations.Length == 0) yield break;
+        trainerModel.ActiveAnimator.Play(animations[Random.Range(0, animations.Length)]);
     }
 
     private void OnDestroy()

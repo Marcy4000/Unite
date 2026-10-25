@@ -520,6 +520,7 @@ public partial class MovesController : NetworkBehaviour
 
     private void UpdateMoveUI(int index)
     {
+        if (BattleUIManager.instance == null) return;
         bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned) || moveStatuses[index].HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetMoveLock(index, showLock);
 
@@ -577,6 +578,7 @@ public partial class MovesController : NetworkBehaviour
 
     private void UpdateUniteMoveUI()
     {
+        if (BattleUIManager.instance == null) return;
         bool showLock = uniteMoveStatus.HasStatus(ActionStatusType.Disabled) || uniteMoveStatus.HasStatus(ActionStatusType.Stunned) || uniteMoveStatus.HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetUniteMoveDisabledLock(showLock);
 
@@ -585,6 +587,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void LearnBasicAttack(BasicAttackBase basicAttack)
     {
+        this.basicAttack?.Dispose();
         this.basicAttack = basicAttack;
         this.basicAttack.Initialize(playerManager);
     }
@@ -719,6 +722,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void ResetAllMoves()
     {
+        basicAttack?.ResetAttack();
         ClearMarshadowBufferedInput();
         ClearCresseliaBufferedInput();
         ClearVaporeonBufferedInput();
@@ -941,6 +945,7 @@ public partial class MovesController : NetworkBehaviour
 
     public override void OnDestroy()
     {
+        basicAttack?.Dispose();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();

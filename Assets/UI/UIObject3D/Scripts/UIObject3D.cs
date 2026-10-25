@@ -348,6 +348,8 @@ namespace UI.ThreeDimensional
             if (_texture2D != null) _Destroy(_texture2D);
             if (_sprite != null) _Destroy(_sprite);
             if (_renderTexture != null) _Destroy(_renderTexture);
+            if (_resolvedRenderTexture != null) _Destroy(_resolvedRenderTexture);
+            requestedMSAASamples = 0;
         }
 
         /// <summary>
@@ -620,13 +622,21 @@ namespace UI.ThreeDimensional
 
                 if (targetCamera.targetTexture != this.renderTexture) targetCamera.targetTexture = this.renderTexture;
                 targetCamera.Render();
+                var source = renderTexture;
+                if (source.antiAliasing > 1)
+                {
+                    // CopyTexture/ReadPixels require a single-sample source.
+                    // Resolve explicitly so the UI keeps MSAA coverage, including alpha.
+                    source.ResolveAntiAliasedSurface(resolvedRenderTexture);
+                    source = resolvedRenderTexture;
+                }
                 if (copyTextureSupported)
                 {
-                    Graphics.CopyTexture(renderTexture, texture2D);
+                    Graphics.CopyTexture(source, texture2D);
                 }
                 else
                 {
-                    RenderTexture.active = this.renderTexture;
+                    RenderTexture.active = source;
                     var rect = new Rect(0, 0, (int)TextureSize.x, (int)TextureSize.y);
                     this.texture2D.ReadPixels(rect, 0, 0);
                     this.texture2D.Apply();
@@ -751,29 +761,59 @@ namespace UI.ThreeDimensional
         }
 
         private RenderTexture _renderTexture;
+        private int requestedMSAASamples;
         protected RenderTexture renderTexture
         {
             get
             {
                 if (_renderTexture == null)
                 {
-#if UNITY_2019_OR_NEWER
-                    _renderTexture = new RenderTexture((int)TextureSize.x, (int)TextureSize.y, 16, RenderTextureFormat.Default);
-#else
-                    _renderTexture = new RenderTexture((int)TextureSize.x, (int)TextureSize.y, 16, RenderTextureFormat.ARGB32);
-#endif
-
-#if !UNITY_2020_2_OR_NEWER // there appears to be a bug in Unity 2020.2 which breaks things when using anti-aliasing
-                    // Use anti-aliasing as per quality settings
-                    if (QualitySettings.antiAliasing > 0) _renderTexture.antiAliasing = QualitySettings.antiAliasing;
-#endif
+                    // Direct rendering now uses this depth buffer, not the gameplay
+                    // renderer's intermediate depth. D16 corrupts overlapping face/nose
+                    // geometry at the trainer card's longer camera distances.
+                    _renderTexture = new RenderTexture((int)TextureSize.x, (int)TextureSize.y, 24, RenderTextureFormat.ARGB32);
+                    requestedMSAASamples = 0;
                     if (QualitySettings.anisotropicFiltering > 0) _renderTexture.anisoLevel = (int)QualitySettings.anisotropicFiltering;
 
                     _renderTexture.filterMode = FilterMode.Trilinear;
                     _renderTexture.useMipMap = false;
                 }
 
+                // URP's MSAA setting lives on its pipeline asset, not QualitySettings.
+                // Reconfigure an existing preview too when in-game quality changes.
+                var pipeline = UniversalRenderPipeline.asset;
+                int samples = pipeline != null ? Mathf.Max(1, pipeline.msaaSampleCount) : Mathf.Max(1, QualitySettings.antiAliasing);
+                if (samples != requestedMSAASamples)
+                {
+                    var descriptor = _renderTexture.descriptor;
+                    descriptor.msaaSamples = samples;
+                    int supportedSamples = SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor);
+                    if (_renderTexture.antiAliasing != supportedSamples)
+                    {
+                        _renderTexture.Release();
+                        _renderTexture.antiAliasing = supportedSamples;
+                    }
+                    requestedMSAASamples = samples;
+                }
+
                 return _renderTexture;
+            }
+        }
+
+        private RenderTexture _resolvedRenderTexture;
+        private RenderTexture resolvedRenderTexture
+        {
+            get
+            {
+                if (_resolvedRenderTexture == null)
+                {
+                    var descriptor = renderTexture.descriptor;
+                    descriptor.msaaSamples = 1;
+                    descriptor.depthBufferBits = 0;
+                    _resolvedRenderTexture = new RenderTexture(descriptor);
+                    _resolvedRenderTexture.Create();
+                }
+                return _resolvedRenderTexture;
             }
         }
 

@@ -59,6 +59,16 @@ public class CameraMigrationTests
         var image = area.GetComponent<Image>();
         Assert.That(image.raycastTarget, Is.True);
         Assert.That(image.color.a, Is.Zero);
+        var panCanvas = area.GetComponent<Canvas>();
+        Assert.That(panCanvas, Is.Not.Null);
+        Assert.That(panCanvas.overrideSorting, Is.True);
+        Assert.That(panCanvas.sortingOrder, Is.EqualTo(-1));
+        Assert.That(area.GetComponent<GraphicRaycaster>(), Is.Not.Null);
+        foreach (var hudCanvas in prefab.GetComponentsInChildren<Canvas>(true).Where(canvas => canvas != panCanvas))
+        {
+            Assert.That(panCanvas.sortingLayerID, Is.EqualTo(hudCanvas.sortingLayerID));
+            Assert.That(panCanvas.sortingOrder, Is.LessThan(hudCanvas.sortingOrder));
+        }
         var handlerType = Type.GetType("MobileCameraPanArea, Assembly-CSharp", true);
         var handler = area.GetComponent(handlerType);
         Assert.That(handler, Is.Not.Null);

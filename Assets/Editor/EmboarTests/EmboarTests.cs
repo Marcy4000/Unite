@@ -113,6 +113,21 @@ public class EmboarTests
     [TestCase(6, 3.5f)]
     [TestCase(14, 3.5f)]
     public void AttackRangeWorksWhenInitializedAfterEvolution(int level, float expected) => Assert.That(Rule("BasicRange", level), Is.EqualTo(expected));
+    [TestCase(0f, true)]
+    [TestCase(3.5f, true)]
+    [TestCase(4f, true)]
+    [TestCase(4.01f, false)]
+    [TestCase(80f, false)]
+    public void BasicRangeChecksUseTheSameBoundForPrimaryAndSecondaryTargets(float distance, bool expected)
+        => Assert.That(Rule("InBasicRange", Vector3.zero, Vector3.forward * distance, 3.5f), Is.EqualTo(expected));
+    [Test]
+    public void BasicRangeRejectsInvalidPositionsAndDeadOffMapLocations()
+    {
+        Assert.That(Rule("InBasicRange", Vector3.zero, new Vector3(float.NaN, 0, 0), 3.5f), Is.False);
+        Assert.That(Rule("InBasicRange", new Vector3(float.PositiveInfinity, 0, 0), Vector3.zero, 3.5f), Is.False);
+        Assert.That(Rule("InBasicRange", Vector3.zero, new Vector3(0, -50, -50), 3.5f), Is.False);
+        Assert.That(Rule("InBasicRange", Vector3.zero, Vector3.zero, float.NaN), Is.False);
+    }
     [TestCase(0f, false, 5f)]
     [TestCase(0.2f, false, 7f)]
     [TestCase(0.4f, false, 9f)]

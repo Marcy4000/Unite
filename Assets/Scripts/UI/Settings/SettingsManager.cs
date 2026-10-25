@@ -71,7 +71,7 @@ public class SettingsManager : MonoBehaviour
         sfxVolumeSlider.onValueChanged.AddListener(SetSFXVolume);
         announcerVolumeSlider.onValueChanged.AddListener(SetAnnouncerVolume);
         // Load saved settings
-        fullscreenToggle.isOn = Screen.fullScreen;
+        fullscreenToggle.SetIsOnWithoutNotify(Screen.fullScreen);
         vsyncToggle.isOn = QualitySettings.vSyncCount == 1;
         for (int i = 0; i < qualityToggles.Length; i++)
         {
@@ -126,7 +126,7 @@ public class SettingsManager : MonoBehaviour
         resolutionDropdown.value = currentResolutionIndex;
         resolutionDropdown.RefreshShownValue();
 
-        fullscreenToggle.isOn = Screen.fullScreen;
+        fullscreenToggle.SetIsOnWithoutNotify(Screen.fullScreen);
         for (int i = 0; i < qualityToggles.Length; i++)
         {
             qualityToggles[i].isOn = QualitySettings.GetQualityLevel() == i;
@@ -182,6 +182,10 @@ public class SettingsManager : MonoBehaviour
 
     public void SetFullscreen(bool isFullscreen)
     {
+        // Android owns immersive mode separately from desktop window settings.
+        if (Application.platform == RuntimePlatform.Android)
+            return;
+
         Screen.fullScreen = isFullscreen;
         Screen.fullScreenMode = isFullscreen ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
     }

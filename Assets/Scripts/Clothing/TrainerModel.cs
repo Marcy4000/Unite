@@ -102,6 +102,9 @@ public class TrainerModel : MonoBehaviour
 
     public void InitializeClothes(PlayerClothesInfo info)
     {
+        // Callers must not mistake the previous visible outfit for a completed
+        // new request during the coroutine's initial coalescing frame.
+        initialized = false;
         requestedInfo = info;
         playerClothesInfo = info;
         hasPendingRequest = true;

@@ -40,7 +40,7 @@ public class JoltBasicAtk : BasicAttackBase
         {
             Pokemon targetPokemon = hitCollider.GetComponent<Pokemon>();
 
-            if (targetPokemon == null)
+            if (targetPokemon == null || !CombatTargeting.WithinMeleeRange(playerManager.transform.position, targetPokemon.transform.position, range))
             {
                 continue;
             }
