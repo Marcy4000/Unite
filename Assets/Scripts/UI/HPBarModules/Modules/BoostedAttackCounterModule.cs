@@ -94,7 +94,7 @@ public class BoostedAttackCounterModule : HPBarModuleBase
             iconObject.transform.SetParent(rect, false);
             Image image = iconObject.GetComponent<Image>();
             image.raycastTarget = false;
-            image.preserveAspect = true;
+            image.preserveAspect = false;
             icons.Add(image);
         }
 
