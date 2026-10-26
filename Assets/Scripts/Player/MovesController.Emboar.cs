@@ -9,10 +9,11 @@ public partial class MovesController
 {
     private readonly EmboarRecklessState emboarReckless = new EmboarRecklessState();
     private readonly EmboarAttackState emboarAttacks = new EmboarAttackState();
+    private readonly NetworkVariable<byte> emboarAttackCharge = new NetworkVariable<byte>(readPerm: NetworkVariableReadPermission.Owner);
     private readonly NetworkVariable<int> emboarCharge = new NetworkVariable<int>();
     private readonly NetworkVariable<double> emboarReadyUntil = new NetworkVariable<double>();
     private readonly NetworkVariable<double> emboarRearmUntil = new NetworkVariable<double>();
-    private readonly NetworkVariable<int> emboarPledgeHits = new NetworkVariable<int>();
+    private readonly NetworkVariable<int> emboarPledgeHits = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
     private readonly Dictionary<int, EmboarRequest> emboarRequests = new Dictionary<int, EmboarRequest>();
     private readonly Dictionary<ulong, double> emboarDamageCharge = new Dictionary<ulong, double>();
     private readonly double[] emboarNextCast = new double[3];
@@ -27,6 +28,7 @@ public partial class MovesController
     public bool EmboarRecklessReady => emboarCharge.Value == 100 && EmboarNow < emboarReadyUntil.Value;
     public float EmboarRecklessRearm => (float)Math.Max(0, emboarRearmUntil.Value - EmboarNow);
     public int EmboarPledgeHits => emboarPledgeHits.Value;
+    public int EmboarAttackCharge => emboarAttackCharge.Value;
     public int NextEmboarCast() => ++emboarSerial;
 
     private sealed class EmboarRequest
@@ -63,6 +65,9 @@ public partial class MovesController
     {
         emboarCharge.Value = emboarReckless.Charge; emboarReadyUntil.Value = emboarReckless.ReadyUntil;
         emboarRearmUntil.Value = emboarReckless.RearmUntil; emboarPledgeHits.Value = emboarAttacks.PledgeHits;
+        // Pledge makes the next basic boosted independently of the natural cycle.
+        // Send only the personal display state; do not alter either combat counter.
+        emboarAttackCharge.Value = (byte)(emboarAttacks.PledgeHits > 0 ? 2 : emboarAttacks.Charge);
     }
     private void OnEmboarDamageTaken(DamageInfo damage)
     {

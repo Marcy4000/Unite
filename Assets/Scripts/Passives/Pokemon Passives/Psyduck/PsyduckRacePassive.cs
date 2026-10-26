@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
 public class PsyduckRacePassive : PassiveBase
@@ -23,6 +21,10 @@ public class PsyduckRacePassive : PassiveBase
 
     private float animationUpdateRate = 0.1f;
     private float lastAnimationUpdate;
+    private static readonly int RacingIdleState = Animator.StringToHash("Base Layer.ani_spell1bidle_bat_0054");
+    private Coroutine movementChangeRoutine;
+    private float originalStepOffset;
+    private bool disposed;
 
     protected bool isDashing = false;
     protected float dashSpeed = 20f;
@@ -38,6 +40,7 @@ public class PsyduckRacePassive : PassiveBase
     {
         base.Start(controller);
         characterController = playerManager.PlayerMovement.CharacterController;
+        originalStepOffset = characterController.stepOffset;
         playerManager.PlayerMovement.OnCanMoveChanged += OnPlayerMovementCanMoveChange;
         currentFacingDirection = playerManager.transform.forward;
 
@@ -47,21 +50,24 @@ public class PsyduckRacePassive : PassiveBase
 
         canMove = playerManager.PlayerMovement.CanMove;
 
-        playerManager.StartCoroutine(PlayAnimationDelayed());
-
         SnapPlayerToGround();
     }
 
-    private IEnumerator PlayAnimationDelayed()
+    internal static void InitializeAnimator(Animator animator)
     {
-        yield return new WaitUntil(() => playerManager.Pokemon.CurrentEvolution != null);
-        yield return new WaitForSeconds(0.15f);
-        playerManager.AnimationManager.PlayAnimation("ani_spell1bidle_bat_0054");
+        animator.keepAnimatorStateOnDisable = true;
+        if (animator.HasState(0, RacingIdleState))
+        {
+            animator.Play(RacingIdleState, 0, 0f);
+        }
     }
 
     private void OnPlayerMovementCanMoveChange(bool value)
     {
-        playerManager.StartCoroutine(SetCanMoveRoutine(value));
+        if (!disposed)
+        {
+            movementChangeRoutine = playerManager.StartCoroutine(SetCanMoveRoutine(value));
+        }
     }
 
     private IEnumerator SetCanMoveRoutine(bool value)
@@ -72,7 +78,34 @@ public class PsyduckRacePassive : PassiveBase
 
         yield return null;
 
-        playerManager.PlayerMovement.OnCanMoveChanged += OnPlayerMovementCanMoveChange;
+        movementChangeRoutine = null;
+        if (!disposed && playerManager != null)
+        {
+            playerManager.PlayerMovement.OnCanMoveChanged += OnPlayerMovementCanMoveChange;
+        }
+    }
+
+    public override void Dispose()
+    {
+        if (disposed) return;
+        disposed = true;
+        if (playerManager == null) return;
+
+        if (movementChangeRoutine != null)
+        {
+            playerManager.StopCoroutine(movementChangeRoutine);
+            movementChangeRoutine = null;
+        }
+        playerManager.Pokemon.OnStatusChange -= OnStatusChanged;
+        playerManager.PlayerMovement.OnCanMoveChanged -= OnPlayerMovementCanMoveChange;
+        // The passive disables regular movement while it handles input itself.
+        // Restore the requested state before a replacement passive takes over;
+        // PlayerMovement still respects any external movement restrictions.
+        playerManager.PlayerMovement.CanMove = canMove;
+        if (characterController != null && characterController.stepOffset == 0f)
+        {
+            characterController.stepOffset = originalStepOffset;
+        }
     }
 
     private void OnStatusChanged(StatusEffect status, bool added)
@@ -193,7 +226,10 @@ public class PsyduckRacePassive : PassiveBase
             Vector3 localVelocity = playerManager.transform.InverseTransformDirection(currentVelocity);
             float turnDirection = Mathf.Clamp(localVelocity.x / maxSpeed, -1f, 1f);
 
-            playerManager.AnimationManager.SetFloat("TurnDirection", turnDirection);
+            if (!playerManager.AnimationManager.IsAnimatorNull())
+            {
+                playerManager.AnimationManager.SetFloat("TurnDirection", turnDirection);
+            }
 
             if (canMove)
                 SnapPlayerToGround();
@@ -204,6 +240,7 @@ public class PsyduckRacePassive : PassiveBase
 
     private void SetWalking(bool isWalking)
     {
+        if (playerManager.AnimationManager.IsAnimatorNull()) return;
         if (playerManager.AnimationManager.Animator.GetBool("Walking") != isWalking)
         {
             playerManager.AnimationManager.SetBool("Walking", isWalking);

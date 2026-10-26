@@ -8,7 +8,9 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 public partial class MovesController
 {
-    private readonly NetworkVariable<byte> cinderAttackCharge = new NetworkVariable<byte>();
+    // Combat remains server-authoritative; only the owning player needs this
+    // charge for their personal indicator and attack animation selection.
+    private readonly NetworkVariable<byte> cinderAttackCharge = new NetworkVariable<byte>(readPerm: NetworkVariableReadPermission.Owner);
     private readonly Dictionary<int, CinderRequest> cinderRequests = new Dictionary<int, CinderRequest>();
     private readonly Dictionary<ulong, CinderTargetState> cinderTargets = new Dictionary<ulong, CinderTargetState>();
     private readonly double[] cinderNextCast = new double[3];

@@ -177,11 +177,9 @@ public static class MeowsticPrefabBuilder
                 break;
             case MeowsticEffect.State:
                 orbit = false;
-                var attacks = new GameObject[2]; var enemies = new GameObject[5];
-                for (int i = 0; i < attacks.Length; i++) attacks[i] = Primitive("AttackPip" + i, graphics.transform, PrimitiveType.Sphere, white, new Vector3((i - 0.5f) * 0.22f, 2.1f, 0), Vector3.one * 0.1f);
+                var enemies = new GameObject[5];
                 for (int i = 0; i < enemies.Length; i++) enemies[i] = Primitive("EnemyPip" + i, graphics.transform, PrimitiveType.Sphere, lavender, new Vector3((i - 2) * 0.13f, 2.3f, 0), Vector3.one * 0.06f);
-                Array(view, "attackPips", attacks); Array(view, "enemyPips", enemies);
-                Set(view, "boostedReady", MeshNode("BoostedReady", graphics.transform, ring, cyan, Vector3.up * 1.9f, Vector3.one * 0.25f));
+                Array(view, "enemyPips", enemies);
                 break;
             case MeowsticEffect.Inversion:
                 Eye(motion.transform, Vector3.up * 1.7f, 0.2f, pink);

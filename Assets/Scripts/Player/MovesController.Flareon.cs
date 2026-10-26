@@ -9,7 +9,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 public partial class MovesController
 {
     private readonly FlareonComboState flareonCombo = new FlareonComboState();
-    private readonly NetworkVariable<byte> flareonAttackCharge = new NetworkVariable<byte>();
+    private readonly NetworkVariable<byte> flareonAttackCharge = new NetworkVariable<byte>(readPerm: NetworkVariableReadPermission.Owner);
     private readonly NetworkVariable<byte> flareonStacks = new NetworkVariable<byte>();
     private readonly NetworkVariable<double> flareonStacksExpire = new NetworkVariable<double>();
     private readonly NetworkVariable<ulong> flareonRecastTarget = new NetworkVariable<ulong>(ulong.MaxValue);

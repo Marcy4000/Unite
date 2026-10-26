@@ -6,7 +6,7 @@ using UnityEngine;
 
 public partial class MovesController
 {
-    private readonly NetworkVariable<byte> meowsticAttackCharge = new NetworkVariable<byte>();
+    private readonly NetworkVariable<byte> meowsticAttackCharge = new NetworkVariable<byte>(readPerm: NetworkVariableReadPermission.Owner);
     private readonly NetworkVariable<byte> meowsticNearbyEnemies = new NetworkVariable<byte>();
     private readonly NetworkVariable<double> meowsticReflectUntil = new NetworkVariable<double>();
     private readonly NetworkVariable<int> meowsticStoredDamage = new NetworkVariable<int>();

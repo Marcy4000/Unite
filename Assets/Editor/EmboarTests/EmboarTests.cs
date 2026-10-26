@@ -212,14 +212,13 @@ public class EmboarTests
         Assert.That(count, Is.EqualTo(1));
     }
     [Test]
-    public void ArtDimensionsAndPledgePipsMatchGameplay()
+    public void ArtDimensionsMatchGameplayAndPledgeUsesSharedPersonalCounter()
     {
         var unite = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "EmboarUniteObject.prefab");
         Assert.That(unite.GetComponentInChildren<SphereCollider>(true).radius, Is.EqualTo(3.5f));
         var flame = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "EmboarFlamethrowerObject.prefab").GetComponentInChildren<BoxCollider>(true);
         Assert.That(flame.center.z - flame.size.z / 2, Is.EqualTo(0));
-        var pledge = new SerializedObject(AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "EmboarFirePledgeObject.prefab").GetComponent(GameType("EmboarMoveObject")));
-        Assert.That(pledge.FindProperty("pledgePips").arraySize, Is.EqualTo(3));
+        Assert.That(GameType("ChargedBasicAttackBase").IsAssignableFrom(GameType("EmboarBasicAtk")), Is.True);
     }
     [Test]
     public void BasicsDoNotRequestAnimationsAndReworkedMovesDoNotUseSharedSpawnCallbacks()

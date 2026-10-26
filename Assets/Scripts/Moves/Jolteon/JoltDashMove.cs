@@ -7,6 +7,7 @@ public abstract class JoltDashMove : MoveBase
 {
     protected readonly JoltRecastState Combo = new JoltRecastState();
     private readonly JoltActionLock actionLock = new JoltActionLock();
+    private readonly WallCrossingTraversal traversal = new WallCrossingTraversal();
     private readonly HashSet<ulong> directHits = new HashSet<ulong>();
     private readonly HashSet<ulong> slowedTargets = new HashSet<ulong>();
     private Vector3 direction;
@@ -74,8 +75,11 @@ public abstract class JoltDashMove : MoveBase
         distanceRemaining = range;
         travelSpeed = IsFang ? range / JoltMoveRules.FangDuration
             : playerManager.Pokemon.GetSpeed() / 1000f * (Combo.IsSecondPass ? 3.5f : 2.5f);
+        if (IsFang) distanceRemaining = Vector3.Distance(playerManager.transform.position,
+            playerManager.PlayerMovement.GetWallCrossingDestination(playerManager.transform.position + direction.normalized * range));
         playerManager.transform.rotation = Quaternion.LookRotation(direction);
         actionLock.Acquire(playerManager);
+        if (IsFang) traversal.Begin(playerManager.PlayerMovement);
         if (IsFang) playerManager.AnimationManager.PlayAnimation("pm0135_00_ba20_thunderFang");
         else playerManager.AnimationManager.SetBool("Walking", true);
         effect = JoltMoveRuntime.Effect(playerManager, IsFang ? JoltEffect.ThunderFang : JoltEffect.Discharge, Combo.Empowered, IsUpgraded, Combo.IsSecondPass);
@@ -98,7 +102,7 @@ public abstract class JoltDashMove : MoveBase
         // entire rush. Web's on-hit movement bonus can accelerate it mid-pass.
         if (!IsFang) travelSpeed = playerManager.Pokemon.GetSpeed() / 1000f * (Combo.IsSecondPass ? 3.5f : 2.5f);
         float requested = Mathf.Min(distanceRemaining, travelSpeed * delta);
-        Vector3 movement = playerManager.PlayerMovement.MoveWithWalls(direction * requested);
+        Vector3 movement = IsFang ? traversal.Move(direction * requested) : playerManager.PlayerMovement.MoveWithWalls(direction * requested);
         float actual = new Vector2(movement.x, movement.z).magnitude;
         distanceRemaining -= actual;
         elapsed += delta;
@@ -144,6 +148,7 @@ public abstract class JoltDashMove : MoveBase
     private void EndPass()
     {
         executing = false;
+        traversal.End();
         actionLock.Release();
         JoltMoveRuntime.EndEffect(playerManager, ref effect);
         if (IsFang && hitAnything)
@@ -184,6 +189,7 @@ public abstract class JoltDashMove : MoveBase
     {
         Cancel();
         executing = false;
+        traversal.End();
         actionLock.Release();
         JoltMoveRuntime.EndEffect(playerManager, ref effect);
         directHits.Clear();

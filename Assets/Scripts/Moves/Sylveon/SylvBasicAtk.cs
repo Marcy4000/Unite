@@ -1,8 +1,9 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class SylvBasicAtk : BasicAttackBase
+public class SylvBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => charge;
     private string attackPrefab;
     private byte charge = 0;
 
@@ -59,5 +60,6 @@ public class SylvBasicAtk : BasicAttackBase
         {
             charge = 0;
         }
+        base.Update();
     }
 }

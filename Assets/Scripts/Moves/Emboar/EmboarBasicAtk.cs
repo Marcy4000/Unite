@@ -1,7 +1,9 @@
 using UnityEngine;
 
-public class EmboarBasicAtk : BasicAttackBase
+public class EmboarBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => playerManager.MovesController != null ? playerManager.MovesController.EmboarAttackCharge : 0;
+    protected override int StoredBoostedCharges => playerManager.MovesController != null ? playerManager.MovesController.EmboarPledgeHits : 0;
     public override void Initialize(PlayerManager manager)
     {
         base.Initialize(manager);
@@ -18,5 +20,9 @@ public class EmboarBasicAtk : BasicAttackBase
         // No basic-attack animation: the model does not currently provide one.
         playerManager.StopMovementForTime(0.22f * playerManager.MovesController.GetAtkSpeedCooldown(), false);
     }
-    public override void Update() { range = EmboarMoveRules.BasicRange(playerManager.Pokemon.CurrentLevel); }
+    public override void Update()
+    {
+        if (playerManager != null) range = EmboarMoveRules.BasicRange(playerManager.Pokemon.CurrentLevel);
+        base.Update();
+    }
 }

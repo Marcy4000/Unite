@@ -148,17 +148,6 @@ public static class EmboarPrefabBuilder
             MeshNode("HeatRing", body.transform, ring, orange, Vector3.up * 0.1f, Vector3.one * 0.85f);
             Sparks(body.transform, 0.65f, reckless ? 14 : 30, 0.055f);
         }
-        if (kind == EmboarCast.FirePledge)
-        {
-            var serialized = new SerializedObject(script);
-            var pips = serialized.FindProperty("pledgePips"); pips.arraySize = 3;
-            for (int i = 0; i < 3; i++)
-            {
-                var pip = MeshNode("PledgeCharge" + (i + 1), body.transform, shard, i == 2 ? white : gold, new Vector3((i - 1) * 0.28f, 2.2f, 0), new Vector3(0.12f, 0.17f, 0.12f));
-                pips.GetArrayElementAtIndex(i).objectReferenceValue = pip;
-            }
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
         var audio = graphics.AddComponent<AudioSource>();
         audio.playOnAwake = false; audio.spatialBlend = 1; audio.volume = kind == EmboarCast.Unite ? 0.5f : 0.22f;
         audio.minDistance = 3; audio.maxDistance = 22; audio.rolloffMode = AudioRolloffMode.Linear;

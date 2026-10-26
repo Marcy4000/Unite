@@ -169,6 +169,22 @@ public abstract class EmboarBasicTargetingTests
         yield return null;
     }
     [UnityTest]
+    public IEnumerator NaturalBasicsAndPledgePublishOnlyTheActualNextAttackCharge()
+    {
+        var wild = Pokemon("Basic cycle target", Vector3.forward * 2, "Neutral", "Wild");
+        Physics.SyncTransforms();
+        Assert.That(Get(combat, "EmboarAttackCharge"), Is.EqualTo(0));
+        Attack(wild); Assert.That(Get(combat, "EmboarAttackCharge"), Is.EqualTo(1));
+        Attack(wild); Assert.That(Get(combat, "EmboarAttackCharge"), Is.EqualTo(2));
+        Attack(wild); Assert.That(Get(combat, "EmboarAttackCharge"), Is.EqualTo(0));
+        Call(combat, "ArmEmboarPledge"); Assert.That(Get(combat, "EmboarAttackCharge"), Is.EqualTo(2));
+        Attack(wild); Assert.That(Get(combat, "EmboarAttackCharge"), Is.EqualTo(2));
+        Attack(wild); Assert.That(Get(combat, "EmboarAttackCharge"), Is.EqualTo(2));
+        Attack(wild); Assert.That(Get(combat, "EmboarAttackCharge"), Is.EqualTo(0));
+        yield return null;
+    }
+
+    [UnityTest]
     public IEnumerator StalePrimaryIdOutsideMeleeRangeIsRejected()
     {
         var enemy = Pokemon("Out-of-range old primary", Vector3.forward * 80);

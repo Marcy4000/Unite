@@ -9,8 +9,11 @@ public class MeowsticVisual : MonoBehaviour
 {
     [SerializeField] private GameObject graphics;
     [SerializeField] private Transform motion, wave, timer;
-    [SerializeField] private GameObject[] attackPips = Array.Empty<GameObject>(), enemyPips = Array.Empty<GameObject>(), storagePips = Array.Empty<GameObject>();
-    [SerializeField] private GameObject boostedReady;
+    // Retain legacy serialized references so already-authored prefabs can hide
+    // their old attack decorations. New prefabs only author passive/storage UI.
+    [SerializeField, HideInInspector] private GameObject[] attackPips = Array.Empty<GameObject>();
+    [SerializeField, HideInInspector] private GameObject boostedReady;
+    [SerializeField] private GameObject[] enemyPips = Array.Empty<GameObject>(), storagePips = Array.Empty<GameObject>();
     [SerializeField] private AudioSource sound;
     private MovesController actor;
     private MeowsticEffect effect;
@@ -24,6 +27,12 @@ public class MeowsticVisual : MonoBehaviour
     private Vector3 modelPosition;
     private Vector3 timerScale;
     private MeowsticProjectileMotion projectileMotion;
+
+    private void Awake()
+    {
+        foreach (GameObject pip in attackPips) if (pip != null) pip.SetActive(false);
+        if (boostedReady != null) boostedReady.SetActive(false);
+    }
 
     public void Initialize(MovesController actor, MeowsticEffect effect, float duration, float age, ulong target,
         float size, int detail, AsyncOperationHandle<GameObject> handle, Action onDestroyed)
@@ -84,9 +93,7 @@ public class MeowsticVisual : MonoBehaviour
         if (timer != null) timer.localScale = Vector3.Scale(timerScale, new Vector3(Mathf.Max(0.02f, 1 - age / Mathf.Max(0.01f, duration)), 1, 1));
         if (effect == MeowsticEffect.State)
         {
-            for (int i = 0; i < attackPips.Length; i++) attackPips[i].SetActive(i < actor.MeowsticAttackCharge);
             for (int i = 0; i < enemyPips.Length; i++) enemyPips[i].SetActive(actor.Pokemon.CurrentLevel >= 3 && i < actor.MeowsticNearbyEnemies);
-            if (boostedReady != null) boostedReady.SetActive(actor.MeowsticAttackCharge == 2);
         }
         if (effect == MeowsticEffect.Reflect)
             for (int i = 0; i < storagePips.Length; i++) storagePips[i].SetActive(actor.MeowsticStoredDamage > i * Mathf.Max(1, detail) / storagePips.Length);

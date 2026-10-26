@@ -1,7 +1,8 @@
 using UnityEngine;
 
-public class FlygonBasicAtk : BasicAttackBase
+public class FlygonBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => charge;
     private static readonly StatusType[] invulnerableStatuses = { StatusType.Invincible, StatusType.Untargetable, StatusType.Invisible };
 
     private DamageInfo normalDamage = new DamageInfo(0, 0.35f, 5, 100, DamageType.Physical, DamageProprieties.IsBasicAttack);
@@ -15,16 +16,7 @@ public class FlygonBasicAtk : BasicAttackBase
         range = 2.5f;
         normalDamage.attackerId = playerManager.NetworkObjectId;
         boostedDamage.attackerId = playerManager.NetworkObjectId;
-        playerManager.Pokemon.OnEvolution += () => {
-            if (playerManager.Pokemon.CurrentLevel == 3)
-            {
-                range = 3f;
-            }
-            else if (playerManager.Pokemon.CurrentLevel == 6)
-            {
-                range = 3.5f;
-            }
-        };
+        playerManager.Pokemon.OnEvolution += OnEvolution;
         charge = 0;
     }
 
@@ -73,8 +65,15 @@ public class FlygonBasicAtk : BasicAttackBase
         }
     }
 
-    public override void Update()
+    private void OnEvolution()
     {
+        if (playerManager.Pokemon.CurrentLevel == 3) range = 3f;
+        else if (playerManager.Pokemon.CurrentLevel == 6) range = 3.5f;
+    }
 
+    public override void Dispose()
+    {
+        if (playerManager != null && playerManager.Pokemon != null) playerManager.Pokemon.OnEvolution -= OnEvolution;
+        base.Dispose();
     }
 }

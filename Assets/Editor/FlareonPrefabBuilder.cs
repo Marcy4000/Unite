@@ -167,13 +167,13 @@ public static class FlareonPrefabBuilder
         var full = Node("MaximumHeat", parent); Set(script, "fullHeat", full);
         MeshNode("WarmAura", full.transform, ring, orange, Vector3.up * 0.1f, Vector3.one * 0.8f); Sparks(full.transform, 0.65f, 12); full.SetActive(false);
         var serialized = new SerializedObject(script);
-        foreach (string field in new[] { "attackPips", "heatPips" })
+        foreach (string field in new[] { "heatPips" })
         {
             var array = serialized.FindProperty(field); array.arraySize = 3;
             for (int i = 0; i < 3; i++)
             {
-                var pip = MeshNode(field + i, parent, flame, field == "attackPips" ? cream : gold,
-                    new Vector3((i - 1) * 0.24f, field == "attackPips" ? 1.7f : 1.98f, 0), new Vector3(0.09f, 0.15f, 0.09f));
+                var pip = MeshNode(field + i, parent, flame, gold,
+                    new Vector3((i - 1) * 0.24f, 1.98f, 0), new Vector3(0.09f, 0.15f, 0.09f));
                 pip.SetActive(false); array.GetArrayElementAtIndex(i).objectReferenceValue = pip;
             }
         }

@@ -39,6 +39,7 @@ public class WildPokemonAI : NetworkBehaviour
     private Dictionary<StatusType, System.Action> statusRemovedActions;
 
     private WildPokemonState previousState;
+    private int activeStuns;
     private Vector3 previousTargetPosition;
 
     public WildPokemon WildPokemon => wildPokemon;
@@ -79,6 +80,7 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void ApplyStun()
     {
+        if (++activeStuns != 1) return;
         if (state != WildPokemonState.Stunned)
         {
             previousState = state;
@@ -94,6 +96,7 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void RemoveStun()
     {
+        if (activeStuns == 0 || --activeStuns != 0 || wildPokemon.Pokemon.CurrentHp <= 0) return;
         state = previousState;
         rb.isKinematic = true;
         agent.enabled = true;

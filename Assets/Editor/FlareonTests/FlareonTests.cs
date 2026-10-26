@@ -137,11 +137,12 @@ public class FlareonTests
             foreach (string banned in new[] { "CreatePrimitive(", "new Mesh", "new GameObject(", "AddComponent<LineRenderer>" }) Assert.That(File.ReadAllText(path), Does.Not.Contain(banned));
     }
     [Test]
-    public void StateViewContainsTheAuthoredSweepPreviewAndComboIndicators()
+    public void StateViewKeepsSweepPreviewAndHeatIndicatorsWhileBasicsUseSharedCounter()
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>((string)Rule("Path", Kind("State")));
         var data = new SerializedObject(prefab.GetComponent(Type("FlareonMoveObject")));
         foreach (string field in new[] { "flamePreview", "recastMarker", "strike", "fullHeat" }) Assert.That(data.FindProperty(field).objectReferenceValue, Is.Not.Null, field);
-        Assert.That(data.FindProperty("attackPips").arraySize, Is.EqualTo(3)); Assert.That(data.FindProperty("heatPips").arraySize, Is.EqualTo(3));
+        Assert.That(data.FindProperty("heatPips").arraySize, Is.EqualTo(3));
+        Assert.That(Type("ChargedBasicAttackBase").IsAssignableFrom(Type("FlareonBasicAtk")), Is.True);
     }
 }

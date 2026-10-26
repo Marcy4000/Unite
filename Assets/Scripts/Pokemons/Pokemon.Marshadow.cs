@@ -24,7 +24,7 @@ public partial class Pokemon
             while (attempts < 1000 && thief.HasMarshadowStatId(nextMarshadowStolenId));
             if (thief.HasMarshadowStatId(nextMarshadowStolenId)) break;
             copy.ID = nextMarshadowStolenId;
-            statChanges.RemoveAt(i); statTimers.RemoveAt(i);
+            RemoveStatAt(i);
             thief.AddStatChange(copy);
             count++;
         }

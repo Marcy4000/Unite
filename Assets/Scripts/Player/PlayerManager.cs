@@ -59,6 +59,9 @@ public class PlayerManager : NetworkBehaviour
 
     private Dictionary<StatusType, Action> statusAddedActions;
     private Dictionary<StatusType, Action> statusRemovedActions;
+    private readonly Dictionary<StatusType, int> activeStatusCounts = new Dictionary<StatusType, int>();
+    private int activeStuns;
+    private readonly List<IDisposable> stunRestrictions = new List<IDisposable>();
 
     private NetworkList<ScoreBoost> goalBuffs;
     private List<float> goalBuffsTimers = new List<float>();
@@ -237,18 +240,7 @@ public class PlayerManager : NetworkBehaviour
                     animationManager.SetBool("Walking", false);
                 }
             },
-            { StatusType.Frozen, () =>
-                {
-                    playerMovement.AddMovementRestriction();
-                    movesController.CancelAllMoves();
-                    if (!IsRayquazaScoringProtected) EndScoring();
-                    movesController.AddMoveStatus(0, ActionStatusType.Stunned);
-                    movesController.AddMoveStatus(1, ActionStatusType.Stunned);
-                    movesController.AddMoveStatus(2, ActionStatusType.Stunned);
-                    movesController.BasicAttackStatus.AddStatus(ActionStatusType.Stunned);
-                    scoreStatus.AddStatus(ActionStatusType.Stunned);
-                }
-            },
+            { StatusType.Frozen, ApplyStun },
             { StatusType.Incapacitated, ApplyStun },
             { StatusType.Asleep, ApplyStun },
             { StatusType.Bound, ApplyStun },
@@ -439,7 +431,7 @@ public class PlayerManager : NetworkBehaviour
     {
         CameraController.Instance.ForcePan(false);
         ChangeCurrentState(PlayerState.Alive);
-        pokemon.HealDamageRPC(pokemon.GetMaxHp());
+        pokemon.RestoreHealthOnRespawnRPC();
         movesController.UnlockEveryAction();
         scoreStatus.RemoveStatus(ActionStatusType.Busy);
         NotifyRespawnRPC();
@@ -555,7 +547,7 @@ public class PlayerManager : NetworkBehaviour
     private void CancelRecall()
     {
         isRecalling = false;
-        BattleUIManager.instance.SetRecallBarActive(false);
+        BattleUIManager.instance?.SetRecallBarActive(false);
     }
 
     private void StartRecalling()
@@ -738,34 +730,45 @@ public class PlayerManager : NetworkBehaviour
 
     private void ApplyStun()
     {
+        if (++activeStuns != 1) return;
         playerMovement.AddMovementRestriction();
-        animationManager.SetTrigger("Stun");
+        if (!animationManager.IsAnimatorNull()) animationManager.SetTrigger("Stun");
         movesController.CancelAllMoves();
         if (!IsRayquazaScoringProtected) EndScoring();
         CancelRecall();
-        movesController.AddMoveStatus(0, ActionStatusType.Stunned);
-        movesController.AddMoveStatus(1, ActionStatusType.Stunned);
-        movesController.AddMoveStatus(2, ActionStatusType.Stunned);
-        movesController.BasicAttackStatus.AddStatus(ActionStatusType.Stunned);
-        scoreStatus.AddStatus(ActionStatusType.Stunned);
+        stunRestrictions.Add(movesController.AcquireMoveStatus(0, ActionStatusType.Stunned));
+        stunRestrictions.Add(movesController.AcquireMoveStatus(1, ActionStatusType.Stunned));
+        stunRestrictions.Add(movesController.AcquireMoveStatus(2, ActionStatusType.Stunned));
+        stunRestrictions.Add(movesController.BasicAttackStatus.AcquireStatus(ActionStatusType.Stunned));
+        stunRestrictions.Add(scoreStatus.AcquireStatus(ActionStatusType.Stunned));
     }
 
     private void RemoveStun()
     {
+        if (activeStuns == 0 || --activeStuns != 0) return;
         playerMovement.RemoveMovementRestriction();
-        animationManager.SetTrigger("Transition");
-        movesController.RemoveMoveStatus(0, ActionStatusType.Stunned);
-        movesController.RemoveMoveStatus(1, ActionStatusType.Stunned);
-        movesController.RemoveMoveStatus(2, ActionStatusType.Stunned);
-        movesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Stunned);
-        scoreStatus.RemoveStatus(ActionStatusType.Stunned);
+        if (!animationManager.IsAnimatorNull()) animationManager.SetTrigger("Transition");
+        var restrictions = stunRestrictions.ToArray();
+        stunRestrictions.Clear();
+        foreach (var restriction in restrictions) restriction.Dispose();
     }
 
     private void OnPokemonStatusChange(StatusEffect effect, bool added)
     {
-        // This is so incredibly stupid but it'll do for now
-        // Update: no longer as stupid, still stupid
-        Debug.Log("Status changed");
+        // Different sources/durations may supply the same status type. Apply
+        // its restriction on the first instance and release it on the last.
+        activeStatusCounts.TryGetValue(effect.Type, out int count);
+        if (added)
+        {
+            activeStatusCounts[effect.Type] = count + 1;
+            if (count > 0) return;
+        }
+        else
+        {
+            if (count == 0) return;
+            if (count > 1) { activeStatusCounts[effect.Type] = count - 1; return; }
+            activeStatusCounts.Remove(effect.Type);
+        }
         if (added && statusAddedActions.TryGetValue(effect.Type, out Action addAction))
         {
             addAction.Invoke();

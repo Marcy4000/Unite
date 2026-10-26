@@ -1,8 +1,10 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class GlaceBasicAtk : BasicAttackBase
+public class GlaceBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => charge;
+    protected override bool ShowAttackCounter => basicAtkType == 0;
     private string attackPrefab;
     private byte charge = 0;
     private byte basicAtkType = 0; // 0 = normal, 1 = Ice Shard, 2 = Icy Wind
@@ -105,5 +107,6 @@ public class GlaceBasicAtk : BasicAttackBase
         {
             charge = 0;
         }
+        base.Update();
     }
 }

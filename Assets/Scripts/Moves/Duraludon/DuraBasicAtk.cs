@@ -2,8 +2,9 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 
-public class DuraBasicAtk : BasicAttackBase
+public class DuraBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => charge;
     private string attackPrefab = "Assets/Prefabs/Objects/BasicAtk/CinderBasicAtk.prefab";
     private string boostedAttackPrefab = "Assets/Prefabs/Objects/BasicAtk/DuraludonBoostedAtk.prefab";
     private byte charge = 0;
@@ -37,17 +38,10 @@ public class DuraBasicAtk : BasicAttackBase
         boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.35f, 0, 0, DamageType.Physical, proprieties);
         cannonDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.16f, 3, 132, DamageType.Physical, proprieties);
 
-        playerManager.MovesController.onObjectSpawned += (obj) =>
-        {
-            if (obj.TryGetComponent(out DuraBoostedObj projectile))
-            {
-                projectile.InitializeRPC(boostedDmg, playerManager.NetworkObjectId);
-                boostedObjInstance = projectile;
-            }
-        };
+        playerManager.MovesController.onObjectSpawned += OnBoostedObjectSpawned;
 
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(boostedAttackPrefab, playerManager.OwnerClientId);
-        playerManager.Pokemon.OnDeath += _ => ExitCannonMode();
+        playerManager.Pokemon.OnDeath += OnDeath;
     }
 
     public override void Perform(bool wildPriority)
@@ -102,8 +96,26 @@ public class DuraBasicAtk : BasicAttackBase
         charge = 2;
     }
 
-    public override void Update()
+    private void OnBoostedObjectSpawned(GameObject obj)
     {
+        if (obj.TryGetComponent(out DuraBoostedObj projectile))
+        {
+            projectile.InitializeRPC(boostedDmg, playerManager.NetworkObjectId);
+            boostedObjInstance = projectile;
+        }
+    }
+
+    private void OnDeath(DamageInfo damage) { ExitCannonMode(); }
+
+    public override void Dispose()
+    {
+        if (playerManager != null)
+        {
+            if (playerManager.MovesController != null) playerManager.MovesController.onObjectSpawned -= OnBoostedObjectSpawned;
+            if (playerManager.Pokemon != null) playerManager.Pokemon.OnDeath -= OnDeath;
+            ExitCannonMode();
+        }
+        base.Dispose();
     }
 
     public void EnterCannonMode()

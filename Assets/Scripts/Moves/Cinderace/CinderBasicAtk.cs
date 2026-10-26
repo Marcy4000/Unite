@@ -1,8 +1,14 @@
 using UnityEngine;
 
-public class CinderBasicAtk : BasicAttackBase
+public class CinderBasicAtk : ChargedBasicAttackBase
 {
-    public override void Initialize(PlayerManager manager) { base.Initialize(manager); range = 7f; }
+    protected override int AttackCharge => playerManager.MovesController != null ? playerManager.MovesController.CinderaceAttackCharge : 0;
+
+    public override void Initialize(PlayerManager manager)
+    {
+        base.Initialize(manager);
+        range = 7f;
+    }
     public override void Perform(bool wildPriority)
     {
         var target = Aim.Instance.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
@@ -13,5 +19,4 @@ public class CinderBasicAtk : BasicAttackBase
         playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
         playerManager.transform.rotation = Quaternion.LookRotation(CinderMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward));
     }
-    public override void Update() { }
 }

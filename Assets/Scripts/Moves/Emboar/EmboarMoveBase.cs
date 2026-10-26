@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Owner-only input and wall-safe movement. Damage, empowerment and effect lifetimes are server-owned.
+// Owner-only input and driven movement. Damage, empowerment and effect lifetimes are server-owned.
 public abstract class EmboarMoveBase : MoveBase
 {
     public abstract EmboarCast Kind { get; }
     private readonly List<IDisposable> leases = new List<IDisposable>();
     private IDisposable ownSlot;
+    private readonly WallCrossingTraversal traversal = new WallCrossingTraversal();
     private Vector3 direction, destination, travelVelocity;
     private ulong targetId;
     private bool hasTarget, pending, executing, rooted, movementEnded, empowered, recast;
@@ -62,10 +63,16 @@ public abstract class EmboarMoveBase : MoveBase
         if (!accepted) { Complete(); return; }
         executing = true; empowered = boost; elapsed = nextReport = 0; destination = point;
         recovery = EmboarMoveRules.Recovery(Kind);
+        if (Kind == EmboarCast.Smog || Kind == EmboarCast.HeatCrash || Kind == EmboarCast.Unite)
+        {
+            traversal.Begin(playerManager.PlayerMovement);
+            if (Kind == EmboarCast.Smog) destination = playerManager.transform.position + direction * EmboarMoveRules.Range(Kind);
+            destination = playerManager.PlayerMovement.GetWallCrossingDestination(destination);
+        }
         playerManager.transform.rotation = Quaternion.LookRotation(Kind == EmboarCast.Smog ? -direction : direction);
         if (Kind == EmboarCast.HeatCrash) travelVelocity = (destination - playerManager.transform.position) / EmboarMoveRules.CrashLeap;
         else if (Kind == EmboarCast.Unite) travelVelocity = (destination - playerManager.transform.position) / EmboarMoveRules.UniteDrive;
-        else if (Kind == EmboarCast.Smog) travelVelocity = direction * (EmboarMoveRules.Range(Kind) / 0.3f);
+        else if (Kind == EmboarCast.Smog) travelVelocity = (destination - playerManager.transform.position) / 0.3f;
         // Move clips only. Basic attacks deliberately have no animation integration.
         Play(Kind == EmboarCast.FlameCharge ? "Movement_run" : Kind == EmboarCast.HeatCrash || Kind == EmboarCast.Unite ? "Fight_attack_2" : Kind == EmboarCast.FirePledge ? "Fight_release" : "Fight_no_touch_attack");
         if (CanBrake) { ownSlot?.Dispose(); ownSlot = null; }
@@ -103,7 +110,7 @@ public abstract class EmboarMoveBase : MoveBase
                 float start = Kind == EmboarCast.Unite ? EmboarMoveRules.UniteWindup : 0;
                 float end = start + (Kind == EmboarCast.Unite ? EmboarMoveRules.UniteDrive : Kind == EmboarCast.HeatCrash ? EmboarMoveRules.CrashLeap : 0.3f);
                 float delta = Mathf.Max(0, Mathf.Min(elapsed, end) - Mathf.Max(previous, start));
-                if (delta > 0) playerManager.PlayerMovement.MoveWithWalls(travelVelocity * delta);
+                if (delta > 0) traversal.Move(travelVelocity * delta);
                 if (elapsed >= end) EndMovement();
             }
             if (!movementEnded && elapsed >= nextReport)
@@ -118,6 +125,7 @@ public abstract class EmboarMoveBase : MoveBase
     {
         if (movementEnded) return;
         movementEnded = true;
+        traversal.End();
         playerManager.MovesController.EmboarMovementRPC(cast, true, playerManager.transform.position);
         if (Kind == EmboarCast.FlameCharge) recovery = elapsed + 0.08f;
         if (Kind == EmboarCast.HeatCrash || Kind == EmboarCast.Unite) Play("Fight_landing");
@@ -135,6 +143,7 @@ public abstract class EmboarMoveBase : MoveBase
     private void Complete()
     {
         bool hadAction = rooted || pending || executing || ownSlot != null || leases.Count > 0;
+        traversal.End();
         ownSlot?.Dispose(); ownSlot = null;
         foreach (IDisposable lease in leases) lease.Dispose(); leases.Clear();
         if (rooted && playerManager != null) playerManager.PlayerMovement.RemoveMovementRestriction();

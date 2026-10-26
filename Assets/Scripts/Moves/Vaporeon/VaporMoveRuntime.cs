@@ -63,6 +63,7 @@ public abstract class VaporMoveBase : MoveBase
 {
     public abstract VaporCast Kind { get; }
     private readonly VaporActionLock actionLock = new VaporActionLock();
+    private readonly WallCrossingTraversal traversal = new WallCrossingTraversal();
     private Vector3 destination, hopStart;
     private ulong targetId;
     private bool hasTarget, executing, committed;
@@ -106,6 +107,7 @@ public abstract class VaporMoveBase : MoveBase
         hopStart = playerManager.transform.position;
         executing = true; committed = false; elapsed = 0;
         actionLock.Acquire(playerManager, !VaporMoveRules.IsSupport(Kind));
+        if (Kind == VaporCast.RainDance) traversal.Begin(playerManager.PlayerMovement);
         playerManager.transform.rotation = Quaternion.LookRotation(VaporMoveRules.Direction(destination - hopStart, playerManager.transform.forward));
         VaporMoveRuntime.Animate(playerManager, Kind == VaporCast.Tempest ? "Armature_pm0134_00_ba02_roar01_gfbanm"
             : Kind == VaporCast.RainDance ? "Armature_pm0134_00_kw35_playA01_gfbanm" : "Armature_pm0134_00_ba21_tokusyu01_gfbanm");
@@ -125,7 +127,8 @@ public abstract class VaporMoveBase : MoveBase
         if (Kind == VaporCast.RainDance && elapsed - Time.deltaTime < VaporMoveRules.Windup(Kind))
         {
             Vector3 next = Vector3.Lerp(hopStart, destination, Mathf.Clamp01(elapsed / VaporMoveRules.Windup(Kind)));
-            playerManager.PlayerMovement.MoveWithWalls(next - playerManager.transform.position);
+            traversal.Move(next - playerManager.transform.position);
+            if (elapsed >= VaporMoveRules.Windup(Kind)) traversal.End();
         }
         if (!committed && elapsed >= VaporMoveRules.Windup(Kind)) Commit();
         if (elapsed >= VaporMoveRules.Windup(Kind) + VaporMoveRules.Recovery(Kind)) Complete();
@@ -138,6 +141,7 @@ public abstract class VaporMoveBase : MoveBase
     }
     private void Complete()
     {
+        traversal.End();
         executing = false; committed = false; elapsed = 0; actionLock.Dispose();
         VaporMoveRuntime.ReturnToLocomotion(playerManager);
     }

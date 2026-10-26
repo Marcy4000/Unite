@@ -1,7 +1,8 @@
 using UnityEngine;
 
-public class FlareonBasicAtk : BasicAttackBase
+public class FlareonBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => playerManager.MovesController != null ? playerManager.MovesController.FlareonAttackCharge : 0;
     public override void Initialize(PlayerManager manager) { base.Initialize(manager); range = FlareonMoveRules.BasicRange; }
     public override void Perform(bool wildPriority)
     {
@@ -14,5 +15,4 @@ public class FlareonBasicAtk : BasicAttackBase
         // Contact is at 0.1s. No missing Flareon attack clips are requested.
         playerManager.StopMovementForTime(0.14f, playerManager.Pokemon.CurrentLevel < 3);
     }
-    public override void Update() { }
 }

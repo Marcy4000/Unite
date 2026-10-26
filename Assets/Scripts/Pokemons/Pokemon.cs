@@ -17,6 +17,7 @@ public partial class Pokemon : NetworkBehaviour
 
     private NetworkList<ShieldInfo> shields;
     private List<float> shieldTimers = new List<float>();
+    private bool shieldChangePending;
 
     private int localExp;
     private int localStoredExp;
@@ -113,6 +114,8 @@ public partial class Pokemon : NetworkBehaviour
         statChanges = new NetworkList<StatChange>();
         statusEffects = new NetworkList<StatusEffect>();
         shields = new NetworkList<ShieldInfo>();
+        statChanges.OnListChanged += OnStatListChanged;
+        shields.OnListChanged += OnShieldListChanged;
     }
 
     public void GainPassiveExp(int amount)
@@ -140,24 +143,32 @@ public partial class Pokemon : NetworkBehaviour
 
     public void InitializePokemon()
     {
-        localExp = 0;
-        if (IsServer) {
+        // Asset loading completes independently on each peer. A client's level can
+        // still be stale here, so it must never reset the authoritative spawn HP
+        // (or any other gameplay state) using its local copy of the stats.
+        if (IsServer)
+        {
             currentHp.Value = GetMaxHp();
             currentExp.Value = 0;
-            shields.Clear();
             shieldTimers.Clear();
-        } else {
-            SetCurrentHPServerRPC(GetMaxHp());
-            SetCurrentEXPServerRPC(0);
-            ClearShieldsRPC();
+            shields.Clear();
+            flipAtkStat.Value = false;
         }
-        FlipAtkStatsRPC(false);
 
+        // Replication may have arrived before the PokemonBase finished loading.
+        localExp = currentExp.Value;
+        localStoredExp = storedExp.Value;
+        localLevel = currentLevel.Value;
+
+        currentHp.OnValueChanged -= CurrentHpChanged;
         currentHp.OnValueChanged += CurrentHpChanged;
+        storedExp.OnValueChanged -= StoredExpChanged;
         storedExp.OnValueChanged += StoredExpChanged;
+        currentExp.OnValueChanged -= CurrentExpValueChanged;
         currentExp.OnValueChanged += CurrentExpValueChanged;
+        currentLevel.OnValueChanged -= CurrentLevelChanged;
         currentLevel.OnValueChanged += CurrentLevelChanged;
-        statChanges.OnListChanged += OnStatListChanged;
+        team.OnValueChanged -= OnTeamChanged;
         team.OnValueChanged += OnTeamChanged;
         CheckEvolution();
 
@@ -171,7 +182,7 @@ public partial class Pokemon : NetworkBehaviour
 
     private void CurrentHpChanged(int previous, int current)
     {
-        if (current <= 0)
+        if (previous > 0 && current <= 0)
         {
             if (IsServer)
             {
@@ -182,21 +193,19 @@ public partial class Pokemon : NetworkBehaviour
         OnHpChange?.Invoke();
     }
 
-    [Rpc(SendTo.Everyone)]
-    private void OnShieldListChangedRPC(int expectedSize)
+    private void OnShieldListChanged(NetworkListEvent<ShieldInfo> change)
     {
-        StartCoroutine(ShieldListChanged(expectedSize));
+        // Observe replicated changes, not an RPC's potentially obsolete list size.
+        // Coalesce a burst into one notification after the list is consistent.
+        shieldChangePending = true;
     }
 
-    private IEnumerator ShieldListChanged(int expectedSize)
+    private void LateUpdate()
     {
-        yield return null;
-
-        while (shields.Count != expectedSize)
-        {
-            yield return null;
-        }
-
+        // Inactive recipients retain the dirty flag until they resume. No
+        // coroutine can get stranded by disable/despawn or an obsolete count.
+        if (!IsSpawned || !shieldChangePending) return;
+        shieldChangePending = false;
         OnShieldChange?.Invoke();
     }
 
@@ -220,6 +229,14 @@ public partial class Pokemon : NetworkBehaviour
 
     private void OnStatListChanged(NetworkListEvent<StatChange> changeEvent)
     {
+        // A max-HP modifier disappearing must not leave overhealed HP behind.
+        // Increasing the maximum does not grant free healing.
+        bool clampedHp = IsServer && baseStats != null && CurrentHp > GetMaxHp();
+        if (clampedHp)
+            currentHp.Value = GetMaxHp();
+        else if (changeEvent.Value.AffectedStat == Stat.MaxHp || changeEvent.PreviousValue.AffectedStat == Stat.MaxHp
+            || changeEvent.Type == NetworkListEvent<StatChange>.EventType.Clear)
+            OnHpChange?.Invoke();
         OnStatChange?.Invoke(changeEvent);
     }
 
@@ -662,21 +679,16 @@ public partial class Pokemon : NetworkBehaviour
     private void AddStatChangeRPC(StatChange change)
     {
         if (!InterceptMeowsticStat(ref change)) return;
+        // NetworkList invokes callbacks synchronously. Publish only after the
+        // matching timer exists, so callbacks can safely remove/replace a stat.
+        statTimers.Add(change.IsTimed ? change.Duration : -1);
         statChanges.Add(change);
-        if (change.IsTimed)
-        {
-            statTimers.Add(change.Duration);
-        }
-        else
-        {
-            statTimers.Add(-1);
-        }
-        NetworkListEvent<StatChange> networkListEvent = new NetworkListEvent<StatChange>();
-        networkListEvent.PreviousValue = change;
-        networkListEvent.Value = change;
-        networkListEvent.Type = NetworkListEvent<StatChange>.EventType.Add;
-        networkListEvent.Index = statChanges.Count - 1;
-        OnStatChange?.Invoke(networkListEvent);
+    }
+
+    private void RemoveStatAt(int index)
+    {
+        statTimers.RemoveAt(index);
+        statChanges.RemoveAt(index);
     }
 
     [Rpc(SendTo.Server)]
@@ -688,8 +700,7 @@ public partial class Pokemon : NetworkBehaviour
             {
                 if (statChanges[i].CanBeRemoved)
                 {
-                    statChanges.RemoveAt(i);
-                    statTimers.RemoveAt(i);
+                    RemoveStatAt(i);
                 }
                 return;
             }
@@ -699,18 +710,8 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void RemoveAllStatChangeWithIDRPC(ushort id)
     {
-        for (int i = statChanges.Count; i > 0; i--)
-        {
-            int index = i - 1;
-            if (statChanges[index].ID == id)
-            {
-                if (statChanges[index].CanBeRemoved)
-                {
-                    statChanges.RemoveAt(index);
-                    statTimers.RemoveAt(index);
-                }
-            }
-        }
+        foreach (var change in statChanges.AsNativeArray().ToArray())
+            if (change.ID == id && change.CanBeRemoved) RemoveStatChangeRPC(change);
     }
 
     [Rpc(SendTo.Server)]
@@ -722,8 +723,7 @@ public partial class Pokemon : NetworkBehaviour
             {
                 if (statChanges[i].CanBeRemoved)
                 {
-                    statChanges.RemoveAt(i);
-                    statTimers.RemoveAt(i);
+                    RemoveStatAt(i);
                 }
                 return;
             }
@@ -733,28 +733,15 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void RemoveAllStatChangesRPC()
     {
-        for (int i = statChanges.Count; i > 0; i--)
-        {
-            int index = i - 1;
-            if (statChanges[index].CanBeRemoved)
-            {
-                statChanges.RemoveAt(index);
-                statTimers.RemoveAt(index);
-            }
-        }
+        foreach (var change in statChanges.AsNativeArray().ToArray())
+            if (change.CanBeRemoved) RemoveStatChangeRPC(change);
     }
 
     [Rpc(SendTo.Server)]
     public void RemoveAllStatusEffectsRPC()
     {
-        for (int i = statusEffects.Count - 1; i >= 0; i--)
-        {
-            StatusEffect effect = statusEffects[i];
-            OnStatusListChangedRPC(effect, false);
-        }
-
-        statusEffects.Clear();
-        statusTimers.Clear();
+        foreach (var effect in statusEffects.AsNativeArray().ToArray())
+            RemoveStatusEffectRPC(effect);
     }
 
     public int GetStatChange(Stat affectedStat)
@@ -812,14 +799,8 @@ public partial class Pokemon : NetworkBehaviour
         }
         else if (effect.Type == StatusType.Unstoppable)
         {
-            for (int i = statusEffects.Count - 1; i >= 0; i--)
-            {
-                var loopEffect = statusEffects[i];
-                if (loopEffect.IsNegativeStatus())
-                {
-                    RemoveStatusEffectRPC(loopEffect);
-                }
-            }
+            foreach (var negative in statusEffects.AsNativeArray().ToArray())
+                if (negative.IsNegativeStatus()) RemoveStatusEffectRPC(negative);
         }
 
         if (HasStatusEffect(effect))
@@ -828,15 +809,8 @@ public partial class Pokemon : NetworkBehaviour
         }
         else
         {
+            statusTimers.Add(effect.IsTimed ? effect.Duration : -1);
             statusEffects.Add(effect);
-            if (effect.IsTimed)
-            {
-                statusTimers.Add(effect.Duration);
-            }
-            else
-            {
-                statusTimers.Add(-1);
-            }
             OnStatusListChangedRPC(effect, true);
         }
     }
@@ -849,9 +823,7 @@ public partial class Pokemon : NetworkBehaviour
             {
                 if (statusEffects[i].ID == id)
                 {
-                    OnStatusListChangedRPC(statusEffects[i], false);
-                    statusEffects.RemoveAt(i);
-                    statusTimers.RemoveAt(i);
+                    RemoveStatusAt(i);
                     return;
                 }
             }
@@ -869,24 +841,20 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (statusEffects[i].Equals(effect))
             {
-                OnStatusListChangedRPC(effect, false);
-                statusEffects.RemoveAt(i);
-                statusTimers.RemoveAt(i);
+                RemoveStatusAt(i);
                 return;
             }
         }
     }
 
-        [Rpc(SendTo.Server)]
+    [Rpc(SendTo.Server)]
     private void RemoveStatusEffectWithIDRPC(ushort id)
     {
         for (int i = 0; i < statusEffects.Count; i++)
         {
             if (statusEffects[i].ID == id)
             {
-                OnStatusListChangedRPC(statusEffects[i], false);
-                statusEffects.RemoveAt(i);
-                statusTimers.RemoveAt(i);
+                RemoveStatusAt(i);
                 return;
             }
         }
@@ -908,7 +876,16 @@ public partial class Pokemon : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    private void RemoveStatusAt(int index)
+    {
+        StatusEffect effect = statusEffects[index];
+        statusTimers.RemoveAt(index);
+        statusEffects.RemoveAt(index);
+        // Gameplay callbacks see the completed removal on both server types.
+        OnStatusListChangedRPC(effect, false);
+    }
+
+    [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
     private void OnStatusListChangedRPC(StatusEffect effect, bool added)
     {
         OnStatusChange?.Invoke(effect, added);
@@ -917,14 +894,7 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void ClearStatusEffectsRPC()
     {
-        for (int i = statusEffects.Count - 1; i >= 0; i--)
-        {
-            StatusEffect effect = statusEffects[i];
-            OnStatusListChangedRPC(effect, false);
-        }
-
-        statusEffects.Clear();
-        statusTimers.Clear();
+        RemoveAllStatusEffectsRPC();
     }
 
     public bool HasStatusEffect(StatusType type)
@@ -989,6 +959,7 @@ public partial class Pokemon : NetworkBehaviour
         if (IsServer)
         {
             TickPeriodicStatuses();
+            List<StatChange> expiredStats = null;
             for (int i = statChanges.Count; i > 0; i--)
             {
                 int index = i - 1;
@@ -998,12 +969,20 @@ public partial class Pokemon : NetworkBehaviour
                     statTimers[index] -= Time.deltaTime;
                     if (statTimers[index] <= 0)
                     {
-                        statChanges.RemoveAt(index);
-                        statTimers.RemoveAt(index);
+                        (expiredStats ??= new List<StatChange>()).Add(change);
                     }
                 }
             }
+            // Expiry callbacks can cleanse or replace other effects. Do not keep
+            // iterating live indices across those callbacks.
+            if (expiredStats != null)
+                foreach (var change in expiredStats)
+                {
+                    int index = statChanges.IndexOf(change);
+                    if (index >= 0 && statTimers[index] <= 0) RemoveStatAt(index);
+                }
 
+            List<StatusEffect> expiredStatuses = null;
             for (int i = statusEffects.Count; i > 0; i--)
             {
                 int index = i - 1;
@@ -1013,12 +992,16 @@ public partial class Pokemon : NetworkBehaviour
                     statusTimers[index] = effect.PeriodicDamage.Enabled ? PeriodicTimeRemaining(effect) : statusTimers[index] - Time.deltaTime;
                     if (statusTimers[index] <= 0)
                     {
-                        statusEffects.RemoveAt(index);
-                        statusTimers.RemoveAt(index);
-                        OnStatusListChangedRPC(effect, false);
+                        (expiredStatuses ??= new List<StatusEffect>()).Add(effect);
                     }
                 }
             }
+            if (expiredStatuses != null)
+                foreach (var effect in expiredStatuses)
+                {
+                    int index = statusEffects.IndexOf(effect);
+                    if (index >= 0 && statusTimers[index] <= 0) RemoveStatusAt(index);
+                }
 
             for (int i = shields.Count; i > 0; i--)
             {
@@ -1029,9 +1012,8 @@ public partial class Pokemon : NetworkBehaviour
                     shieldTimers[index] -= Time.deltaTime;
                     if (shieldTimers[index] <= 0)
                     {
-                        shields.RemoveAt(index);
                         shieldTimers.RemoveAt(index);
-                        OnShieldListChangedRPC(shieldTimers.Count);
+                        shields.RemoveAt(index);
                     }
                 }
             }
@@ -1130,7 +1112,7 @@ public partial class Pokemon : NetworkBehaviour
         if (damage.type != DamageType.True)
         {
             List<ShieldInfo> remainingShields = TakeDamageFromShields(localShields.ToArray(), actualDamage, out damageRemainder);
-            UpdateShieldListRPC(remainingShields.ToArray());
+            UpdateDamagedShields(remainingShields);
         }
         else
         {
@@ -1291,22 +1273,37 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void HealDamageRPC(int amount)
     {
+        ApplyHealing(amount);
+    }
+
+    private void ApplyHealing(int amount)
+    {
         int oldHp = currentHp.Value;
-        int newHp = Mathf.Min(oldHp + amount, GetMaxHp());
-
-        currentHp.Value = newHp;
-
-        int healAmount = newHp - oldHp;
-
+        if (oldHp <= 0 || amount <= 0 || baseStats == null) return;
+        int healAmount = Mathf.Min(amount, Mathf.Max(0, GetMaxHp() - oldHp));
+        if (healAmount == 0) return;
+        currentHp.Value = oldHp + healAmount;
         ClientHealRpc(healAmount);
+    }
+
+    // Only an explicit respawn/round reset may restore HP from zero. Keep the
+    // existing owner-driven respawn flow while also allowing server authority.
+    [Rpc(SendTo.Server)]
+    public void RestoreHealthOnRespawnRPC(RpcParams rpcParams = default)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+        if ((sender != OwnerClientId && sender != Unity.Netcode.NetworkManager.ServerClientId)
+            || type != PokemonType.Player || baseStats == null) return;
+        currentHp.Value = GetMaxHp();
     }
 
     [Rpc(SendTo.Server)]
     public void HealDamageRPC(DamageInfo healInfo)
     {
+        if (CurrentHp <= 0 || baseStats == null
+            || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(healInfo.attackerId, out var obj)
+            || !obj.TryGetComponent(out Pokemon attacker) || attacker.BaseStats == null) return;
         int atkStat;
-        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[healInfo.attackerId].GetComponent<Pokemon>();
-        int localHp = currentHp.Value;
 
         switch (healInfo.type)
         {
@@ -1324,11 +1321,7 @@ public partial class Pokemon : NetworkBehaviour
 
         int healAmount = Mathf.FloorToInt(healInfo.ratio * atkStat + healInfo.slider * attacker.CurrentLevel + healInfo.baseDmg);
 
-        localHp = Mathf.Min(localHp + healAmount, GetMaxHp());
-
-        currentHp.Value = localHp;
-
-        ClientHealRpc(healAmount);
+        ApplyHealing(healAmount);
     }
 
     [Rpc(SendTo.Server)]
@@ -1340,25 +1333,16 @@ public partial class Pokemon : NetworkBehaviour
             {
                 if (shields[i].ID == info.ID)
                 {
-                    shields[i] = shields[i] = new ShieldInfo(info.MaxStacks == 0 ? shields[i].Amount + info.Amount : Mathf.Min(shields[i].Amount + info.Amount, info.MaxStacks),
-                            info.ID, shields[i].Priority, shields[i].Duration, shields[i].IsTimed);
                     shieldTimers[i] += info.Duration;
-                    OnShieldListChangedRPC(shields.Count);
+                    shields[i] = new ShieldInfo(info.MaxStacks == 0 ? shields[i].Amount + info.Amount : Mathf.Min(shields[i].Amount + info.Amount, info.MaxStacks),
+                            info.ID, shields[i].Priority, shields[i].Duration, shields[i].IsTimed, info.MaxStacks);
                     return;
                 }
             }
         }
 
+        shieldTimers.Add(info.IsTimed ? info.Duration : -1);
         shields.Add(info);
-        if (info.IsTimed)
-        {
-            shieldTimers.Add(info.Duration);
-        }
-        else
-        {
-            shieldTimers.Add(-1);
-        }
-        OnShieldListChangedRPC(shieldTimers.Count);
     }
 
     [Rpc(SendTo.Server)]
@@ -1368,9 +1352,8 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (shields[i].ID == id)
             {
-                shields.RemoveAt(i);
                 shieldTimers.RemoveAt(i);
-                OnShieldListChangedRPC(shieldTimers.Count);
+                shields.RemoveAt(i);
                 return;
             }
         }
@@ -1414,24 +1397,22 @@ public partial class Pokemon : NetworkBehaviour
         return shieldAmount;
     }
 
-    [Rpc(SendTo.Server)]
-    private void UpdateShieldListRPC(ShieldInfo[] newShields)
+    private void UpdateDamagedShields(List<ShieldInfo> remainingShields)
     {
-        List<ShieldInfo> oldShields = shields.AsNativeArray().ToList();
-
-        List<ShieldInfo> filteredShields = new List<ShieldInfo>(newShields);
-        filteredShields.RemoveAll(shield => shield.Amount == 0);
-
-        shields.Clear();
-        shieldTimers.Clear();
-
-        foreach (var shield in filteredShields)
+        // Damage changes amounts, not lifetimes. Keep each surviving shield's
+        // timer and metadata instead of rebuilding it from its original duration.
+        for (int i = remainingShields.Count - 1; i >= 0; i--)
         {
-            shields.Add(shield);
-            shieldTimers.Add(shield.Duration);
+            if (remainingShields[i].Amount <= 0)
+            {
+                shieldTimers.RemoveAt(i);
+                shields.RemoveAt(i);
+            }
+            else if (!shields[i].Equals(remainingShields[i]))
+            {
+                shields[i] = remainingShields[i];
+            }
         }
-
-        OnShieldListChangedRPC(shieldTimers.Count);
     }
 
     [Rpc(SendTo.Everyone)]
@@ -1512,25 +1493,6 @@ public partial class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void ClearShieldsRPC()
-    {
-        shields.Clear();
-        shieldTimers.Clear();
-    }
-
-    [Rpc(SendTo.Server)]
-    private void SetCurrentHPServerRPC(int amount)
-    {
-        currentHp.Value = amount;
-    }
-
-    [Rpc(SendTo.Server)]
-    private void SetCurrentEXPServerRPC(int amount)
-    {
-        currentExp.Value = amount;
-    }
-
-    [Rpc(SendTo.Server)]
     private void SetStoredExpServerRPC(int amount)
     {
         storedExp.Value = amount;
@@ -1581,6 +1543,14 @@ public partial class Pokemon : NetworkBehaviour
 
         PokemonEvolution evolution = baseStats.IsNewEvoLevel(evolutionLevel);
 
+        // Each peer can announce the initial evolution after loading its assets.
+        // A delayed duplicate must not replace an already initialized model and
+        // lose its Animator state (notably Psyduck's racing branch).
+        if (evolution == null || (currentEvolution == evolution && activeModel != null))
+        {
+            yield break;
+        }
+
         if (activeModel != null)
         {
             Destroy(activeModel);
@@ -1591,10 +1561,12 @@ public partial class Pokemon : NetworkBehaviour
         OnEvolution?.Invoke();
     }
 
-    [Rpc(SendTo.ClientsAndHost)]
+    // Calculate rewards once on the server. Broadcasting this would make every
+    // peer send the same GainExperienceRPC requests back to the server.
+    [Rpc(SendTo.Server)]
     public void GiveExpRpc(ulong attackerID, Vector3 deathPos, float baseExp)
     {
-        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
+        Pokemon attacker = NetworkManager.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
 
         Dictionary<int, (float koerExp, float proximityExp)> expDistribution = new Dictionary<int, (float, float)>
         {
@@ -1623,7 +1595,7 @@ public partial class Pokemon : NetworkBehaviour
     {
         List<Pokemon> playersInProximity = new List<Pokemon>();
 
-        foreach (var playerObject in NetworkManager.Singleton.SpawnManager.SpawnedObjects.Values)
+        foreach (var playerObject in NetworkManager.SpawnManager.SpawnedObjects.Values)
         {
             PlayerManager player = playerObject.GetComponent<PlayerManager>();
             if (player != null && player.CurrentTeam.IsOnSameTeam(team) && Vector3.Distance(player.transform.position, koPosition) <= range)

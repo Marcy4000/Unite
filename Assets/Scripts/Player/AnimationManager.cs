@@ -14,13 +14,25 @@ public class AnimationManager : NetworkBehaviour
 
     public void AssignAnimator(Animator animator)
     {
+        bool animatorChanged = this.animator != animator;
         this.animator = animator;
+        if (animator == null)
+            return;
+
         foreach (var parameter in animator.parameters)
         {
             if (parameter.type == AnimatorControllerParameterType.Trigger)
             {
                 animator.ResetTrigger(parameter.name);
             }
+        }
+
+        // Racing is a persistent presentation mode, not a one-shot owner RPC.
+        // Every peer must initialize it when its own model finishes loading.
+        if (animatorChanged && TryGetComponent(out Pokemon pokemon)
+            && pokemon.BaseStats != null && pokemon.BaseStats.Passive == AvailablePassives.PsyduckRacePassive)
+        {
+            PsyduckRacePassive.InitializeAnimator(animator);
         }
     }
 

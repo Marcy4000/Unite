@@ -11,7 +11,7 @@ public partial class MovesController
     private readonly Dictionary<int, VaporVisualRequest> vaporVisuals = new Dictionary<int, VaporVisualRequest>();
     private readonly List<AsyncOperationHandle<GameObject>> vaporWarmAssets = new List<AsyncOperationHandle<GameObject>>();
     private int vaporVisualSequence, vaporLocalSequence;
-    private bool vaporDecoration, vaporAssetsRequested;
+    private bool vaporAssetsRequested;
     private Transform vaporModel;
     private Vector3 vaporModelPosition;
     private float vaporSink;
@@ -76,13 +76,6 @@ public partial class MovesController
         request.Position = center; request.Target = target;
         if (request.Instance != null) request.Instance.UpdateAim(center, target);
     }
-    public void EnsureVaporeonBoostDecoration()
-    {
-        if (vaporDecoration || !IsOwner) return;
-        vaporDecoration = true;
-        EnsureVaporeonPresentationAssets();
-        LoadVaporeonVisual(VaporEffect.BoostReady, --vaporLocalSequence, transform.position, 0, NetworkObjectId, 1, 0, VaporNow);
-    }
     private void EnsureVaporeonPresentationAssets()
     {
         if (vaporAssetsRequested || !IsClient) return;
@@ -90,7 +83,8 @@ public partial class MovesController
         // Warm on every client, not only the caster: the first enemy telegraph
         // matters too. Gameplay still never waits for these loads.
         foreach (VaporEffect effect in Enum.GetValues(typeof(VaporEffect)))
-            vaporWarmAssets.Add(Addressables.LoadAssetAsync<GameObject>(VaporMoveRules.EffectPath(effect)));
+            if (effect != VaporEffect.BoostReady) // Reserved legacy asset, replaced by personal HP-bar UI.
+                vaporWarmAssets.Add(Addressables.LoadAssetAsync<GameObject>(VaporMoveRules.EffectPath(effect)));
     }
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
     private void PresentVaporeonHopRPC(double started) { vaporHopStarted = started; }
@@ -126,7 +120,7 @@ public partial class MovesController
             request.Cancelled = true;
             if (request.Instance != null) Destroy(request.Instance.gameObject);
         }
-        vaporVisuals.Clear(); vaporDecoration = false; vaporAssetsRequested = false;
+        vaporVisuals.Clear(); vaporAssetsRequested = false;
         foreach (var handle in vaporWarmAssets) if (handle.IsValid()) Addressables.Release(handle);
         vaporWarmAssets.Clear();
         if (vaporModel != null) vaporModel.localPosition = vaporModelPosition;

@@ -45,6 +45,10 @@ public class HPBar : MonoBehaviour
     [SerializeField] private RectTransform modulesContainer;
     [SerializeField] private List<MonoBehaviour> prefabModules = new List<MonoBehaviour>();
 
+    [Header("Boosted Attack Counter (Opt-in)")]
+    [SerializeField] private BoostedAttackCounterModule boostedAttackCounterPrefab;
+    [SerializeField, Min(0f)] private float boostedAttackCounterGap = 0.04f;
+
     [Header("Bar Size Configuration")]
     [SerializeField] private RectTransform barRectTransform;
     [SerializeField] private float wildBarWidth = 1f;
@@ -59,6 +63,7 @@ public class HPBar : MonoBehaviour
     private List<IHPBarModule> activeModules = new List<IHPBarModule>();
     private Dictionary<string, IHPBarModule> moduleRegistry = new Dictionary<string, IHPBarModule>();
     private Dictionary<string, GaugeModule> dynamicGauges = new Dictionary<string, GaugeModule>();
+    private readonly Vector3[] moduleCorners = new Vector3[4];
 
     public Pokemon Pokemon => pokemon;
     public bool IsInitialized => isInitialized;
@@ -71,6 +76,20 @@ public class HPBar : MonoBehaviour
     /// </summary>
     public void SetPokemon(Pokemon pokemon, bool isOwner = false)
     {
+        // Rebinding must not retain old event subscriptions or initialize modules twice.
+        if (this.pokemon != null)
+        {
+            this.pokemon.OnHpChange -= UpdateHPUI;
+            this.pokemon.OnShieldChange -= UpdateShieldsUI;
+            this.pokemon.OnLevelChange -= UpdateLevel;
+            this.pokemon.OnExpChange -= UpdateExp;
+        }
+        if (isInitialized)
+        {
+            foreach (var module in activeModules) module.Cleanup();
+        }
+        isInitialized = false;
+
         this.pokemon = pokemon;
         this.isOwner = isOwner;
 
@@ -91,13 +110,18 @@ public class HPBar : MonoBehaviour
         // Initialize prefab modules
         foreach (var moduleBehaviour in prefabModules)
         {
-            if (moduleBehaviour is IHPBarModule module && moduleBehaviour != null)
+            if (moduleBehaviour is IHPBarModule module && moduleBehaviour != null && !activeModules.Contains(module))
             {
                 RegisterAndInitializeModule(module);
             }
         }
 
         isInitialized = true;
+        foreach (var module in activeModules)
+        {
+            module.Initialize(pokemon, isOwner);
+        }
+        UpdateBoostedAttackCounterLayout();
     }
 
     /// <summary>
@@ -167,6 +191,9 @@ public class HPBar : MonoBehaviour
             lvText.text = $"{pokemon.CurrentLevel + 1}";
         }
         UpdateExp();
+        // HP and level replicate separately; recalculate once the new max HP is known.
+        UpdateHPUI();
+        UpdateShieldsUI();
         CreateHPMarkers(pokemon.GetMaxHp());
     }
 
@@ -378,6 +405,7 @@ public class HPBar : MonoBehaviour
         {
             generigGuage.SetActive(show);
         }
+        UpdateBoostedAttackCounterLayout();
     }
 
     /// <summary>
@@ -411,14 +439,10 @@ public class HPBar : MonoBehaviour
     /// </summary>
     public void AddModule(IHPBarModule module)
     {
-        if (module == null) return;
+        if (module == null || activeModules.Contains(module)) return;
 
         RegisterAndInitializeModule(module);
-
-        if (isInitialized && pokemon != null)
-        {
-            module.Initialize(pokemon, isOwner);
-        }
+        UpdateBoostedAttackCounterLayout();
     }
 
     /// <summary>
@@ -599,6 +623,81 @@ public class HPBar : MonoBehaviour
         {
             gauge.SetVisibility(visible);
         }
+    }
+
+    #endregion
+
+    #region Boosted Attack Counter
+
+    /// <summary>
+    /// Creates the shared counter only when a character opts in. Capacity counts
+    /// white icons only; SetState(count, ready) controls the extra yellow icon.
+    /// This does not change attack logic or add network state.
+    /// </summary>
+    public BoostedAttackCounterModule GetOrCreateBoostedAttackCounter(int maxNormalCharges = 2)
+    {
+        BoostedAttackCounterModule counter = GetModule<BoostedAttackCounterModule>();
+        if (counter == null)
+        {
+            if (boostedAttackCounterPrefab == null) return null;
+            counter = AddModuleFromPrefab(boostedAttackCounterPrefab);
+        }
+        counter.Configure(maxNormalCharges);
+        UpdateBoostedAttackCounterLayout();
+        return counter;
+    }
+
+    private void LateUpdate()
+    {
+        // Also catches modules toggled directly through SetVisibility/gameObject,
+        // and gauges whose size/position changes independently of this HP bar.
+        UpdateBoostedAttackCounterLayout();
+    }
+
+    private void UpdateBoostedAttackCounterLayout()
+    {
+        BoostedAttackCounterModule counter = GetModule<BoostedAttackCounterModule>();
+        if (counter == null || !counter.IsActive) return;
+
+        RectTransform rect = counter.RectTransform;
+        RectTransform parent = rect != null ? rect.parent as RectTransform : null;
+        RectTransform bar = barRectTransform != null ? barRectTransform : hpBar != null ? hpBar.rectTransform : null;
+        if (parent == null || bar == null) return;
+
+        float bottom = GetModuleBottom(bar, parent);
+        if (generigGuage != null && generigGuage.activeInHierarchy && generigGuage.transform is RectTransform gaugeRect)
+        {
+            bottom = Mathf.Min(bottom, GetModuleBottom(gaugeRect, parent));
+        }
+        // The existing bush/vision indicator also occupies the space under HP.
+        if (eyeIcon != null && eyeIcon.activeInHierarchy && eyeIcon.transform is RectTransform eyeRect)
+        {
+            bottom = Mathf.Min(bottom, GetModuleBottom(eyeRect, parent));
+        }
+        foreach (var module in activeModules)
+        {
+            if (module == counter || !module.IsActive) continue;
+            RectTransform moduleRect = module.RectTransform;
+            if (moduleRect == null || !moduleRect.gameObject.activeInHierarchy || rect.IsChildOf(moduleRect)) continue;
+            bottom = Mathf.Min(bottom, GetModuleBottom(moduleRect, parent));
+        }
+
+        Vector3 left = parent.InverseTransformPoint(bar.TransformPoint(new Vector3(bar.rect.xMin, bar.rect.center.y, 0f)));
+        Vector3 position = rect.localPosition;
+        position.x = left.x;
+        position.y = bottom - Mathf.Max(0f, boostedAttackCounterGap);
+        rect.localPosition = position;
+    }
+
+    private float GetModuleBottom(RectTransform rect, RectTransform relativeTo)
+    {
+        rect.GetWorldCorners(moduleCorners);
+        float bottom = float.PositiveInfinity;
+        for (int i = 0; i < moduleCorners.Length; i++)
+        {
+            bottom = Mathf.Min(bottom, relativeTo.InverseTransformPoint(moduleCorners[i]).y);
+        }
+        return bottom;
     }
 
     #endregion

@@ -6,6 +6,7 @@ public abstract class FlareonMoveBase : MoveBase
 {
     public abstract FlareonCast Kind { get; }
     private readonly List<IDisposable> leases = new List<IDisposable>();
+    private readonly WallCrossingTraversal traversal = new WallCrossingTraversal();
     private FlareonCast executingKind;
     private Vector3 direction, velocity;
     private Pokemon target;
@@ -15,6 +16,7 @@ public abstract class FlareonMoveBase : MoveBase
     public Vector3 AimDirection => direction;
     public bool CanBuffer => executing && FlareonMoveRules.Recovery(executingKind) - elapsed <= FlareonMoveRules.InputBuffer;
     public bool CanRecast => Kind == FlareonCast.Takedown && !pending && !executing && playerManager != null && playerManager.MovesController.FlareonRecastAvailable;
+    private bool CrossesWalls => executingKind == FlareonCast.Tackle || executingKind == FlareonCast.Slam || executingKind == FlareonCast.Unite;
 
     public override void Start(PlayerManager controller)
     {
@@ -52,8 +54,12 @@ public abstract class FlareonMoveBase : MoveBase
         pending = false;
         if (!accepted) { Complete(); return; }
         executing = true; elapsed = nextReport = drivenDistance = 0; movementEnded = false;
+        if (CrossesWalls) traversal.Begin(playerManager.PlayerMovement);
         velocity = FlareonMoveRules.Targeted(executingKind) ? (destination - playerManager.transform.position) / FlareonMoveRules.DriveTime(executingKind)
             : direction * (FlareonMoveRules.Range(executingKind) / FlareonMoveRules.DriveTime(executingKind));
+        if (executingKind == FlareonCast.Tackle)
+            velocity = (playerManager.PlayerMovement.GetWallCrossingDestination(playerManager.transform.position + direction * FlareonMoveRules.Range(executingKind))
+                - playerManager.transform.position) / FlareonMoveRules.DriveTime(executingKind);
         playerManager.transform.rotation = Quaternion.LookRotation(direction);
         PlayMoveAnimation();
         if (executingKind != FlareonCast.Slam)
@@ -85,18 +91,22 @@ public abstract class FlareonMoveBase : MoveBase
             if (delta > 0 && FlareonMoveRules.Targeted(executingKind) && target != null && target.IsSpawned && target.CurrentHp > 0)
             {
                 Vector3 goal = target.transform.position - FlareonMoveRules.Direction(target.transform.position - playerManager.transform.position, direction) * 0.65f;
+                // Do not stop inside a wall just because the target is within
+                // melee reach on its far side. Range and travel time stay capped.
+                if (CrossesWalls && !playerManager.PlayerMovement.IsWallCrossingLandingValid(goal)) goal = target.transform.position;
                 Vector3 toward = goal - playerManager.transform.position; toward.y = 0;
                 direction = FlareonMoveRules.Direction(toward, direction);
                 float remainingRange = Mathf.Max(0, FlareonMoveRules.Range(executingKind) - drivenDistance);
                 step = direction * Mathf.Min(toward.magnitude, remainingRange, FlareonMoveRules.Range(executingKind) / FlareonMoveRules.DriveTime(executingKind) * delta);
                 playerManager.transform.rotation = Quaternion.LookRotation(direction);
             }
-            Vector3 actual = delta > 0 ? playerManager.PlayerMovement.MoveWithWalls(step) : Vector3.zero;
+            Vector3 actual = delta > 0 ? (CrossesWalls ? traversal.Move(step) : playerManager.PlayerMovement.MoveWithWalls(step)) : Vector3.zero;
             drivenDistance += actual.magnitude;
             bool blocked = delta > 0 && step.sqrMagnitude > 0.0001f && actual.sqrMagnitude < step.sqrMagnitude * 0.02f;
             if (elapsed >= end || blocked || FlareonMoveRules.Targeted(executingKind) && drivenDistance >= FlareonMoveRules.Range(executingKind))
             {
                 movementEnded = true;
+                traversal.End();
                 playerManager.MovesController.FlareonMovementRPC(cast, true, playerManager.transform.position);
             }
             else if (delta > 0 && elapsed >= nextReport)
@@ -118,6 +128,7 @@ public abstract class FlareonMoveBase : MoveBase
     private void Complete()
     {
         bool hadAction = rooted || executing || pending;
+        traversal.End();
         foreach (IDisposable lease in leases) lease.Dispose(); leases.Clear();
         if (rooted && playerManager != null) playerManager.PlayerMovement.RemoveMovementRestriction();
         rooted = pending = executing = false; target = null;

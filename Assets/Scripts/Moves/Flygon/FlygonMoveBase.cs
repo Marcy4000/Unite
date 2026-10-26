@@ -8,6 +8,7 @@ public abstract class FlygonMoveBase : MoveBase
     public abstract FlygonCast Kind { get; }
     private readonly List<IDisposable> locks = new List<IDisposable>();
     private IDisposable ownSlot;
+    private readonly WallCrossingTraversal traversal = new WallCrossingTraversal();
     private Vector3 direction, destination, leapStep;
     private bool pending, executing, rooted, controlsReleased, recastAim, leapFinished, endRequested;
     private float elapsed;
@@ -62,6 +63,8 @@ public abstract class FlygonMoveBase : MoveBase
         if (Kind == FlygonCast.Earthquake)
         {
             destination = FlygonMoveRules.Destination(playerManager.transform.position, destination, FlygonMoveRules.Range(Kind));
+            destination = playerManager.PlayerMovement.GetWallCrossingDestination(destination);
+            traversal.Begin(playerManager.PlayerMovement);
             leapStep = (destination - playerManager.transform.position) / FlygonMoveRules.QuakeLeap;
         }
         wasMoveSuccessful = true;
@@ -85,10 +88,11 @@ public abstract class FlygonMoveBase : MoveBase
         if (Kind == FlygonCast.Earthquake && !leapFinished)
         {
             float step = Mathf.Min(Time.deltaTime, Mathf.Max(0, FlygonMoveRules.QuakeLeap - (elapsed - Time.deltaTime)));
-            playerManager.PlayerMovement.MoveWithWalls(leapStep * step);
+            traversal.Move(leapStep * step);
             if (elapsed >= FlygonMoveRules.QuakeLeap)
             {
                 leapFinished = true;
+                traversal.End();
                 playerManager.MovesController.FlygonLandingRPC(cast, playerManager.transform.position);
             }
         }
@@ -149,6 +153,7 @@ public abstract class FlygonMoveBase : MoveBase
     }
     private void Complete()
     {
+        traversal.End();
         if (Kind == FlygonCast.Dig && playerManager != null) playerManager.PlayerMovement.EndFlygonDig(playerManager.Pokemon.CurrentHp > 0);
         if (FlygonMoveRules.Mode(Kind)) ShowModeTimer(0);
         ReleaseControls(); pending = executing = recastAim = endRequested = false;

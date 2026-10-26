@@ -8,6 +8,7 @@ public class MarshadowAuraSphere : MarshadowMoveBase
     private Pokemon target;
     private float deadline;
     private int markEffect;
+    private readonly WallCrossingTraversal traversal = new WallCrossingTraversal();
     public int LastCast => cast;
     protected override float AimRange => MarshadowMoveRules.AuraRange;
     protected override bool RequiresMovement => phase == Phase.Lunging;
@@ -32,6 +33,7 @@ public class MarshadowAuraSphere : MarshadowMoveBase
             if (!ValidTarget() || Time.time >= deadline) { Complete(); return; }
             direction = MarshadowMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward);
             Begin(); phase = Phase.Lunging;
+            traversal.Begin(playerManager.PlayerMovement);
             MarshadowMoveRuntime.ShowWindow(0, 0);
             MarshadowMoveRuntime.EndEffect(playerManager, ref markEffect);
             effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.Rush, 0.45f, stage: 2);
@@ -61,8 +63,10 @@ public class MarshadowAuraSphere : MarshadowMoveBase
             case Phase.Lunging:
                 if (!ValidTarget()) { Complete(); return; }
                 Vector3 offset = target.transform.position - playerManager.transform.position; offset.y = 0;
-                if (offset.magnitude <= 1f)
+                bool safeLanding = playerManager.PlayerMovement.IsWallCrossingLandingValid(playerManager.transform.position);
+                if (offset.magnitude <= 1f && safeLanding)
                 {
+                    traversal.End();
                     Hit(MarshadowHit.AuraFollowup, target: target.NetworkObjectId);
                     // A host-side KO can synchronously invoke OnTargetDeath.
                     // Do not resurrect the completed sequence after its cleanup.
@@ -71,8 +75,10 @@ public class MarshadowAuraSphere : MarshadowMoveBase
                 }
                 direction = offset.normalized;
                 playerManager.transform.rotation = Quaternion.LookRotation(direction);
-                float requested = Mathf.Min(offset.magnitude - 0.8f, 19f * Time.deltaTime);
-                Vector3 movement = playerManager.PlayerMovement.MoveWithWalls(direction * requested);
+                // The usual melee stopping distance may still be inside the
+                // wall. Continue toward the target until there is room to land.
+                float requested = Mathf.Min(Mathf.Max(0, offset.magnitude - (safeLanding ? 0.8f : 0)), 19f * Time.deltaTime);
+                Vector3 movement = traversal.Move(direction * requested);
                 if (elapsed >= 0.6f || movement.sqrMagnitude < requested * requested * 0.01f) Complete();
                 break;
             case Phase.Recovery:
@@ -95,6 +101,7 @@ public class MarshadowAuraSphere : MarshadowMoveBase
     private void OnTargetDeath(DamageInfo _) { Complete(); }
     protected override void Complete()
     {
+        traversal.End();
         if (target != null) target.OnDeath -= OnTargetDeath;
         target = null; phase = Phase.Idle;
         MarshadowMoveRuntime.ShowWindow(0, 0);

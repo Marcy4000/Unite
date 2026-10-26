@@ -1,7 +1,8 @@
 using UnityEngine;
 
-public class MarshadowBasicAtk : BasicAttackBase
+public class MarshadowBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => charge;
     private DamageInfo normalDamage = new DamageInfo(0, 0.6f, 5, 110, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
     private DamageInfo boostedDamage = new DamageInfo(0, 0.9f, 6, 140, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
 
@@ -67,8 +68,4 @@ public class MarshadowBasicAtk : BasicAttackBase
         }
     }
 
-    public override void Update()
-    {
-
-    }
 }

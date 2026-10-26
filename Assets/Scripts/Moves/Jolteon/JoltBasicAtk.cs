@@ -1,7 +1,8 @@
 using UnityEngine;
 
-public class JoltBasicAtk : BasicAttackBase
+public class JoltBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => charge;
     private DamageInfo normalDamage = new DamageInfo(0, 0.4f, 5, 120, DamageType.Physical, DamageProprieties.IsBasicAttack);
     private DamageInfo boostedDamage = new DamageInfo(0, 0.6f, 7, 160, DamageType.Physical, DamageProprieties.IsBasicAttack);
 
@@ -61,8 +62,4 @@ public class JoltBasicAtk : BasicAttackBase
         }
     }
 
-    public override void Update()
-    {
-        
-    }
 }

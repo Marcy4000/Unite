@@ -11,7 +11,7 @@ public class EmboarMoveObject : NetworkBehaviour
     [SerializeField] private GameObject graphics, telegraph, body, burst, waveFront;
     [SerializeField] private SphereCollider area;
     [SerializeField] private BoxCollider waveArea;
-    [SerializeField] private GameObject[] pledgePips;
+    [SerializeField, HideInInspector] private GameObject[] pledgePips;
     [SerializeField] private AudioSource effectAudio;
     [SerializeField] private AudioClip rushSound, impactSound;
     private readonly NetworkVariable<ulong> actorId = new NetworkVariable<ulong>(ulong.MaxValue);
@@ -38,6 +38,13 @@ public class EmboarMoveObject : NetworkBehaviour
     private bool Live => actor != null && actor.IsSpawned && actor.Pokemon.CurrentHp > 0 && IsSpawned;
     private float Age => Time.time - createdAt;
     private float PhaseAge => (float)((NetworkManager != null ? NetworkManager.ServerTime.Time : Time.timeAsDouble) - phaseStarted.Value);
+
+    private void Awake()
+    {
+        // Retire the legacy charge geometry in existing prefabs. Stored boosted
+        // attacks are now shown by the owner's shared HP-bar counter.
+        if (pledgePips != null) foreach (GameObject pip in pledgePips) if (pip != null) pip.SetActive(false);
+    }
 
     public void HoldAsset(AsyncOperationHandle<GameObject> handle) { asset = handle; holdsAsset = true; }
     public override void OnNetworkSpawn()
@@ -291,8 +298,6 @@ public class EmboarMoveObject : NetworkBehaviour
             waveFront.SetActive(show);
             if (show) waveFront.transform.localScale = new Vector3(3.2f + (phase.Value - 1) * 1.3f, 1, 2.2f);
         }
-        if (pledgePips != null)
-            for (int i = 0; i < pledgePips.Length; i++) if (pledgePips[i] != null) pledgePips[i].SetActive(i < actor.MovesController.EmboarPledgeHits);
         PresentLeap();
     }
     private void PresentLeap()

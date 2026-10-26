@@ -87,20 +87,13 @@ public partial class PlayerMovement
         if (pokemon != null && pokemon.CurrentHp > 0 && valid) transform.position = exit;
     }
 
-    // Rain, Whirlpool pulls and Dive's shove still respect walls. None of these
-    // modes changes IsFlying, controller.enabled, or another move's dash state.
+    // Rain crosses walls; Whirlpool pulls and Dive's shove still respect them.
+    // None changes IsFlying, controller.enabled, or another move's dash state.
     public Vector3 VaporeonHopDestination(Vector3 requested)
     {
         Vector3 start = transform.position;
         requested = VaporMoveRules.ClampDestination(start, requested, 4f);
-        Vector3 last = start;
-        for (int i = 1; i <= 40; i++)
-        {
-            Vector3 point = Vector3.Lerp(start, requested, i / 40f);
-            if (walkableWithWalls != null && !walkableWithWalls.Raycast(new Ray(new Vector3(point.x, -29, point.z), Vector3.down), out _, 2)) break;
-            last = point;
-        }
-        return last;
+        return GetWallCrossingDestination(requested);
     }
     [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
     public void VaporeonDisplaceRPC(Vector3 center, float distance, bool inward)

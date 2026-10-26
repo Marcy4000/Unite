@@ -1,12 +1,13 @@
 using Unity.Netcode;
 using UnityEngine;
 
-public class VaporBasicAtk : BasicAttackBase
+public class VaporBasicAtk : ChargedBasicAttackBase
 {
+    protected override int AttackCharge => playerManager.MovesController != null ? playerManager.MovesController.VaporeonAttackCharge : 0;
+    protected override bool ShowAttackCounter => playerManager.MovesController == null || !playerManager.MovesController.VaporeonDiving;
     public override void Initialize(PlayerManager manager)
     {
         base.Initialize(manager); range = VaporMoveRules.BasicRange;
-        manager.HPBar.ShowGenericGuage(true);
     }
     public override void Perform(bool wildPriority)
     {
@@ -16,10 +17,5 @@ public class VaporBasicAtk : BasicAttackBase
         playerManager.transform.rotation = Quaternion.LookRotation(VaporMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward));
         // Short firing commitment, then kite freely. Animation is chosen by the server.
         playerManager.StopMovementForTime(Mathf.Min(0.15f, playerManager.MovesController.GetAtkSpeedCooldown() * 0.25f));
-    }
-    public override void Update()
-    {
-        playerManager.HPBar.UpdateGenericGuageValue(playerManager.MovesController.VaporeonAttackCharge, 3);
-        playerManager.MovesController.EnsureVaporeonBoostDecoration();
     }
 }

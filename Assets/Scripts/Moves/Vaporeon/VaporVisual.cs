@@ -54,11 +54,13 @@ public class VaporVisual : MonoBehaviour
         || (effect == VaporEffect.Aim && VaporMoveRules.IsSupport((VaporCast)detail));
     private void Apply(float delta)
     {
+        // Serialized enum/asset retained for compatibility, but the generic
+        // personal counter now owns readiness. Never render this old decoration.
+        if (effect == VaporEffect.BoostReady) { graphics.SetActive(false); return; }
         if (Attached)
         {
             if (!VaporMoveRuntime.Living(target)) { graphics.SetActive(false); return; }
             bool visible = !target.TryGetComponent(out Vision vision) || (vision.IsRendered && vision.IsVisiblyEligible);
-            if (effect == VaporEffect.BoostReady) visible &= actor.MovesController.VaporeonAttackCharge >= 3 && !actor.MovesController.VaporeonDiving;
             graphics.SetActive(visible);
             transform.position = target.transform.position;
         }

@@ -12,7 +12,9 @@ public class FlareonMoveObject : NetworkBehaviour
     [SerializeField] private Transform sweep;
     [SerializeField] private SphereCollider area;
     [SerializeField] private BoxCollider flameArea;
-    [SerializeField] private GameObject[] attackPips, heatPips;
+    // Existing prefabs may still contain these retired charge decorations.
+    [SerializeField, HideInInspector] private GameObject[] attackPips;
+    [SerializeField] private GameObject[] heatPips;
     [SerializeField] private AudioSource effectAudio;
     [SerializeField] private AudioClip ignitionSound, impactSound;
     private readonly NetworkVariable<ulong> actorId = new NetworkVariable<ulong>(ulong.MaxValue);
@@ -42,6 +44,11 @@ public class FlareonMoveObject : NetworkBehaviour
     private bool Live => actor != null && actor.IsSpawned && actor.Pokemon.CurrentHp > 0 && IsSpawned;
     private float Age => (float)(NetworkManager.ServerTime.Time - started.Value);
     private float PhaseAge => (float)(NetworkManager.ServerTime.Time - phaseStarted.Value);
+
+    private void Awake()
+    {
+        if (attackPips != null) foreach (GameObject pip in attackPips) if (pip != null) pip.SetActive(false);
+    }
 
     public void HoldAsset(AsyncOperationHandle<GameObject> handle) { asset = handle; holdsAsset = true; }
     public override void OnNetworkSpawn() { if (graphics != null) graphics.SetActive(false); if (IsServer) StartCoroutine(Watchdog()); }
@@ -260,7 +267,6 @@ public class FlareonMoveObject : NetworkBehaviour
     {
         stateViews[actorId.Value] = this;
         bool owner = actor.IsOwner;
-        for (int i = 0; i < attackPips.Length; i++) attackPips[i].SetActive(owner && (i < combat.FlareonAttackCharge || i == 2 && combat.FlareonAttackCharge == 2));
         for (int i = 0; i < heatPips.Length; i++)
         {
             heatPips[i].SetActive(owner && i < combat.FlareonAttackStacks);

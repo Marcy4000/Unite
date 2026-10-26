@@ -6,7 +6,7 @@ using UnityEngine;
 
 public partial class MovesController
 {
-    private readonly NetworkVariable<byte> vaporAttackCharge = new NetworkVariable<byte>();
+    private readonly NetworkVariable<byte> vaporAttackCharge = new NetworkVariable<byte>(readPerm: NetworkVariableReadPermission.Owner);
     private readonly NetworkVariable<double> vaporDiveEnds = new NetworkVariable<double>();
     private readonly AvailableMoves[] vaporLearned = { AvailableMoves.VaporSwift, AvailableMoves.VaporHelpingHand, AvailableMoves.VaporeonUnite };
     private readonly double[] vaporNextCast = new double[3];
@@ -20,7 +20,7 @@ public partial class MovesController
     private Vector3 vaporDiveExit;
     private double VaporNow => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.timeAsDouble;
     private bool IsLivingVaporeon => pokemon != null && pokemon.BaseStats != null && pokemon.BaseStats.PokemonName == "Vaporeon" && pokemon.CurrentHp > 0;
-    public int VaporeonAttackCharge => vaporAttackCharge.Value == 2 ? 3 : vaporAttackCharge.Value;
+    public int VaporeonAttackCharge => vaporAttackCharge.Value;
     public bool VaporeonDiving => vaporDiveEnds.Value > VaporNow;
 
     private void UpdateVaporeonRuntime()
