@@ -17,6 +17,7 @@ public class UniteRoyaleTrainer : NetworkBehaviour
     private PlayerNetworkManager assignedPlayer;
     private float nextUpdateTime;
     private bool isRunning = false;
+    private Animator movementAnimator;
 
     private void Awake()
     {
@@ -86,24 +87,46 @@ public class UniteRoyaleTrainer : NetworkBehaviour
 
     private void UpdateAnimation()
     {
-        if (trainerModel == null || trainerModel.ActiveAnimator == null || navMeshAgent == null)
+        if (navMeshAgent == null)
         {
             return;
         }
 
-        trainerModel.ActiveAnimator.SetBool("useAltIdle", true);
-
         // Check if the agent is moving based on velocity
-        bool shouldBeRunning = navMeshAgent.velocity.sqrMagnitude > 0.1f;
+        UpdateMovementAnimation(navMeshAgent.velocity.sqrMagnitude > 0.1f);
+    }
+
+    private void UpdateMovementAnimation(bool shouldBeRunning)
+    {
+        var animator = trainerModel != null ? trainerModel.ActiveAnimator : null;
+        if (animator == null || !animator.isActiveAndEnabled)
+        {
+            return;
+        }
+
+        // Clothes load asynchronously and can replace the active gender's Animator
+        // after movement has started. The new Animator has not received our triggers.
+        if (movementAnimator != animator)
+        {
+            movementAnimator = animator;
+            animator.ResetTrigger("startRun");
+            animator.ResetTrigger("stopRun");
+            isRunning = false;
+        }
+
+        animator.SetBool("useAltIdle", true);
 
         if (shouldBeRunning && !isRunning)
         {
-            trainerModel.ActiveAnimator.SetTrigger("startRun");
+            // An unconsumed stop must not immediately cancel the next run.
+            animator.ResetTrigger("stopRun");
+            animator.SetTrigger("startRun");
             isRunning = true;
         }
         else if (!shouldBeRunning && isRunning)
         {
-            trainerModel.ActiveAnimator.SetTrigger("stopRun");
+            animator.ResetTrigger("startRun");
+            animator.SetTrigger("stopRun");
             isRunning = false;
         }
     }
