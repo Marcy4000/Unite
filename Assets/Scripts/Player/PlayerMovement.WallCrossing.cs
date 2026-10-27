@@ -82,4 +82,8 @@ public sealed class WallCrossingTraversal
         if (!movement.IsWallCrossingLandingValid(movement.transform.position)) movement.transform.position = lastSafe;
         movement = null;
     }
+
+    // Death/despawn may already have teleported the actor. In that case there
+    // is no landing to repair, and an old cast must not overwrite the teleport.
+    public void Cancel() { movement = null; }
 }

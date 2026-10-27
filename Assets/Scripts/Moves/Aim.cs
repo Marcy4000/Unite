@@ -34,6 +34,36 @@ public class Aim : NetworkBehaviour
     private Team teamToIgnore;
 
     private string activeControlScheme;
+    private GameObject customIndicator;
+    private readonly Dictionary<string, GameObject> customIndicators = new Dictionary<string, GameObject>();
+
+    public void ShowCustomIndicator(string resourcePath, Vector3 scale, bool mirror = false)
+    {
+        HideCustomIndicator();
+        if (!customIndicators.TryGetValue(resourcePath, out var indicator) || indicator == null)
+        {
+            var prefab = Resources.Load<GameObject>(resourcePath);
+            if (prefab == null) return;
+            indicator = Instantiate(prefab, indicatorHolders.transform);
+            customIndicators[resourcePath] = indicator;
+        }
+        customIndicator = indicator;
+        indicator.transform.localScale = new Vector3(scale.x * (mirror ? -1 : 1), scale.y, scale.z);
+        indicator.SetActive(true);
+        dashIndicator.SetActive(false); skillShotLine.SetActive(false);
+    }
+
+    public void UpdateCustomIndicator(Vector3 direction)
+    {
+        direction.y = 0;
+        if (customIndicator != null && direction.sqrMagnitude > 0.001f) customIndicator.transform.rotation = Quaternion.LookRotation(direction);
+    }
+
+    public void HideCustomIndicator()
+    {
+        if (customIndicator != null) customIndicator.SetActive(false);
+        customIndicator = null;
+    }
     private float deviceSwitchCooldown = 0.5f; // Time to prevent rapid switching
     private float lastInputTime;
 

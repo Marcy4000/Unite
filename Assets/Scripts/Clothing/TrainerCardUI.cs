@@ -28,9 +28,11 @@ public class TrainerCardUI : MonoBehaviour
     
     private PlayerClothesInfo? currentClothes; 
     private Coroutine setupCoroutine;
+    private Coroutine renderCoroutine;
 
     private void OnEnable()
     {
+        if (trainerObject != null) trainerObject.ManageImageVisibility = false;
         if (currentClothes.HasValue)
         {
             if (setupCoroutine != null)
@@ -76,6 +78,7 @@ public class TrainerCardUI : MonoBehaviour
         currentClothes = clothes;
         currentAnimationIndex = clothes.TrainerCardInfo.TrainerAnimation;
 
+        trainerObject.ManageImageVisibility = false;
         trainerObject.ObjectPrefab = trainerPrefab.transform;
 
         if (gameObject.activeInHierarchy)
@@ -100,23 +103,42 @@ public class TrainerCardUI : MonoBehaviour
 
     private IEnumerator SetupTrainerModelUI(PlayerClothesInfo clothes)
     {
+        DetachTrainerModel();
         SetImageAlpha(0f);
 
-        while (trainerObject.TargetGameObject == null)
+        // A non-null target alone is not enough: startup or a hard refresh may
+        // still replace it. Follow the stable target for this activation.
+        while (true)
         {
+            if (!trainerObject.IsReady)
+            {
+                DetachTrainerModel();
+                SetImageAlpha(0f);
+            }
+            else
+            {
+                var candidate = trainerObject.TargetGameObject.GetComponent<TrainerModel>();
+                if (candidate != null && candidate != trainerModel)
+                {
+                    DetachTrainerModel();
+                    SetImageAlpha(0f);
+                    trainerModel = candidate;
+                    // Wait for the requested gender's outfit/animator to commit.
+                    trainerModel.onClothesInitialized += OnTrainerClothesInitialized;
+                    trainerModel.InitializeClothes(clothes);
+                }
+            }
             yield return null;
         }
-
-        DetachTrainerModel();
-        trainerModel = trainerObject.TargetGameObject.GetComponent<TrainerModel>();
-        // The prefab can still be using the other gender's animator until the
-        // asynchronous outfit commit. Never play the requested pose before that.
-        trainerModel.onClothesInitialized += OnTrainerClothesInitialized;
-        trainerModel.InitializeClothes(clothes);
     }
 
     private void DetachTrainerModel()
     {
+        if (renderCoroutine != null)
+        {
+            StopCoroutine(renderCoroutine);
+            renderCoroutine = null;
+        }
         if (trainerModel != null) trainerModel.onClothesInitialized -= OnTrainerClothesInitialized;
         trainerModel = null;
     }
@@ -203,19 +225,25 @@ public class TrainerCardUI : MonoBehaviour
 
             if (triggerRender && gameObject.activeInHierarchy)
             {
-                StartCoroutine(RenderDelayed());
+                if (renderCoroutine != null) StopCoroutine(renderCoroutine);
+                renderCoroutine = StartCoroutine(RenderDelayed(trainerModel));
             }
         }
     }
 
-    private IEnumerator RenderDelayed()
+    private IEnumerator RenderDelayed(TrainerModel expectedModel)
     {
         yield return new WaitForEndOfFrame();
-        if (!isActiveAndEnabled || trainerModel == null || !trainerModel.IsInitialized) yield break;
+        if (!isActiveAndEnabled || trainerModel == null || trainerModel != expectedModel
+            || !trainerModel.IsInitialized || !trainerObject.IsReady
+            || trainerObject.TargetGameObject != trainerModel.gameObject) yield break;
         
-        trainerObject.Render();
+        // Publish visibility only after the final posed model has actually rendered,
+        // not when a frame-limited preview has merely queued its next render.
+        trainerObject.Render(true);
         
         SetImageAlpha(1f);
+        renderCoroutine = null;
     }
 
     private void SetImageAlpha(float alpha)

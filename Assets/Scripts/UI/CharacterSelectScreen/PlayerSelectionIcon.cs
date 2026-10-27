@@ -13,6 +13,7 @@ public class PlayerSelectionIcon : MonoBehaviour
     [SerializeField] private Sprite[] backgrounds;
     [SerializeField] private PlayerHeadUI playerHeadUI;
     [SerializeField] private PlayerHeldItemsIcons playerHeldItemsIcons;
+    [SerializeField] private LaneSelectionBadge laneBadge;
 
     [SerializeField] private Sprite defaultBackground;
 
@@ -21,6 +22,7 @@ public class PlayerSelectionIcon : MonoBehaviour
     public void Initialize(Player player)
     {
         assignedPlayer = player;
+        if (laneBadge != null) laneBadge.Bind(player.Id);
         playerNameText.text = player.Data["PlayerName"].Value;
         if (assignedPlayer.Id == LobbyController.Instance.Player.Id)
         {

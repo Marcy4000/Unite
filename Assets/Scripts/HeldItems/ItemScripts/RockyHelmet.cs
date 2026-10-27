@@ -21,7 +21,7 @@ public class RockyHelmet : HeldItemBase
 
         if (damageDealt > Mathf.FloorToInt(playerManager.Pokemon.GetMaxHp() * 0.1f))
         {
-            DamageInfo recoilDamage = new DamageInfo(playerManager.NetworkObjectId, 1f, 0, (short)Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.04f), DamageType.True);
+            DamageInfo recoilDamage = new DamageInfo(playerManager.NetworkObjectId, 1f, 0, (short)Mathf.RoundToInt(playerManager.Pokemon.GetMaxHp() * 0.04f), DamageType.True) { source = DamageSource.Item };
             Collider[] hitColliders = Physics.OverlapSphere(playerManager.transform.position, 4f);
 
             foreach (Collider hitCollider in hitColliders)

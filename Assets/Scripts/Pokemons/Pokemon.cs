@@ -1080,18 +1080,25 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void TakeDamageRPC(DamageInfo damage)
     {
-        if (HasStatusEffect(StatusType.Invincible) || currentHp.Value <= 0)
+        ResolveDamage(damage);
+    }
+
+    // Synchronous server result includes shield absorption, but not overkill.
+    // Existing RPC callers retain exactly the same damage flow.
+    public int ResolveDamage(DamageInfo damage)
+    {
+        if (!IsServer || HasStatusEffect(StatusType.Invincible) || currentHp.Value <= 0)
         {
-            return;
+            return 0;
         }
 
         lastHit = damage;
 
         if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(damage.attackerId, out var attackerObject)
-            || !attackerObject.TryGetComponent(out Pokemon attacker)) return;
+            || !attackerObject.TryGetComponent(out Pokemon attacker)) return 0;
         if (BeforeDamage != null)
             foreach (Func<DamageInfo, bool> block in BeforeDamage.GetInvocationList())
-                if (block(damage)) return;
+                if (block(damage)) return 0;
 
         int previousHp = currentHp.Value;
         int localHp = previousHp;
@@ -1099,7 +1106,7 @@ public partial class Pokemon : NetworkBehaviour
 
         if (damage.proprieties.HasFlag(DamageProprieties.CanCrit))
         {
-            if (UnityEngine.Random.Range(0, 100) < attacker.GetCritRate())
+            if (UnityEngine.Random.Range(0, 100) < Mathf.Clamp(attacker.GetCritRate() + damage.bonusCritRate, 0, 100))
             {
                 damage.proprieties |= DamageProprieties.WasCriticalHit;
             }
@@ -1134,8 +1141,11 @@ public partial class Pokemon : NetworkBehaviour
         currentHp.Value = localHp;
 
         attacker.OnHealthDamageDealt?.Invoke(this, damage, Mathf.Max(0, previousHp - localHp));
+        int resolved = Mathf.Min(actualDamage, previousHp + (damage.type == DamageType.True ? 0 : localShields.Sum(shield => shield.Amount)));
+        attacker.OnDamageApplied?.Invoke(this, damage, resolved);
         ClientDamageRPC(actualDamage, damage, RayquazaBuff.ProtectsScoring(HasRayquazaShield, damage.type));
         attacker.OnDamageDealtRPC(NetworkObjectId, damage);
+        return resolved;
     }
 
     public int CalculateDamage(DamageInfo damage)

@@ -22,7 +22,11 @@ public class CharacterInfo : ScriptableObject
     public AssetReferenceGameObject model;
 
     public Sprite icon;
+    [Tooltip("Circle portrait of the highest evolution, used by character-select map markers without loading the gameplay PokemonBase.")]
+    public Sprite circleIcon;
     public Sprite portrait;
+
+    public Sprite CircleIcon => circleIcon != null ? circleIcon : icon;
 
     public bool Hidden;
 }

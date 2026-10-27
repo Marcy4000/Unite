@@ -140,14 +140,18 @@ public partial class MovesController : NetworkBehaviour
 
         if (playerManager.PlayerState == PlayerState.Alive)
         {
+            if (controls.Movement.CancelMove.WasPressedThisFrame()) ClearServerAttackBufferedInput();
+            ProcessServerAttackBufferedInput();
             bool show = controls.Movement.BasicAttack.IsPressed() || controls.Movement.BasicAttackWild.IsPressed();
             Aim.Instance.ShowBasicAtk(show, basicAttack.range);
 
-            if (controls.Movement.BasicAttack.IsPressed())
+            bool freshBufferedMove = ServerAttackBufferDuration > 0 && (controls.Movement.MoveA.WasPressedThisFrame()
+                || controls.Movement.MoveB.WasPressedThisFrame() || controls.Movement.UniteMove.WasPressedThisFrame());
+            if (!freshBufferedMove && controls.Movement.BasicAttack.IsPressed())
             {
                 TryPerformingBasicAttack(false);
             }
-            else if (controls.Movement.BasicAttackWild.IsPressed())
+            else if (!freshBufferedMove && controls.Movement.BasicAttackWild.IsPressed())
             {
                 TryPerformingBasicAttack(true);
             }
@@ -205,6 +209,7 @@ public partial class MovesController : NetworkBehaviour
                 ClearEmboarBufferedInput();
                 ClearFlareonBufferedInput();
                 ClearMeowsticBufferedInput();
+                ClearServerAttackBufferedInput();
                 moves[0].Cancel();
                 moves[1].Cancel();
                 uniteMove.Cancel();
@@ -347,11 +352,13 @@ public partial class MovesController : NetworkBehaviour
 
     private void TryPerformingBasicAttack(bool wildPriority)
     {
+        if (ServerAttackInputHasPriority()) return;
         if (!basicAttackStatus.HasStatus(ActionStatusType.None))
         {
             return;
         }
         basicAttack.Perform(wildPriority);
+        if (!basicAttack.ServerResolved) ReportOffensiveActionRPC(AvailableMoves.LockedMove, true);
         basicAttackStatus.Cooldown = GetAtkSpeedCooldown();
         BasicAttackStatus.AddStatus(ActionStatusType.Cooldown);
         onBasicAttackPerformed?.Invoke();
@@ -377,11 +384,14 @@ public partial class MovesController : NetworkBehaviour
             return;
         }
 
+        if (BufferMoveDuringServerAttack(index, false)) return;
+
         moves[index].Start(playerManager);
     }
 
     public void TryUsingUniteMove()
     {
+        if (BufferMoveDuringServerAttack(2, false)) return;
         if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastCresseliaUnite && !CanRecastFlygon(2))
             return;
 
@@ -398,6 +408,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void TryFinishingUniteMove()
     {
+        if (BufferMoveDuringServerAttack(2, true)) return;
         if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastCresseliaUnite && !CanRecastFlygon(2))
             return;
 
@@ -422,6 +433,8 @@ public partial class MovesController : NetworkBehaviour
             BufferMeowsticInput(index, true);
             return;
         }
+
+        if (BufferMoveDuringServerAttack(index, true)) return;
 
         moves[index].Finish();
     }
@@ -449,13 +462,14 @@ public partial class MovesController : NetworkBehaviour
                 // MoveBase.Finish has already spent the successful use.
                 SynchronizeStoredMove(i);
             }
-            else if (move.Cooldown > 0)
+            else if (move.Cooldown > 0 && move.CooldownOnFinish)
             {
                 moveStatuses[i].AddStatus(ActionStatusType.Cooldown);
                 moveStatuses[i].Cooldown = GetMoveCooldown(move);
                 UpdateMoveUI(i);
             }
             onMovePerformed?.Invoke(move);
+            if (!(move is PrefabMove)) ReportLegacyMoveAction(move);
             return;
         }
 
@@ -466,6 +480,7 @@ public partial class MovesController : NetworkBehaviour
         }
 
         onMovePerformed?.Invoke(move);
+        if (!(move is PrefabMove)) ReportLegacyMoveAction(move);
     }
 
     private float GetMoveCooldown(MoveBase move)
@@ -587,6 +602,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void LearnBasicAttack(BasicAttackBase basicAttack)
     {
+        ResetServerAttackInput();
         this.basicAttack?.Dispose();
         this.basicAttack = basicAttack;
         this.basicAttack.Initialize(playerManager);
@@ -594,7 +610,9 @@ public partial class MovesController : NetworkBehaviour
 
     public void LearnMove(MoveAsset move)
     {
+        if (!move.isUpgraded) ClearServerAttackBufferedInput();
         MoveBase previousMove = GetMove(move.moveType);
+        if (!move.isUpgraded && previousMove is PrefabMove) previousMove.ResetMove();
         if (!move.isUpgraded && previousMove is MeowsticMoveBase)
         {
             ClearMeowsticBufferedInput(); previousMove.ResetMove();
@@ -715,6 +733,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void CancelAllMoves()
     {
+        ClearServerAttackBufferedInput();
         moves[0].Cancel();
         moves[1].Cancel();
         uniteMove.Cancel();
@@ -722,6 +741,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void ResetAllMoves()
     {
+        ResetServerAttackInput();
         basicAttack?.ResetAttack();
         ClearMarshadowBufferedInput();
         ClearCresseliaBufferedInput();
@@ -946,6 +966,7 @@ public partial class MovesController : NetworkBehaviour
     public override void OnDestroy()
     {
         basicAttack?.Dispose();
+        DisposeServerAttack();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();

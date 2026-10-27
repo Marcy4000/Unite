@@ -37,6 +37,31 @@ public static class CombatTargeting
         return result;
     }
 
+    public static HashSet<Pokemon> SectorTargets(Vector3 origin, Vector3 direction, float range, float angle)
+    {
+        var result = new HashSet<Pokemon>();
+        direction.y = 0;
+        if (!Finite(origin) || !Finite(direction) || direction.sqrMagnitude < 0.001f || range <= 0) return result;
+        float cosine = Mathf.Cos(Mathf.Clamp(angle, 0, 360) * 0.5f * Mathf.Deg2Rad);
+        foreach (var target in SphereTargets(origin + Vector3.up * 0.8f, range))
+        {
+            Vector3 delta = target.transform.position - origin; delta.y = 0;
+            if (delta.sqrMagnitude <= (range + 0.5f) * (range + 0.5f)
+                && (delta.sqrMagnitude < 0.001f || Vector3.Dot(delta.normalized, direction.normalized) >= cosine)) result.Add(target);
+        }
+        return result;
+    }
+
+    // Sample the whole travelled segment, not just its last frame's endpoint.
+    public static HashSet<Pokemon> SweptSphereTargets(Vector3 start, Vector3 end, float radius)
+    {
+        var result = new HashSet<Pokemon>();
+        if (!Finite(start) || !Finite(end) || !float.IsFinite(radius) || radius <= 0) return result;
+        int steps = Mathf.Clamp(Mathf.CeilToInt(Vector3.Distance(start, end) / (radius * 0.5f)), 1, 128);
+        for (int i = 0; i <= steps; i++) result.UnionWith(SphereTargets(Vector3.Lerp(start, end, i / (float)steps), radius));
+        return result;
+    }
+
     public static bool OverlapsSphereNow(Collider collider, Vector3 center, float radius)
     {
         if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy

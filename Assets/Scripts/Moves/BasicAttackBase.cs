@@ -18,6 +18,13 @@ public abstract class BasicAttackBase
 
     public virtual void ResetAttack() { }
     public virtual void Dispose() { }
+    // Opt-in; legacy owner-resolved attacks are unchanged.
+    public virtual bool ServerResolved => false;
+    // Opt-in buffered move input during a server-resolved attack animation.
+    public virtual float MoveInputBufferDuration => 0;
+    public virtual void InitializeServer(PlayerManager manager) { playerManager = manager; }
+    public virtual void PerformOnServer(Pokemon target) { }
+    public virtual void ApplyServerState(int charge, float empoweredUntil) { }
 }
 
 public class EmptyBasicAtk : BasicAttackBase
@@ -72,6 +79,8 @@ public static class BasicAttacksDatabase
                 return new WildPokemonBasicAtk();
             case "duraludon":
                 return new DuraBasicAtk();
+            case "absol":
+                return new AbsolBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

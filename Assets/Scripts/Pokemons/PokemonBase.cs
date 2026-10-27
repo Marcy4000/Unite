@@ -5,9 +5,6 @@ public class PokemonBase : ScriptableObject
 {
     [SerializeField] string pokemonName;
 
-    [TextArea]
-    [SerializeField] string description;
-
     [SerializeField] int[] maxHp = new int[15];
     [SerializeField] int[] attack = new int[15];
     [SerializeField] int[] defense = new int[15];
@@ -27,8 +24,6 @@ public class PokemonBase : ScriptableObject
     [SerializeField] PokemonEvolution[] evolutions;
 
     public string PokemonName { get { return pokemonName; } }
-    public string Description { get { return description; } }
-
     public int[] MaxHp { get { return maxHp; } }
     public int[] Attack { get { return attack; } }
     public int[] Defense { get { return defense; } }

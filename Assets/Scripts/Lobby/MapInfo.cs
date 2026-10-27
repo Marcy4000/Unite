@@ -45,6 +45,13 @@ public AssetReferenceSprite mapResultsBlue;
     [Tooltip("Additional custom properties for the map.")]
     public List<CustomMapProperties> customProperties = new List<CustomMapProperties>();
 
+    [Tooltip("Lane picker graphics and available lanes. Leave empty for maps without lane selection. Presence of the disableLaneSelection custom property also hides all lane UI.")]
+    public LanePickerLayout lanePickerLayout;
+
+    public bool SupportsLaneSelection => lanePickerLayout != null && lanePickerLayout.lanes != null &&
+        lanePickerLayout.lanes.Length > 0 &&
+        (customProperties == null || !customProperties.Exists(property => property != null && property.HasProperty("disableLaneSelection")));
+
     [Space]
     [Header("Passive Exp")]
     [Tooltip("Passive exp schedule ordered by the elapsed match time when each value becomes active.")]

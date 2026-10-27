@@ -108,6 +108,7 @@ public class CharacterSelectController : NetworkBehaviour
         {
             if (current == CharacterSelectPhase.Preview)
             {
+                GetComponent<LaneSelectionNetwork>()?.ShowPreparationLayout();
                 mainScreen.SetActive(false);
                 previewScreenUI.gameObject.SetActive(true);
                 previewScreenUI.InitializeUI();
@@ -198,6 +199,7 @@ public class CharacterSelectController : NetworkBehaviour
                         case CharacterSelectPhase.Selection:
                             if (skipPreviewPhase)
                             {
+                                GetComponent<LaneSelectionNetwork>()?.StopSelection();
                                 ShowLoadingScreenRpc();
                                 LobbyController.Instance.LoadGameMap();
                                 isLoading = true;
@@ -209,6 +211,7 @@ public class CharacterSelectController : NetworkBehaviour
                         case CharacterSelectPhase.Preview:
                             if (!isLoading)
                             {
+                                GetComponent<LaneSelectionNetwork>()?.StopSelection();
                                 ShowLoadingScreenRpc();
                                 LobbyController.Instance.LoadGameMap();
                                 isLoading = true;
@@ -234,6 +237,7 @@ public class CharacterSelectController : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowLoadingScreenRpc()
     {
+        GetComponent<LaneSelectionNetwork>()?.StopSelection();
         AudioManager.StopMusic(DefaultAudioMusic.ChoosePokemon);
         AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme, true);
         AudioManager.PlaySound(DefaultAudioSounds.Play_Load17051302578487348);

@@ -19,6 +19,7 @@ public class DraftPlayerIcon : MonoBehaviour
     [SerializeField] private PlayerHeadUI playerHead;
     [SerializeField] private PlayerHeldItemsIcons heldItemsHolder;
     [SerializeField] private DraftRequestHolder requestHolder;
+    [SerializeField] private LaneSelectionBadge laneBadge;
 
     [SerializeField] private Sprite emptyBattleItem;
 
@@ -54,6 +55,7 @@ public class DraftPlayerIcon : MonoBehaviour
     public void Initialize(Player player, bool autoSyncCharacter=true)
     {
         assignedPlayer = player;
+        if (laneBadge != null) laneBadge.Bind(player.Id);
         playerNameText.text = player.Data["PlayerName"].Value;
         this.autoSyncCharacter = autoSyncCharacter;
         UpdateSelectedCharacter(null);

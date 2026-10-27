@@ -11,6 +11,7 @@ public abstract class MoveBase
     public bool IsUpgraded = false;
 
     public bool wasMoveSuccessful = false;
+    public virtual bool CooldownOnFinish => true;
 
     // Normal moves need no additional configuration. Stored moves declare the
     // type, capacity and cast interval; Cooldown remains the recharge duration.
@@ -287,6 +288,14 @@ public static class MoveDatabase
             case AvailableMoves.DuraludonUnite:
                 return new DuraludonUnite();
 
+            case AvailableMoves.AbsolFeint: return new AbsolFeint();
+            case AvailableMoves.AbsolSlash: return new AbsolSlash();
+            case AvailableMoves.AbsolNightSlash: return new AbsolNightSlash();
+            case AvailableMoves.AbsolPursuit: return new AbsolPursuit();
+            case AvailableMoves.AbsolPsychoCut: return new AbsolPsychoCut();
+            case AvailableMoves.AbsolSuckerPunch: return new AbsolSuckerPunch();
+            case AvailableMoves.AbsolMidnightSlash: return new AbsolMidnightSlash();
+
             default:
                 return null;
         }
@@ -406,5 +415,12 @@ public enum AvailableMoves : uint
     DuraMetalClaw,
     DuraStelthRock,
     DuraludonUnite,
-    CinderBlazeKick // Append: existing serialized move values must not change.
+    CinderBlazeKick, // Append: existing serialized move values must not change.
+    AbsolFeint,
+    AbsolSlash,
+    AbsolNightSlash,
+    AbsolPursuit,
+    AbsolPsychoCut,
+    AbsolSuckerPunch,
+    AbsolMidnightSlash
 }

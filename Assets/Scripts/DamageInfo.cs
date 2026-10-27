@@ -3,6 +3,9 @@ using Unity.Netcode;
 
 public enum DamageType : byte { Physical, Special, True }
 
+// Orthogonal to the legacy flags: secondary damage must not recursively proc itself.
+public enum DamageSource : byte { Direct, Item, Secondary }
+
 [Flags]
 public enum DamageProprieties : byte
 {
@@ -28,6 +31,8 @@ public struct DamageInfo : INetworkSerializable
     public DamageProprieties proprieties;
     // Zero is treated as one for legacy/default-initialized damage records.
     public float multiplier;
+    public float bonusCritRate;
+    public DamageSource source;
 
     public DamageInfo(ulong attackerId, float ratio, short slider, short baseDmg, DamageType type, DamageProprieties proprieties = DamageProprieties.None)
     {
@@ -38,6 +43,8 @@ public struct DamageInfo : INetworkSerializable
         this.type = type;
         this.proprieties = proprieties;
         multiplier = 1f;
+        bonusCritRate = 0;
+        source = DamageSource.Direct;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -49,5 +56,7 @@ public struct DamageInfo : INetworkSerializable
         serializer.SerializeValue(ref type);
         serializer.SerializeValue(ref proprieties);
         serializer.SerializeValue(ref multiplier);
+        serializer.SerializeValue(ref bonusCritRate);
+        serializer.SerializeValue(ref source);
     }
 }

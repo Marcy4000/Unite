@@ -317,6 +317,15 @@ namespace UI.ThreeDimensional
 
         [NonSerialized]
         private bool started = false;
+        private bool displayReady;
+        private Color? hiddenImageColor;
+
+        /// <summary>True after the preview's startup/rebuild has finished creating its target.</summary>
+        public bool IsReady => started && displayReady && _target != null;
+
+        /// <summary>Disable when the owning UI controls visibility while loading its model.</summary>
+        public bool ManageImageVisibility { get; set; } = true;
+
         [NonSerialized]
         private bool hardUpdateQueued = false;
         [NonSerialized]
@@ -359,20 +368,19 @@ namespace UI.ThreeDimensional
         /// </summary>
         public void HardUpdateDisplay()
         {
-            var color = imageComponent.color;
-            if (Application.isPlaying)
-            {
-                imageComponent.color = new Color(0, 0, 0, 0);
-                //imageComponent.sprite = null;
-            }
-
-            DestroyResources();
-
+            HideImageWhileRebuilding();
             Cleanup();
 
-            //UpdateDisplay();
             UIObject3DTimer.AtEndOfFrame(() => UpdateDisplay(), this);
-            UIObject3DTimer.DelayedCall(0.05f, () => { imageComponent.color = color; }, this, true);
+        }
+
+        private void HideImageWhileRebuilding()
+        {
+            if (!Application.isPlaying || !ManageImageVisibility) return;
+            // Repeated rebuilds must retain the intended color, not capture the
+            // transparent color temporarily applied by an earlier rebuild.
+            if (!hiddenImageColor.HasValue) hiddenImageColor = imageComponent.color;
+            imageComponent.color = Color.clear;
         }
 
         private void _Destroy(UnityEngine.Object o)
@@ -386,24 +394,18 @@ namespace UI.ThreeDimensional
         /// </summary>
         void Start()
         {
-            var color = imageComponent.color;
-            if (Application.isPlaying)
-            {
-                imageComponent.color = new Color(0, 0, 0, 0);
-                //imageComponent.sprite = null;
-            }
-
-            UIObject3DTimer.AtEndOfFrame(() => SetStarted(), this, true);
-            UIObject3DTimer.AtEndOfFrame(() => OnEnable(), this);
+            HideImageWhileRebuilding();
 
             // Some models (particularly, models with rigs) can cause Unity to crash if they are instantiated this early (for some reason)
             // as such, we must delay very briefly to avoid this before rendering
             UIObject3DTimer.DelayedCall(0.01f, () =>
             {
+                if (this == null) return;
                 Cleanup();
+                // Do not publish a temporary target before the startup cleanup.
+                SetStarted();
+                if (isActiveAndEnabled) OnEnable();
                 UpdateDisplay();
-
-                UIObject3DTimer.DelayedCall(0.05f, () => { imageComponent.color = color; }, this, true);
             }, this, true);
         }
 
@@ -424,16 +426,16 @@ namespace UI.ThreeDimensional
         {
             if (!Application.isPlaying && !started)
             {
-                Start();
                 SetStarted();
             }
 
-            if (!started) return;
+            if (!started || !isActiveAndEnabled) return;
 
             Prepare();
 
             UpdateTargetPositioningAndScale();
             UpdateTargetCameraPositioningEtc();
+            displayReady = _target != null && _targetCamera != null;
 
             if (OnUpdateTarget != null)
             {
@@ -545,7 +547,7 @@ namespace UI.ThreeDimensional
 
         void OnDestroy()
         {
-            UIObject3DUtilities.UnRegisterTargetContainer(this);
+            Cleanup();
         }
 
         void Prepare()
@@ -560,9 +562,15 @@ namespace UI.ThreeDimensional
         /// </summary>
         public void Cleanup()
         {
+            displayReady = false;
+            renderQueued = false;
+            DestroyResources();
             _texture2D = null;
             _sprite = null;
             _renderTexture = null;
+            _resolvedRenderTexture = null;
+            _targetCamera = null;
+            _cameraLight = null;
 
             _target = null;
             _targetContainer = null;
@@ -576,6 +584,7 @@ namespace UI.ThreeDimensional
 
                 if (Application.isPlaying)
                 {
+                    _container.gameObject.SetActive(false);
                     Destroy(_container.gameObject);
                 }
                 else
@@ -647,6 +656,13 @@ namespace UI.ThreeDimensional
                 RenderTexture.active = previousRenderTexture;
             }
 
+            // Restore generic previews only after a completed capture. Trainer
+            // cards opt out and reveal the image after clothes and pose are ready.
+            if (ManageImageVisibility && hiddenImageColor.HasValue)
+            {
+                imageComponent.color = hiddenImageColor.Value;
+                hiddenImageColor = null;
+            }
             renderQueued = false;
         }
 

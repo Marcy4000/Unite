@@ -642,6 +642,7 @@ public class DraftSelectController : NetworkBehaviour
     private void StartMatch()
     {
         Debug.Log("Draft phase complete! Starting match...");
+        GetComponent<LaneSelectionNetwork>()?.StopSelection();
         ShowLoadingScreenRpc();
         LobbyController.Instance.LoadGameMap();
     }
@@ -649,6 +650,7 @@ public class DraftSelectController : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void ShowLoadingScreenRpc()
     {
+        GetComponent<LaneSelectionNetwork>()?.StopSelection();
         AudioManager.StopMusic(DefaultAudioMusic.ChoosePokemon);
         AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme, true);
         AudioManager.PlaySound(DefaultAudioSounds.Play_Load17051302578487348);

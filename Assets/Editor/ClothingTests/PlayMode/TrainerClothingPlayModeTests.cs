@@ -30,7 +30,8 @@ public class TrainerClothingPlayModeTests
     private static object Property(object target, string name) => target.GetType().GetProperty(name).GetValue(target);
     private void Initialize() => model.GetType().GetMethod("InitializeClothes").Invoke(model, new[] { info });
     private static object Call(object target, string name, params object[] args) => target.GetType()
-        .GetMethod(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Invoke(target, args);
+        .GetMethod(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            null, args.Select(argument => argument.GetType()).ToArray(), null).Invoke(target, args);
 
     private Component CreateTrainerCard(bool male)
     {
@@ -49,6 +50,8 @@ public class TrainerClothingPlayModeTests
         // Exercise the actual card lifecycle without rendering or loading card artwork.
         // This preview already targets the fixture's real trainer and controllers.
         Set(preview, "_target", model.transform);
+        Set(preview, "started", true);
+        Set(preview, "displayReady", true);
         Set(card, "trainerObject", preview);
         Set(card, "maleAnimations", Get(configured, "maleAnimations"));
         Set(card, "femaleAnimations", Get(configured, "femaleAnimations"));
@@ -66,6 +69,158 @@ public class TrainerClothingPlayModeTests
         string pose = ((string[])Get(card, male ? "maleAnimations" : "femaleAnimations"))[index];
         Assert.That((bool)Property(model, "IsMale"), Is.EqualTo(male));
         Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName(pose), Is.True, "Expected pose: " + pose);
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    private Component CreateRealTrainerCard(out GameObject host)
+    {
+#if UNITY_EDITOR
+        host = new GameObject("Initially disabled trainer card");
+        host.SetActive(false);
+        host.transform.SetParent(root.transform, false);
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/TrainerModels/TrainerCard.prefab");
+        var instance = Object.Instantiate(prefab, host.transform, false);
+        var card = instance.GetComponent(GameType("TrainerCardUI"));
+        var preview = (Component)Get(card, "trainerObject");
+        Set(preview, "_RenderScale", 0.25f);
+        // The fixture only supplies hair and a shirt, not a complete default outfit.
+        // Frame both of those meshes instead of using a head-only extreme zoom.
+        Set(info, "Shirt", (ushort)1);
+        var metadata = Get(info, "TrainerCardInfo");
+        metadata.GetType().GetProperty("TrainerScale").SetValue(metadata, (byte)100);
+        Set(info, "TrainerCardInfo", metadata);
+        return card;
+#else
+        throw new NotSupportedException();
+#endif
+    }
+
+    private IEnumerator WaitForVisibleCard(Component card)
+    {
+        var preview = (Component)Get(card, "trainerObject");
+        float deadline = Time.realtimeSinceStartup + 15f;
+        while (Time.realtimeSinceStartup < deadline)
+        {
+            var trainer = (Component)Get(card, "trainerModel");
+            var image = (UnityEngine.UI.Image)Property(preview, "imageComponent");
+            if ((bool)Property(preview, "IsReady") && trainer != null
+                && (bool)Property(trainer, "IsInitialized") && image.color.a == 1f) break;
+            yield return null;
+        }
+        var bound = (Component)Get(card, "trainerModel");
+        Assert.That((bool)Property(preview, "IsReady"), Is.True, "Preview never became ready.");
+        Assert.That(bound != null, Is.True, "Card never bound the stable trainer target.");
+        Assert.That(Property(preview, "TargetGameObject"), Is.EqualTo(bound.gameObject));
+        Assert.That((bool)Property(bound, "IsInitialized"), Is.True);
+        var display = (UnityEngine.UI.Image)Property(preview, "imageComponent");
+        Assert.That(display.color.a, Is.EqualTo(1f), "Trainer must be visible on its first activation.");
+        Assert.That(display.sprite != null, Is.True);
+        Assert.That((bool)Get(preview, "renderQueued"), Is.False,
+            "Visibility must follow an actual render, not a queued render.");
+        Assert.That(display.sprite.texture, Is.EqualTo(Get(preview, "_texture2D")));
+        var camera = (Camera)Get(preview, "_targetCamera");
+        var source = camera.targetTexture.antiAliasing > 1
+            ? (RenderTexture)Get(preview, "_resolvedRenderTexture") : camera.targetTexture;
+        var previous = RenderTexture.active;
+        var pixels = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false);
+        try
+        {
+            RenderTexture.active = source;
+            pixels.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0);
+            pixels.Apply();
+            Assert.That(pixels.GetPixels32().Any(pixel => pixel.a > 0), Is.True,
+                "The final capture must contain trainer pixels, not just an empty texture. Camera: "
+                + camera.transform.position + " / " + camera.transform.eulerAngles + "; meshes: "
+                + string.Join("; ", bound.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(renderer =>
+                    $"{renderer.name}, active={renderer.gameObject.activeInHierarchy}, enabled={renderer.enabled}, layer={renderer.gameObject.layer}, bounds={renderer.bounds}")));
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            Object.Destroy(pixels);
+        }
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [UnityTest]
+    public IEnumerator InitiallyDisabledTrainerCardRendersOnItsFirstEnable()
+    {
+        var card = CreateRealTrainerCard(out var host);
+        Call(card, "Initialize", info);
+        var preview = (Component)Get(card, "trainerObject");
+        Assert.That((bool)Property(preview, "IsReady"), Is.False);
+        Assert.That(Property(preview, "TargetGameObject"), Is.Null);
+        host.SetActive(true);
+        yield return WaitForVisibleCard(card);
+        var target = Property(preview, "TargetGameObject");
+        // Outwait both legacy color-restoration timers and the startup cleanup.
+        yield return new WaitForSecondsRealtime(0.15f);
+        Assert.That(Property(preview, "TargetGameObject"), Is.EqualTo(target));
+        Assert.That(((UnityEngine.UI.Image)Property(preview, "imageComponent")).color.a, Is.EqualTo(1f));
+        Assert.That(((UnityEngine.UI.Image)Get(card, "backgroundImage")).sprite != null, Is.True);
+        Assert.That(((UnityEngine.UI.Image)Get(card, "frameImage")).sprite != null, Is.True);
+    }
+
+    [UnityTest]
+    public IEnumerator TrainerCardInitializedOnFirstEnableSurvivesRapidToggleAndReenable()
+    {
+        var card = CreateRealTrainerCard(out var host);
+        host.SetActive(true);
+        Call(card, "Initialize", info);
+        yield return null;
+        host.SetActive(false);
+        host.SetActive(true);
+        yield return WaitForVisibleCard(card);
+        host.SetActive(false);
+        yield return null;
+        host.SetActive(true);
+        yield return WaitForVisibleCard(card);
+    }
+
+    [UnityTest]
+    public IEnumerator TrainerCardRebindsAfterItsPreviewIsRebuilt()
+    {
+        var card = CreateRealTrainerCard(out var host);
+        Call(card, "Initialize", info);
+        host.SetActive(true);
+        yield return WaitForVisibleCard(card);
+        var preview = (Component)Get(card, "trainerObject");
+        var original = (Component)Get(card, "trainerModel");
+        int previousWidth = ((UnityEngine.UI.Image)Property(preview, "imageComponent")).sprite.texture.width;
+        Set(preview, "_RenderScale", 0.5f);
+        Call(preview, "HardUpdateDisplay");
+        Assert.That((bool)Property(preview, "IsReady"), Is.False);
+        Assert.That(original.gameObject.activeInHierarchy, Is.False);
+        yield return WaitForVisibleCard(card);
+        Assert.That(Get(card, "trainerModel"), Is.Not.SameAs(original));
+        Assert.That(((UnityEngine.UI.Image)Property(preview, "imageComponent")).sprite.texture.width,
+            Is.GreaterThan(previousWidth), "Rebuilds must replace the resolved texture as well as the trainer.");
+    }
+
+    [UnityTest]
+    public IEnumerator GenericPreviewRestoresItsIntendedColorAfterRepeatedStartupRebuilds()
+    {
+        var card = CreateRealTrainerCard(out var host);
+        ((Behaviour)card).enabled = false; // Only exercise UIObject3D's own visibility policy.
+        var preview = (Component)Get(card, "trainerObject");
+        Set(preview, "_ObjectPrefab", ((GameObject)Get(card, "trainerPrefab")).transform);
+        var image = (UnityEngine.UI.Image)Property(preview, "imageComponent");
+        var intendedColor = new Color(0.4f, 0.8f, 0.3f, 0.65f);
+        image.color = intendedColor;
+        Call(preview, "HardUpdateDisplay");
+        Call(preview, "HardUpdateDisplay");
+        host.SetActive(true);
+        yield return null;
+        host.SetActive(false);
+        host.SetActive(true);
+        float deadline = Time.realtimeSinceStartup + 5f;
+        while ((!(bool)Property(preview, "IsReady") || image.color != intendedColor)
+            && Time.realtimeSinceStartup < deadline) yield return null;
+        Assert.That((bool)Property(preview, "IsReady"), Is.True);
+        Assert.That(image.color, Is.EqualTo(intendedColor),
+            "A nested rebuild must not remember another rebuild's temporary zero alpha.");
+        yield return new WaitForSecondsRealtime(0.15f);
+        Assert.That(image.color, Is.EqualTo(intendedColor));
         LogAssert.NoUnexpectedReceived();
     }
 
