@@ -93,6 +93,7 @@ public partial class Pokemon : NetworkBehaviour
     public event Action OnPokemonInitialized;
 
     public event Action<ulong, DamageInfo> OnDamageDealt;
+    public event Action<int> OnHealingDone;
     // Server-only extension points. Block before shields/HP, and report real HP
     // lost after shields/overkill rather than re-evaluating a damage formula.
     public event Func<DamageInfo, bool> BeforeDamage;
@@ -1052,7 +1053,7 @@ public partial class Pokemon : NetworkBehaviour
         }
         if (Keyboard.current.yKey.wasPressedThisFrame)
         {
-            HealDamageRPC(300);
+            HealEnvironmentRPC(300);
         }
 
         if (Keyboard.current.hKey.wasPressedThisFrame)
@@ -1288,10 +1289,24 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void HealDamageRPC(int amount)
     {
+        ApplyHealing(amount, this);
+    }
+
+    [Rpc(SendTo.Server)]
+    public void HealDamageRPC(int amount, ulong healerId)
+    {
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(healerId, out var obj)
+            || !obj.TryGetComponent(out Pokemon healer)) return;
+        ApplyHealing(amount, healer);
+    }
+
+    [Rpc(SendTo.Server)]
+    public void HealEnvironmentRPC(int amount)
+    {
         ApplyHealing(amount);
     }
 
-    private void ApplyHealing(int amount)
+    private void ApplyHealing(int amount, Pokemon healer = null)
     {
         int oldHp = currentHp.Value;
         if (oldHp <= 0 || amount <= 0 || baseStats == null) return;
@@ -1299,6 +1314,20 @@ public partial class Pokemon : NetworkBehaviour
         if (healAmount == 0) return;
         currentHp.Value = oldHp + healAmount;
         ClientHealRpc(healAmount);
+        if (type == PokemonType.Player && healer != null && healer.Type == PokemonType.Player
+            && (GameManager.Instance == null || GameManager.Instance.GameState == GameState.Playing))
+        {
+            if (healer.TryGetComponent(out PlayerManager healingPlayer) && healingPlayer.IsBot)
+                healingPlayer.RecordBotHealing(healAmount);
+            else
+                healer.NotifyHealingDoneRpc(healAmount);
+        }
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void NotifyHealingDoneRpc(int amount)
+    {
+        OnHealingDone?.Invoke(amount);
     }
 
     // Only an explicit respawn/round reset may restore HP from zero. Keep the
@@ -1336,7 +1365,7 @@ public partial class Pokemon : NetworkBehaviour
 
         int healAmount = Mathf.FloorToInt(healInfo.ratio * atkStat + healInfo.slider * attacker.CurrentLevel + healInfo.baseDmg);
 
-        ApplyHealing(healAmount);
+        ApplyHealing(healAmount, attacker);
     }
 
     [Rpc(SendTo.Server)]

@@ -186,7 +186,7 @@ public class VolleyballElectrode : NetworkBehaviour
             {
                 continue; // Skip if the player's HP is already full
             }
-            player.Pokemon.HealDamageRPC(Mathf.RoundToInt(player.Pokemon.GetMaxHp() / 2.5f));
+            player.Pokemon.HealEnvironmentRPC(Mathf.RoundToInt(player.Pokemon.GetMaxHp() / 2.5f));
         }
 
         // Il resto del codice per quando ci sono giocatori rimane invariato

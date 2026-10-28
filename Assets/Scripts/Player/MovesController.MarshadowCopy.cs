@@ -89,7 +89,7 @@ public partial class MovesController
             var allies = new System.Collections.Generic.HashSet<Pokemon>();
             foreach (Collider collider in Physics.OverlapSphere(origin + Vector3.up * 0.7f, radius))
                 if (collider.TryGetComponent(out Pokemon ally) && ally.CurrentHp > 0 && ally.TeamMember.IsOnSameTeam(playerManager.CurrentTeam) && allies.Add(ally))
-                    ally.HealDamageRPC(Mathf.RoundToInt(pokemon.GetAttack() * 2.6f + 5 * pokemon.CurrentLevel + 840));
+                    ally.HealDamageRPC(Mathf.RoundToInt(pokemon.GetAttack() * 2.6f + 5 * pokemon.CurrentLevel + 840), pokemon.NetworkObjectId);
         }
         if (source == AvailableMoves.GlaceonUnite) StartCoroutine(MarshadowIceField(cast, origin, direction));
     }

@@ -7,6 +7,7 @@ public class MoonlightArea : NetworkBehaviour
     [SerializeField] CapsuleCollider capsuleCollider;
 
     private float healPercentage;
+    private ulong healerId;
 
     private bool initialized;
 
@@ -18,12 +19,13 @@ public class MoonlightArea : NetworkBehaviour
     private List<PlayerManager> playerList = new List<PlayerManager>();
 
     [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, Team orangeTeam, float healPercentage)
+    public void InitializeRPC(Vector3 position, Team orangeTeam, float healPercentage, ulong healerId)
     {
         vaporeonTeam = orangeTeam;
         transform.position = position;
         capsuleCollider.enabled = true;
         this.healPercentage = healPercentage;
+        this.healerId = healerId;
         initialized = true;
     }
 
@@ -45,7 +47,7 @@ public class MoonlightArea : NetworkBehaviour
                 {
                     if (player.CurrentTeam.IsOnSameTeam(vaporeonTeam))
                     {
-                        player.Pokemon.HealDamageRPC(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * healPercentage));
+                        player.Pokemon.HealDamageRPC(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * healPercentage), healerId);
                     }
                 }
             }

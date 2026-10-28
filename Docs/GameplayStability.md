@@ -31,6 +31,26 @@ This pass changes shared systems, not bot strategy or early lane-farm policy.
 - Map capacity counts humans and the actual number of teams. Bots are cleared by
   the successful map-change roster update rather than preventing smaller modes.
 
+## Post-match healing done
+
+- The green Battle Data bar shows HP restored by that player, including ally
+  healing, move-based self-recovery, lifesteal, spell vamp, and held/battle items.
+  Only actual HP restored counts; overhealing, shields, and healing dead targets
+  do not add credit. Ally healing belongs to the healer, not the recipient.
+- `Pokemon.HealDamageRPC(int)` credits self-healing. Ally healing uses
+  `HealDamageRPC(int, ulong healerId)` or a `DamageInfo` carrying the healer's
+  network object ID. Legacy Moonlight/Lunar Blessing objects also require that
+  source ID when initialized.
+- Goal zones, berries, home-base pads, wild/objective recovery, wild-KO recovery,
+  and volleyball map recovery use `HealEnvironmentRPC(int)` and never add credit.
+  Explicit respawns and level-up HP rescaling also remain untracked.
+- The server measures restoration. Human healing notifies only that avatar's
+  owner to update `PlayerStats.healingDone`; bot healing updates the healer's
+  server-authoritative `botStats` directly, never the shared host owner. The
+  settlement UI already displays this total and its share of the team's healing.
+  Match resets clear it alongside the other statistics; recovery outside play
+  adds no credit.
+
 ## Placement and movement
 
 - AEOS drops are grounded before NGO serializes their initial position. Terrain

@@ -124,4 +124,37 @@ public class RematchRespawnTests
         Assert.That(Get(coordinator, "localDeathTimer"), Is.EqualTo(20f));
         Assert.That(Value(Get(coordinator, "deathTimer")), Is.EqualTo(20f));
     }
+
+    [Test]
+    public void HealingUpdatesTheSettlementStatWithoutChangingOtherStatsAndResetsForRematches()
+    {
+        var statsType = GameType("PlayerStats");
+        var stats = Activator.CreateInstance(statsType, "rematch-player", (ushort)2, (ushort)3,
+            (ushort)4, (ushort)100, (uint)1500, (uint)2000, (uint)50);
+        SetValue(Get(coordinator, "playerStats"), stats);
+        SetValue(Get(coordinator, "lobbyPlayerId"), statsType.GetField("playerId").GetValue(stats));
+        var recordHealing = coordinator.GetType().GetMethod("OnPlayerHeal", Private);
+        recordHealing.Invoke(coordinator, new object[] { 300 });
+        recordHealing.Invoke(coordinator, new object[] { 125 });
+        recordHealing.Invoke(coordinator, new object[] { 0 });
+        recordHealing.Invoke(coordinator, new object[] { -100 });
+        var updated = Value(Get(coordinator, "playerStats"));
+        Assert.That(statsType.GetField("healingDone").GetValue(updated), Is.EqualTo(475));
+        foreach (var field in statsType.GetFields(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (field.Name != "healingDone") Assert.That(field.GetValue(updated), Is.EqualTo(field.GetValue(stats)), field.Name);
+        }
+
+        LeaveResults();
+        Assert.That(statsType.GetField("healingDone").GetValue(Value(Get(coordinator, "playerStats"))), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void NonOwnersCannotRecordHealingForAnotherPlayer()
+    {
+        coordinator.GetType().GetProperty("IsOwner").SetValue(coordinator, false);
+        coordinator.GetType().GetMethod("OnPlayerHeal", Private).Invoke(coordinator, new object[] { 300 });
+        var stats = Value(Get(coordinator, "playerStats"));
+        Assert.That(stats.GetType().GetField("healingDone").GetValue(stats), Is.EqualTo(0));
+    }
 }

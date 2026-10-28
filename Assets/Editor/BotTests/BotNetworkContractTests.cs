@@ -73,6 +73,29 @@ public class BotNetworkContractTests
         finally { UnityEngine.Object.DestroyImmediate(root); }
     }
 
+    [TestCase(true, true, 250, 250u)]
+    [TestCase(true, true, 0, 0u)]
+    [TestCase(true, true, -100, 0u)]
+    [TestCase(false, true, 250, 0u)]
+    [TestCase(true, false, 250, 0u)]
+    public void BotHealingRequiresServerAuthorityAndBotIdentity(bool server, bool bot, int amount, uint expected)
+    {
+        var root = new GameObject("Bot healing authority");
+        root.SetActive(false);
+        try
+        {
+            root.AddComponent<NetworkObject>();
+            var player = root.AddComponent(GameType("PlayerManager"));
+            typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(player, server);
+            ((NetworkVariable<bool>)player.GetType().GetField("botControlled", Fields).GetValue(player)).Value = bot;
+            player.GetType().GetMethod("RecordBotHealing", Fields).Invoke(player, new object[] { amount });
+            var variable = player.GetType().GetField("botStats", Fields).GetValue(player);
+            var stats = variable.GetType().GetProperty("Value").GetValue(variable);
+            Assert.That(stats.GetType().GetField("healingDone").GetValue(stats), Is.EqualTo(expected));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(root); }
+    }
+
     [Test]
     public void BrainConstructionDoesNotCallNativeNavigationBeforeStart()
     {

@@ -155,6 +155,14 @@ public partial class PlayerManager
         botStats.Value = stats;
     }
 
+    internal void RecordBotHealing(int amount)
+    {
+        if (!IsServer || !IsBot || amount <= 0) return;
+        var stats = botStats.Value;
+        stats.healingDone += (uint)amount;
+        botStats.Value = stats;
+    }
+
     private void RecordBotMove(MoveAsset move)
     {
         var stats = botStats.Value;

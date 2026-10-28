@@ -109,6 +109,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
                 pokemon.OnDeath -= OnPlayerDeath;
                 pokemon.OnDamageTaken -= OnPlayerTakeDamage;
                 pokemon.OnDamageDealt -= OnPlayerDealDamage;
+                pokemon.OnHealingDone -= OnPlayerHeal;
                 pokemon.OnOtherPokemonKilled -= OnOtherPokemonKilled;
             }
             playerManager.onGoalScored -= OnGoalScored;
@@ -300,7 +301,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
         }
         if (!IsSpawned || match == null || GameManager.Instance != match || avatar == null || !avatar.IsSpawned) yield break;
         var player = avatar.GetComponent<PlayerManager>();
-        if (player == null || avatar.OwnerClientId != OwnerClientId || playerManager == player) yield break;
+        if (player == null || player.IsBot || avatar.OwnerClientId != OwnerClientId || playerManager == player) yield break;
         playerManager = player;
         matchStarted = false;
         // Also reset at the next avatar's initialization, before move tracking
@@ -314,6 +315,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
         player.Pokemon.OnDeath += OnPlayerDeath;
         player.Pokemon.OnDamageTaken += OnPlayerTakeDamage;
         player.Pokemon.OnDamageDealt += OnPlayerDealDamage;
+        player.Pokemon.OnHealingDone += OnPlayerHeal;
         player.onGoalScored += OnGoalScored;
         player.Pokemon.OnOtherPokemonKilled += OnOtherPokemonKilled;
         player.OnRespawn += OnPlayerRespawned;
@@ -344,6 +346,20 @@ public partial class PlayerNetworkManager : NetworkBehaviour
             lobbyPlayerId.Value.ToString(),
             currentStats.kills, currentStats.deaths, currentStats.assists, currentStats.score,
             currentStats.damageDealt + (uint)amount, currentStats.damageTaken, currentStats.healingDone,
+            currentStats.moveA, currentStats.moveB, currentStats.uniteMove,
+            currentStats.basicAttackName.ToString(), currentStats.battleItem,
+            currentStats.moveAUpgraded, currentStats.moveBUpgraded, currentStats.uniteMoveUpgraded
+        );
+    }
+
+    private void OnPlayerHeal(int amount)
+    {
+        if (!IsOwner || amount <= 0) return;
+        var currentStats = playerStats.Value;
+        playerStats.Value = new PlayerStats(
+            lobbyPlayerId.Value.ToString(),
+            currentStats.kills, currentStats.deaths, currentStats.assists, currentStats.score,
+            currentStats.damageDealt, currentStats.damageTaken, currentStats.healingDone + (uint)amount,
             currentStats.moveA, currentStats.moveB, currentStats.uniteMove,
             currentStats.basicAttackName.ToString(), currentStats.battleItem,
             currentStats.moveAUpgraded, currentStats.moveBUpgraded, currentStats.uniteMoveUpgraded

@@ -1099,8 +1099,7 @@ public class LobbyController : MonoBehaviour
             uniteRoyaleGameResults = default;
             LoadingScreen.Instance?.HideMatchLoadingScreen();
             LoadingScreen.Instance?.HideGameBeginScreen();
-            if (SceneManager.GetActiveScene().name != "LobbyScene")
-                await SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
+            await SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
             lobbyUI?.ShowMainMenuUI();
             LastConnectionFailure = reason;
             Debug.LogWarning($"Session ended unexpectedly: {reason}. No match result was generated.");
@@ -1270,12 +1269,29 @@ public class LobbyController : MonoBehaviour
         });
     }
 
-    public void ReturnToHomeWithoutLeavingLobby() => StartCoroutine(ReturnToHomeWithoutLeavingLobbyAsync());
+    public void ReturnToHomeWithoutLeavingLobby()
+    {
+        if (handlingSessionLoss) return;
+        var networkManager = NetworkManager.Singleton;
+        if (session == null || networkManager == null || !networkManager.IsListening ||
+            !networkManager.IsConnectedClient || failureGuard.PendingReason != SessionFailureReason.None)
+        {
+            var reason = failureGuard.PendingReason != SessionFailureReason.None
+                ? failureGuard.PendingReason
+                : LastConnectionFailure != SessionFailureReason.None
+                    ? LastConnectionFailure : SessionFailureReason.ConnectionLost;
+            handlingSessionLoss = true;
+            ObserveTask(HandleSessionLossAsync(reason));
+            return;
+        }
+        StartCoroutine(ReturnToHomeWithoutLeavingLobbyAsync());
+    }
 
     private IEnumerator ReturnToHomeWithoutLeavingLobbyAsync()
     {
         LoadingScreen.Instance.ShowGenericLoadingScreen();
         yield return SceneManager.UnloadSceneAsync(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene);
+        if (handlingSessionLoss) yield break;
         lobbyUI.EnableLobbyScene();
         if (isInMatchmakingGame && originalPartyInfo != null)
         {

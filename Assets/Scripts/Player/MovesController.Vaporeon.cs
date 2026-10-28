@@ -107,7 +107,7 @@ public partial class MovesController
         if (!IsLivingVaporeon || !VaporMoveRuntime.CanHeal(playerManager, recipient)) return 0;
         amount = Mathf.Min(Mathf.Max(0, amount), recipient.GetMissingHp());
         if (amount <= 0) return 0;
-        recipient.HealDamageRPC(amount); SupportVaporeonAlly(recipient);
+        recipient.HealDamageRPC(amount, pokemon.NetworkObjectId); SupportVaporeonAlly(recipient);
         return amount;
     }
     private void SupportVaporeonAlly(Pokemon recipient)

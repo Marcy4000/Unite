@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -125,6 +126,36 @@ public class SharedUiTests
         Assert.That(dismiss.gameObject.name, Is.EqualTo("OK"));
         Assert.That(dismiss.GetType().GetProperty("interactable").GetValue(dismiss), Is.True);
         Assert.That(notice.GetType().GetMethod("OnGUI", Private), Is.Null);
+    }
+
+    [Test]
+    public void ReturningToDisconnectedLobbyStartsFailureRecoveryOnlyOnce()
+    {
+        var controller = root.AddComponent(GameType("LobbyController"));
+        var gate = (SemaphoreSlim)controller.GetType().GetField("lifecycleGate", Private).GetValue(controller);
+        var cancellation = (CancellationTokenSource)controller.GetType().GetField("lifetimeCancellation", Private).GetValue(controller);
+        gate.Wait();
+        try
+        {
+            controller.GetType().GetMethod("ReturnToHomeWithoutLeavingLobby").Invoke(controller, null);
+            Assert.That(controller.GetType().GetProperty("IsHandlingConnectionFailure").GetValue(controller), Is.True);
+            controller.GetType().GetMethod("ReturnToHomeWithoutLeavingLobby").Invoke(controller, null);
+            Assert.That(controller.GetType().GetProperty("IsHandlingConnectionFailure").GetValue(controller), Is.True);
+        }
+        finally
+        {
+            cancellation.Cancel();
+            gate.Release();
+        }
+    }
+
+    [Test]
+    public void ReturningToLobbyDuringFailureRecoveryDoesNotStartResultsCoroutine()
+    {
+        var controller = root.AddComponent(GameType("LobbyController"));
+        controller.GetType().GetField("handlingSessionLoss", Private).SetValue(controller, true);
+        controller.GetType().GetMethod("ReturnToHomeWithoutLeavingLobby").Invoke(controller, null);
+        Assert.That(controller.GetType().GetProperty("IsHandlingConnectionFailure").GetValue(controller), Is.True);
     }
 
     [Test]

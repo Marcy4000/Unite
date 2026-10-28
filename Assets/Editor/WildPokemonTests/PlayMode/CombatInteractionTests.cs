@@ -245,6 +245,166 @@ public abstract class CombatInteractionTests
     }
 
     [UnityTest]
+    public IEnumerator HealingCreditsActualRecoveryToTheHealerOwnerNotTheRecipient()
+    {
+        var healer = Spawn((ulong)Get(clients[0], "LocalClientId"));
+        var recipient = Spawn((ulong)Get(clients[1], "LocalClientId"));
+        yield return Replicate(healer, recipient);
+        int healingDone = 0;
+        int healingReceived = 0;
+        int observerHealing = 0;
+        Observe(Remote(healer, clients[0]), "OnHealingDone", args => healingDone += (int)args[0]);
+        Observe(Remote(recipient, clients[1]), "OnHealingDone", args => healingReceived += (int)args[0]);
+        Observe(Remote(healer, clients[1]), "OnHealingDone", args => observerHealing += (int)args[0]);
+
+        Hp(recipient, 4500);
+        Call(Remote(recipient, clients[1]), "HealDamageRPC", 800, Get(healer, "NetworkObjectId"));
+        yield return Until(() => healingDone == 500, "Ally healing did not credit the healer's owner with capped HP recovery.");
+        Assert.That(Get(recipient, "CurrentHp"), Is.EqualTo(5000));
+        Call(recipient, "HealDamageRPC", 800, Get(healer, "NetworkObjectId"));
+        Hp(recipient, 4900);
+        Call(recipient, "HealDamageRPC", Damage(healer, 300));
+        yield return Until(() => healingDone == 600, "Formula-based healing was not credited to its source.");
+
+        Hp(healer, 4600);
+        Call(Remote(healer, clients[0]), "HealDamageRPC", 1000);
+        yield return Until(() => healingDone == 1000, "Self-healing did not credit actual restored HP.");
+        Assert.That(healingReceived, Is.Zero, "Receiving an ally's healing must not increase healing done.");
+        Assert.That(observerHealing, Is.Zero, "Only the healer's owner should receive the statistics notification.");
+    }
+
+    [UnityTest]
+    public IEnumerator EnvironmentalRecoveryRespawnsAndInvalidHealsDoNotCount()
+    {
+        var healer = Spawn();
+        var recipient = Spawn();
+        yield return Replicate(healer, recipient);
+        int healingDone = 0;
+        int recipientHealing = 0;
+        Observe(healer, "OnHealingDone", args => healingDone += (int)args[0]);
+        Observe(recipient, "OnHealingDone", args => recipientHealing += (int)args[0]);
+        Hp(recipient, 4000);
+        Call(recipient, "HealEnvironmentRPC", 600);
+        Assert.That(Get(recipient, "CurrentHp"), Is.EqualTo(4600));
+        Call(recipient, "HealDamageRPC", 0, Get(healer, "NetworkObjectId"));
+        Call(recipient, "HealDamageRPC", -100, Get(healer, "NetworkObjectId"));
+        Hp(recipient, 0);
+        Call(recipient, "HealDamageRPC", 1000, Get(healer, "NetworkObjectId"));
+        Call(recipient, "HealDamageRPC", Damage(healer, 1000));
+        Assert.That(Get(recipient, "CurrentHp"), Is.Zero);
+        Call(recipient, "RestoreHealthOnRespawnRPC", Activator.CreateInstance(T("Unity.Netcode.RpcParams")));
+        Assert.That(Get(recipient, "CurrentHp"), Is.EqualTo(5000));
+        Assert.That(healingDone, Is.Zero);
+        Assert.That(recipientHealing, Is.Zero);
+
+        Hp(recipient, 4500);
+        Call(recipient, "HealDamageRPC", 200, Get(healer, "NetworkObjectId"));
+        Assert.That(healingDone, Is.EqualTo(200), "Server-owned healers must also receive healing credit.");
+    }
+
+    [UnityTest]
+    public IEnumerator ServerOwnedBotsKeepSeparateHealingStatsWithoutCreditingTheHost()
+    {
+        var host = Spawn();
+        var firstBot = Spawn();
+        var secondBot = Spawn();
+        var human = Spawn((ulong)Get(clients[0], "LocalClientId"));
+        yield return Replicate(host, firstBot, secondBot, human);
+        var firstPlayer = BotHealingStatsView(firstBot, "bot-healer-one");
+        var secondPlayer = BotHealingStatsView(secondBot, "bot-healer-two");
+        int hostHealing = 0;
+        int botOwnerNotifications = 0;
+        int humanHealing = 0;
+        Observe(host, "OnHealingDone", args => hostHealing += (int)args[0]);
+        Observe(firstBot, "OnHealingDone", args => botOwnerNotifications += (int)args[0]);
+        Observe(secondBot, "OnHealingDone", args => botOwnerNotifications += (int)args[0]);
+        Observe(Remote(human, clients[0]), "OnHealingDone", args => humanHealing += (int)args[0]);
+
+        Assert.That(Get(firstBot, "OwnerClientId"), Is.EqualTo(Get(host, "OwnerClientId")));
+        Assert.That(Get(secondBot, "OwnerClientId"), Is.EqualTo(Get(host, "OwnerClientId")));
+        Hp(firstBot, 4800);
+        Call(firstBot, "HealDamageRPC", 500);
+        Hp(secondBot, 4400);
+        Call(secondBot, "HealDamageRPC", 300);
+        Hp(host, 4500);
+        Call(host, "HealDamageRPC", 400, Get(firstBot, "NetworkObjectId"));
+        Hp(human, 4800);
+        Call(human, "HealDamageRPC", Damage(secondBot, 300));
+        Call(secondBot, "HealDamageRPC", 300, Get(firstBot, "NetworkObjectId"));
+        Hp(firstBot, 4000);
+        Call(firstBot, "HealEnvironmentRPC", 200);
+
+        foreach (var entry in new[] { (player: firstPlayer, id: "bot-healer-one", total: 900u), (player: secondPlayer, id: "bot-healer-two", total: 500u) })
+        {
+            var botStats = Get(Field(entry.player, "botStats"), "Value");
+            Assert.That(botStats.GetType().GetField("playerId").GetValue(botStats).ToString(), Is.EqualTo(entry.id));
+            Assert.That(botStats.GetType().GetField("healingDone").GetValue(botStats), Is.EqualTo(entry.total));
+            Assert.That(Get(entry.player, "PlayerStats"), Is.EqualTo(botStats), "Settlement stats must follow the bot's replicated stats.");
+        }
+        Assert.That(hostHealing, Is.Zero, "Bot self-healing and healing received by the host must not credit the host.");
+        Assert.That(botOwnerNotifications, Is.Zero, "Bot healing must bypass the human owner-notification path.");
+        Call(host, "HealDamageRPC", 100);
+        Assert.That(hostHealing, Is.EqualTo(100));
+        Hp(human, 4900);
+        Call(Remote(human, clients[0]), "HealDamageRPC", 300);
+        yield return Until(() => humanHealing == 100, "Human healing must still reach its own owner.");
+        Assert.That(hostHealing, Is.EqualTo(100));
+    }
+
+    private Component BotHealingStatsView(Component pokemon, string id)
+    {
+        var player = pokemon.gameObject.AddComponent(T("PlayerManager"));
+        ((Behaviour)player).enabled = false;
+        T("Unity.Netcode.NetworkBehaviour").GetProperty("IsServer").SetValue(player, true);
+        var controlled = Field(player, "botControlled");
+        controlled.GetType().GetProperty("Value").SetValue(controlled, true);
+        var variable = Field(player, "botStats");
+        var value = Activator.CreateInstance(T("PlayerStats"), id, (ushort)0, (ushort)0,
+            (ushort)0, (ushort)0, 0u, 0u, 0u);
+        variable.GetType().GetProperty("Value").SetValue(variable, value);
+        var callback = variable.GetType().GetField("OnValueChanged");
+        callback.SetValue(variable, Delegate.CreateDelegate(callback.FieldType, player,
+            player.GetType().GetMethod("OnBotStatsChanged", Private)));
+        player.GetType().GetProperty("PlayerStats").SetValue(player, value);
+        return player;
+    }
+
+    [UnityTest]
+    public IEnumerator LifestealAndSpellVampCountAsSelfHealing()
+    {
+        Set(stats, "lifeSteal", Enumerable.Repeat(50, 22).ToArray());
+        Set(stats, "spellVamp", Enumerable.Repeat(50f, 22).ToArray());
+        var healer = Spawn();
+        var target = Spawn();
+        yield return Replicate(healer, target);
+        int healingDone = 0;
+        Observe(healer, "OnHealingDone", args => healingDone += (int)args[0]);
+        Hp(healer, 4000);
+        var attack = Damage(healer, 400, "True");
+        attack.GetType().GetField("proprieties").SetValue(attack, E("DamageProprieties", "IsBasicAttack"));
+        Call(target, "TakeDamageRPC", attack);
+        Assert.That(healingDone, Is.EqualTo(200));
+        Call(target, "TakeDamageRPC", Damage(healer, 400, "Special"));
+        Assert.That(healingDone, Is.EqualTo(400));
+        Assert.That(Get(healer, "CurrentHp"), Is.EqualTo(4400));
+    }
+
+    [UnityTest]
+    public IEnumerator RecoveryOfWildPokemonDoesNotCountAsPlayerHealing()
+    {
+        var healer = Spawn();
+        var recipient = Spawn();
+        yield return Replicate(healer, recipient);
+        int healingDone = 0;
+        Observe(healer, "OnHealingDone", args => healingDone += (int)args[0]);
+        recipient.GetType().GetProperty("Type").SetValue(recipient, E("PokemonType", "Wild"));
+        Hp(recipient, 4000);
+        Call(recipient, "HealDamageRPC", 200, Get(healer, "NetworkObjectId"));
+        Assert.That(Get(recipient, "CurrentHp"), Is.EqualTo(4200));
+        Assert.That(healingDone, Is.Zero);
+    }
+
+    [UnityTest]
     public IEnumerator DamagePreservesEverySurvivingShieldTimerAndMetadata()
     {
         var source = Spawn(); var target = Spawn(); yield return Replicate(source, target);
@@ -398,15 +558,19 @@ public abstract class CombatInteractionTests
         // Only the item lifecycle is needed; do not initialize lobby/UI/controls.
         var player = pokemon.gameObject.AddComponent(T("PlayerManager")); ((Behaviour)player).enabled = false;
         var item = Activator.CreateInstance(T("FocusBand"));
+        int healingDone = 0;
+        Observe(pokemon, "OnHealingDone", args => healingDone += (int)args[0]);
         Call(item, "Initialize", player);
         Hp(pokemon, 600);
         Assert.That(Get(pokemon, "CurrentHp"), Is.EqualTo(1200), "The immediate heal must not recursively start another recovery.");
+        Assert.That(healingDone, Is.EqualTo(600), "Held-item recovery must count as self-healing.");
         Call(pokemon, "TakeDamageRPC", Damage(source, 2000, "True"));
         Assert.That(Get(pokemon, "CurrentHp"), Is.Zero);
         Call(pokemon, "RestoreHealthOnRespawnRPC", Activator.CreateInstance(T("Unity.Netcode.RpcParams")));
         Call(pokemon, "TakeDamageRPC", Damage(source, 1000, "True"));
         yield return new WaitForSeconds(1.1f);
         Assert.That(Get(pokemon, "CurrentHp"), Is.EqualTo(4000), "The old recovery must not resume in a new life.");
+        Assert.That(healingDone, Is.EqualTo(600), "Death and respawn must not add healing credit.");
     }
 
     [UnityTest]

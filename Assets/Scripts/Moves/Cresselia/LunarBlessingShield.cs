@@ -4,14 +4,16 @@ using UnityEngine;
 public class LunarBlessingShield : NetworkBehaviour
 {
     private Pokemon target;
+    private ulong healerId;
 
     private bool initialized = false;
 
     private float timer = 0f;
 
     [Rpc(SendTo.Server)]
-    public void SetTargetServerRPC(ulong targetId)
+    public void SetTargetServerRPC(ulong targetId, ulong healerId)
     {
+        this.healerId = healerId;
         target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetId].GetComponent<Pokemon>();
         target.OnDeath += (killer) => NetworkObject.Despawn(true);
         target.OnShieldChange += CheckForShield;
@@ -52,7 +54,7 @@ public class LunarBlessingShield : NetworkBehaviour
             target.OnShieldChange -= CheckForShield;
             if (target.HasShieldWithID(8))
             {
-                target.HealDamageRPC(target.GetShieldWithID(8).Value.Amount);
+                target.HealDamageRPC(target.GetShieldWithID(8).Value.Amount, healerId);
             }
             NetworkObject.Despawn(true);
         }

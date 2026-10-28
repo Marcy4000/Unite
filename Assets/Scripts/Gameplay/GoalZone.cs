@@ -262,7 +262,7 @@ public class GoalZone : NetworkBehaviour
             {
                 if (!player.Pokemon.IsHPFull())
                 {
-                    player.Pokemon.HealDamageRPC(healAmount);
+                    player.Pokemon.HealEnvironmentRPC(healAmount);
                 }
                 // Refresh, rather than accumulating several minutes of shield
                 // duration when a defender has stood here for a long time.

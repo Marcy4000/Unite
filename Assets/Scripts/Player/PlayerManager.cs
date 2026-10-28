@@ -369,12 +369,12 @@ public partial class PlayerManager : NetworkBehaviour
     private IEnumerator WildPokemonHeal()
     {
         if (pokemon.CurrentHp < pokemon.GetMaxHp())
-            pokemon.HealDamageRPC(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.03f));
+            pokemon.HealEnvironmentRPC(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.03f));
 
         yield return new WaitForSeconds(1f);
 
         if (pokemon.CurrentHp < pokemon.GetMaxHp())
-            pokemon.HealDamageRPC(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.03f));
+            pokemon.HealEnvironmentRPC(Mathf.FloorToInt(pokemon.GetMaxHp() * 0.03f));
     }
 
     [Rpc(SendTo.Everyone)]

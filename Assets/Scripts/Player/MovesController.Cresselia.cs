@@ -258,7 +258,7 @@ public partial class MovesController
         StopCresseliaEffectRPC(visual);
         if (heal > 0 && CresseliaMoveRuntime.Living(target))
         {
-            target.HealDamageRPC(heal);
+            target.HealDamageRPC(heal, pokemon.NetworkObjectId);
             ShowCresseliaEffect(CresseliaEffect.ShieldHeal, target.transform.position, transform.forward, 0.45f, target.NetworkObjectId);
         }
         else if (CresseliaMoveRuntime.Living(target)) ShowCresseliaEffect(CresseliaEffect.ShieldBreak, target.transform.position, transform.forward, 0.25f, target.NetworkObjectId);
@@ -279,7 +279,7 @@ public partial class MovesController
                 if (!CresseliaMoveRuntime.Living(ally) || !ally.TeamMember.IsOnSameTeam(playerManager.CurrentTeam)) continue;
                 int amount = Mathf.Min(ally.GetMaxHp() - ally.CurrentHp, Mathf.FloorToInt(ally.GetMaxHp() * 0.08f));
                 if (amount <= 0) continue;
-                ally.HealDamageRPC(amount);
+                ally.HealDamageRPC(amount, pokemon.NetworkObjectId);
                 if (!rhythm && ally != pokemon) { rhythm = true; AdvanceCresseliaRhythm(); }
             }
         }
