@@ -18,13 +18,13 @@ public class DuraDragonTail : MoveBase
     {
         base.Start(controller);
         if (!IsActive) return;
-        Aim.Instance.InitializeSkillshotAim(4f);
-        direction = Aim.Instance.SkillshotAim();
+        ActorAim.InitializeSkillshotAim(4f);
+        direction = ActorAim.SkillshotAim();
     }
 
     public override void Update()
     {
-        if (IsActive) direction = Aim.Instance.SkillshotAim();
+        if (IsActive) direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
@@ -41,13 +41,13 @@ public class DuraDragonTail : MoveBase
             attack.GainBoostedAttack();
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Finish();
     }
 
     public override void Cancel()
     {
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Cancel();
     }
 

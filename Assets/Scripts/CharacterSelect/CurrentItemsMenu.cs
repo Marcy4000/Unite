@@ -77,8 +77,9 @@ public class CurrentItemsMenu : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        foreach (var statBoost in itemInfo.statBoosts)
+        foreach (var statBoost in itemInfo.StatBoosts)
         {
+            if (statBoost == null) continue;
             var obj = Instantiate(statBoostPrefab, statBoostsHolder);
             var statBoostUI = obj.GetComponent<ItemStatBoostUI>();
 

@@ -28,7 +28,7 @@ public class DuraMetalClaw : MoveBase
             initialized = true;
         }
 
-        Aim.Instance.InitializeSkillshotAim(range);
+        ActorAim.InitializeSkillshotAim(range);
         damageInfo.attackerId = playerManager.NetworkObjectId;
     }
 
@@ -39,7 +39,7 @@ public class DuraMetalClaw : MoveBase
             return;
         }
 
-        direction = Aim.Instance.SkillshotAim();
+        direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
@@ -68,13 +68,13 @@ public class DuraMetalClaw : MoveBase
 
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Finish();
     }
 
     public override void Cancel()
     {
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Cancel();
     }
 

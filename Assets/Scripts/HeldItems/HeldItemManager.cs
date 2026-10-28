@@ -19,8 +19,9 @@ public class HeldItemManager : NetworkBehaviour
 
         foreach (var heldItemInfo in heldItems)
         {
-            foreach (var statBoost in heldItemInfo.statBoosts)
+            foreach (var statBoost in heldItemInfo.StatBoosts)
             {
+                if (statBoost == null) continue;
                 StatChange statChange = new StatChange(statBoost.BoostAmount, statBoost.AffectedStat, 0f, false, true, statBoost.IsPercentage, 0, false);
                 playerManager.Pokemon.AddStatChange(statChange);
             }

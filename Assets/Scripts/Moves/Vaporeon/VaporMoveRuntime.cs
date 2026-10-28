@@ -76,9 +76,9 @@ public abstract class VaporMoveBase : MoveBase
     {
         if (executing) return;
         base.Start(controller);
-        if (VaporMoveRules.IsSupport(Kind)) Aim.Instance.InitializeAutoAim(8, 60, AimTarget.Ally);
-        else if (Kind == VaporCast.Tempest) Aim.Instance.InitializeSimpleCircle(VaporMoveRules.TempestRadius);
-        else Aim.Instance.InitializeCircleAreaIndicator(VaporMoveRules.Range(Kind));
+        if (VaporMoveRules.IsSupport(Kind)) ActorAim.InitializeAutoAim(8, 60, AimTarget.Ally);
+        else if (Kind == VaporCast.Tempest) ActorAim.InitializeSimpleCircle(VaporMoveRules.TempestRadius);
+        else ActorAim.InitializeCircleAreaIndicator(VaporMoveRules.Range(Kind));
         ReadAim();
         aimVisual = controller.MovesController.ShowVaporeonAim(Kind, destination, targetId);
     }
@@ -88,14 +88,14 @@ public abstract class VaporMoveBase : MoveBase
         if (VaporMoveRules.IsSupport(Kind))
         {
             // Aiming into empty ground naturally selects self for Aqua Ring.
-            var target = Aim.Instance.SureHitAim();
+            var target = ActorAim.SureHitAim();
             hasTarget = target != null && target != playerManager.gameObject && target.TryGetComponent(out PlayerManager ally)
                 && VaporMoveRuntime.CanHeal(playerManager, ally.Pokemon);
             targetId = hasTarget ? target.GetComponent<Unity.Netcode.NetworkObject>().NetworkObjectId
                 : Kind == VaporCast.AquaRing ? playerManager.NetworkObjectId : ulong.MaxValue;
         }
         else if (Kind != VaporCast.Tempest)
-            destination = VaporMoveRules.ClampDestination(playerManager.transform.position, Aim.Instance.CircleAreaAim(), VaporMoveRules.Range(Kind));
+            destination = VaporMoveRules.ClampDestination(playerManager.transform.position, ActorAim.CircleAreaAim(), VaporMoveRules.Range(Kind));
     }
     public override void Finish()
     {
@@ -149,10 +149,10 @@ public abstract class VaporMoveBase : MoveBase
     {
         if (playerManager != null) playerManager.MovesController.StopVaporeonLocalEffect(aimVisual);
         aimVisual = 0;
-        if (Aim.Instance == null) return;
-        if (VaporMoveRules.IsSupport(Kind)) Aim.Instance.HideAutoAim();
-        else if (Kind == VaporCast.Tempest) Aim.Instance.HideSimpleCircle();
-        else Aim.Instance.HideCircleAreaIndicator();
+        if (ActorAim == null) return;
+        if (VaporMoveRules.IsSupport(Kind)) ActorAim.HideAutoAim();
+        else if (Kind == VaporCast.Tempest) ActorAim.HideSimpleCircle();
+        else ActorAim.HideCircleAreaIndicator();
     }
     public override void Cancel()
     {

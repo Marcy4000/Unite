@@ -2,6 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(LayoutElement))]
 public class EnemyDeathInfoUI : MonoBehaviour
 {
     [SerializeField] private Image portrait;
@@ -9,39 +10,78 @@ public class EnemyDeathInfoUI : MonoBehaviour
     [SerializeField] private GameObject holder;
 
     private PlayerManager allyPokemon;
+    private Pokemon subscribedPokemon;
+    private int shownSeconds = -1;
+
+    private LayoutElement layoutElement;
+
+    private void Awake()
+    {
+        SetVisible(false);
+    }
+
+    private void SetVisible(bool visible)
+    {
+        if (layoutElement == null) layoutElement = GetComponent<LayoutElement>();
+        layoutElement.ignoreLayout = !visible;
+        holder.SetActive(visible);
+    }
 
     public void InitializeUI(PlayerManager player)
     {
+        Unsubscribe();
         allyPokemon = player;
-        portrait.sprite = player.Pokemon.Portrait;
-        player.Pokemon.OnEvolution += UpdatePortrait;
-        player.Pokemon.OnDeath += OnDeath;
+        shownSeconds = -1;
+        SetVisible(false);
+        if (player == null || player.Pokemon == null) return;
+        subscribedPokemon = player.Pokemon;
+        subscribedPokemon.OnPokemonInitialized += UpdatePortrait;
+        subscribedPokemon.OnEvolution += UpdatePortrait;
+        subscribedPokemon.OnDeath += OnDeath;
         player.OnRespawn += OnRespawn;
-        if (GameManager.Instance.TryGetPlayerNetworkManager(player.OwnerClientId, out PlayerNetworkManager playerNetworkManager))
-        {
-            playerNetworkManager.OnDeathTimerChanged += UpdateDeathTimer;
-        }
-
-        holder.SetActive(false);
+        UpdatePortrait();
+        Update();
     }
 
-    private void UpdateDeathTimer(float time)
+    private void Update()
     {
-        deathTimer.text = Mathf.RoundToInt(time).ToString();
+        if (allyPokemon == null) return;
+        bool dead = allyPokemon.PlayerState == PlayerState.Dead;
+        SetVisible(dead);
+        if (dead)
+        {
+            int seconds = Mathf.CeilToInt(allyPokemon.DeathTimer);
+            if (seconds != shownSeconds) { shownSeconds = seconds; deathTimer.SetText(seconds.ToString()); }
+        }
     }
 
     private void OnDeath(DamageInfo info)
     {
-        holder.SetActive(true);
+        SetVisible(true);
     }
 
     private void OnRespawn()
     {
-        holder.SetActive(false);
+        SetVisible(false);
     }
 
     public void UpdatePortrait()
     {
-        portrait.sprite = allyPokemon.Pokemon.Portrait;
+        portrait.sprite = subscribedPokemon != null ? subscribedPokemon.Portrait : null;
+        portrait.enabled = portrait.sprite != null;
     }
+
+    private void Unsubscribe()
+    {
+        if (subscribedPokemon != null)
+        {
+            subscribedPokemon.OnPokemonInitialized -= UpdatePortrait;
+            subscribedPokemon.OnEvolution -= UpdatePortrait;
+            subscribedPokemon.OnDeath -= OnDeath;
+        }
+        if (allyPokemon != null) allyPokemon.OnRespawn -= OnRespawn;
+        subscribedPokemon = null;
+    }
+
+    private void OnDestroy() => Unsubscribe();
 }

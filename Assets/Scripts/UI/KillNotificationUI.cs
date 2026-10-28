@@ -36,8 +36,13 @@ public class KillNotificationUI : MonoBehaviour
 
     private void ShowKill(KillInfo killInfo)
     {
+        // Wild Pokemon can despawn while a previous notification is animating.
+        // Skip stale queued entries rather than dereferencing destroyed actors.
+        var network = NetworkManager.Singleton;
+        if (killInfo == null || killInfo.killed == null || network == null || network.SpawnManager == null ||
+            !network.SpawnManager.SpawnedObjects.TryGetValue(killInfo.info.attackerId, out var attackerObject) ||
+            !attackerObject.TryGetComponent(out Pokemon attacker)) return;
         // Set the image to the killer's avatar
-        Pokemon attacker = NetworkManager.Singleton.SpawnManager.SpawnedObjects[killInfo.info.attackerId].GetComponent<Pokemon>();
 
         background.sprite = ChooseBackground(attacker, killInfo.killed);
         SetStreakText(attacker, killInfo.killed);

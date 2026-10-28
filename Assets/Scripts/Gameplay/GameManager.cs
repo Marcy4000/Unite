@@ -2,6 +2,7 @@ using JSAM;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unite.Multiplayer;
 using Unity.Netcode;
 using UnityEngine;
@@ -24,6 +25,7 @@ public enum GameState
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
+    public static event Action<GameManager> OnInstanceAvailable;
 
     public float MAX_GAME_TIME { get; private set; } = 600f;
     public float FINAL_STRETCH_TIME { get; private set; } = 120f;
@@ -72,6 +74,8 @@ public class GameManager : NetworkBehaviour
 
     public event Action<int> onUpdatePassiveExp;
     public event Action<GameState> onGameStateChanged;
+    public event Action<PlayerManager> OnPlayerAdded;
+    public event Action<PlayerManager> OnPlayerRemoved;
     public event Action onFinalStretch;
     public event Action onFarmLevelUps;
 
@@ -83,6 +87,7 @@ public class GameManager : NetworkBehaviour
     private void Awake()
     {
         Instance = this;
+        OnInstanceAvailable?.Invoke(this);
     }
 
     private void OnDisable()
@@ -115,7 +120,11 @@ public class GameManager : NetworkBehaviour
         for (var index = players.Count - 1; index >= 0; index--)
         {
             var player = players[index];
-            if (player == null) players.RemoveAt(index);
+            if (player == null)
+            {
+                players.RemoveAt(index);
+                OnPlayerRemoved?.Invoke(player);
+            }
             else if (player.OwnerClientId == clientId) RemovePlayer(player);
         }
     }
@@ -161,6 +170,19 @@ public class GameManager : NetworkBehaviour
         if (IsServer)
         {
             gameState.Value = GameState.Initialising;
+            LobbyController.Instance.BotRoster?.SpawnBotsForMatch();
+        }
+        var botDeadline = Time.realtimeSinceStartup + playerLoadingTimeoutSeconds;
+        while (LobbyController.Instance.BotRoster?.HasBots == true &&
+            (FindObjectsByType<PlayerManager>(FindObjectsSortMode.None).Count(player => player.IsBot && player.BotReady) !=
+                LobbyController.Instance.Lobby.Players.Count(player => player.IsBot)))
+        {
+            if (Time.realtimeSinceStartup >= botDeadline)
+            {
+                LobbyController.Instance.ReportSessionFailure(SessionFailureReason.LoadingTimedOut);
+                yield break;
+            }
+            yield return null;
         }
         yield return new WaitForSeconds(1.9f);
         
@@ -322,13 +344,13 @@ public class GameManager : NetworkBehaviour
     {
         if (player == null || players.Contains(player)) return;
         players.Add(player);
-        onUpdatePassiveExp += player.Pokemon.GainPassiveExp;
+        OnPlayerAdded?.Invoke(player);
     }
 
     public void RemovePlayer(PlayerManager player)
     {
         if (player == null || !players.Remove(player)) return;
-        if (player.Pokemon != null) onUpdatePassiveExp -= player.Pokemon.GainPassiveExp;
+        OnPlayerRemoved?.Invoke(player);
     }
 
     private void InitializePassiveExpQueue()
@@ -377,6 +399,19 @@ public class GameManager : NetworkBehaviour
 
                 if (currentPassiveExpSetting != null)
                 {
+                    // A match-local roster, not delegates targeting scene-owned
+                    // Pokemon that can already have been destroyed on teardown.
+                    for (int i = players.Count - 1; i >= 0; i--)
+                    {
+                        var player = players[i];
+                        if (player == null || player.Pokemon == null || !player.IsSpawned)
+                        {
+                            players.RemoveAt(i);
+                            OnPlayerRemoved?.Invoke(player);
+                            continue;
+                        }
+                        if (player.Pokemon.BaseStats != null) player.Pokemon.GainPassiveExp(currentPassiveExpSetting.value);
+                    }
                     onUpdatePassiveExp?.Invoke(currentPassiveExpSetting.value);
                 }
             }
@@ -462,6 +497,8 @@ public class GameManager : NetworkBehaviour
         {
             stats.Add(playerNetworkManager.PlayerStats);
         }
+        foreach (var player in players)
+            if (player != null && player.IsBot) stats.Add(player.PlayerStats);
 
         return new GameResults
         {

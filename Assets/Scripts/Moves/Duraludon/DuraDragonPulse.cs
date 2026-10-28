@@ -28,7 +28,7 @@ public class DuraDragonPulse : MoveBase
         playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Charging);
         playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
         playerManager.AnimationManager.PlayAnimation("ani_spell1b1_bat_0884");
-        Aim.Instance.InitializeSimpleCircle(DuraMoveRules.PulseRadius(0));
+        ActorAim.InitializeSimpleCircle(DuraMoveRules.PulseRadius(0));
         playerManager.HPBar.ShowGenericGuage(true);
     }
 
@@ -57,7 +57,7 @@ public class DuraDragonPulse : MoveBase
         }
         float elapsed = Time.time - chargeStarted;
         float charge = Mathf.Clamp01(elapsed / DuraMoveRules.PulseChargeTime);
-        Aim.Instance.InitializeSimpleCircle(DuraMoveRules.PulseRadius(charge));
+        ActorAim.InitializeSimpleCircle(DuraMoveRules.PulseRadius(charge));
         playerManager.HPBar.UpdateGenericGuageValue(charge, 1f);
         if (elapsed >= DuraMoveRules.PulseChargeTime) Finish();
     }
@@ -86,7 +86,7 @@ public class DuraDragonPulse : MoveBase
         playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Charging);
         playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
         playerManager.HPBar.ShowGenericGuage(false);
-        Aim.Instance.HideSimpleCircle();
+        ActorAim.HideSimpleCircle();
     }
 
     public override void Cancel()

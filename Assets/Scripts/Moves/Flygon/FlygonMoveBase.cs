@@ -26,15 +26,15 @@ public abstract class FlygonMoveBase : MoveBase
         if (executing && controlsReleased) Complete(); // A cooldown reset may allow another cast before the old field expires.
         if (pending || executing) return;
         base.Start(controller);
-        if (FlygonMoveRules.GroundAim(Kind)) Aim.Instance.InitializeSizedCircleAreaIndicator(FlygonMoveRules.Range(Kind), Kind == FlygonCast.Earthquake ? FlygonMoveRules.QuakeRadius : FlygonMoveRules.StormRadius);
-        else if (FlygonMoveRules.DirectionAim(Kind)) Aim.Instance.InitializeSkillshotAim(FlygonMoveRules.Range(Kind));
-        else Aim.Instance.InitializeSimpleCircle(FlygonMoveRules.Range(Kind));
+        if (FlygonMoveRules.GroundAim(Kind)) playerManager.Aim.InitializeSizedCircleAreaIndicator(FlygonMoveRules.Range(Kind), Kind == FlygonCast.Earthquake ? FlygonMoveRules.QuakeRadius : FlygonMoveRules.StormRadius);
+        else if (FlygonMoveRules.DirectionAim(Kind)) playerManager.Aim.InitializeSkillshotAim(FlygonMoveRules.Range(Kind));
+        else playerManager.Aim.InitializeSimpleCircle(FlygonMoveRules.Range(Kind));
         ReadAim();
     }
     private void ReadAim()
     {
-        direction = FlygonMoveRules.Direction(FlygonMoveRules.DirectionAim(Kind) ? Aim.Instance.SkillshotAim() : playerManager.transform.forward, playerManager.transform.forward);
-        destination = FlygonMoveRules.GroundAim(Kind) ? Aim.Instance.CircleAreaAim() : playerManager.transform.position;
+        direction = FlygonMoveRules.Direction(FlygonMoveRules.DirectionAim(Kind) ? playerManager.Aim.SkillshotAim() : playerManager.transform.forward, playerManager.transform.forward);
+        destination = FlygonMoveRules.GroundAim(Kind) ? playerManager.Aim.CircleAreaAim() : playerManager.transform.position;
         if (FlygonMoveRules.GroundAim(Kind)) direction = FlygonMoveRules.Direction(destination - playerManager.transform.position, playerManager.transform.forward);
     }
     public override void Finish()
@@ -160,15 +160,15 @@ public abstract class FlygonMoveBase : MoveBase
     }
     private void HideAim()
     {
-        if (Aim.Instance == null) return;
-        if (FlygonMoveRules.GroundAim(Kind)) Aim.Instance.HideCircleAreaIndicator();
-        else if (FlygonMoveRules.DirectionAim(Kind)) Aim.Instance.HideSkillshotAim();
-        else Aim.Instance.HideSimpleCircle();
+        if (playerManager == null || playerManager.Aim == null) return;
+        if (FlygonMoveRules.GroundAim(Kind)) playerManager.Aim.HideCircleAreaIndicator();
+        else if (FlygonMoveRules.DirectionAim(Kind)) playerManager.Aim.HideSkillshotAim();
+        else playerManager.Aim.HideSimpleCircle();
     }
     public override void Cancel() { if (IsActive) HideAim(); recastAim = false; base.Cancel(); }
     private void ShowModeTimer(float remaining)
     {
-        if (BattleUIManager.instance == null) return;
+        if (!playerManager.IsLocalHuman || BattleUIManager.instance == null) return;
         if (Kind == FlygonCast.Unite) BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(remaining);
         else BattleUIManager.instance.ShowMoveSecondaryCooldown(1, remaining);
     }

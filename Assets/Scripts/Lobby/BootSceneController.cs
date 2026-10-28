@@ -9,6 +9,7 @@ using UnityEngine.UI;
 
 public class BootSceneController : MonoBehaviour
 {
+    private const string PlayerNamePreferenceKey = "PlayerName";
     [SerializeField] private Button startButton;
     [SerializeField] private Button clearCacheButton;
     [SerializeField] private TMP_InputField playerNameInputField;
@@ -35,6 +36,7 @@ public class BootSceneController : MonoBehaviour
         NetworkManager.Singleton.LogLevel = LogLevel.Error;
 #endif
         startButton.onClick.AddListener(OnStartButtonClicked);
+        RestorePlayerName();
         versionText.text = $"v.{Application.version}";
 
         StartCoroutine(PlayAudioAfterLoading());
@@ -111,7 +113,7 @@ public class BootSceneController : MonoBehaviour
 
     private void OnStartButtonClicked()
     {
-        if (string.IsNullOrWhiteSpace(playerNameInputField.text))
+        if (!SavePlayerName(playerNameInputField.text))
         {
             return;
         }
@@ -120,5 +122,19 @@ public class BootSceneController : MonoBehaviour
         AudioManager.PlaySound(DefaultAudioSounds.Home_ui_start);
 
         LobbyController.Instance.StartGame(playerNameInputField.text);
+    }
+
+    private void RestorePlayerName()
+    {
+        var savedName = PlayerPrefs.GetString(PlayerNamePreferenceKey, string.Empty);
+        if (!string.IsNullOrWhiteSpace(savedName)) playerNameInputField.text = savedName;
+    }
+
+    private static bool SavePlayerName(string playerName)
+    {
+        if (string.IsNullOrWhiteSpace(playerName)) return false;
+        PlayerPrefs.SetString(PlayerNamePreferenceKey, playerName);
+        PlayerPrefs.Save();
+        return true;
     }
 }

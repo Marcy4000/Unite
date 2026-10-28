@@ -43,13 +43,23 @@ public static class AeosEnergyDropper
 
         int bigDrops = amount / settings.BigEnergyValue;
         int smallDrops = amount % settings.BigEnergyValue;
+        var match = GameManager.Instance;
+        var network = NetworkManager.Singleton;
+        if (network == null || !network.IsServer) return;
 
         AsyncOperationHandle<GameObject> loadHandle = Addressables.LoadAssetAsync<GameObject>(settings.ResourcePath);
         loadHandle.Completed += handle =>
         {
+            if (network == null || !network.IsListening || !network.IsServer ||
+                (match != null && (GameManager.Instance != match || !match.IsSpawned)))
+            {
+                Addressables.Release(handle);
+                return;
+            }
             if (handle.Status != AsyncOperationStatus.Succeeded)
             {
                 Debug.LogError($"Failed to load addressable: {handle.OperationException}");
+                Addressables.Release(handle);
                 return;
             }
 
@@ -78,6 +88,17 @@ public static class AeosEnergyDropper
         if (aeosEnergy != null)
         {
             aeosEnergy.LocalBigEnergy = isBig;
+            // Set the authoritative initial transform before NGO serializes the
+            // spawn, rather than independently snapping against each peer's actors.
+            if (!aeosEnergy.SnapToGround())
+            {
+                spawnedObject.transform.position = origin;
+                if (!aeosEnergy.SnapToGround())
+                {
+                    Object.Destroy(spawnedObject);
+                    return;
+                }
+            }
         }
 
         NetworkObject networkObject = spawnedObject.GetComponent<NetworkObject>();

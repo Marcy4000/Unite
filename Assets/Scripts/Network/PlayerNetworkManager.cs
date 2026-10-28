@@ -1,4 +1,5 @@
 using JSAM;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
@@ -7,7 +8,7 @@ using Lobby = Unite.Multiplayer.GameSessionView;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class PlayerNetworkManager : NetworkBehaviour
+public partial class PlayerNetworkManager : NetworkBehaviour
 {
     [SerializeField] private GameObject playerPrefab;
     private PlayerManager playerManager;
@@ -32,8 +33,9 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     public PlayerStats PlayerStats => playerStats.Value;
 
-    private float localDeathTimer = 5f;
-    private NetworkVariable<float> deathTimer = new NetworkVariable<float>(5f, writePerm:NetworkVariableWritePermission.Owner);
+    private const float DefaultDeathTimer = 5f;
+    private float localDeathTimer = DefaultDeathTimer;
+    private NetworkVariable<float> deathTimer = new NetworkVariable<float>(DefaultDeathTimer, writePerm:NetworkVariableWritePermission.Owner);
     public float DeathTimer => deathTimer.Value;
     public event System.Action<float> OnDeathTimerChanged;
     public event System.Action<PlayerStats> OnPlayerStatsChanged;
@@ -50,7 +52,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
         if (IsOwner)
         {
-            playerStats.Value = new PlayerStats(LobbyController.Instance.Player.Id, 0, 0, 0, 0, 0, 0, 0);
+            ResetMatchStats();
             lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
         }
         subscribedLobbyController = LobbyController.Instance;
@@ -60,6 +62,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
         if (!subscribedLobbyController.PlayerNetworkManagers.Contains(this))
             subscribedLobbyController.PlayerNetworkManagers.Add(this);
+        InitializeBotRoster();
     }
 
     public override void OnNetworkDespawn()
@@ -75,6 +78,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void UnsubscribeEvents()
     {
+        UnsubscribeBotRoster();
         if (subscribedSceneManager != null)
         {
             subscribedSceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
@@ -140,10 +144,21 @@ public class PlayerNetworkManager : NetworkBehaviour
 
         if (scene.name.Equals(CharactersList.Instance.GetCurrentLobbyMap().resultScreenScene))
         {
-            matchStarted = false;
-            isInResultScreen.Value = false;
-            playerStats.Value = new PlayerStats(LobbyController.Instance.Player.Id, 0, 0, 0, 0, 0, 0, 0);
+            ResetMatchStats();
         }
+    }
+
+    private void ResetMatchStats()
+    {
+        // This coordinator survives a return to the same lobby. Streaks and
+        // respawn timers belong to a match just like the visible scoreboard.
+        matchStarted = false;
+        isInResultScreen.Value = false;
+        killsSinceLastDeath = 0;
+        pointsSinceLastDeath = 0;
+        localDeathTimer = DefaultDeathTimer;
+        deathTimer.Value = localDeathTimer;
+        playerStats.Value = new PlayerStats(LobbyController.Instance.Player.Id, 0, 0, 0, 0, 0, 0, 0);
     }
 
     private void HandleLobbyUpdate(Lobby lobby)
@@ -199,6 +214,7 @@ public class PlayerNetworkManager : NetworkBehaviour
 
     private void Update()
     {
+        TickBotRoster();
         if (!IsOwner || playerManager == null)
         {
             return;
@@ -266,48 +282,50 @@ public class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void OnPlayerSpawnedRpc(ulong networkID, Team team)
     {
-        PlayerManager[] players = FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
-        foreach (PlayerManager player in players)
+        StartCoroutine(BindSpawnedPlayer(networkID, team));
+    }
+
+    private IEnumerator BindSpawnedPlayer(ulong networkID, Team team)
+    {
+        var match = GameManager.Instance;
+        float deadline = Time.realtimeSinceStartup + 15;
+        NetworkObject avatar = null;
+        // NGO spawn replication and scene-owned presentation can arrive on
+        // different frames. Never lose initialization because one scene scan ran early.
+        while (IsSpawned && match != null && GameManager.Instance == match && Time.realtimeSinceStartup < deadline)
         {
-            NetworkObject playerNetworkObject = player.GetComponent<NetworkObject>();
-
-            if (playerNetworkObject.NetworkObjectId == networkID)
-            {
-                GameManager.Instance.AddPlayer(player);
-                if (playerNetworkObject.OwnerClientId == OwnerClientId)
-                {
-                    playerManager = player;
-                    player.ChangeCurrentTeam(team);
-                    player.Initialize();
-
-                    MinimapManager.Instance.CreatePlayerIcon(player);
-
-                    if (IsOwner)
-                    {
-                        player.Pokemon.OnDeath += OnPlayerDeath;
-                        player.Pokemon.OnDamageTaken += OnPlayerTakeDamage;
-                        player.Pokemon.OnDamageDealt += OnPlayerDealDamage;
-                        player.onGoalScored += OnGoalScored;
-                        player.Pokemon.OnOtherPokemonKilled += OnOtherPokemonKilled;
-                        player.OnRespawn += OnPlayerRespawned;
-
-                        // Subscribe to move learning events
-                        if (player.MovesController != null)
-                        {
-                            SubscribeToMoveEvents();
-
-                            // Sottoscrivi l'evento OnMoveLearned per aggiornare le stats tramite evento
-                            player.MovesController.OnMoveLearned += OnMoveLearnedFromController;
-                        }
-
-                        short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
-                        Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(team, pos);
-                        playerManager.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
-                        playerManager.PlayerMovement.CanMove = false;
-                    }
-                }
-            }
+            if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkID, out avatar) &&
+                avatar != null && avatar.IsSpawned && MinimapManager.Instance != null) break;
+            yield return null;
         }
+        if (!IsSpawned || match == null || GameManager.Instance != match || avatar == null || !avatar.IsSpawned) yield break;
+        var player = avatar.GetComponent<PlayerManager>();
+        if (player == null || avatar.OwnerClientId != OwnerClientId || playerManager == player) yield break;
+        playerManager = player;
+        matchStarted = false;
+        // Also reset at the next avatar's initialization, before move tracking
+        // starts, so a new match never depends on the previous results flow.
+        if (IsOwner) ResetMatchStats();
+        player.ChangeCurrentTeam(team);
+        player.Initialize();
+        match.AddPlayer(player);
+        MinimapManager.Instance.CreatePlayerIcon(player);
+        if (!IsOwner) yield break;
+        player.Pokemon.OnDeath += OnPlayerDeath;
+        player.Pokemon.OnDamageTaken += OnPlayerTakeDamage;
+        player.Pokemon.OnDamageDealt += OnPlayerDealDamage;
+        player.onGoalScored += OnGoalScored;
+        player.Pokemon.OnOtherPokemonKilled += OnOtherPokemonKilled;
+        player.OnRespawn += OnPlayerRespawned;
+        if (player.MovesController != null)
+        {
+            SubscribeToMoveEvents();
+            player.MovesController.OnMoveLearned += OnMoveLearnedFromController;
+        }
+        short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+        Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(team, pos);
+        player.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
+        player.PlayerMovement.CanMove = false;
     }
 
     private void OnPlayerDealDamage(ulong attacked, DamageInfo damage)

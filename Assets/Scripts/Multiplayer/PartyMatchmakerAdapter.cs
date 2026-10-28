@@ -15,7 +15,8 @@ namespace Unite.Multiplayer
         public async Task<string> FindMatchAsync(List<Player> players, string queueName, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var ticket = await MatchmakerService.Instance.CreateTicketAsync(players, new CreateTicketOptions(queueName));
+            var ticket = await MatchmakerService.Instance.CreateTicketAsync(players, new CreateTicketOptions(queueName,
+                new Dictionary<string, object> { [SessionCompatibility.PropertyName] = SessionCompatibility.Current }));
             try
             {
                 while (true)

@@ -22,7 +22,7 @@ public class JoltSwift : MoveBase
         bigStar.attackerId = playerManager.NetworkObjectId;
         smallStar.attackerId = playerManager.NetworkObjectId;
 
-        Aim.Instance.InitializeSkillshotAim(range);
+        ActorAim.InitializeSkillshotAim(range);
     }
 
     public override void Update()
@@ -32,7 +32,7 @@ public class JoltSwift : MoveBase
             return;
         }
 
-        direction = Aim.Instance.SkillshotAim();
+        direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
@@ -53,13 +53,13 @@ public class JoltSwift : MoveBase
 
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Finish();
     }
 
     public override void Cancel()
     {
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Cancel();
     }
 

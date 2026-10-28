@@ -14,11 +14,19 @@ public class SpawnArea : NetworkBehaviour
 
     private List<PlayerManager> playersInSpawn = new List<PlayerManager>();
 
+    public void AllowControlledPlayerTraversal(PlayerManager player)
+    {
+        if (IsServer && player.IsOwner && player.CurrentTeam.Team == team && wallCollider != null)
+            Physics.IgnoreCollision(player.PlayerMovement.CharacterController, wallCollider);
+    }
+
     public override void OnNetworkSpawn()
     {
         Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
-        wallCollider.enabled = team != localPlayerTeam;
+        // A host now simulates both teams. Keep both barriers in its physics
+        // world, ignoring each controlled participant only against its own base.
+        wallCollider.enabled = IsServer || team != localPlayerTeam;
         healTimer = HEAL_INTERVAL;
     }
 

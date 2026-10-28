@@ -60,7 +60,7 @@ public static class CresseliaMoveRuntime
     {
         if (actor == null || actor.Pokemon.CurrentHp <= 0 || actor.Pokemon.HasAnyStatusEffect(CresseliaMoveRules.Interrupts)) return;
         actor.AnimationManager.SetFloat("CresseliaActionSpeed", 1);
-        bool walking = actor.PlayerMovement.CanMove && actor.PlayerControls.Movement.Move.ReadValue<Vector2>().sqrMagnitude > 0.01f;
+        bool walking = actor.PlayerMovement.CanMove && actor.MovementInput.sqrMagnitude > 0.01f;
         actor.AnimationManager.SetBool("Walking", walking);
         actor.AnimationManager.PlayAnimation(walking ? "pm0488_fi21_run01" : "pm0488_ba10_waitA01");
     }
@@ -82,16 +82,16 @@ public abstract class CresseliaMoveBase : MoveBase
     {
         if (executing) return;
         base.Start(controller);
-        if (CresseliaMoveRules.IsSupport(Kind)) Aim.Instance.InitializeAutoAim(CresseliaMoveRules.Range(Kind), 60, AimTarget.Ally);
-        else if (Kind == CresseliaCast.Moonlight) Aim.Instance.InitializeCircleAreaIndicator(CresseliaMoveRules.Range(Kind));
-        else Aim.Instance.InitializeSkillshotAim(CresseliaMoveRules.Range(Kind));
+        if (CresseliaMoveRules.IsSupport(Kind)) ActorAim.InitializeAutoAim(CresseliaMoveRules.Range(Kind), 60, AimTarget.Ally);
+        else if (Kind == CresseliaCast.Moonlight) ActorAim.InitializeCircleAreaIndicator(CresseliaMoveRules.Range(Kind));
+        else ActorAim.InitializeSkillshotAim(CresseliaMoveRules.Range(Kind));
         ReadAim();
     }
     public void ReadAim()
     {
         if (CresseliaMoveRules.IsSupport(Kind))
         {
-            var target = Aim.Instance.SureHitAim();
+            var target = ActorAim.SureHitAim();
             hasTarget = target != null && target != playerManager.gameObject && target.TryGetComponent(out PlayerManager ally)
                 && CresseliaMoveRuntime.Living(ally.Pokemon) && ally.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam);
             targetId = hasTarget ? target.GetComponent<Unity.Netcode.NetworkObject>().NetworkObjectId : 0;
@@ -99,10 +99,10 @@ public abstract class CresseliaMoveBase : MoveBase
         }
         else if (Kind == CresseliaCast.Moonlight)
         {
-            destination = Aim.Instance.CircleAreaAim();
+            destination = ActorAim.CircleAreaAim();
             direction = destination - playerManager.transform.position;
         }
-        else direction = Aim.Instance.SkillshotAim();
+        else direction = ActorAim.SkillshotAim();
         direction = CresseliaMoveRules.Direction(direction, playerManager.transform.forward);
     }
     public override void Update()
@@ -141,10 +141,10 @@ public abstract class CresseliaMoveBase : MoveBase
     }
     private void HideAim()
     {
-        if (Aim.Instance == null) return;
-        if (CresseliaMoveRules.IsSupport(Kind)) Aim.Instance.HideAutoAim();
-        else if (Kind == CresseliaCast.Moonlight) Aim.Instance.HideCircleAreaIndicator();
-        else Aim.Instance.HideSkillshotAim();
+        if (ActorAim == null) return;
+        if (CresseliaMoveRules.IsSupport(Kind)) ActorAim.HideAutoAim();
+        else if (Kind == CresseliaCast.Moonlight) ActorAim.HideCircleAreaIndicator();
+        else ActorAim.HideSkillshotAim();
     }
     public override void Cancel()
     {

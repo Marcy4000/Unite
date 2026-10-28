@@ -88,7 +88,7 @@ public class CharactersList : MonoBehaviour
 
     public CharacterInfo GetCharacterFromID(short characterID)
     {
-        if (characterID > characters.Length || characterID < 0)
+        if (characterID >= characters.Length || characterID < 0)
         {
             return null;
         }
@@ -98,6 +98,7 @@ public class CharactersList : MonoBehaviour
 
     public short GetCharacterID(CharacterInfo character)
     {
+        if (character == null) return -1;
         for (short i = 0; i < characters.Length; i++)
         {
             if (characters[i] == character)

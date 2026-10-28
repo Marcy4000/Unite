@@ -24,7 +24,7 @@ public class GlaceFreezeDry : MoveBase
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
-        Aim.Instance.InitializeSkillshotAim(distance);
+        ActorAim.InitializeSkillshotAim(distance);
     }
 
     public override void Update()
@@ -33,7 +33,7 @@ public class GlaceFreezeDry : MoveBase
         {
             return;
         }
-        direction = Aim.Instance.SkillshotAim();
+        direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
@@ -55,7 +55,7 @@ public class GlaceFreezeDry : MoveBase
             playerManager.transform.rotation = Quaternion.LookRotation(this.direction);
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         Debug.Log($"Finished {Name}!");
         base.Finish();
     }
@@ -77,7 +77,7 @@ public class GlaceFreezeDry : MoveBase
     public override void Cancel()
     {
         base.Cancel();
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
     }
 
     public override void ResetMove()

@@ -16,12 +16,12 @@ public class CresseliaUnite : MoveBase
     {
         if (phase != 0 && !CanRecast) return;
         base.Start(controller);
-        Aim.Instance.InitializeSimpleCircle(CresseliaMoveRules.UniteRadius);
+        ActorAim.InitializeSimpleCircle(CresseliaMoveRules.UniteRadius);
     }
     public override void Finish()
     {
         if (!IsActive) return;
-        Aim.Instance.HideSimpleCircle();
+        ActorAim.HideSimpleCircle();
         if (phase == 0)
         {
             oldSnap = playerManager.PlayerMovement.SnapToGround;
@@ -35,7 +35,7 @@ public class CresseliaUnite : MoveBase
             playerManager.PlayerMovement.CanBeKnockedBack = false;
             playerManager.AnimationManager.SetFloat("CresseliaActionSpeed", 1.5f);
             playerManager.AnimationManager.PlayAnimation("pm0488_ba02_roar01");
-            BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(CresseliaMoveRules.FlightDuration);
+            if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(CresseliaMoveRules.FlightDuration);
             wasMoveSuccessful = true;
             base.Finish(); // Commit energy exactly once, at takeoff.
             playerManager.MovesController.BeginCresseliaUniteRPC();
@@ -99,19 +99,19 @@ public class CresseliaUnite : MoveBase
     }
     private void Cleanup()
     {
-        if (IsActive && Aim.Instance != null) Aim.Instance.HideSimpleCircle();
+        if (IsActive && ActorAim != null) ActorAim.HideSimpleCircle();
         phase = 0; recastRequested = false; IsActive = false;
         ReleaseMovement(); actionLock.Release();
         playerManager.PlayerMovement.SnapToGround = oldSnap;
         playerManager.PlayerMovement.IsFlying = oldFlying;
         playerManager.PlayerMovement.CanBeKnockedBack = oldKnockback;
         if (playerManager.Pokemon.CurrentHp <= 0) playerManager.PlayerMovement.CanMove = false;
-        BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(0);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(0);
         CresseliaMoveRuntime.ReturnToLocomotion(playerManager);
     }
     public override void Cancel()
     {
-        if (IsActive && Aim.Instance != null) Aim.Instance.HideSimpleCircle();
+        if (IsActive && ActorAim != null) ActorAim.HideSimpleCircle();
         base.Cancel(); // Cancel aiming, not an already committed Unite.
     }
     public override void ResetMove()

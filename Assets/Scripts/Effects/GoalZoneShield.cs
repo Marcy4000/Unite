@@ -9,6 +9,8 @@ public class GoalZoneShield : MonoBehaviour
     [SerializeField] [ColorUsage(true, true)] private Color shieldColor;
 
     private bool isShieldActive = false;
+    private Material material;
+    private Material ShieldMaterial => material != null ? material : material = shieldRenderer.material;
 
     private void Awake()
     {
@@ -23,8 +25,11 @@ public class GoalZoneShield : MonoBehaviour
 
     public void ShowShield()
     {
+        if (shieldRenderer == null || !isActiveAndEnabled) return;
+        if (isShieldActive) return;
+        initialized = true;
         isShieldActive = true;
-        shieldRenderer.material.SetFloat("_Smoothness", 0.5f);
+        ShieldMaterial.SetFloat("_Smoothness", 0.5f);
 
         Color shieldColor = this.shieldColor;
         StopAllCoroutines();
@@ -33,36 +38,44 @@ public class GoalZoneShield : MonoBehaviour
 
     public void HideShield()
     {
+        if (shieldRenderer == null) return;
+        if (initialized && !isShieldActive) return;
+        initialized = true;
         isShieldActive = false;
-        shieldRenderer.material.SetFloat("_Smoothness", 0);
+        ShieldMaterial.SetFloat("_Smoothness", 0);
 
         Color shieldColor = this.shieldColor;
         StopAllCoroutines();
-        StartCoroutine(TransitionColor(Color.clear, 0.3f));
+        if (isActiveAndEnabled) StartCoroutine(TransitionColor(Color.clear, 0.3f));
+        else ShieldMaterial.SetColor("_EmissionColor", Color.clear);
     }
+
+    private bool initialized;
 
     private IEnumerator TransitionColor(Color targetColor, float duration)
     {
-        Color startColor = shieldRenderer.material.GetColor("_EmissionColor");
+        Color startColor = ShieldMaterial.GetColor("_EmissionColor");
         float elapsedTime = 0;
 
         while (elapsedTime < duration)
         {
-            shieldRenderer.material.SetColor("_EmissionColor", Color.Lerp(startColor, targetColor, elapsedTime / duration));
+            ShieldMaterial.SetColor("_EmissionColor", Color.Lerp(startColor, targetColor, elapsedTime / duration));
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        shieldRenderer.material.SetColor("_EmissionColor", targetColor);
+        ShieldMaterial.SetColor("_EmissionColor", targetColor);
     }
 
     private void Update()
     {
-        shieldRenderer.material.SetTextureOffset("_BaseMap", new Vector2(Time.time * shieldSpeed % 1, 0));
+        ShieldMaterial.SetTextureOffset("_BaseMap", new Vector2(Time.time * shieldSpeed % 1, 0));
 
         if (isShieldActive)
         {
-            shieldRenderer.material.SetColor("_EmissionColor", shieldColor * (1 - Mathf.Sin(Time.time * 5) * 0.1f));
+            ShieldMaterial.SetColor("_EmissionColor", shieldColor * (1 - Mathf.Sin(Time.time * 5) * 0.1f));
         }
     }
+
+    private void OnDestroy() { if (material != null) Destroy(material); }
 }

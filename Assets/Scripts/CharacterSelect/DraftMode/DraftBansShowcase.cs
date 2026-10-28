@@ -34,6 +34,7 @@ public class DraftBansShowcase : MonoBehaviour
 
         for (int i = 0; i < bannedCharacters.Count; i++)
         {
+            if (bannedCharacters[i] == null) continue; // A skipped ban is not a Pokemon portrait.
             if (i == bannedCharacters.Count / 2)
             {
                 Instantiate(middleIcon, icons);

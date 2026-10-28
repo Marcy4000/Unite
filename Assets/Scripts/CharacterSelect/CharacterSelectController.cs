@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using Unity.Netcode;
 using Player = Unite.Multiplayer.GameSessionPlayer;
@@ -47,6 +48,7 @@ public class CharacterSelectController : NetworkBehaviour
     private bool skipPreviewPhase = false;
 
     private int lastValue = 0;
+    private short displayedCharacter = -1;
 
     private AsyncOperationHandle<GameObject> characterSelectModelHandle;
 
@@ -57,7 +59,10 @@ public class CharacterSelectController : NetworkBehaviour
 
     private void OnDisable()
     {
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        ClearPokemonPreview();
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
+            NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
+        if (LobbyController.Instance != null) LobbyController.Instance.onLobbyUpdate -= OnParticipantSelectionChanged;
     }
 
     private void HandleSceneLoaded(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
@@ -76,6 +81,8 @@ public class CharacterSelectController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        if (IsServer) LobbyController.Instance.BotRoster?.BeginBotCharacterSelection();
+        LobbyController.Instance.onLobbyUpdate += OnParticipantSelectionChanged;
         AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon, true);
 
@@ -192,11 +199,14 @@ public class CharacterSelectController : NetworkBehaviour
             if (startTimer)
             {
                 selectionTimer.Value -= Time.deltaTime;
+                if (currentPhase.Value == CharacterSelectPhase.Selection && selectionTimer.Value <= 2f)
+                    LobbyController.Instance.BotRoster?.ResolveBotCharacters(true);
                 if (selectionTimer.Value <= 0 && !isLoading)
                 {
                     switch (currentPhase.Value)
                     {
                         case CharacterSelectPhase.Selection:
+                            LobbyController.Instance.BotRoster?.FreezeBotCharacters();
                             if (skipPreviewPhase)
                             {
                                 GetComponent<LaneSelectionNetwork>()?.StopSelection();
@@ -225,7 +235,7 @@ public class CharacterSelectController : NetworkBehaviour
             }
         }
 
-        if (selectionTimer.Value <= 0.3f && !hasSelectedCharacter)
+        if (LobbyController.Instance.BotRoster?.UsesBotSelection != true && selectionTimer.Value <= 0.3f && !hasSelectedCharacter)
         {
             if (NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["SelectedCharacter"].Value) < 0)
             {
@@ -238,19 +248,18 @@ public class CharacterSelectController : NetworkBehaviour
     private void ShowLoadingScreenRpc()
     {
         GetComponent<LaneSelectionNetwork>()?.StopSelection();
+        LobbyController.Instance.PersistPlayerCharacter();
         AudioManager.StopMusic(DefaultAudioMusic.ChoosePokemon);
         AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme, true);
         AudioManager.PlaySound(DefaultAudioSounds.Play_Load17051302578487348);
         LoadingScreen.Instance.ShowMatchLoadingScreen();
 
-        if (characterSelectModelHandle.IsValid())
-        {
-            Addressables.Release(characterSelectModelHandle);
-        }
+        ClearPokemonPreview();
     }
 
     private void ChangeCharacter(CharacterInfo character)
     {
+        if (character == null || currentPhase.Value != CharacterSelectPhase.Selection) return;
         if (!IsCharacterAvailable(CharactersList.Instance.GetCharacterID(character)) && !ALLOW_DUPLICATE_CHARACTERS)
         {
             return;
@@ -258,6 +267,7 @@ public class CharacterSelectController : NetworkBehaviour
 
         hasSelectedCharacter = true;
         LobbyController.Instance.ChangePlayerCharacter(CharactersList.Instance.GetCharacterID(character));
+        if (LobbyController.Instance.BotRoster?.UsesBotSelection == true) return;
         pokemonInfo.gameObject.SetActive(true);
         pokemonInfo.SetPokemonInfo(character);
         SpawnPokemon(character);
@@ -268,7 +278,7 @@ public class CharacterSelectController : NetworkBehaviour
         Player[] localTeamPlayers = LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam());
         foreach (var player in localTeamPlayers)
         {
-            if (player.Id != LobbyController.Instance.Player.Id)
+            if (player.Id != LobbyController.Instance.Player.Id && !player.IsBot)
             {
                 if (player.Data["SelectedCharacter"].Value == NumberEncoder.ToBase64(characterID))
                 {
@@ -282,20 +292,22 @@ public class CharacterSelectController : NetworkBehaviour
 
     private CharacterInfo GetRandomCharacter()
     {
-        bool found = false;
+        var candidates = CharactersList.Instance.Characters.Where(character => !character.Hidden &&
+            IsCharacterAvailable(CharactersList.Instance.GetCharacterID(character))).ToArray();
+        return candidates.Length == 0 ? null : candidates[UnityEngine.Random.Range(0, candidates.Length)];
+    }
 
-        CharacterInfo character = null;
-
-        while (!found)
-        {
-            character = CharactersList.Instance.Characters[UnityEngine.Random.Range(0, CharactersList.Instance.Characters.Length)];
-            if (IsCharacterAvailable(CharactersList.Instance.GetCharacterID(character)) && !character.Hidden)
-            {
-                found = true;
-            }
-        }
-
-        return character;
+    private void OnParticipantSelectionChanged(Unite.Multiplayer.GameSessionView lobby)
+    {
+        if (LobbyController.Instance.BotRoster?.UsesBotSelection != true) return;
+        short selected = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["SelectedCharacter"].Value);
+        if (selected < 0 || selected == displayedCharacter) return;
+        displayedCharacter = selected;
+        hasSelectedCharacter = true;
+        var character = CharactersList.Instance.GetCharacterFromID(selected);
+        pokemonInfo.gameObject.SetActive(true);
+        pokemonInfo.SetPokemonInfo(character);
+        SpawnPokemon(character);
     }
 
     private void SpawnPokemon(CharacterInfo character)
@@ -305,24 +317,37 @@ public class CharacterSelectController : NetworkBehaviour
             return;
         }
 
+        ClearPokemonPreview();
+
+        characterSelectModelHandle = Addressables.LoadAssetAsync<GameObject>(character.model);
+        characterSelectModelHandle.Completed += OnCharacterSelectModelLoaded;
+    }
+
+    private void ClearPokemonPreview()
+    {
         if (currentPokemon != null)
         {
             Destroy(currentPokemon);
             currentPokemon = null;
         }
 
-        // Release the previous addressable handle if valid
+        // Releasing a pending load does not cancel its completion callback.
         if (characterSelectModelHandle.IsValid())
         {
-            Addressables.Release(characterSelectModelHandle);
+            var handle = characterSelectModelHandle;
+            characterSelectModelHandle = default;
+            handle.Completed -= OnCharacterSelectModelLoaded;
+            Addressables.Release(handle);
         }
-
-        characterSelectModelHandle = Addressables.LoadAssetAsync<GameObject>(character.model);
-        characterSelectModelHandle.Completed += OnCharacterSelectModelLoaded;
     }
 
     private void OnCharacterSelectModelLoaded(AsyncOperationHandle<GameObject> obj)
     {
+        if (!characterSelectModelHandle.IsValid() || !obj.IsValid() || !obj.Equals(characterSelectModelHandle))
+        {
+            return;
+        }
+
         if (obj.Status == AsyncOperationStatus.Succeeded)
         {
             currentPokemon = Instantiate(obj.Result, pokemonSpawnPoint);

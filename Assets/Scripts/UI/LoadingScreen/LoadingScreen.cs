@@ -100,7 +100,7 @@ public class LoadingScreen : MonoBehaviour
         yield return new WaitForSecondsRealtime(5f);
         foreach (var playerIcon in playerList)
         {
-            if (!playerIcon.HasProgressTracker && playerIcon.CurrentPlayer != null)
+            if (!playerIcon.HasProgressTracker && playerIcon.CurrentPlayer != null && !playerIcon.CurrentPlayer.IsBot)
             {
                 var player = playerIcon.CurrentPlayer;
                 string ownerId = player.Data.TryGetValue("OwnerID", out var owner) ? owner.Value : "missing";

@@ -44,10 +44,10 @@ public partial class MovesController
         if (IsMeowstic && meowsticShownReflect != meowsticReflectUntil.Value)
         {
             meowsticShownReflect = meowsticReflectUntil.Value;
-            if (BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, MeowsticReflectRemaining);
+            if (playerManager.IsLocalHuman && BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, MeowsticReflectRemaining);
         }
         if (meowsticBufferedSlot < 0) return;
-        if (!IsMeowstic || Time.time > meowsticBufferUntil || controls.Movement.CancelMove.WasPressedThisFrame() || pokemon.HasAnyStatusEffect(MeowsticMoveRules.Interrupts)) { ClearMeowsticBufferedInput(); return; }
+        if (!IsMeowstic || Time.time > meowsticBufferUntil || (playerManager.IsLocalHuman && controls.Movement.CancelMove.WasPressedThisFrame()) || pokemon.HasAnyStatusEffect(MeowsticMoveRules.Interrupts)) { ClearMeowsticBufferedInput(); return; }
         int slot = meowsticBufferedSlot;
         if (!moveStatuses[slot].HasStatus(ActionStatusType.None) && !CanRecastMeowstic(slot)) return;
         bool release = meowsticBufferedRelease; ClearMeowsticBufferedInput();

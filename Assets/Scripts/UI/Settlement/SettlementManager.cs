@@ -93,6 +93,7 @@ public class SettlementManager : MonoBehaviour
 
         yield return blueScoreboardHandle;
 
+        if (this == null || !blueScoreboardHandle.IsValid()) yield break;
         if (blueScoreboardHandle.Status == AsyncOperationStatus.Succeeded)
         {
             blueScoreboard.gameObject.SetActive(true);
@@ -103,6 +104,7 @@ public class SettlementManager : MonoBehaviour
 
         yield return orangeScoreboardHandle;
 
+        if (this == null || !orangeScoreboardHandle.IsValid()) yield break;
         if (orangeScoreboardHandle.Status == AsyncOperationStatus.Succeeded)
         {
             orangeScoreboard.gameObject.SetActive(true);
@@ -112,8 +114,11 @@ public class SettlementManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        Addressables.Release(blueScoreboardHandle);
-        Addressables.Release(orangeScoreboardHandle);
+        StopAllCoroutines();
+        if (blueScoreboardHandle.IsValid()) Addressables.Release(blueScoreboardHandle);
+        if (orangeScoreboardHandle.IsValid()) Addressables.Release(orangeScoreboardHandle);
+        blueScoreboardHandle = default;
+        orangeScoreboardHandle = default;
     }
 
     public void ShowScore()

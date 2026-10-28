@@ -167,8 +167,7 @@ public class SpatialAudioManager : NetworkBehaviour
             if (controller == null || !controller.IsEnabled || controller.IsBlinded)
                 continue;
 
-            if (controller.ContainsVision(vision) &&
-                (!vision.IsInBush || vision.IsVisibleInBush.Contains(controller.gameObject.GetInstanceID())))
+            if (controller.CanSee(vision))
             {
                 return true;
             }

@@ -6,7 +6,7 @@ public class FlareonBasicAtk : ChargedBasicAttackBase
     public override void Initialize(PlayerManager manager) { base.Initialize(manager); range = FlareonMoveRules.BasicRange; }
     public override void Perform(bool wildPriority)
     {
-        GameObject target = Aim.Instance.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
+        GameObject target = playerManager.Aim.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
         if (target == null || !target.TryGetComponent(out Pokemon pokemon)) return;
         Vector3 direction = FlareonMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward);
         playerManager.transform.rotation = Quaternion.LookRotation(direction);

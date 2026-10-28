@@ -20,7 +20,13 @@ public class VisionManager : MonoBehaviour
         Instance = this;
 
         LocalPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        // Also handle additive scene load ordering (Vision.OnEnable can precede
+        // this manager's Awake).
+        foreach (var vision in FindObjectsByType<Vision>(FindObjectsSortMode.None)) RegisterVision(vision);
+        foreach (var controller in FindObjectsByType<VisionController>(FindObjectsSortMode.None)) RegisterController(controller);
     }
+
+    private void OnDestroy() { if (Instance == this) Instance = null; }
 
     public void RegisterVision(Vision vision)
     {
@@ -49,48 +55,25 @@ public class VisionManager : MonoBehaviour
         UpdateVisibility();
     }
 
+    // Per-team simulation query; never use the host's rendered state for an AI.
+    public bool IsVisibleToTeam(Vision vision, Team team)
+    {
+        if (vision == null || !vision.isActiveAndEnabled || !vision.IsVisiblyEligible) return false;
+        if (vision.CurrentTeam == team || vision.TemporarilyRevealed) return true;
+        foreach (var controller in allControllers)
+            if (controller != null && controller.CurrentTeam == team && controller.CanSee(vision)) return true;
+        return false;
+    }
+
     private void UpdateVisibility()
     {
-        foreach (var vision in allVisions)
+        for (int i = allControllers.Count - 1; i >= 0; i--)
+            if (allControllers[i] == null) allControllers.RemoveAt(i);
+        for (int i = allVisions.Count - 1; i >= 0; i--)
         {
-            if (!vision.IsVisiblyEligible)
-            {
-                vision.SetVisibility(false);
-                continue;
-            }
-
-            // Always visible if on the same team as the local player
-            if (vision.CurrentTeam == LocalPlayerTeam)
-            {
-                vision.SetVisibility(true);
-                continue;
-            }
-
-            bool isVisible = false;
-
-            foreach (var controller in allControllers)
-            {
-                // Only vision controllers from the local player's team can reveal enemies
-                if (!controller.IsEnabled || controller.IsBlinded || controller.CurrentTeam != LocalPlayerTeam)
-                    continue;
-
-                // Temporarily revealed enemies are always visible
-                if (vision.TemporarilyRevealed)
-                {
-                    isVisible = true;
-                    break;
-                }
-
-                // If controller sees the vision and it is not hidden in a bush
-                if (controller.ContainsVision(vision) &&
-                    (!vision.IsInBush || vision.IsVisibleInBush.Contains(controller.gameObject.GetInstanceID())))
-                {
-                    isVisible = true;
-                    break;
-                }
-            }
-
-            vision.SetVisibility(isVisible);
+            var vision = allVisions[i];
+            if (vision == null) { allVisions.RemoveAt(i); continue; }
+            vision.SetVisibility(IsVisibleToTeam(vision, LocalPlayerTeam));
         }
     }
 

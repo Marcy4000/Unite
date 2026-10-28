@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.util.Log;
 import android.view.DisplayCutout;
+import android.view.Display;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
@@ -15,11 +16,42 @@ import android.view.WindowManager;
 public final class UniteAndroidDisplay {
     private UniteAndroidDisplay() { }
 
+    private static Display activityDisplay(Activity activity) {
+        Display display = Build.VERSION.SDK_INT >= 30 ? activity.getDisplay() : null;
+        return display != null ? display : activity.getWindowManager().getDefaultDisplay();
+    }
+
+    private static Display.Mode highestMode(Display display) {
+        Display.Mode current = display.getMode();
+        Display.Mode best = current;
+        for (Display.Mode mode : display.getSupportedModes()) {
+            if (mode.getPhysicalWidth() == current.getPhysicalWidth()
+                    && mode.getPhysicalHeight() == current.getPhysicalHeight()
+                    && mode.getRefreshRate() > best.getRefreshRate()) {
+                best = mode;
+            }
+        }
+        return best;
+    }
+
+    public static float getHighestRefreshRate(Activity activity) {
+        Display display = activityDisplay(activity);
+        return Build.VERSION.SDK_INT >= 23
+                ? highestMode(display).getRefreshRate() : display.getRefreshRate();
+    }
+
     // Called through JNI. All Android view operations must run on the UI thread.
     public static void apply(final Activity activity) {
         activity.runOnUiThread(() -> {
             try {
                 final Window window = activity.getWindow();
+                if (Build.VERSION.SDK_INT >= 23) {
+                    Display.Mode mode = highestMode(activityDisplay(activity));
+                    WindowManager.LayoutParams refreshAttributes = window.getAttributes();
+                    refreshAttributes.preferredDisplayModeId = mode.getModeId();
+                    refreshAttributes.preferredRefreshRate = mode.getRefreshRate();
+                    window.setAttributes(refreshAttributes);
+                }
                 final View content = activity.findViewById(android.R.id.content);
                 if (content == null) {
                     Log.w("UniteDisplay", "Activity content view is not ready.");

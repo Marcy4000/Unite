@@ -34,6 +34,9 @@ public class WildPokemonSpawner : NetworkBehaviour
     private Vision vision;
 
     public WildPokemon WildPokemon => wildPokemon;
+    public bool IsObjective => isObjective;
+    public bool HasLivingPokemon => isSpawned.Value;
+    public bool HasSpawnedOnce => spawnedFirstTime;
     public float RespawnCooldown => respawnCooldown;
     public RespawnType PokemonRespawnType => respawnType;
 

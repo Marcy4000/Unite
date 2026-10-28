@@ -7,7 +7,7 @@ public class MeowsticMBasicAtk : ChargedBasicAttackBase
     public override void Initialize(PlayerManager manager) { base.Initialize(manager); range = 4f; }
     public override void Perform(bool wildPriority)
     {
-        GameObject target = Aim.Instance.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
+        GameObject target = ActorAim.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
         if (target == null || !target.TryGetComponent(out NetworkObject network)) return;
         playerManager.MovesController.MeowsticBasicRPC(network.NetworkObjectId);
         playerManager.transform.rotation = Quaternion.LookRotation(MeowsticMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward));

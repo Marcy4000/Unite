@@ -9,11 +9,13 @@ namespace Unite.Multiplayer
     public sealed class GameSessionPlayer
     {
         public string Id { get; }
+        public bool IsBot { get; }
         public Dictionary<string, PlayerProperty> Data { get; } = new Dictionary<string, PlayerProperty>();
 
-        public GameSessionPlayer(string id)
+        public GameSessionPlayer(string id, bool isBot = false)
         {
             Id = id;
+            IsBot = isBot;
         }
 
         public void Apply(IEnumerable<KeyValuePair<string, PlayerProperty>> properties)
@@ -69,7 +71,7 @@ namespace Unite.Multiplayer
             foreach (var member in snapshots)
             {
                 var player = member.Id == localPlayer.Id ? localPlayer :
-                    previousPlayers.TryGetValue(member.Id, out var previous) ? previous : new GameSessionPlayer(member.Id);
+                    previousPlayers.TryGetValue(member.Id, out var previous) ? previous : new GameSessionPlayer(member.Id, member.IsBot);
                 player.Apply(member.Data);
                 if (player.Id == localPlayer.Id)
                     foreach (var pending in pendingPlayerProperties)

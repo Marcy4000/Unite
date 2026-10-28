@@ -33,7 +33,7 @@ public class LoadingScreenPlayer : MonoBehaviour
             }
         }
 
-        UpdateProgressBar(0, progressTracker != null ? progressTracker.Progress.Value : 0);
+        UpdateProgressBar(0, currentPlayer?.IsBot == true ? 1 : progressTracker != null ? progressTracker.Progress.Value : 0);
     }
 
     public void UnbindProgressTracker()

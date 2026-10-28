@@ -108,6 +108,8 @@ public class DraftSwitchController : NetworkBehaviour
         {
             return;
         }
+        // Bots never negotiate switches and have no client OwnerID to route to.
+        if (playerIcon.AssignedPlayer.IsBot) { switchPanelUI.HideSwitchPanel(); return; }
 
         currentRequestReceiverID = playerIcon.AssignedPlayer.Id;
 

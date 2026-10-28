@@ -23,14 +23,14 @@ public abstract class MeowsticMoveBase : MoveBase
         base.Start(controller);
         recast = Kind == MeowsticCast.Reflect && controller.MovesController.MeowsticReflectAvailable;
         if (recast) return;
-        if (MeowsticMoveRules.Support(Kind)) Aim.Instance.InitializeAutoAim(MeowsticMoveRules.Range(Kind), 60, AimTarget.Ally);
+        if (MeowsticMoveRules.Support(Kind)) ActorAim.InitializeAutoAim(MeowsticMoveRules.Range(Kind), 60, AimTarget.Ally);
         else if (Kind == MeowsticCast.WonderRoom)
         {
-            Aim.Instance.InitializeSquareAreaIndicator(MeowsticMoveRules.Range(Kind));
+            ActorAim.InitializeSquareAreaIndicator(MeowsticMoveRules.Range(Kind));
             controller.MovesController.ShowMeowsticRoomAim(true, controller.transform.position);
         }
-        else if (Kind == MeowsticCast.Scratch || Kind == MeowsticCast.Leer) Aim.Instance.InitializeSkillshotAim(MeowsticMoveRules.Range(Kind));
-        else Aim.Instance.InitializeSimpleCircle(MeowsticMoveRules.Range(Kind));
+        else if (Kind == MeowsticCast.Scratch || Kind == MeowsticCast.Leer) ActorAim.InitializeSkillshotAim(MeowsticMoveRules.Range(Kind));
+        else ActorAim.InitializeSimpleCircle(MeowsticMoveRules.Range(Kind));
         ReadAim();
     }
     private void ReadAim()
@@ -38,17 +38,17 @@ public abstract class MeowsticMoveBase : MoveBase
         if (recast) return;
         if (MeowsticMoveRules.Support(Kind))
         {
-            GameObject aim = Aim.Instance.SureHitAim();
+            GameObject aim = ActorAim.SureHitAim();
             target = aim != null ? aim.GetComponent<Pokemon>() : null;
             direction = target != null ? target.transform.position - playerManager.transform.position : playerManager.transform.forward;
         }
         else if (Kind == MeowsticCast.WonderRoom)
         {
-            destination = Aim.Instance.CircleAreaAim();
+            destination = ActorAim.CircleAreaAim();
             direction = playerManager.transform.position - destination;
             playerManager.MovesController.ShowMeowsticRoomAim(true, destination);
         }
-        else if (Kind == MeowsticCast.Scratch || Kind == MeowsticCast.Leer) direction = Aim.Instance.SkillshotAim();
+        else if (Kind == MeowsticCast.Scratch || Kind == MeowsticCast.Leer) direction = ActorAim.SkillshotAim();
         else direction = playerManager.transform.forward;
         direction = MeowsticMoveRules.Direction(direction, playerManager.transform.forward);
     }
@@ -89,11 +89,11 @@ public abstract class MeowsticMoveBase : MoveBase
     }
     private void HideAim()
     {
-        if (Aim.Instance == null || recast) return;
-        if (MeowsticMoveRules.Support(Kind)) Aim.Instance.HideAutoAim();
-        else if (Kind == MeowsticCast.WonderRoom) { Aim.Instance.HideCircleAreaIndicator(); playerManager.MovesController.ShowMeowsticRoomAim(false, destination); }
-        else if (Kind == MeowsticCast.Scratch || Kind == MeowsticCast.Leer) Aim.Instance.HideSkillshotAim();
-        else Aim.Instance.HideSimpleCircle();
+        if (ActorAim == null || recast) return;
+        if (MeowsticMoveRules.Support(Kind)) ActorAim.HideAutoAim();
+        else if (Kind == MeowsticCast.WonderRoom) { ActorAim.HideCircleAreaIndicator(); playerManager.MovesController.ShowMeowsticRoomAim(false, destination); }
+        else if (Kind == MeowsticCast.Scratch || Kind == MeowsticCast.Leer) ActorAim.HideSkillshotAim();
+        else ActorAim.HideSimpleCircle();
     }
     public override void Cancel() { if (IsActive) HideAim(); base.Cancel(); }
     public override void ResetMove() { Cancel(); Complete(); target = null; }

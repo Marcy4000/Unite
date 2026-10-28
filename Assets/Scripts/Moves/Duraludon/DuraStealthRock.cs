@@ -18,13 +18,13 @@ public class DuraStealthRock : MoveBase
     {
         base.Start(controller);
         if (!IsActive) return;
-        Aim.Instance.InitializeCircleAreaIndicator(7f);
-        position = Aim.Instance.CircleAreaAim();
+        ActorAim.InitializeCircleAreaIndicator(7f);
+        position = ActorAim.CircleAreaAim();
     }
 
     public override void Update()
     {
-        if (IsActive) position = Aim.Instance.CircleAreaAim();
+        if (IsActive) position = ActorAim.CircleAreaAim();
     }
 
     public override void Finish()
@@ -40,13 +40,13 @@ public class DuraStealthRock : MoveBase
             attack.GainBoostedAttack();
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideCircleAreaIndicator();
+        ActorAim.HideCircleAreaIndicator();
         base.Finish();
     }
 
     public override void Cancel()
     {
-        Aim.Instance.HideCircleAreaIndicator();
+        ActorAim.HideCircleAreaIndicator();
         base.Cancel();
     }
 

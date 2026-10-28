@@ -11,7 +11,7 @@ public class DuraludonUnite : MoveBase
     public override void Start(PlayerManager controller)
     {
         base.Start(controller);
-        Aim.Instance.InitializeSimpleCircle(DuraMoveRules.RuinRadius);
+        ActorAim.InitializeSimpleCircle(DuraMoveRules.RuinRadius);
     }
 
     public override void Update() { }
@@ -25,13 +25,13 @@ public class DuraludonUnite : MoveBase
             attack.Combat.RevolvingRuinRPC();
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideSimpleCircle();
+        ActorAim.HideSimpleCircle();
         base.Finish();
     }
 
     public override void Cancel()
     {
-        Aim.Instance.HideSimpleCircle();
+        ActorAim.HideSimpleCircle();
         base.Cancel();
     }
 

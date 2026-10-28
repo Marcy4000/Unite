@@ -40,7 +40,7 @@ public partial class MovesController
     private void UpdateFlareonRuntime()
     {
         if (!IsFlareon) return;
-        if (IsOwner && flareonShownRecast != flareonRecastUntil.Value)
+        if (playerManager != null && playerManager.IsLocalHuman && flareonShownRecast != flareonRecastUntil.Value)
         {
             flareonShownRecast = flareonRecastUntil.Value;
             if (BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, (float)Math.Max(0, flareonShownRecast - FlareonNow));

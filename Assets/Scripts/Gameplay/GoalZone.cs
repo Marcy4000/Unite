@@ -37,7 +37,12 @@ public class GoalZone : NetworkBehaviour
 
     private NetworkVariable<float> weakenTime = new NetworkVariable<float>();
 
-    private StatChange statChange = new StatChange(60, Stat.Speed, 0, false, true, true, 1);
+    public const ushort GoalShieldId = 64990;
+    public const ushort GoalSpeedId = 64991;
+    private StatChange statChange = new StatChange(60, Stat.Speed, 0, false, true, true, GoalSpeedId);
+    private float nextHeal;
+    private readonly HashSet<PlayerManager> boostedPlayers = new();
+    public bool ProvidesDefense => IsActive && GoalStatus == GoalStatus.Active;
 
     private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
 
@@ -62,20 +67,18 @@ public class GoalZone : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        if (IsServer)
-        {
-            StartCoroutine(GoalZoneHealing());
-        }
+        nextHeal = Time.time;
         scoreText.color = GetTeamColor();
         DestroyUneededModels();
         scoreText.text = $"{maxScore - currentScore.Value}<color=\"white\">/{maxScore}";
         currentScore.OnValueChanged += UpdateGraphics;
-        goalStatus.OnValueChanged += (previous, current) => { onGoalStatusChanged?.Invoke(current); };
+        goalStatus.OnValueChanged += HandleGoalStatusChanged;
+        isActive.OnValueChanged += HandleActivationChanged;
 
         visionController.CurrentTeam = team;
-        visionController.IsEnabled = team == LobbyController.Instance.GetLocalPlayerTeam();
+        visionController.IsEnabled = IsServer || team == LobbyController.Instance.GetLocalPlayerTeam();
         visionController.transform.parent = null;
-        visionController.gameObject.SetActive(team == LobbyController.Instance.GetLocalPlayerTeam());
+        visionController.gameObject.SetActive(IsServer || team == LobbyController.Instance.GetLocalPlayerTeam());
 
         MinimapManager.Instance.CreateGoalzoneIcon(this);
 
@@ -86,6 +89,78 @@ public class GoalZone : NetworkBehaviour
             scoreText.gameObject.SetActive(false);
         }
     }
+
+    private void HandleGoalStatusChanged(GoalStatus previous, GoalStatus current)
+    {
+        RefreshDefense();
+        onGoalStatusChanged?.Invoke(current);
+    }
+
+    private void HandleActivationChanged(bool previous, bool current) => RefreshDefense();
+
+    private static bool Living(PlayerManager player) => player != null && player.IsSpawned &&
+        player.Pokemon != null && player.Pokemon.IsSpawned && player.Pokemon.CurrentHp > 0;
+
+    private void RemoveDefense(PlayerManager player, bool removeShield)
+    {
+        if (!boostedPlayers.Remove(player) || player == null || player.Pokemon == null || !player.Pokemon.IsSpawned || !IsServer) return;
+        player.Pokemon.RemoveStatChangeWithIDRPC(GoalSpeedId);
+        if (removeShield) player.Pokemon.RemoveShieldWithIDRPC(GoalShieldId);
+    }
+
+    private void RefreshDefense()
+    {
+        bool defended = false;
+        foreach (var player in playerManagerList)
+        {
+            bool eligible = ProvidesDefense && Living(player) && player.CurrentTeam.IsOnSameTeam(team);
+            defended |= eligible;
+            if (!IsServer) continue;
+            if (eligible)
+            {
+                if (boostedPlayers.Add(player)) player.Pokemon.AddStatChange(statChange);
+            }
+            else RemoveDefense(player, true);
+        }
+        if (goalZoneShield != null)
+        {
+            if (defended) goalZoneShield.ShowShield();
+            else goalZoneShield.HideShield();
+        }
+    }
+
+    private void RemoveOccupant(PlayerManager player)
+    {
+        playerManagerList.Remove(player);
+        RemoveDefense(player, !Living(player) || !ProvidesDefense);
+        if (player == null || player.GoalZone != this) return;
+        player.GoalZone = null;
+        if (player.IsSpawned) player.ScoreStatus.AddStatus(ActionStatusType.Disabled);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        currentScore.OnValueChanged -= UpdateGraphics;
+        goalStatus.OnValueChanged -= HandleGoalStatusChanged;
+        isActive.OnValueChanged -= HandleActivationChanged;
+        ClearOccupants();
+        // Goal vision is detached from the goal transform at spawn.
+        if (visionController != null) Destroy(visionController.gameObject);
+        base.OnNetworkDespawn();
+    }
+
+    private void ClearOccupants()
+    {
+        for (int i = playerManagerList.Count - 1; i >= 0; i--)
+        {
+            RemoveDefense(playerManagerList[i], true);
+            RemoveOccupant(playerManagerList[i]);
+        }
+        boostedPlayers.Clear();
+        if (goalZoneShield != null) goalZoneShield.HideShield();
+    }
+
+    private void OnDisable() => ClearOccupants();
 
     private Color GetTeamColor()
     {
@@ -131,9 +206,11 @@ public class GoalZone : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!IsSpawned) return;
         if (other.CompareTag("Player"))
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
+            if (!Living(playerManager) || playerManagerList.Contains(playerManager)) return;
             playerManagerList.Add(playerManager);
             if (IsActive)
             {
@@ -143,22 +220,7 @@ public class GoalZone : NetworkBehaviour
                 }
                 playerManager.GoalZone = this;
             }
-            //playerManager.CanScore = IsActive ? playerManager.OrangeTeam != orangeTeam : false;
-            if (playerManager.CurrentTeam.IsOnSameTeam(team) && IsServer)
-            {
-                playerManager.Pokemon.AddStatChange(statChange);
-            }
-
-            GetAlliesInGoal(Team, out int alliesInGoal, out int enemiesInGoal);
-
-            if (alliesInGoal >= 0)
-            {
-                goalZoneShield.ShowShield();
-            }
-            else
-            {
-                goalZoneShield.HideShield();
-            }
+            RefreshDefense();
         }
     }
 
@@ -167,24 +229,9 @@ public class GoalZone : NetworkBehaviour
         if (other.CompareTag("Player"))
         {
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
-            playerManager.ScoreStatus.AddStatus(ActionStatusType.Disabled);
-            if (playerManager.CurrentTeam.IsOnSameTeam(team) && IsServer)
-            {
-                playerManager.Pokemon.RemoveStatChangeWithIDRPC(1);
-            }
-            playerManager.GoalZone = null;
-            playerManagerList.Remove(playerManager);
-
-            GetAlliesInGoal(Team, out int alliesInGoal, out int enemiesInGoal);
-
-            if (alliesInGoal >= 0)
-            {
-                goalZoneShield.ShowShield();
-            }
-            else
-            {
-                goalZoneShield.HideShield();
-            }
+            if (playerManager == null) return;
+            RemoveOccupant(playerManager);
+            RefreshDefense();
         }
     }
 
@@ -194,6 +241,7 @@ public class GoalZone : NetworkBehaviour
         enemiesInGoal = 0;
         foreach (var player in playerManagerList)
         {
+            if (!Living(player)) continue;
             if (player.CurrentTeam.IsOnSameTeam(team))
             {
                 alliesInGoal++;
@@ -205,22 +253,23 @@ public class GoalZone : NetworkBehaviour
         }
     }
 
-    private IEnumerator GoalZoneHealing()
+    private void HealOccupants()
     {
-        while (true)
+        if (!ProvidesDefense) return;
+        foreach (var player in playerManagerList)
         {
-            foreach (var player in playerManagerList)
+            if (Living(player) && player.CurrentTeam.IsOnSameTeam(team))
             {
-                if (player.CurrentTeam.IsOnSameTeam(team))
+                if (!player.Pokemon.IsHPFull())
                 {
-                    if (!player.Pokemon.IsHPFull())
-                    {
-                        player.Pokemon.HealDamageRPC(healAmount);
-                    }
-                    player.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * shieldAmount), 1, 0, 2.5f, true, (ushort)Mathf.FloorToInt(player.Pokemon.GetMaxHp() * shieldAmount)));
+                    player.Pokemon.HealDamageRPC(healAmount);
                 }
+                // Refresh, rather than accumulating several minutes of shield
+                // duration when a defender has stood here for a long time.
+                player.Pokemon.RemoveShieldWithIDRPC(GoalShieldId);
+                int amount = Mathf.FloorToInt(player.Pokemon.GetMaxHp() * shieldAmount);
+                player.Pokemon.AddShieldRPC(new ShieldInfo(amount, GoalShieldId, 0, 2.5f, true, (ushort)amount));
             }
-            yield return new WaitForSeconds(1.5f);
         }
     }
 
@@ -268,10 +317,8 @@ public class GoalZone : NetworkBehaviour
 
     private void DestroyGoalZone()
     {
-        foreach (var player in playerManagerList)
-        {
-            player.ScoreStatus.AddStatus(ActionStatusType.Disabled);
-        }
+        foreach (var player in playerManagerList) RemoveDefense(player, true);
+        ClearOccupants();
         gameObject.SetActive(false);
         visionController.IsEnabled = false;
         onGoalZoneDestroyed?.Invoke(goalLaneId, goalTier);
@@ -320,9 +367,18 @@ public class GoalZone : NetworkBehaviour
 
     private void Update()
     {
+        if (!IsSpawned) return;
+        for (int i = playerManagerList.Count - 1; i >= 0; i--)
+            if (!Living(playerManagerList[i])) RemoveOccupant(playerManagerList[i]);
+        RefreshDefense();
         if (!IsServer)
         {
             return;
+        }
+        if (Time.time >= nextHeal)
+        {
+            nextHeal = Time.time + 1.5f;
+            HealOccupants();
         }
 
         if (weakenTime.Value > 0)
@@ -336,13 +392,4 @@ public class GoalZone : NetworkBehaviour
         }
     }
 
-    private void LateUpdate()
-    {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        playerManagerList.RemoveAll(player => player == null);
-    }
 }

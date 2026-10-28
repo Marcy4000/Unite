@@ -29,7 +29,7 @@ public class SylvHyperVoice : MoveBase
         base.Start(controller);
         closeDamage.attackerId = controller.Pokemon.NetworkObjectId;
         farDamage.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeHyperVoiceAim();
+        ActorAim.InitializeHyperVoiceAim();
     }
 
     public override void Update()
@@ -63,7 +63,7 @@ public class SylvHyperVoice : MoveBase
         {
             return;
         }
-        direction = Aim.Instance.SkillshotAim();
+        direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
@@ -91,7 +91,7 @@ public class SylvHyperVoice : MoveBase
             isScreaming = true;
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideHyperVoiceAim();
+        ActorAim.HideHyperVoiceAim();
         Debug.Log($"Finished {Name}!");
         base.Finish();
     }
@@ -99,7 +99,7 @@ public class SylvHyperVoice : MoveBase
     public override void Cancel()
     {
         base.Cancel();
-        Aim.Instance.HideHyperVoiceAim();
+        ActorAim.HideHyperVoiceAim();
     }
 
     public override void ResetMove()

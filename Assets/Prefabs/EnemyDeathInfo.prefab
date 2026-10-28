@@ -369,6 +369,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7209386699979940349}
   - component: {fileID: 2764558733080196654}
+  - component: {fileID: 5823901468283247150}
   m_Layer: 5
   m_Name: EnemyDeathInfo
   m_TagString: Untagged
@@ -396,6 +397,26 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 84, y: 93}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &5823901468283247150
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7860708957754064590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_IgnoreLayout: 1
+  m_MinWidth: -1
+  m_MinHeight: -1
+  m_PreferredWidth: -1
+  m_PreferredHeight: -1
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
 --- !u!114 &2764558733080196654
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -426,7 +447,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1230671971507236437
 RectTransform:
   m_ObjectHideFlags: 0

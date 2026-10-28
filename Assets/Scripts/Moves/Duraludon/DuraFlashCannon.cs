@@ -34,8 +34,8 @@ public class DuraFlashCannon : MoveBase
 
         if (!isInCannonMode)
         {
-            Aim.Instance.InitializeSkillshotAim(range);
-            direction = Aim.Instance.SkillshotAim();
+            ActorAim.InitializeSkillshotAim(range);
+            direction = ActorAim.SkillshotAim();
         }
 
         damageInfo.attackerId = playerManager.NetworkObjectId;
@@ -48,7 +48,7 @@ public class DuraFlashCannon : MoveBase
             return;
         }
 
-        direction = Aim.Instance.SkillshotAim();
+        direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
@@ -72,23 +72,23 @@ public class DuraFlashCannon : MoveBase
             duraBasicAtk.EnterCannonMode();
             playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath);
 
-            BattleUIManager.instance.ShowMoveSecondaryCooldown(0, 6f);
+            if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, 6f);
 
             wasMoveSuccessful = false;
         } else if (IsActive && isInCannonMode)
         {
             duraBasicAtk.ExitCannonMode();
-            Aim.Instance.HideSkillshotAim();
+            ActorAim.HideSkillshotAim();
             return; // OnExitCannonMode already finished and started cooldown.
         }
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Finish();
     }
 
     private void OnExitCannonMode()
     {
         isInCannonMode = false;
-        BattleUIManager.instance.ShowMoveSecondaryCooldown(0, 0);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, 0);
         if (flashCannonInstance != null)
         {
             flashCannonInstance.DestroySelfRPC();
@@ -101,7 +101,7 @@ public class DuraFlashCannon : MoveBase
 
     public override void Cancel()
     {
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Cancel();
     }
 

@@ -11,6 +11,8 @@ public class FluxZone : NetworkBehaviour
 
     private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
     private HashSet<Pokemon> pokemonInZone = new HashSet<Pokemon>();
+    private readonly Dictionary<Pokemon, HashSet<Collider>> overlaps = new();
+    private readonly Dictionary<Pokemon, StatChange> appliedChanges = new();
 
     public Team Team => team;
     public int LaneID => laneID;
@@ -24,24 +26,41 @@ public class FluxZone : NetworkBehaviour
         {
             isActive.Value = true;
         }
+        OnActiveValueChanged(false, isActive.Value);
     }
 
     public void OnActiveValueChanged(bool oldValue, bool newValue)
     {
-        graphic.SetActive(newValue);
+        if (graphic != null) graphic.SetActive(newValue);
         if (!newValue)
         {
-            foreach (var player in pokemonInZone)
-            {
-                player.RemoveStatChangeWithIDRPC(1);
-            }
-            pokemonInZone.Clear();
+            ClearZoneEffects();
         }
+    }
+
+    private void ClearZoneEffects()
+    {
+        var changes = new List<KeyValuePair<Pokemon, StatChange>>(appliedChanges);
+        appliedChanges.Clear();
+        overlaps.Clear();
+        pokemonInZone.Clear();
+        foreach (var entry in changes)
+            if (entry.Key != null && entry.Key.IsSpawned && entry.Key.IsServer)
+                entry.Key.RemoveStatChangeRPC(entry.Value);
+    }
+
+    private void OnDisable() => ClearZoneEffects();
+
+    public override void OnNetworkDespawn()
+    {
+        isActive.OnValueChanged -= OnActiveValueChanged;
+        ClearZoneEffects();
+        base.OnNetworkDespawn();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsActive || !IsServer)
+        if (!isActiveAndEnabled || !IsActive || !IsServer)
         {
             return;
         }
@@ -53,28 +72,35 @@ public class FluxZone : NetworkBehaviour
                 return;
             }
 
-            pokemonInZone.Add(pokemon);
+            if (!overlaps.TryGetValue(pokemon, out var colliders))
+            {
+                colliders = new HashSet<Collider>();
+                overlaps.Add(pokemon, colliders);
+            }
+            if (!colliders.Add(other) || !pokemonInZone.Add(pokemon)) return;
             int value = pokemon.TeamMember.IsOnSameTeam(team) ? 60 : 50;
             StatChange statChange = new StatChange((short)value, Stat.Speed, 0, false, pokemon.TeamMember.IsOnSameTeam(team), true, 1);
+            appliedChanges.Add(pokemon, statChange);
             pokemon.AddStatChange(statChange);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!IsActive || !IsServer)
+        if (!IsServer)
         {
             return;
         }
 
         if (other.TryGetComponent(out Pokemon pokemon))
         {
-            if (!pokemonInZone.Contains(pokemon))
+            if (!overlaps.TryGetValue(pokemon, out var colliders) || !colliders.Remove(other) || colliders.Count > 0)
             {
                 return;
             }
             pokemonInZone.Remove(pokemon);
-            pokemon.RemoveStatChangeWithIDRPC(1);
+            overlaps.Remove(pokemon);
+            if (appliedChanges.Remove(pokemon, out var change)) pokemon.RemoveStatChangeRPC(change);
         }
     }
 

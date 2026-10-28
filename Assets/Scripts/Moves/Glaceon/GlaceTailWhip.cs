@@ -24,7 +24,7 @@ public class GlaceTailWhip : MoveBase
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeAutoAim(distance, angle, AimTarget.NonAlly);
+        ActorAim.InitializeAutoAim(distance, angle, AimTarget.NonAlly);
     }
 
     public override void Update()
@@ -33,7 +33,7 @@ public class GlaceTailWhip : MoveBase
         {
             return;
         }
-        target = Aim.Instance.SureHitAim();
+        target = ActorAim.SureHitAim();
     }
 
     public override void Finish()
@@ -51,7 +51,7 @@ public class GlaceTailWhip : MoveBase
             GlaceBasicAtk basicAtk = playerManager.MovesController.BasicAttack as GlaceBasicAtk;
             basicAtk.FillChargeAmount();
         }
-        Aim.Instance.HideAutoAim();
+        ActorAim.HideAutoAim();
         Debug.Log("Finished Tail Whip!");
         base.Finish();
     }
@@ -59,7 +59,7 @@ public class GlaceTailWhip : MoveBase
     public override void Cancel()
     {
         base.Cancel();
-        Aim.Instance.HideAutoAim();
+        ActorAim.HideAutoAim();
     }
 
     public override void ResetMove()

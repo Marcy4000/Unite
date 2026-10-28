@@ -31,13 +31,9 @@ public class GlaceIcicleSpear : MoveBase
         base.Start(controller);
 
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeSkillshotAim(distance);
-        playerManager.MovesController.onObjectSpawned += (icicleSpearHitbox) =>
-        {
-            this.icicleSpearHitbox = icicleSpearHitbox.GetComponent<IcicleSpearHitbox>();
-            this.icicleSpearHitbox.InitializeRPC(damageInfo, playerManager.CurrentTeam.Team, IsUpgraded);
-            Debug.Log("Icicle Spear Hitbox spawned!");
-        };
+        ActorAim.InitializeSkillshotAim(distance);
+        playerManager.MovesController.onObjectSpawned -= OnHitboxSpawned;
+        playerManager.MovesController.onObjectSpawned += OnHitboxSpawned;
 
         playerManager.MovesController.SpawnNetworkObjectFromStringRPC(resourcePath, playerManager.OwnerClientId);
 
@@ -51,7 +47,7 @@ public class GlaceIcicleSpear : MoveBase
 
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
 
-        BattleUIManager.instance.ShowMoveSecondaryCooldown(0, timer);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, timer);
         glaceonPassive.ResetTimer();
 
         if (!activated && glaceonPassive.IciclesCount < 1)
@@ -61,6 +57,19 @@ public class GlaceIcicleSpear : MoveBase
         }
 
         activated = true;
+    }
+
+    private void OnHitboxSpawned(GameObject spawned)
+    {
+        if (!spawned.TryGetComponent(out IcicleSpearHitbox hitbox)) return;
+        playerManager.MovesController.onObjectSpawned -= OnHitboxSpawned;
+        if (!IsActive)
+        {
+            playerManager.MovesController.DespawnNetworkObjectRPC(spawned.GetComponent<NetworkObject>().NetworkObjectId);
+            return;
+        }
+        icicleSpearHitbox = hitbox;
+        hitbox.InitializeRPC(damageInfo, playerManager.CurrentTeam.Team, IsUpgraded);
     }
 
     public override void Update()
@@ -82,7 +91,7 @@ public class GlaceIcicleSpear : MoveBase
                 glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount - 1, 0, 8));
                 glaceonPassive.ResetTimer();
                 timer = 1f;
-                BattleUIManager.instance.ShowMoveSecondaryCooldown(0, timer);
+                if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, timer);
             }
             else
             {
@@ -97,7 +106,7 @@ public class GlaceIcicleSpear : MoveBase
             return;
         }
 
-        direction = Aim.Instance.SkillshotAim();
+        direction = ActorAim.SkillshotAim();
 
         if (icicleSpearHitbox == null)
         {
@@ -123,8 +132,8 @@ public class GlaceIcicleSpear : MoveBase
 
         if (IsActive)
         {
-            playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
-            Aim.Instance.HideSkillshotAim();
+            if (icicleSpearHitbox != null) playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
+            ActorAim.HideSkillshotAim();
             icicleSpearHitbox = null;
             playerManager.Pokemon.RemoveStatChangeWithIDRPC(3);
             playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
@@ -142,8 +151,8 @@ public class GlaceIcicleSpear : MoveBase
         {
             return;
         }
-        playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
-        Aim.Instance.HideSkillshotAim();
+        if (icicleSpearHitbox != null) playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
+        ActorAim.HideSkillshotAim();
         icicleSpearHitbox = null;
         playerManager.Pokemon.RemoveStatChangeWithIDRPC(3);
         playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
@@ -156,6 +165,7 @@ public class GlaceIcicleSpear : MoveBase
 
     public override void ResetMove()
     {
+        IsActive = false;
         activated = false;
         if (icicleSpearHitbox != null)
         {

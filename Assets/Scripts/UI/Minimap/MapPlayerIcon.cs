@@ -11,6 +11,9 @@ public class MapPlayerIcon : MonoBehaviour
 
     private MinimapIcon minimapIcon;
     private PlayerManager player;
+    private Pokemon source;
+    private Vision sourceVision;
+    private int displayedEnergy = -1;
 
     private bool isTeammate = false;
 
@@ -20,57 +23,64 @@ public class MapPlayerIcon : MonoBehaviour
     {
         minimapIcon = GetComponent<MinimapIcon>();
         this.player = player;
-        pokemonIcon.sprite = player.Pokemon.Portrait;
-        StartCoroutine(UpdateBackgroundSprite());
+        source = player.Pokemon;
+        sourceVision = player.Vision;
+        scoreText.text = "";
         minimapIcon.SetTarget(player.transform);
 
-        player.Pokemon.OnHpChange += RefreshVisibility;
-        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
-        isTeammate = player.CurrentTeam.IsOnSameTeam(localPlayerTeam);
-        if (!isTeammate)
-        {
-            player.Vision.OnVisibilityChanged += SetVisibility;
-        }
-        RefreshVisibility();
-        player.Pokemon.OnEvolution += () => { pokemonIcon.sprite = player.Pokemon.Portrait; };
+        source.OnHpChange += RefreshVisibility;
+        source.OnEvolution += RefreshPresentation;
+        source.OnPokemonInitialized += RefreshPresentation;
+        source.OnTeamChange += OnTeamChanged;
+        sourceVision.OnVisibilityChanged += OnVisionChanged;
+        RefreshPresentation();
     }
 
     private void OnDestroy()
     {
-        if (player == null) return;
-
-        player.Pokemon.OnHpChange -= RefreshVisibility;
-        if (!isTeammate)
+        if (source != null)
         {
-            player.Vision.OnVisibilityChanged -= SetVisibility;
+            source.OnHpChange -= RefreshVisibility;
+            source.OnEvolution -= RefreshPresentation;
+            source.OnPokemonInitialized -= RefreshPresentation;
+            source.OnTeamChange -= OnTeamChanged;
         }
+        if (sourceVision != null) sourceVision.OnVisibilityChanged -= OnVisionChanged;
+    }
+
+    private void OnTeamChanged(TeamMember _) => RefreshPresentation();
+    private void OnVisionChanged(bool _) => RefreshVisibility();
+
+    private void RefreshPresentation()
+    {
+        if (player == null || source == null || LobbyController.Instance == null) return;
+        isTeammate = player.CurrentTeam.IsOnSameTeam(LobbyController.Instance.GetLocalPlayerTeam());
+        background.sprite = isTeammate ? blueBG : orangeBG;
+        if (source.BaseStats != null) pokemonIcon.sprite = source.Portrait;
+        RefreshVisibility();
     }
 
     private void RefreshVisibility()
     {
+        if (player == null || player.Pokemon == null) { SetVisibility(false); return; }
         SetVisibility(isTeammate || player.Vision.IsRendered);
-    }
-
-    private IEnumerator UpdateBackgroundSprite()
-    {
-        yield return new WaitForSeconds(0.2f);
-        background.sprite = player.CurrentTeam.IsOnSameTeam(LobbyController.Instance.GetLocalPlayerTeam()) ? blueBG : orangeBG;
     }
 
     private void Update()
     {
-        if (player == null) return;
+        if (player == null || player.Pokemon == null) { Destroy(gameObject); return; }
 
         if (player.CurrentEnergy >= 40)
         {
             scoreCircle.fillAmount = player.ScoreGuageValue;
-            scoreText.text = player.CurrentEnergy.ToString();
+            if (displayedEnergy != player.CurrentEnergy) scoreText.text = player.CurrentEnergy.ToString();
         }
         else
         {
             scoreCircle.fillAmount = 0;
-            scoreText.text = "";
+            if (displayedEnergy >= 40) scoreText.text = "";
         }
+        displayedEnergy = player.CurrentEnergy;
     }
 
     public void HideIcon()
@@ -86,7 +96,7 @@ public class MapPlayerIcon : MonoBehaviour
     public void SetVisibility(bool isVisible)
     {
         // Vision can still update while a player is KO'd.
-        isVisible = isVisible && player != null && player.Pokemon.CurrentHp > 0;
+        isVisible = isVisible && player != null && player.Pokemon != null && player.Pokemon.CurrentHp > 0;
         pokemonIcon.gameObject.SetActive(isVisible);
         background.gameObject.SetActive(isVisible);
         scoreCircle.gameObject.SetActive(isVisible);

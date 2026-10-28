@@ -20,7 +20,7 @@ public class JoltBasicAtk : ChargedBasicAttackBase
     public override void Perform(bool wildPriority)
     {
         PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
-        GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
+        GameObject closestEnemy = ActorAim.AimInCircle(range, priority);
         GameObject[] hitColliders;
         if (closestEnemy != null)
         {
@@ -35,7 +35,7 @@ public class JoltBasicAtk : ChargedBasicAttackBase
             }
         }
 
-        hitColliders = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position + (playerManager.transform.forward * 1.377f), 1f, AimTarget.NonAlly);
+        hitColliders = ActorAim.AimInCircleAtPosition(playerManager.transform.position + (playerManager.transform.forward * 1.377f), 1f, AimTarget.NonAlly);
 
         foreach (var hitCollider in hitColliders)
         {

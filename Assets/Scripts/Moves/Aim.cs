@@ -8,6 +8,27 @@ public enum AimTarget { Enemy, Ally, Wild, NonAlly, All }
 public class Aim : NetworkBehaviour
 {
     public static Aim Instance { get; private set; }
+    private PlayerManager actor;
+    private Pokemon botTarget;
+    private Vector3 botAimPoint;
+    private bool IsBot => actor != null && actor.IsBot;
+
+    public void SetBotAim(Pokemon target, Vector3 point)
+    {
+        if (actor == null || !actor.IsBot || !IsServer) return;
+        botTarget = target;
+        botAimPoint = point;
+    }
+
+    private Vector3 BotDirection
+    {
+        get
+        {
+            Vector3 direction = botAimPoint - transform.position;
+            direction.y = 0;
+            return direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
+        }
+    }
 
     public const int MAX_ENEMIES = 15; // Maximum number of enemies to detect
 
@@ -71,13 +92,14 @@ public class Aim : NetworkBehaviour
 
     private void Start()
     {
+        actor = GetComponent<PlayerManager>();
         if (!IsOwner)
         {
             Destroy(indicatorHolders);
             enabled = false;
             return;
         }
-        Instance = this;
+        if (!IsBot) Instance = this;
 
         // Initialize the colliders buffer
         collidersBuffer = new Collider[MAX_ENEMIES];
@@ -86,7 +108,7 @@ public class Aim : NetworkBehaviour
         playerCollider = GetComponent<Collider>();
 
         playerTransform = transform;
-        controls = InputManager.Instance.Controls;
+        if (!IsBot) controls = InputManager.Instance.Controls;
 
         autoAimIndicator.SetActive(false);
         circleIndicator.SetActive(false);
@@ -96,21 +118,32 @@ public class Aim : NetworkBehaviour
         basicAtkIndicator.SetActive(false);
         hyperVoiceIndicator.SetActive(false);
         circleAreaIndicator.SetActive(false);
+        if (IsBot)
+        {
+            indicatorHolders.SetActive(false);
+            return;
+        }
         indicatorHolders.transform.SetParent(null);
         indicatorHolders.transform.rotation = Quaternion.identity;
     }
 
     private void Update()
     {
+        if (IsBot) return;
         indicatorHolders.transform.position = playerTransform.position;
         DetectActiveDevice();
     }
 
     private void DetectActiveDevice()
     {
+        if (InputManager.Instance != null)
+        {
+            SetActiveControlScheme(InputManager.Instance.IsControllerMode ? "Controller" : "Keyboard");
+            return;
+        }
         if (Time.time - lastInputTime < deviceSwitchCooldown) return;
 
-        if (Keyboard.current.wasUpdatedThisFrame)
+        if (Keyboard.current?.anyKey.wasPressedThisFrame == true)
         {
             SetActiveControlScheme("Keyboard");
         }
@@ -253,6 +286,8 @@ public class Aim : NetworkBehaviour
 
     public GameObject AimInCircle(float attackRadius, PokemonType priority = PokemonType.Player)
     {
+        if (IsBot && botTarget != null && Vector3.Distance(transform.position, botTarget.transform.position) <= attackRadius &&
+            CanPokemonBeTargeted(botTarget.gameObject, AimTarget.NonAlly, TeamToIgnore, false)) return botTarget.gameObject;
         if (!CombatTargeting.Finite(transform.position) || !float.IsFinite(attackRadius) || attackRadius < 0) return null;
         if (collidersBuffer == null) collidersBuffer = new Collider[MAX_ENEMIES];
         // Find enemies within the attack radius using OverlapSphereNonAlloc
@@ -335,6 +370,9 @@ public class Aim : NetworkBehaviour
 
     public GameObject SureHitAim()
     {
+        if (IsBot && autoaimTarget == AimTarget.Ally) return FindBotSupportTarget();
+        if (IsBot) return botTarget != null && Vector3.Distance(transform.position, botTarget.transform.position) <= coneDistance &&
+            CanPokemonBeTargeted(botTarget.gameObject, autoaimTarget, TeamToIgnore, false) ? botTarget.gameObject : null;
         Vector3 aimDirection;
 
         if (activeControlScheme == "Keyboard")
@@ -402,8 +440,26 @@ public class Aim : NetworkBehaviour
         return null;
     }
 
+    private GameObject FindBotSupportTarget()
+    {
+        if (GameManager.Instance == null) return null;
+        PlayerManager best = null;
+        float bestScore = float.NegativeInfinity;
+        foreach (var ally in GameManager.Instance.Players)
+        {
+            if (ally == null || ally == actor || ally.Pokemon == null || ally.CurrentTeam.Team != actor.CurrentTeam.Team ||
+                Vector3.Distance(transform.position, ally.transform.position) > coneDistance ||
+                !CanPokemonBeTargeted(ally.gameObject, AimTarget.Ally, actor.CurrentTeam, false)) continue;
+            float score = 1 - ally.Pokemon.CurrentHp / (float)Mathf.Max(1, ally.Pokemon.GetMaxHp());
+            if (!ally.IsBot) score += .05f;
+            if (score > bestScore) { bestScore = score; best = ally; }
+        }
+        return best != null ? best.gameObject : null;
+    }
+
     public Vector3 CircleAreaAim()
     {
+        if (IsBot) return transform.position + Vector3.ClampMagnitude(botAimPoint - transform.position, maxCircleAimRadius);
         Vector3 aimDirection = Vector3.zero;
 
 #if UNITY_ANDROID
@@ -458,6 +514,7 @@ public class Aim : NetworkBehaviour
 
     public Vector3 DashAim()
     {
+        if (IsBot) return BotDirection;
         Vector3 aimDirection;
 
         if (activeControlScheme == "Keyboard")
@@ -487,6 +544,7 @@ public class Aim : NetworkBehaviour
 
     public Vector3 SkillshotAim()
     {
+        if (IsBot) return BotDirection;
         Vector3 aimDirection;
 
         if (activeControlScheme == "Keyboard")
@@ -575,7 +633,8 @@ public class Aim : NetworkBehaviour
 
         if (pokemonObject.TryGetComponent(out Vision vision))
         {
-            if ((!vision.IsRendered || !vision.IsVisiblyEligible) && !canHitInvisTargets)
+            bool visible = IsBot ? VisionManager.Instance != null && VisionManager.Instance.IsVisibleToTeam(vision, teamToIgnore.Team) : vision.IsRendered;
+            if ((!visible || !vision.IsVisiblyEligible) && !canHitInvisTargets)
             {
                 return false;
             }

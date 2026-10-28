@@ -16,6 +16,7 @@ public class LaneSelectionNetwork : NetworkBehaviour
     public bool IsAvailable => IsSpawned && Layout != null;
     public bool CanSelect => IsAvailable && acceptingSelections && receivedSnapshot;
     public event Action Changed;
+    public event Action<Team> ServerChoicesChanged;
 
     private readonly Dictionary<Team, LaneSelectionRoster> serverRosters = new Dictionary<Team, LaneSelectionRoster>();
     private readonly Dictionary<ulong, uint> acknowledgedRequests = new Dictionary<ulong, uint>();
@@ -47,6 +48,7 @@ public class LaneSelectionNetwork : NetworkBehaviour
         subscribedNetworkManager = NetworkManager;
         if (IsServer) subscribedNetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
         if (picker != null) picker.Initialize(this, map != null ? map.maxTeamSize : 5);
+        if (IsServer && IsAvailable) RebalanceBots();
         Changed?.Invoke();
     }
 
@@ -104,6 +106,14 @@ public class LaneSelectionNetwork : NetworkBehaviour
 
     public void StopSelection()
     {
+        if (IsServer && acceptingSelections && IsAvailable)
+        {
+            RebalanceBots();
+            foreach (var roster in serverRosters.Values)
+                foreach (var choice in roster.Choices)
+                    if (lobby.GetPlayerByID(choice.PlayerId)?.IsBot == true)
+                        lobby.BotRoster?.SaveBotLane(choice.PlayerId, choice.LaneId);
+        }
         acceptingSelections = false;
         if (picker != null) picker.Close();
         Changed?.Invoke();
@@ -126,7 +136,7 @@ public class LaneSelectionNetwork : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     private void SelectLaneRpc(string laneId, uint clientRequest, RpcParams rpcParams = default)
     {
-        if (!CanSelect || laneId == null || (laneId.Length > 0 && Layout.FindLane(laneId) == null)) return;
+        if (!IsAvailable || !acceptingSelections || laneId == null || (laneId.Length > 0 && Layout.FindLane(laneId) == null)) return;
         ulong sender = rpcParams.Receive.SenderClientId;
         var player = GetPlayerForClient(sender);
         if (player == null) return;
@@ -134,7 +144,30 @@ public class LaneSelectionNetwork : NetworkBehaviour
         acknowledgedRequests[sender] = clientRequest;
         Team team = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
         GetRoster(team).SetLane(player.Id, laneId);
+        RebalanceBots(team);
         SendTeamSnapshot(team);
+        ServerChoicesChanged?.Invoke(team);
+    }
+
+    public string GetServerLane(Team team, string playerId) => IsServer ? GetRoster(team).GetLane(playerId) : string.Empty;
+
+    private void RebalanceBots()
+    {
+        RebalanceBots(Team.Blue);
+        RebalanceBots(Team.Orange);
+    }
+
+    private void RebalanceBots(Team team)
+    {
+        if (!IsServer || !IsAvailable || !acceptingSelections || lobby.BotRoster?.HasBots != true ||
+            BotAllocationRules.StandardLanes.Any(lane => Layout.FindLane(lane) == null)) return;
+        var players = lobby.GetTeamPlayers(team);
+        var roster = GetRoster(team);
+        var assigned = BotAllocationRules.AllocateLanes(players.Where(player => !player.IsBot).Select(player => roster.GetLane(player.Id)),
+            players.Where(player => player.IsBot).ToDictionary(player => player.Id, player => roster.GetLane(player.Id)));
+        bool changed = false;
+        foreach (var pair in assigned) changed |= roster.SetLane(pair.Key, pair.Value);
+        if (changed) SendTeamSnapshot(team);
     }
 
     private GameSessionPlayer GetPlayerForClient(ulong clientId)
@@ -194,6 +227,7 @@ public class LaneSelectionNetwork : NetworkBehaviour
             var teammates = lobby.GetTeamPlayers(pair.Key);
             if (pair.Value.RemoveWhere(choice => !teammates.Any(player => player.Id == choice.PlayerId))) SendTeamSnapshot(pair.Key);
         }
+        RebalanceBots();
     }
 
     private void OnClientDisconnected(ulong clientId)
@@ -203,7 +237,8 @@ public class LaneSelectionNetwork : NetworkBehaviour
         var remaining = NetworkManager.ConnectedClientsIds.Where(id => id != clientId)
             .Select(GetPlayerForClient).Where(player => player != null).Select(player => player.Id).ToArray();
         foreach (var pair in serverRosters.ToArray())
-            if (pair.Value.RemoveWhere(choice => !remaining.Contains(choice.PlayerId))) SendTeamSnapshot(pair.Key);
+            if (pair.Value.RemoveWhere(choice => !remaining.Contains(choice.PlayerId) &&
+                lobby.GetPlayerByID(choice.PlayerId)?.IsBot != true)) SendTeamSnapshot(pair.Key);
     }
 }
 

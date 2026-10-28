@@ -36,7 +36,7 @@ public class GlaceBasicAtk : ChargedBasicAttackBase
         switch (basicAtkType)
         {
             case 0:
-                GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
+                GameObject closestEnemy = ActorAim.AimInCircle(range, priority);
 
                 // If an enemy is found, launch a homing projectile towards it
                 if (closestEnemy != null)
@@ -65,7 +65,7 @@ public class GlaceBasicAtk : ChargedBasicAttackBase
                 }
                 break;
             case 1:
-                closestEnemy = Aim.Instance.AimInCircle(range, priority);
+                closestEnemy = ActorAim.AimInCircle(range, priority);
 
                 if (closestEnemy != null)
                 {

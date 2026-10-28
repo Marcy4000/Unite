@@ -28,21 +28,21 @@ public abstract class PrefabMove : MoveBase
         direction = controller.transform.forward;
         switch (AimStyle)
         {
-            case MoveAimStyle.Target: Aim.Instance.InitializeAutoAim(Range, 90, AimTarget.NonAlly); break;
-            case MoveAimStyle.Direction: Aim.Instance.InitializeSkillshotAim(Range); break;
-            case MoveAimStyle.Dash: Aim.Instance.InitializeDashAim(Range); break;
-            case MoveAimStyle.Circle: Aim.Instance.InitializeSimpleCircle(Range); break;
+            case MoveAimStyle.Target: playerManager.Aim.InitializeAutoAim(Range, 90, AimTarget.NonAlly); break;
+            case MoveAimStyle.Direction: playerManager.Aim.InitializeSkillshotAim(Range); break;
+            case MoveAimStyle.Dash: playerManager.Aim.InitializeDashAim(Range); break;
+            case MoveAimStyle.Circle: playerManager.Aim.InitializeSimpleCircle(Range); break;
         }
         UpdateAim();
-        if (IndicatorPath != null) Aim.Instance.ShowCustomIndicator(IndicatorPath, IndicatorScale, MirrorsIndicator);
+        if (IndicatorPath != null) playerManager.Aim.ShowCustomIndicator(IndicatorPath, IndicatorScale, MirrorsIndicator);
     }
 
     private void UpdateAim()
     {
-        if (AimStyle == MoveAimStyle.Target) target = Aim.Instance.SureHitAim()?.GetComponent<Pokemon>();
-        else if (AimStyle == MoveAimStyle.Direction) direction = Aim.Instance.SkillshotAim();
-        else if (AimStyle == MoveAimStyle.Dash) direction = Aim.Instance.DashAim();
-        if (IndicatorPath != null) Aim.Instance.UpdateCustomIndicator(direction);
+        if (AimStyle == MoveAimStyle.Target) target = playerManager.Aim.SureHitAim()?.GetComponent<Pokemon>();
+        else if (AimStyle == MoveAimStyle.Direction) direction = playerManager.Aim.SkillshotAim();
+        else if (AimStyle == MoveAimStyle.Dash) direction = playerManager.Aim.DashAim();
+        if (IndicatorPath != null) playerManager.Aim.UpdateCustomIndicator(direction);
     }
 
     public override void Update() { if (IsActive) UpdateAim(); }
@@ -72,14 +72,14 @@ public abstract class PrefabMove : MoveBase
 
     private void HideAim()
     {
-        if (Aim.Instance == null) return;
-        if (IndicatorPath != null) Aim.Instance.HideCustomIndicator();
+        if (playerManager == null || playerManager.Aim == null) return;
+        if (IndicatorPath != null) playerManager.Aim.HideCustomIndicator();
         switch (AimStyle)
         {
-            case MoveAimStyle.Target: Aim.Instance.HideAutoAim(); break;
-            case MoveAimStyle.Direction: Aim.Instance.HideSkillshotAim(); break;
-            case MoveAimStyle.Dash: Aim.Instance.HideDashAim(); break;
-            case MoveAimStyle.Circle: Aim.Instance.HideSimpleCircle(); break;
+            case MoveAimStyle.Target: playerManager.Aim.HideAutoAim(); break;
+            case MoveAimStyle.Direction: playerManager.Aim.HideSkillshotAim(); break;
+            case MoveAimStyle.Dash: playerManager.Aim.HideDashAim(); break;
+            case MoveAimStyle.Circle: playerManager.Aim.HideSimpleCircle(); break;
         }
     }
 

@@ -22,11 +22,14 @@ public partial class PlayerMovement : NetworkBehaviour
     private Vector3 currentMovement; // Accumulated movement vector
     private CharacterController characterController;
     private Pokemon pokemon;
+    private PlayerManager player;
     private bool canMove = true;
     private int movementRestrictions = 0; // Reference counter for movement restrictions
     private int movementRestrictionCount = 0; // Internal counter for tracking restrictions
     private bool isMoving = false;
     private bool isKnockedUp = false;
+    private Tween knockupTween;
+    private uint teleportGeneration;
     private bool canBeKnockedBack = true;
     private bool snapToGround = true;
 
@@ -101,6 +104,7 @@ public partial class PlayerMovement : NetworkBehaviour
         characterController = GetComponent<CharacterController>();
         animationManager = GetComponent<AnimationManager>();
         pokemon = GetComponent<Pokemon>();
+        player = GetComponent<PlayerManager>();
         pokemon.OnEvolution += UpdateAnimations;
         pokemon.OnLevelChange += UpdateSpeed;
         pokemon.OnPokemonInitialized += UpdateSpeed;
@@ -131,6 +135,8 @@ public partial class PlayerMovement : NetworkBehaviour
         
         // Default to walls mesh
         activeWalkmesh = walkableWithWalls;
+        WalkmeshBoundary.Prepare(walkableWithWalls);
+        WalkmeshBoundary.Prepare(walkableNoWalls);
         
         if (walkableWithWalls == null || walkableNoWalls == null)
         {
@@ -140,29 +146,13 @@ public partial class PlayerMovement : NetworkBehaviour
     
     private bool IsPositionValidOnWalkmesh(Vector3 position)
     {
-        if (activeWalkmesh == null) return true;
-        
-        // Determine raycast height based on which walkmesh is active
-        // WalkableWithWalls at Y=-30, WalkableNoWalls at Y=-40
-        float walkmeshY = (activeWalkmesh == walkableWithWalls) ? -30f : -40f;
-        Vector3 rayStart = new Vector3(position.x, walkmeshY + 1f, position.z);
-        RaycastHit hit;
-        
-        // If we hit the walkmesh, the position is valid
-        if (Physics.Raycast(rayStart, Vector3.down, out hit, 2f))
-        {
-            if (hit.collider == activeWalkmesh)
-            {
-                return true;
-            }
-        }
-        
-        return false;
+        return WalkmeshBoundary.Contains(activeWalkmesh, position);
     }
     
     private Vector3 GetClosestValidPosition(Vector3 position)
     {
         if (activeWalkmesh == null) return position;
+        if (WalkmeshBoundary.TryRecover(activeWalkmesh, position, out var recovered)) return recovered;
         
         // Try to find the closest valid position by sampling in a spiral pattern
         float searchRadius = 0.5f;
@@ -251,6 +241,7 @@ public partial class PlayerMovement : NetworkBehaviour
         {
             return intendedPos;
         }
+        if (WalkmeshBoundary.TrySlide(activeWalkmesh, currentPos, intendedPos, out var sliding)) return sliding;
         
         // Movement is blocked - use vector projection for wall sliding
         Vector3 movement = (intendedPos - currentPos);
@@ -273,7 +264,7 @@ public partial class PlayerMovement : NetworkBehaviour
         projectedMovement.y = 0; // Keep it on XZ plane
         
         // Try moving in the projected direction
-        if (projectedMovement.magnitude > 0.01f)
+        if (projectedMovement.sqrMagnitude > 0.00000001f)
         {
             Vector3 projectedPos = currentPos + projectedMovement;
             projectedPos.y = intendedPos.y; // Keep intended Y
@@ -328,14 +319,14 @@ public partial class PlayerMovement : NetworkBehaviour
 
     void Update()
     {
-        if (!CanMove || !IsOwner || isKnockedUp)
+        if (!CanMove || !IsOwner || isKnockedUp || (player != null && (player.PlayerState == PlayerState.Dead || pokemon.CurrentHp <= 0)))
         {
             return;
         }
 
         if (!isDashing)
         {
-            Move(InputManager.Instance.Controls.Movement.Move.ReadValue<Vector2>());
+            Move(player != null ? player.MovementInput : InputManager.Instance.Controls.Movement.Move.ReadValue<Vector2>());
         }
         else
         {
@@ -359,7 +350,7 @@ public partial class PlayerMovement : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (!CanMove || !IsOwner || isKnockedUp || !snapToGround)
+        if (!CanMove || !IsOwner || isKnockedUp || !snapToGround || (player != null && (player.PlayerState == PlayerState.Dead || pokemon.CurrentHp <= 0)))
         {
             return;
         }
@@ -411,6 +402,21 @@ public partial class PlayerMovement : NetworkBehaviour
     }
 
 
+    public void Teleport(Vector3 position, Quaternion rotation, bool recordSafePosition = true)
+    {
+        teleportGeneration++;
+        knockupTween?.Kill();
+        knockupTween = null;
+        isKnockedUp = isDashing = isMoving = false;
+        currentMovement = inputMovement = Vector3.zero;
+        bool restoreController = characterController != null && characterController.enabled;
+        if (restoreController) characterController.enabled = false;
+        transform.SetPositionAndRotation(position, rotation);
+        if (recordSafePosition) lastValidPosition = position;
+        UpdateActiveWalkmesh();
+        if (restoreController) characterController.enabled = true;
+    }
+
     public void StartDash()
     {
         StartDash(transform.forward, dashDistance, dashDuration);
@@ -458,6 +464,7 @@ public partial class PlayerMovement : NetworkBehaviour
 
     private IEnumerator DashCooldown(float distance, float duration)
     {
+        uint generation = teleportGeneration;
         // Switch to no-walls walkmesh for dashing
         Collider previousWalkmesh = activeWalkmesh;
         activeWalkmesh = walkableNoWalls;
@@ -507,6 +514,7 @@ public partial class PlayerMovement : NetworkBehaviour
         }
         
         yield return new WaitForSeconds(duration);
+        if (generation != teleportGeneration) yield break;
         isDashing = false;
         
         // Switch back to appropriate mesh after dash (respect flying state)
@@ -528,7 +536,7 @@ public partial class PlayerMovement : NetworkBehaviour
         }
 
         bool isMoving = inputMovement.magnitude != 0;
-        if (isMoving != animationManager.Animator.GetBool("Walking"))
+        if (!animationManager.TryGetBool(Animator.StringToHash("Walking"), out bool walking) || isMoving != walking)
         {
             UpdateAnimations(isMoving);
         }
@@ -563,7 +571,8 @@ public partial class PlayerMovement : NetworkBehaviour
         }
         
         isKnockedUp = true;
-        transform.DOJump(transform.position, force, 1, duration).OnComplete(() => isKnockedUp = false);
+        knockupTween?.Kill();
+        knockupTween = transform.DOJump(transform.position, force, 1, duration).OnComplete(() => isKnockedUp = false);
     }
 
     public void Knockback(Vector3 direction, float force)
@@ -577,10 +586,11 @@ public partial class PlayerMovement : NetworkBehaviour
 
     private IEnumerator ApplyKnockback(Vector3 direction, float force)
     {
+        uint generation = teleportGeneration;
         float knockbackDuration = 0.2f; // Duration of the knockback effect
         float elapsedTime = 0f;
 
-        while (elapsedTime < knockbackDuration)
+        while (elapsedTime < knockbackDuration && generation == teleportGeneration)
         {
             currentMovement += direction.normalized * force;
             elapsedTime += Time.deltaTime;

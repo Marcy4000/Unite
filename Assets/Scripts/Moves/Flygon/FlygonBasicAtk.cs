@@ -23,7 +23,7 @@ public class FlygonBasicAtk : ChargedBasicAttackBase
     public override void Perform(bool wildPriority)
     {
         PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
-        GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
+        GameObject closestEnemy = playerManager.Aim.AimInCircle(range, priority);
         GameObject[] hitColliders;
         if (closestEnemy != null)
         {
@@ -38,7 +38,7 @@ public class FlygonBasicAtk : ChargedBasicAttackBase
             }
         }
 
-        hitColliders = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position + (playerManager.transform.forward * 1.377f * (range / 2.5f)), 1f * (range / 2.5f), AimTarget.NonAlly);
+        hitColliders = playerManager.Aim.AimInCircleAtPosition(playerManager.transform.position + (playerManager.transform.forward * 1.377f * (range / 2.5f)), 1f * (range / 2.5f), AimTarget.NonAlly);
 
         foreach (var hitCollider in hitColliders)
         {

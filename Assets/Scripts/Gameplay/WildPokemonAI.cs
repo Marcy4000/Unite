@@ -6,6 +6,8 @@ using UnityEngine.AI;
 
 public class WildPokemonAI : NetworkBehaviour
 {
+    private Collider[] noticeColliders = new Collider[16];
+    private readonly HashSet<Pokemon> noticeTargets = new();
     public enum WildPokemonState
     {
         Initializing,
@@ -264,11 +266,18 @@ public class WildPokemonAI : NetworkBehaviour
             return;
         }
 
-        GameObject[] detected = Aim.Instance.AimInCircleAtPosition(transform.position, aiSettings.noticeRadius, AimTarget.Enemy, Team.Neutral);
-
-        if (detected.Length > 0)
+        CombatTargeting.SphereTargetsNonAlloc(transform.position, aiSettings.noticeRadius, noticeTargets, ref noticeColliders);
+        Transform closest = null;
+        float closestDistance = float.PositiveInfinity;
+        foreach (var pokemon in noticeTargets)
         {
-            currentTarget = GetClosestPlayer(detected);
+            if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.Enemy, Team.Neutral, true)) continue;
+            float distance = (pokemon.transform.position - transform.position).sqrMagnitude;
+            if (distance < closestDistance) { closestDistance = distance; closest = pokemon.transform; }
+        }
+        if (closest != null)
+        {
+            currentTarget = closest;
             if (aiSettings.movementType == WildPokemonAISettings.MovementType.ChasePlayer)
             {
                 state = WildPokemonState.Chasing;
@@ -407,13 +416,13 @@ public class WildPokemonAI : NetworkBehaviour
 
     private void HandleAnimations()
     {
-        if (animationManager.IsAnimatorNull() || !agent.isActiveAndEnabled)
+        if (animationManager.IsAnimatorNull() || !agent.isActiveAndEnabled || !agent.isOnNavMesh)
         {
             return;
         }
 
         bool isMoving = agent.remainingDistance > agent.stoppingDistance && agent.velocity.magnitude > 0.1f;
-        if (isMoving != animationManager.Animator.GetBool(animationHashWalking))
+        if (!animationManager.TryGetBool(animationHashWalking, out bool walking) || isMoving != walking)
         {
             UpdateAnimations(isMoving);
         }

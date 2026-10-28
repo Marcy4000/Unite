@@ -22,8 +22,8 @@ public abstract class JoltDashMove : MoveBase
         if (executing) return;
         if (Combo.Expired(Time.time)) { CompleteSequence(); return; }
         base.Start(controller);
-        Aim.Instance.InitializeDashAim(PreviewRange(controller));
-        direction = Aim.Instance.DashAim();
+        ActorAim.InitializeDashAim(PreviewRange(controller));
+        direction = ActorAim.DashAim();
     }
 
     private float PreviewRange(PlayerManager controller)
@@ -44,16 +44,16 @@ public abstract class JoltDashMove : MoveBase
         if (executing) AdvancePass();
         else if (Combo.Expired(Time.time))
         {
-            if (IsActive) Aim.Instance.HideDashAim();
+            if (IsActive) ActorAim.HideDashAim();
             CompleteSequence();
         }
-        if (IsActive) direction = Aim.Instance.DashAim();
+        if (IsActive) direction = ActorAim.DashAim();
     }
 
     public override void Finish()
     {
         if (!IsActive || executing) return;
-        Aim.Instance.HideDashAim();
+        ActorAim.HideDashAim();
         if (direction.sqrMagnitude < 0.001f) { base.Cancel(); return; }
         if (Combo.HasWindow)
         {
@@ -164,7 +164,7 @@ public abstract class JoltDashMove : MoveBase
 
     private void ShowWindow(float duration)
     {
-        if (BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, duration);
+        if (playerManager != null && playerManager.IsLocalHuman && BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, duration);
     }
 
     private void CompleteSequence()
@@ -181,7 +181,7 @@ public abstract class JoltDashMove : MoveBase
     {
         // Cancelling aim does not erase an already earned recast or stop a
         // committed pass. Death/interruption uses ResetMove instead.
-        if (IsActive) Aim.Instance.HideDashAim();
+        if (IsActive) ActorAim.HideDashAim();
         base.Cancel();
     }
 

@@ -20,7 +20,7 @@ public partial class MovesController
     private void ProcessVaporeonBufferedInput()
     {
         if (vaporBufferedSlot < 0) return;
-        if (!IsLivingVaporeon || Time.time > vaporBufferUntil || controls.Movement.CancelMove.WasPressedThisFrame()
+        if (!IsLivingVaporeon || Time.time > vaporBufferUntil || (playerManager.IsLocalHuman && controls.Movement.CancelMove.WasPressedThisFrame())
             || pokemon.HasAnyStatusEffect(VaporMoveRules.Interrupts)) { ClearVaporeonBufferedInput(); return; }
         int slot = vaporBufferedSlot;
         if (!moveStatuses[slot].HasStatus(ActionStatusType.None)) return;

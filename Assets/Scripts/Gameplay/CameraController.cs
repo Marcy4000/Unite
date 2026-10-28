@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Cinemachine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class CameraController : MonoBehaviour
 {
@@ -24,6 +25,46 @@ public class CameraController : MonoBehaviour
     public bool IsPanning => isPanning;
 
     private Coroutine superJumpCameraCoroutine;
+    private readonly Dictionary<object, ZoomOverride> zoomOverrides = new();
+    private readonly object legacySuperJumpOwner = new();
+    private Vector3 baseZoomOffset = new Vector3(0, 18.85f, -18.6f);
+    private float baseZoomFOV = 25f;
+    private Vector3 effectiveZoomOffset;
+    private float effectiveZoomFOV;
+    private bool hasEffectiveZoom;
+    private long zoomOrder;
+    private readonly ZoomRenderScalePolicy renderScalePolicy = new();
+
+    private void LateUpdate()
+    {
+        var camera = VirtualCamera;
+        var follow = camera != null ? camera.GetComponent<CinemachineFollow>() : null;
+        if (Instance != this || camera == null || !camera.isActiveAndEnabled || follow == null)
+        {
+            renderScalePolicy.Restore();
+            return;
+        }
+        renderScalePolicy.Apply(follow.FollowOffset.magnitude, camera.Lens.FieldOfView);
+    }
+
+    private void OnDisable()
+    {
+        renderScalePolicy.Restore();
+    }
+
+    private void OnDestroy()
+    {
+        renderScalePolicy.Restore();
+        if (Instance == this) Instance = null;
+    }
+
+    private struct ZoomOverride
+    {
+        public Vector3 Offset;
+        public float FieldOfView;
+        public int Priority;
+        public long Order;
+    }
 
     private void Awake()
     {
@@ -97,6 +138,44 @@ public class CameraController : MonoBehaviour
 
     public void ZoomCamera(Vector3 targetOffset, float targetFOV = 25f, float duration = 1.0f)
     {
+        baseZoomOffset = targetOffset;
+        baseZoomFOV = targetFOV;
+        ApplyEffectiveZoom(duration);
+    }
+
+    public void SetZoomOverride(object owner, Vector3 targetOffset, float targetFOV = 25f, int priority = 0, float duration = 1f)
+    {
+        if (owner == null) return;
+        zoomOverrides[owner] = new ZoomOverride
+        {
+            Offset = targetOffset, FieldOfView = targetFOV, Priority = priority, Order = ++zoomOrder
+        };
+        ApplyEffectiveZoom(duration);
+    }
+
+    public void ReleaseZoomOverride(object owner, float duration = 1f)
+    {
+        if (owner != null && zoomOverrides.Remove(owner)) ApplyEffectiveZoom(duration);
+    }
+
+    private void ApplyEffectiveZoom(float duration)
+    {
+        Vector3 targetOffset = baseZoomOffset;
+        float targetFOV = baseZoomFOV;
+        int priority = int.MinValue;
+        long order = long.MinValue;
+        foreach (var request in zoomOverrides.Values)
+        {
+            if (request.Priority < priority || (request.Priority == priority && request.Order < order)) continue;
+            priority = request.Priority;
+            order = request.Order;
+            targetOffset = request.Offset;
+            targetFOV = request.FieldOfView;
+        }
+        if (hasEffectiveZoom && effectiveZoomOffset == targetOffset && effectiveZoomFOV == targetFOV) return;
+        hasEffectiveZoom = true;
+        effectiveZoomOffset = targetOffset;
+        effectiveZoomFOV = targetFOV;
         if (superJumpCameraCoroutine != null)
         {
             StopCoroutine(superJumpCameraCoroutine);
@@ -113,18 +192,20 @@ public class CameraController : MonoBehaviour
     {
         if (isSuperJump)
         {
-            ZoomCamera(new Vector3(0, 57.7f, -61), 30f);
+            SetZoomOverride(legacySuperJumpOwner, new Vector3(0, 57.7f, -61), 30f, 100);
         }
         else
         {
-            ResetZoom();
+            ReleaseZoomOverride(legacySuperJumpOwner);
         }
     }
 
     private IEnumerator SmoothZoomTransition(float targetFOV, Vector3 targetOffset, float duration)
     {
         var camera = VirtualCamera;
+        if (camera == null) yield break;
         var follow = camera.GetComponent<CinemachineFollow>();
+        if (follow == null) yield break;
         float initialFOV = camera.Lens.FieldOfView;
         Vector3 initialOffset = follow.FollowOffset;
         float elapsedTime = 0f;

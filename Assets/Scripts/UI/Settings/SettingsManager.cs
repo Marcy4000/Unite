@@ -30,17 +30,16 @@ public class SettingsManager : MonoBehaviour
     [SerializeField] private VolumeTrack announcerVolumeTrack;
 
     private Resolution[] resolutions;
+    public bool IsMenuOpen => (settingsPanel != null && settingsPanel.activeInHierarchy) ||
+        (creditsPanel != null && creditsPanel.activeInHierarchy) ||
+        (keybindsPanel != null && keybindsPanel.activeInHierarchy);
 
     private void Awake()
     {
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (Application.platform == RuntimePlatform.Android)
-        {
-            QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = 75;
-        }
+        AndroidDisplaySettings.ApplyMobileFrameRatePolicy();
     }
 
     void Start()
@@ -81,7 +80,7 @@ public class SettingsManager : MonoBehaviour
         // Add listeners
         resolutionDropdown.onValueChanged.AddListener(SetResolution);
         fullscreenToggle.onValueChanged.AddListener(SetFullscreen);
-        vsyncToggle.onValueChanged.AddListener((value) => QualitySettings.vSyncCount = value ? 1 : 0);
+        vsyncToggle.onValueChanged.AddListener(SetVSync);
         for (int i = 0; i < qualityToggles.Length; i++)
         {
             int qualityIndex = i;
@@ -98,7 +97,7 @@ public class SettingsManager : MonoBehaviour
             vsyncToggle.interactable = false;
             resolutionDropdown.interactable = false;
         }
-        else if (Application.platform == RuntimePlatform.Android)
+        else if (AndroidDisplaySettings.IsMobileDisplay)
         {
             fullscreenToggle.interactable = false;
             vsyncToggle.interactable = false;
@@ -173,6 +172,7 @@ public class SettingsManager : MonoBehaviour
 
     public void SetResolution(int resolutionIndex)
     {
+        if (AndroidDisplaySettings.ApplyMobileFrameRatePolicy()) return;
         Resolution resolution = resolutions[resolutionIndex];
 #if !UNITY_ANDROID
         Screen.SetResolution(resolution.width, resolution.height, Screen.fullScreenMode, resolution.refreshRateRatio);
@@ -183,7 +183,7 @@ public class SettingsManager : MonoBehaviour
     public void SetFullscreen(bool isFullscreen)
     {
         // Android owns immersive mode separately from desktop window settings.
-        if (Application.platform == RuntimePlatform.Android)
+        if (AndroidDisplaySettings.IsMobileDisplay)
             return;
 
         Screen.fullScreen = isFullscreen;
@@ -193,6 +193,13 @@ public class SettingsManager : MonoBehaviour
     public void SetQuality(int qualityIndex)
     {
         QualitySettings.SetQualityLevel(qualityIndex);
+        AndroidDisplaySettings.ApplyMobileFrameRatePolicy();
+    }
+
+    public void SetVSync(bool enabled)
+    {
+        if (!AndroidDisplaySettings.ApplyMobileFrameRatePolicy())
+            QualitySettings.vSyncCount = enabled ? 1 : 0;
     }
 
     public void SetMasterVolume(float volume)

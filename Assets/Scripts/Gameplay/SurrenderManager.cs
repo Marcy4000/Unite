@@ -39,7 +39,8 @@ public class SurrenderManager : NetworkBehaviour
 
     private void UpdateSurrenderingTeam(Team orangeTeam)
     {
-        surrenderTeam = LobbyController.Instance.GetTeamPlayers(orangeTeam);
+        // Bots do not outvote humans or make a one-human team impossible to surrender.
+        surrenderTeam = LobbyController.Instance.GetTeamPlayers(orangeTeam).Where(player => !player.IsBot).ToArray();
         playerVotes.Clear();
 
         foreach (var player in surrenderTeam)

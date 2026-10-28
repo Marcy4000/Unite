@@ -24,7 +24,7 @@ public partial class MovesController
     private void ProcessCresseliaBufferedInput()
     {
         if (cresseliaBufferedSlot < 0) return;
-        if (!IsLivingCresselia || Time.time > cresseliaBufferUntil || controls.Movement.CancelMove.WasPressedThisFrame()
+        if (!IsLivingCresselia || Time.time > cresseliaBufferUntil || (playerManager.IsLocalHuman && controls.Movement.CancelMove.WasPressedThisFrame())
             || pokemon.HasAnyStatusEffect(CresseliaMoveRules.Interrupts)) { ClearCresseliaBufferedInput(); return; }
         int slot = cresseliaBufferedSlot;
         if (!moveStatuses[slot].HasStatus(ActionStatusType.None)) return;

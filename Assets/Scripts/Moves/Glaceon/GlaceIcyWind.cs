@@ -32,7 +32,7 @@ public class GlaceIcyWind : MoveBase
         icicleDamage.attackerId = controller.Pokemon.NetworkObjectId;
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
         basicAtk = playerManager.MovesController.BasicAttack as GlaceBasicAtk;
-        Aim.Instance.InitializeDashAim(dashDistance);
+        ActorAim.InitializeDashAim(dashDistance);
 
         if (!subscribed)
         {
@@ -60,7 +60,7 @@ public class GlaceIcyWind : MoveBase
             return;
         }
 
-        dashDirection = Aim.Instance.DashAim();
+        dashDirection = ActorAim.DashAim();
     }
 
     private void OnBasicAttack()
@@ -70,7 +70,7 @@ public class GlaceIcyWind : MoveBase
             return;
         }
 
-        GameObject closestEnemy = Aim.Instance.AimInCircle(attackRange);
+        GameObject closestEnemy = ActorAim.AimInCircle(attackRange);
 
         // If an enemy is found, launch a homing projectile towards it
         if (closestEnemy != null)
@@ -128,13 +128,13 @@ public class GlaceIcyWind : MoveBase
 
             glaceonPassive.ResetTimer();
         }
-        Aim.Instance.HideDashAim();
+        ActorAim.HideDashAim();
         base.Finish();
     }
 
     public override void Cancel()
     {
-        Aim.Instance.HideDashAim();
+        ActorAim.HideDashAim();
         base.Cancel();
     }
 

@@ -10,6 +10,8 @@ public class MapObjective : MonoBehaviour
     private MinimapIcon minimapIcon;
 
     private WildPokemon wildPokemon;
+    private Pokemon source;
+    private Tween pulse;
 
     public MinimapIcon MinimapIcon => minimapIcon;
 
@@ -19,7 +21,18 @@ public class MapObjective : MonoBehaviour
         this.wildPokemon = wildPokemon;
         minimapIcon.SetTarget(wildPokemon.transform);
 
-        wildPokemon.Pokemon.OnDeath += (info) => { Destroy(gameObject); };
+        source = wildPokemon.Pokemon;
+        source.OnDeath += OnDeath;
+    }
+
+    private void OnDeath(DamageInfo _) => Destroy(gameObject);
+
+    private void Update() { if (wildPokemon == null || source == null) Destroy(gameObject); }
+
+    private void OnDestroy()
+    {
+        pulse?.Kill();
+        if (source != null) source.OnDeath -= OnDeath;
     }
 
     public void HideIcon()
@@ -39,6 +52,7 @@ public class MapObjective : MonoBehaviour
 
     public void DoAnimation()
     {
+        pulse?.Kill();
         // Reset circles
         circle1.gameObject.SetActive(true);
         circle1.transform.localScale = Vector3.one;
@@ -82,5 +96,6 @@ public class MapObjective : MonoBehaviour
             });
 
         pingSequence.Play();
+        pulse = pingSequence;
     }
 }

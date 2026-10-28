@@ -27,6 +27,13 @@ public class BigJumpPad : NetworkBehaviour
 
     private bool isJumping = false;
     private PlayerManager currentJumper;
+    private readonly HashSet<Collider> localOverlaps = new();
+    private readonly List<IDisposable> actionRestrictions = new();
+    private readonly HashSet<ulong> serverJumpers = new();
+    private Tween jumpTween;
+    private Coroutine jumpCoroutine;
+    private bool movementRestricted;
+    private CameraController jumpCamera;
 
     private string[] jumpAnimations = new string[] { "JumpForward", "JumpLeft", "JumpRight" };
 
@@ -54,8 +61,7 @@ public class BigJumpPad : NetworkBehaviour
     {
         isActive.OnValueChanged += SetJumpPadActive;
 
-        inJumpSelection = true;
-        ExitJumpSelection();
+        ResetIndicators();
 
         SetJumpPadActive(false, isActive.Value);
 
@@ -72,12 +78,32 @@ public class BigJumpPad : NetworkBehaviour
 
     private void SetJumpPadActive(bool oldValue, bool active)
     {
-        jumpPadAnimator.gameObject.SetActive(active);
+        if (!active) CleanupPad();
+        if (jumpPadAnimator != null) jumpPadAnimator.gameObject.SetActive(active);
+    }
+
+    private void OnDisable() => CleanupPad();
+
+    private void CleanupPad()
+    {
+        ReleaseLocalJumper();
+        StopAllCoroutines();
+        serverJumpers.Clear();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        isActive.OnValueChanged -= SetJumpPadActive;
+        CleanupPad();
+        base.OnNetworkDespawn();
     }
 
     private void Update()
     {
-        if (currentJumper != null && currentJumper.IsOwner)
+        if (currentJumper != null && (!currentJumper.IsSpawned || !currentJumper.IsLocalHuman || currentJumper.Pokemon.CurrentHp <= 0))
+            ReleaseLocalJumper();
+
+        if (currentJumper != null && currentJumper.IsLocalHuman && !isJumping)
         {
             HandleJumpSelectionState();
         }
@@ -125,7 +151,7 @@ public class BigJumpPad : NetworkBehaviour
 
     private void EnterJumpSelection()
     {
-        if (inJumpSelection) return; // Prevent re-entering
+        if (inJumpSelection || isJumping || !isActive.Value || currentJumper == null || !currentJumper.IsLocalHuman) return;
 
         AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_BigJump_Ready);
 
@@ -134,7 +160,8 @@ public class BigJumpPad : NetworkBehaviour
         lineObject.gameObject.SetActive(true);
         UpdateIndicatorPosition();
 
-        CameraController.Instance.SetSuperJumpCamera(true);
+        jumpCamera = CameraController.Instance;
+        jumpCamera?.SetZoomOverride(this, new Vector3(0, 57.7f, -61), 30f, 100);
 
         OnEnterJumpSelection?.Invoke(this);
     }
@@ -144,14 +171,49 @@ public class BigJumpPad : NetworkBehaviour
         if (!inJumpSelection) return; // Prevent multiple exits
 
         inJumpSelection = false;
-        landingIndicator.SetActive(false);
-        lineObject.gameObject.SetActive(false);
-        currentLane = 0;
-        currentPosition = 0;
+        ResetIndicators();
 
-        CameraController.Instance.SetSuperJumpCamera(false);
+        jumpCamera?.ReleaseZoomOverride(this);
+        jumpCamera = null;
 
         OnExitJumpSelection?.Invoke();
+    }
+
+    private void ResetIndicators()
+    {
+        if (landingIndicator != null) landingIndicator.SetActive(false);
+        if (lineObject != null) lineObject.gameObject.SetActive(false);
+        currentLane = 0;
+        currentPosition = 0;
+        selectionTimer = 0;
+    }
+
+    private void ReleaseLocalJumper()
+    {
+        var player = currentJumper;
+        currentJumper = null;
+        if (player != null && player.Pokemon != null) player.Pokemon.OnDeath -= OnJumperDeath;
+        if (jumpCoroutine != null) StopCoroutine(jumpCoroutine);
+        jumpCoroutine = null;
+        jumpTween?.Kill();
+        jumpTween = null;
+        if (movementRestricted && player != null) player.PlayerMovement.RemoveMovementRestriction();
+        movementRestricted = false;
+        isJumping = false;
+        ReleaseActionRestrictions();
+        ExitJumpSelection();
+        ResetIndicators();
+        bool wasOnPad = localOverlaps.Count > 0;
+        localOverlaps.Clear();
+        if (wasOnPad) OnExitJumpPad?.Invoke();
+    }
+
+    private void OnJumperDeath(DamageInfo damage) => ReleaseLocalJumper();
+
+    private void ReleaseActionRestrictions()
+    {
+        foreach (var restriction in actionRestrictions) restriction.Dispose();
+        actionRestrictions.Clear();
     }
 
     /// <summary>
@@ -160,7 +222,7 @@ public class BigJumpPad : NetworkBehaviour
     /// </summary>
     public void OnMobileTapLandingPosition(Transform tappedPosition)
     {
-        if (!inJumpSelection || currentJumper == null || !currentJumper.IsOwner) return;
+        if (!inJumpSelection || isJumping || currentJumper == null || !currentJumper.IsLocalHuman) return;
 
         // Find the lane and position for the tapped transform
         for (int laneIndex = 0; laneIndex < lanes.Length; laneIndex++)
@@ -260,14 +322,21 @@ public class BigJumpPad : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void PerformJumpServerRPC(ulong playerID, int lane, int position)
+    private void PerformJumpServerRPC(ulong playerID, int lane, int position, RpcParams rpcParams = default)
     {
-        PlayerManager player = NetworkManager.SpawnManager.SpawnedObjects[playerID].GetComponent<PlayerManager>();
+        if (!isActiveAndEnabled || !isActive.Value || serverJumpers.Contains(playerID)
+            || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerID, out var playerObject)
+            || !playerObject.TryGetComponent(out PlayerManager player)
+            || player.IsBot || player.OwnerClientId != rpcParams.Receive.SenderClientId || player.Pokemon.CurrentHp <= 0
+            || lane < 0 || lane >= lanes.Length || lanes[lane] == null
+            || position < 0 || position >= lanes[lane].childCount) return;
+        serverJumpers.Add(playerID);
         StartCoroutine(PerformJumpServer(player, lane, position));
     }
 
     private IEnumerator PerformJumpServer(PlayerManager player, int lane = 0, int position = 0)
     {
+        ulong playerID = player.NetworkObjectId;
         Transform targetPosition = lanes[lane].GetChild(position);
 
         jumpPadAnimator.SetTrigger(GetJumpAnimation(lane));
@@ -277,7 +346,8 @@ public class BigJumpPad : NetworkBehaviour
 
         yield return new WaitForSeconds(jumpTime);
 
-        UnlockPlayerMovementRPC(player.NetworkObjectId, RpcTarget.Single(player.OwnerClientId, RpcTargetUse.Temp));
+        serverJumpers.Remove(playerID);
+        if (player == null || !player.IsSpawned || player.Pokemon.CurrentHp <= 0) yield break;
 
         GameObject[] enemiesHit = Aim.Instance.AimInCircleAtPosition(targetPosition.transform.position, 1f, AimTarget.NonAlly, player.CurrentTeam);
 
@@ -310,11 +380,10 @@ public class BigJumpPad : NetworkBehaviour
     [Rpc(SendTo.SpecifiedInParams)]
     private void StartJumpForPlayerRPC(ulong playerID, Vector3 targetPosition, RpcParams rpcParams = default)
     {
-        PlayerManager jumper = NetworkManager.SpawnManager.SpawnedObjects[playerID].GetComponent<PlayerManager>();
-
-        if (jumper != null)
+        if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerID, out var playerObject)
+            && playerObject.TryGetComponent(out PlayerManager jumper) && jumper == currentJumper && jumper.IsLocalHuman && !isJumping)
         {
-            StartCoroutine(PerformJump(jumper, targetPosition));
+            jumpCoroutine = StartCoroutine(PerformJump(jumper, targetPosition));
         }
     }
 
@@ -323,24 +392,19 @@ public class BigJumpPad : NetworkBehaviour
         isJumping = true;
         AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_BigJump_Fly);
         player.PlayerMovement.AddMovementRestriction();
-        player.transform.DOJump(targetPosition, jumpHeight, 1, jumpTime);
+        movementRestricted = true;
+        jumpTween = player.transform.DOJump(targetPosition, jumpHeight, 1, jumpTime);
 
         yield return new WaitForSeconds(jumpTime);
 
-        player.PlayerMovement.RemoveMovementRestriction();
-
         AudioManager.PlaySound(DefaultAudioSounds.Play_UI_InGame_BigJump_Done);
-
-        ExitJumpSelection();
-
-        isJumping = false;
-
-        landingIndicator.SetActive(false);
+        jumpCoroutine = null;
+        ReleaseLocalJumper();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!isActive.Value || !other.CompareTag("Player"))
+        if (!isActiveAndEnabled || !isActive.Value || isJumping || !other.CompareTag("Player"))
         {
             return;
         }
@@ -350,10 +414,12 @@ public class BigJumpPad : NetworkBehaviour
             return;
         }
 
-        if (playerManager.IsOwner)
+        if (playerManager.IsLocalHuman && (currentJumper == null || currentJumper == playerManager))
         {
+            if (!localOverlaps.Add(other) || currentJumper == playerManager) return;
             currentJumper = playerManager;
-            LockPlayerMovementRPC(playerManager.NetworkObjectId, RpcTarget.Single(playerManager.OwnerClientId, RpcTargetUse.Temp));
+            playerManager.Pokemon.OnDeath += OnJumperDeath;
+            LockPlayerActions(playerManager);
             OnEnterJumpPad?.Invoke(this);
         }
     }
@@ -370,53 +436,29 @@ public class BigJumpPad : NetworkBehaviour
             return;
         }
 
-        if (currentJumper = playerManager)
+        if (currentJumper == playerManager && localOverlaps.Remove(other) && localOverlaps.Count == 0)
         {
-            OnExitJumpPad?.Invoke();
-            currentJumper = null;
-
-            if (!isJumping)
+            if (isJumping)
             {
-                UnlockPlayerMovementRPC(playerManager.NetworkObjectId, RpcTarget.Single(playerManager.OwnerClientId, RpcTargetUse.Temp));
+                OnExitJumpPad?.Invoke();
+                ExitJumpSelection();
             }
-            currentJumper = null;
-            ExitJumpSelection();
+            else
+            {
+                ReleaseLocalJumper();
+                OnExitJumpPad?.Invoke();
+            }
         }
     }
 
-    [Rpc(SendTo.SpecifiedInParams)]
-    private void LockPlayerMovementRPC(ulong playerID, RpcParams rpcParams = default)
+    private void LockPlayerActions(PlayerManager player)
     {
-        PlayerManager player = NetworkManager.SpawnManager.SpawnedObjects[playerID].GetComponent<PlayerManager>();
-
-        player.MovesController.AddMoveStatus(0, ActionStatusType.Busy);
-        player.MovesController.AddMoveStatus(1, ActionStatusType.Busy);
-        player.MovesController.AddMoveStatus(2, ActionStatusType.Busy);
-
-        player.MovesController.BattleItemStatus.AddStatus(ActionStatusType.Busy);
-
-        player.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Busy);
-
-        player.RecallStatus.AddStatus(ActionStatusType.Busy);
-
-        player.ScoreStatus.AddStatus(ActionStatusType.Busy);
-    }
-
-    [Rpc(SendTo.SpecifiedInParams)]
-    private void UnlockPlayerMovementRPC(ulong playerID, RpcParams rpcParams = default)
-    {
-        PlayerManager player = NetworkManager.SpawnManager.SpawnedObjects[playerID].GetComponent<PlayerManager>();
-
-        player.MovesController.RemoveMoveStatus(0, ActionStatusType.Busy);
-        player.MovesController.RemoveMoveStatus(1, ActionStatusType.Busy);
-        player.MovesController.RemoveMoveStatus(2, ActionStatusType.Busy);
-
-        player.MovesController.BattleItemStatus.RemoveStatus(ActionStatusType.Busy);
-
-        player.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Busy);
-
-        player.RecallStatus.RemoveStatus(ActionStatusType.Busy);
-
-        player.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
+        actionRestrictions.Add(player.MovesController.AcquireMoveStatus(0, ActionStatusType.Busy));
+        actionRestrictions.Add(player.MovesController.AcquireMoveStatus(1, ActionStatusType.Busy));
+        actionRestrictions.Add(player.MovesController.AcquireMoveStatus(2, ActionStatusType.Busy));
+        actionRestrictions.Add(player.MovesController.BattleItemStatus.AcquireStatus(ActionStatusType.Busy));
+        actionRestrictions.Add(player.MovesController.BasicAttackStatus.AcquireStatus(ActionStatusType.Busy));
+        actionRestrictions.Add(player.RecallStatus.AcquireStatus(ActionStatusType.Busy));
+        actionRestrictions.Add(player.ScoreStatus.AcquireStatus(ActionStatusType.Busy));
     }
 }

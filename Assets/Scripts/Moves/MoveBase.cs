@@ -7,6 +7,7 @@ public abstract class MoveBase
     public string Name;
     public float Cooldown;
     public PlayerManager playerManager;
+    protected Aim ActorAim => playerManager != null ? playerManager.Aim : null;
     public bool IsActive = false;
     public bool IsUpgraded = false;
 

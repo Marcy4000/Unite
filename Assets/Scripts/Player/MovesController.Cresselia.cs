@@ -294,7 +294,7 @@ public partial class MovesController
         cresseliaShields.Clear();
         if (IsServer && cresseliaBound && NetworkManager != null && NetworkManager.SpawnManager != null)
             foreach (var obj in NetworkManager.SpawnManager.SpawnedObjects.Values)
-                if (obj.TryGetComponent(out Pokemon target))
+                if (obj.TryGetComponent(out Pokemon target) && target.IsSpawned)
                 {
                     target.RemoveAllStatChangeWithIDRPC(cresseliaAuroraDebuff);
                     target.RemoveAllStatChangeWithIDRPC(cresseliaMoonblastDebuff);

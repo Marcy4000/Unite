@@ -74,7 +74,7 @@ public class GlaceSwift : MoveBase
 
         for (int i = 0; i < starsToShoot; i++)
         {
-            GameObject closestEnemy = Aim.Instance.AimInCircle(range);
+            GameObject closestEnemy = ActorAim.AimInCircle(range);
 
             // If an enemy is found, launch a homing projectile towards it
             if (closestEnemy != null)

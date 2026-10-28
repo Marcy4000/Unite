@@ -79,7 +79,7 @@ public partial class MovesController
     }
     public void ShowMeowsticRoomAim(bool show, Vector3 position)
     {
-        if (!IsOwner) return;
+        if (playerManager == null || !playerManager.IsLocalHuman) return;
         meowsticRoomAim = position;
         if (!show) { CancelMeowsticVisual(-2); return; }
         if (!meowsticVisuals.TryGetValue(-2, out var request)) LoadMeowsticVisual(MeowsticEffect.RoomAim, -2, position, transform.position - position, 0, ulong.MaxValue, MeowsticMoveRules.RoomHalfSize, 0, MeowsticNow);

@@ -24,7 +24,7 @@ public class MarshadowPhantomForce : MarshadowMoveBase
             playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, 0.22f, true, MarshadowMoveRules.PhantomInvincible));
             playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invisible, 4.1f, true, MarshadowMoveRules.PhantomInvisible));
             ghostEffect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.PhantomForce, 4f);
-            MarshadowMoveRuntime.ShowWindow(1, 4f);
+            MarshadowMoveRuntime.ShowWindow(playerManager, 1, 4f);
         }
         else
         {
@@ -50,7 +50,7 @@ public class MarshadowPhantomForce : MarshadowMoveBase
         playerManager.Pokemon.RemoveStatusEffectWithID(MarshadowMoveRules.PhantomInvincible);
         playerManager.Pokemon.RemoveStatusEffectWithID(MarshadowMoveRules.PhantomInvisible);
         MarshadowMoveRuntime.EndEffect(playerManager, ref ghostEffect);
-        MarshadowMoveRuntime.ShowWindow(1, 0);
+        MarshadowMoveRuntime.ShowWindow(playerManager, 1, 0);
     }
     public void BreakStealth()
     {

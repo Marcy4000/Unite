@@ -56,7 +56,11 @@ public class Vision : MonoBehaviour
     public event System.Action<GameObject> OnBushChanged;
 
     private void OnEnable() => VisionManager.Instance?.RegisterVision(this);
-    private void OnDisable() => VisionManager.Instance?.UnregisterVision(this);
+    private void OnDisable()
+    {
+        VisionManager.Instance?.UnregisterVision(this);
+        ClearTransientState();
+    }
 
     public void SetVisibility(bool isVisible)
     {
@@ -65,32 +69,53 @@ public class Vision : MonoBehaviour
         if (!hasAppliedInitialVisibility && (renderersToDisable.Count == 0 && objectsToDisable.Count == 0))
             return;
 
+        if (hasAppliedInitialVisibility && isRendered == isVisible) return;
+        ApplyVisibility(isVisible);
+    }
+
+    private void ApplyVisibility(bool isVisible)
+    {
+        bool changed = !hasAppliedInitialVisibility || isRendered != isVisible;
         hasAppliedInitialVisibility = true;
 
         foreach (GameObject obj in objectsToDisable)
-            obj.SetActive(isVisible);
+            if (obj != null && obj.activeSelf != isVisible) obj.SetActive(isVisible);
 
         foreach (Renderer renderer in renderersToDisable)
-            renderer.enabled = isVisible;
+            if (renderer != null) renderer.enabled = isVisible;
 
         isRendered = isVisible;
-        OnVisibilityChanged?.Invoke(isVisible);
+        if (changed) OnVisibilityChanged?.Invoke(isVisible);
     }
 
     public void AddObject(GameObject obj)
     {
+        if (obj == null || objectsToDisable.Contains(obj)) return;
         objectsToDisable.Add(obj);
-        SetVisibility(pendingVisibilityState);
+        ApplyVisibility(pendingVisibilityState);
     }
 
     public void AddRenderer(Renderer renderer)
     {
+        if (renderer == null || renderersToDisable.Contains(renderer)) return;
         renderersToDisable.Add(renderer);
-        SetVisibility(pendingVisibilityState);
+        ApplyVisibility(pendingVisibilityState);
     }
 
     public void ResetObjects() => objectsToDisable.Clear();
     public void ResetRenderers() => renderersToDisable.Clear();
+
+    public void ClearTransientState()
+    {
+        temporarilyRevealed = false;
+        revealTimer = 0;
+        isVisibleInBush.Clear();
+        if (currentBush != null)
+        {
+            currentBush = null;
+            OnBushChanged?.Invoke(null);
+        }
+    }
 
     public void RevealTemporarily(RevealType reason, float duration = 2f)
     {

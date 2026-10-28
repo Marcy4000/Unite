@@ -28,6 +28,23 @@ public static class CombatTargeting
         return result;
     }
 
+    public static void SphereTargetsNonAlloc(Vector3 center, float radius, HashSet<Pokemon> result, ref Collider[] buffer)
+    {
+        result.Clear();
+        if (!Finite(center) || !float.IsFinite(radius) || radius < 0) return;
+        if (buffer == null || buffer.Length == 0) buffer = new Collider[16];
+        int count;
+        while (true)
+        {
+            count = Physics.OverlapSphereNonAlloc(center, radius, buffer);
+            if (count < buffer.Length) break;
+            System.Array.Resize(ref buffer, buffer.Length * 2);
+        }
+        for (int i = 0; i < count; i++)
+            if (TryGetPokemon(buffer[i], out var pokemon) && OverlapsSphereNow(buffer[i], center, radius)) result.Add(pokemon);
+        System.Array.Clear(buffer, 0, count);
+    }
+
     public static HashSet<Pokemon> BoxTargets(Vector3 center, Vector3 halfExtents, Quaternion rotation)
     {
         var result = new HashSet<Pokemon>();

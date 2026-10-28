@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 public class InputManager : MonoBehaviour
 {
@@ -8,6 +9,10 @@ public class InputManager : MonoBehaviour
     private PlayerControls playerControls;
 
     public PlayerControls Controls => playerControls;
+    public bool IsControllerMode { get; private set; }
+    private float lastMouseActivity;
+    private bool hasFocus = true;
+    private const float CursorIdleSeconds = 2f;
 
     private void Awake()
     {
@@ -19,6 +24,7 @@ public class InputManager : MonoBehaviour
         else
         {
             Destroy(this);
+            return;
         }
 
         // Initialize and enable PlayerControls
@@ -30,8 +36,63 @@ public class InputManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        playerControls.Disable();
+        playerControls?.Disable();
+        playerControls?.Dispose();
+        if (Instance == this)
+        {
+            Instance = null;
+            Cursor.visible = true;
+        }
     }
+
+    private void Update()
+    {
+        var mouse = Mouse.current;
+        var mouseActive = mouse != null && (mouse.delta.ReadValue().sqrMagnitude > 0.01f ||
+            mouse.scroll.ReadValue().sqrMagnitude > 0f || mouse.leftButton.wasPressedThisFrame ||
+            mouse.rightButton.wasPressedThisFrame || mouse.middleButton.wasPressedThisFrame ||
+            mouse.forwardButton.wasPressedThisFrame || mouse.backButton.wasPressedThisFrame);
+        var keyboardActive = Keyboard.current?.anyKey.wasPressedThisFrame == true;
+        var controllerActive = false;
+        foreach (var gamepad in Gamepad.all)
+        {
+            if (gamepad.leftStick.ReadValue().sqrMagnitude > 0.09f ||
+                gamepad.rightStick.ReadValue().sqrMagnitude > 0.09f)
+                controllerActive = true;
+            foreach (var control in gamepad.allControls)
+                if (control is ButtonControl button && button.wasPressedThisFrame) controllerActive = true;
+        }
+        UpdateInputMode(mouseActive, keyboardActive, controllerActive, Time.unscaledTime);
+        if (Gamepad.all.Count == 0) IsControllerMode = false;
+        var game = GameManager.Instance;
+        var inGame = game != null && (game.GameState == GameState.Playing || game.GameState == GameState.Starting);
+        var menuOpen = (SettingsManager.Instance != null && SettingsManager.Instance.IsMenuOpen) ||
+            (LobbyController.Instance != null && (LobbyController.Instance.IsHandlingConnectionFailure ||
+                LobbyController.Instance.LastConnectionFailure != Unite.Multiplayer.SessionFailureReason.None ||
+                !string.IsNullOrEmpty(LobbyController.Instance.LastOperationError)));
+        Cursor.visible = ShouldShowCursor(inGame, menuOpen, hasFocus, Time.unscaledTime);
+    }
+
+    private void UpdateInputMode(bool mouseActive, bool keyboardActive, bool controllerActive, float now)
+    {
+        if (mouseActive) lastMouseActivity = now;
+        if (mouseActive || keyboardActive) IsControllerMode = false;
+        else if (controllerActive) IsControllerMode = true;
+    }
+
+    private bool ShouldShowCursor(bool inGame, bool menuOpen, bool focused, float now)
+    {
+        return !inGame || menuOpen || !focused || !IsControllerMode || now - lastMouseActivity < CursorIdleSeconds;
+    }
+
+    private void OnApplicationFocus(bool focused)
+    {
+        hasFocus = focused;
+        lastMouseActivity = Time.unscaledTime;
+        if (!focused) Cursor.visible = true;
+    }
+
+    private void OnDisable() => Cursor.visible = true;
 
     public void StartRebinding(
         InputAction action,

@@ -759,7 +759,7 @@ public partial class Pokemon : NetworkBehaviour
 
     public bool HasStatChangeWithID(ushort id)
     {
-        foreach (StatChange change in statChanges) if (change.ID == id) return true;
+        for (int i = 0; i < statChanges.Count; i++) if (statChanges[i].ID == id) return true;
         return false;
     }
 
@@ -899,8 +899,9 @@ public partial class Pokemon : NetworkBehaviour
 
     public bool HasStatusEffect(StatusType type)
     {
-        foreach (StatusEffect effect in statusEffects)
+        for (int i = 0; i < statusEffects.Count; i++)
         {
+            StatusEffect effect = statusEffects[i];
             if (effect.Type == type)
             {
                 return true;
@@ -912,8 +913,9 @@ public partial class Pokemon : NetworkBehaviour
 
     public bool HasStatusEffect(StatusEffect newEffect)
     {
-        foreach (StatusEffect effect in statusEffects)
+        for (int i = 0; i < statusEffects.Count; i++)
         {
+            StatusEffect effect = statusEffects[i];
             if (newEffect.Equals(effect))
             {
                 return true;
@@ -926,8 +928,9 @@ public partial class Pokemon : NetworkBehaviour
     public bool HasStatusEffect(ushort id)
     {
 
-        foreach (StatusEffect effect in statusEffects)
+        for (int i = 0; i < statusEffects.Count; i++)
         {
+            StatusEffect effect = statusEffects[i];
             if (effect.ID == id)
             {
                 return true;
@@ -939,8 +942,9 @@ public partial class Pokemon : NetworkBehaviour
 
     public bool HasAnyStatusEffect(StatusType[] types)
     {
-        foreach (StatusEffect effect in statusEffects)
+        for (int i = 0; i < statusEffects.Count; i++)
         {
+            StatusEffect effect = statusEffects[i];
             foreach (var type in types)
             {
                 if (effect.Type == type)
@@ -1041,6 +1045,7 @@ public partial class Pokemon : NetworkBehaviour
         }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
+        if (TryGetComponent<PlayerManager>(out var controlledPlayer) && controlledPlayer.IsBot) return;
         if (Keyboard.current.tKey.wasPressedThisFrame)
         {
             TakeDamageRPC(new DamageInfo(NetworkObjectId, 3.45f, 32, 820, DamageType.Physical));
@@ -1371,8 +1376,9 @@ public partial class Pokemon : NetworkBehaviour
 
     public bool HasShieldWithID(ushort id)
     {
-        foreach (ShieldInfo shield in shields)
+        for (int i = 0; i < shields.Count; i++)
         {
+            ShieldInfo shield = shields[i];
             if (shield.ID == id)
             {
                 return true;
@@ -1384,8 +1390,9 @@ public partial class Pokemon : NetworkBehaviour
 
     public ShieldInfo? GetShieldWithID(ushort id)
     {
-        foreach (ShieldInfo shield in shields)
+        for (int i = 0; i < shields.Count; i++)
         {
+            ShieldInfo shield = shields[i];
             if (shield.ID == id)
             {
                 return shield;

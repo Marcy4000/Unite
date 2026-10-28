@@ -8,29 +8,46 @@ public class AllyInfoUI : MonoBehaviour
     [SerializeField] private Image hpBar;
     [SerializeField] private GameObject deathImage;
     [SerializeField] private TMP_Text deathTimer;
+    [SerializeField] private GameObject uniteReadyDot;
 
     private PlayerManager allyPokemon;
+    private Pokemon subscribedPokemon;
+    private int shownSeconds = -1;
 
     public void InitializeUI(PlayerManager player)
     {
+        Unsubscribe();
         allyPokemon = player;
-        portrait.sprite = player.Pokemon.Portrait;
-        hpBar.fillAmount = (float)player.Pokemon.CurrentHp / player.Pokemon.GetMaxHp();
-        player.Pokemon.OnHpChange += UpdateHpBar;
-        player.Pokemon.OnEvolution += UpdatePortrait;
-        player.Pokemon.OnDeath += OnDeath;
+        shownSeconds = -1;
+        if (player == null || player.Pokemon == null) return;
+        subscribedPokemon = player.Pokemon;
+        subscribedPokemon.OnPokemonInitialized += RefreshPokemon;
+        subscribedPokemon.OnHpChange += UpdateHpBar;
+        subscribedPokemon.OnEvolution += UpdatePortrait;
+        subscribedPokemon.OnDeath += OnDeath;
         player.OnRespawn += OnRespawn;
-        if (GameManager.Instance.TryGetPlayerNetworkManager(player.OwnerClientId, out PlayerNetworkManager playerNetworkManager))
-        {
-            playerNetworkManager.OnDeathTimerChanged += UpdateDeathTimer;
-        }
-
-        deathImage.SetActive(false);
+        if (player.MovesController != null && player.MovesController.IsSpawned) player.MovesController.RequestUniteReadyRpc();
+        RefreshPokemon();
+        Update();
     }
 
-    private void UpdateDeathTimer(float time)
+    private void RefreshPokemon()
     {
-        deathTimer.text = Mathf.RoundToInt(time).ToString();
+        UpdatePortrait();
+        UpdateHpBar();
+    }
+
+    private void Update()
+    {
+        if (allyPokemon == null) return;
+        bool dead = allyPokemon.PlayerState == PlayerState.Dead;
+        deathImage.SetActive(dead);
+        if (uniteReadyDot != null) uniteReadyDot.SetActive(!dead && allyPokemon.MovesController != null && allyPokemon.MovesController.UniteIsReady);
+        if (dead)
+        {
+            int seconds = Mathf.CeilToInt(allyPokemon.DeathTimer);
+            if (seconds != shownSeconds) { shownSeconds = seconds; deathTimer.SetText(seconds.ToString()); }
+        }
     }
 
     private void OnDeath(DamageInfo info)
@@ -45,11 +62,29 @@ public class AllyInfoUI : MonoBehaviour
 
     public void UpdateHpBar()
     {
-        hpBar.fillAmount = (float)allyPokemon.Pokemon.CurrentHp / allyPokemon.Pokemon.GetMaxHp();
+        if (subscribedPokemon == null || subscribedPokemon.BaseStats == null) { hpBar.fillAmount = 0; return; }
+        int maxHp = subscribedPokemon.GetMaxHp();
+        hpBar.fillAmount = maxHp > 0 ? Mathf.Clamp01((float)subscribedPokemon.CurrentHp / maxHp) : 0;
     }
 
     public void UpdatePortrait()
     {
-        portrait.sprite = allyPokemon.Pokemon.Portrait;
+        portrait.sprite = subscribedPokemon != null ? subscribedPokemon.Portrait : null;
+        portrait.enabled = portrait.sprite != null;
     }
+
+    private void Unsubscribe()
+    {
+        if (subscribedPokemon != null)
+        {
+            subscribedPokemon.OnPokemonInitialized -= RefreshPokemon;
+            subscribedPokemon.OnHpChange -= UpdateHpBar;
+            subscribedPokemon.OnEvolution -= UpdatePortrait;
+            subscribedPokemon.OnDeath -= OnDeath;
+        }
+        if (allyPokemon != null) allyPokemon.OnRespawn -= OnRespawn;
+        subscribedPokemon = null;
+    }
+
+    private void OnDestroy() => Unsubscribe();
 }

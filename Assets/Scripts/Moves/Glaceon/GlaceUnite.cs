@@ -29,7 +29,7 @@ public class GlaceUnite : MoveBase
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
         glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
-        Aim.Instance.InitializeGlaceonUniteAim();
+        ActorAim.InitializeGlaceonUniteAim();
     }
 
     public override void Update()
@@ -38,7 +38,7 @@ public class GlaceUnite : MoveBase
         {
             return;
         }
-        direction = Aim.Instance.SkillshotAim();
+        direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
@@ -69,7 +69,7 @@ public class GlaceUnite : MoveBase
                 playerManager.Pokemon.AddStatChange(buff);
             }
         }
-        Aim.Instance.HideGlaceonUniteAim();
+        ActorAim.HideGlaceonUniteAim();
         Debug.Log("Finished glaceon unite!");
         base.Finish();
     }
@@ -84,7 +84,7 @@ public class GlaceUnite : MoveBase
     public override void Cancel()
     {
         base.Cancel();
-        Aim.Instance.HideGlaceonUniteAim();
+        ActorAim.HideGlaceonUniteAim();
     }
 
     public override void ResetMove()

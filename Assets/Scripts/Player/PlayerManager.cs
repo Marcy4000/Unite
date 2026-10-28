@@ -16,7 +16,7 @@ public enum PlayerState : byte
     Scoring
 }
 
-public class PlayerManager : NetworkBehaviour
+public partial class PlayerManager : NetworkBehaviour
 {
     // TODO: reorganize these variable declarations
 
@@ -93,7 +93,30 @@ public class PlayerManager : NetworkBehaviour
 
     public GoalZone GoalZone { get => goalZone; set => goalZone = value; }
 
-    public PlayerStats PlayerStats { get => playerStats; set => playerStats = value; }
+    public PlayerStats PlayerStats
+    {
+        get => playerStats;
+        set { playerStats = value; OnPlayerStatsChanged?.Invoke(value); }
+    }
+
+    public event Action<PlayerStats> OnPlayerStatsChanged;
+    private PlayerNetworkManager humanTimerSource;
+    private GameManager registeredGameManager;
+    private bool initialized;
+    private bool wasAliveForVision;
+
+    public float DeathTimer
+    {
+        get
+        {
+            if (IsBot)
+                return PlayerState == PlayerState.Dead && NetworkManager != null
+                    ? Mathf.Max(0, (float)(botRespawnAt.Value - NetworkManager.ServerTime.Time)) : 0;
+            if (humanTimerSource == null && LobbyController.Instance != null)
+                humanTimerSource = LobbyController.Instance.PlayerNetworkManagers.Find(manager => manager != null && manager.Player == this);
+            return humanTimerSource != null ? Mathf.Max(0, humanTimerSource.DeathTimer) : 0;
+        }
+    }
 
     public Player LobbyPlayer { get => LobbyController.Instance.GetPlayerByID(lobbyPlayerId.Value.ToString()); }
 
@@ -140,6 +163,11 @@ public class PlayerManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        if (IsBot)
+        {
+            StartCoroutine(InitializeBotAvatar());
+            return;
+        }
         if (IsOwner)
         {
             lobbyPlayerId.Value = LobbyController.Instance.Player.Id;
@@ -149,6 +177,10 @@ public class PlayerManager : NetworkBehaviour
 
     public void Initialize()
     {
+        if (initialized) return;
+        initialized = true;
+        registeredGameManager = GameManager.Instance;
+        pokemon.OnHpChange += UpdateLifeVisibility;
         Team currentPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
 
         aim.TeamToIgnore = tempTeam;
@@ -157,15 +189,17 @@ public class PlayerManager : NetworkBehaviour
         vision.HasATeam = true;
         vision.IsVisiblyEligible = true;
 
-        hpBar.InitializeEnergyUI(PokemonType.Player, tempTeam, IsOwner);
-        hpBar.UpdateHpBarColor(tempTeam != currentPlayerTeam, IsOwner);
+        hpBar.InitializeEnergyUI(PokemonType.Player, tempTeam, IsLocalHuman);
+        hpBar.UpdateHpBarColor(tempTeam != currentPlayerTeam, IsLocalHuman);
 
         if (IsOwner)
         {
-            CameraController cameraController = FindFirstObjectByType<CameraController>();
-            cameraController.Initialize(transform);
-
-            playerControls = InputManager.Instance.Controls;
+            if (IsLocalHuman)
+            {
+                CameraController cameraController = FindFirstObjectByType<CameraController>();
+                cameraController.Initialize(transform);
+                playerControls = InputManager.Instance.Controls;
+            }
 
             pokemon.OnLevelChange += OnPokemonLevelUp;
             pokemon.OnDeath += OnPokemonDeath;
@@ -202,14 +236,14 @@ public class PlayerManager : NetworkBehaviour
                 {
                     EndScoring();
                 }
-                BattleUIManager.instance.SetEnergyBallLock(showLock);
+                if (IsLocalHuman) BattleUIManager.instance.SetEnergyBallLock(showLock);
             };
 
             visionController.IsEnabled = true;
         }
         else
         {
-            visionController.IsEnabled = tempTeam == currentPlayerTeam;
+            visionController.IsEnabled = IsServer || tempTeam == currentPlayerTeam;
         }
 
         hpBar.AssignVision(vision);
@@ -228,6 +262,8 @@ public class PlayerManager : NetworkBehaviour
         }
 
         UpdateEnergyGraphic();
+        if (IsServer && IsOwner)
+            foreach (var spawn in FindObjectsByType<SpawnArea>(FindObjectsSortMode.None)) spawn.AllowControlledPlayerTraversal(this);
     }
 
     private void InitializeStatusActions()
@@ -305,6 +341,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void HandleEvolution()
     {
+        if (pokemon.ActiveModel == null) return;
         pokemon.ActiveModel.GetComponentInChildren<Animator>().keepAnimatorStateOnDisable = true;
         animationManager.AssignAnimator(pokemon.ActiveModel.GetComponentInChildren<Animator>());
         AssignVisionObjects();
@@ -343,9 +380,36 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     public void ChangeSelectedPokemonRpc(short pokemonId)
     {
+        LoadSelectedPokemon(pokemonId);
+    }
+
+    private void UpdateLifeVisibility()
+    {
+        bool alive = pokemon != null && pokemon.CurrentHp > 0;
+        if (alive != wasAliveForVision)
+        {
+            vision.ClearTransientState();
+            visionController.ClearTrackedVisions();
+        }
+        wasAliveForVision = alive;
+        vision.IsVisiblyEligible = alive;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (registeredGameManager != null) registeredGameManager.RemovePlayer(this);
+        if (MinimapManager.Instance != null) MinimapManager.Instance.RemovePlayerIcon(this);
+        if (pokemon != null) pokemon.OnHpChange -= UpdateLifeVisibility;
+        if (visionController != null) visionController.ClearTrackedVisions();
+        base.OnNetworkDespawn();
+    }
+
+    private void LoadSelectedPokemon(short pokemonId)
+    {
         pokemonLoadHandle = Addressables.LoadAssetAsync<PokemonBase>(CharactersList.Instance.GetCharacterFromID(pokemonId).pokemon);
         pokemonLoadHandle.Completed += (handle) =>
         {
+            if (this == null || !IsSpawned) return;
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
                 PokemonBase newPokemon = handle.Result;
@@ -368,29 +432,25 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(SendTo.Owner)]
     public void UpdatePosAndRotRPC(Vector3 pos, Quaternion rot)
     {
-        transform.position = pos;
-        transform.rotation = rot;
+        playerMovement.Teleport(pos, rot, pos != deathPosition);
     }
 
     private void OnPlayerStateChange(PlayerState prev, PlayerState curr)
     {
-        if (curr != PlayerState.Dead && transform.position.y == deathPosition.y)
-        {
-            Transform spawnpoint = GetSpawnPoint();
-            UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
-            playerMovement.CanMove = true;
-        }
+        if (curr == PlayerState.Dead) playerMovement.CanMove = false;
+        else if (prev == PlayerState.Dead && curr == PlayerState.Alive) playerMovement.CanMove = true;
     }
 
     private Transform GetSpawnPoint()
     {
-        short pos = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["PlayerPos"].Value);
+        short pos = NumberEncoder.FromBase64<short>(LobbyPlayer.Data["PlayerPos"].Value);
         Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(CurrentTeam.Team, pos);
         return spawnpoint;
     }
 
     private void OnPokemonDamage(DamageInfo info)
     {
+        CancelRecall();
         if (isScoring && !pokemon.LastDamageProtectedScoring)
         {
             EndScoring();
@@ -399,6 +459,7 @@ public class PlayerManager : NetworkBehaviour
 
     private void OnPokemonDeath(DamageInfo info)
     {
+        CancelRecall();
         EndScoring();
         SpawnEnergyOnDeathRPC(currentEnergy.Value);
         ResetEnergyRPC();
@@ -412,7 +473,7 @@ public class PlayerManager : NetworkBehaviour
         pokemon.RemoveAllStatChangesRPC();
         pokemon.RemoveAllStatusEffectsRPC();
 
-        CameraController.Instance.ForcePan(true);
+        if (IsLocalHuman) CameraController.Instance.ForcePan(true);
 
         UpdatePosAndRotRPC(deathPosition, Quaternion.identity);
         ChangeCurrentState(PlayerState.Dead);
@@ -429,11 +490,18 @@ public class PlayerManager : NetworkBehaviour
 
     public void Respawn()
     {
-        CameraController.Instance.ForcePan(false);
-        ChangeCurrentState(PlayerState.Alive);
+        if (!IsOwner && !IsServer) return;
+        if (IsLocalHuman) CameraController.Instance.ForcePan(false);
+        // Never infer a respawn teleport from an exact parking-position height.
+        // Knockups, collision resolution and late movement cleanup can perturb it.
+        Transform spawnpoint = GetSpawnPoint();
+        UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
         pokemon.RestoreHealthOnRespawnRPC();
+        ChangeCurrentState(PlayerState.Alive);
+        if (IsBot && IsServer) botRespawnAt.Value = 0;
         movesController.UnlockEveryAction();
         scoreStatus.RemoveStatus(ActionStatusType.Busy);
+        playerMovement.CanMove = true;
         NotifyRespawnRPC();
     }
 
@@ -481,8 +549,9 @@ public class PlayerManager : NetworkBehaviour
             }
         }
 
-        if (!IsOwner)
+        if (!IsLocalHuman)
         {
+            if (IsBot && IsServer && PlayerState == PlayerState.Alive) TickRecall();
             return;
         }
 
@@ -513,24 +582,7 @@ public class PlayerManager : NetworkBehaviour
             StartRecalling();
         }
 
-        if (isRecalling)
-        {
-            recallTime -= Time.deltaTime;
-            BattleUIManager.instance.UpdateRecallBar(1f-recallTime / 3f);
-
-            if (recallTime <= 0)
-            {
-                Transform spawnpoint = GetSpawnPoint();
-                UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
-                isRecalling = false;
-                BattleUIManager.instance.SetRecallBarActive(false);
-            }
-
-            if (playerMovement.IsMoving)
-            {
-                CancelRecall();
-            }
-        }
+        TickRecall();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         if (Keyboard.current.nKey.wasPressedThisFrame)
@@ -547,7 +599,23 @@ public class PlayerManager : NetworkBehaviour
     private void CancelRecall()
     {
         isRecalling = false;
-        BattleUIManager.instance?.SetRecallBarActive(false);
+        if (IsLocalHuman) BattleUIManager.instance?.SetRecallBarActive(false);
+    }
+
+    private void TickRecall()
+    {
+        if (!isRecalling) return;
+        if (playerMovement.IsMoving || pokemon.CurrentHp <= 0 || !recallStatus.HasStatus(ActionStatusType.None))
+        {
+            CancelRecall();
+            return;
+        }
+        recallTime -= Time.deltaTime;
+        if (IsLocalHuman) BattleUIManager.instance.UpdateRecallBar(1f - recallTime / 3f);
+        if (recallTime > 0) return;
+        Transform spawnpoint = GetSpawnPoint();
+        UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
+        CancelRecall();
     }
 
     private void StartRecalling()
@@ -559,14 +627,15 @@ public class PlayerManager : NetworkBehaviour
 
         isRecalling = true;
         recallTime = 3f;
-        BattleUIManager.instance.SetRecallBarActive(true);
+        if (IsLocalHuman) BattleUIManager.instance.SetRecallBarActive(true);
     }
 
     private bool IsRayquazaScoringProtected => isScoring && pokemon.HasRayquazaShield;
 
     private void StartScoring()
     {
-        if (!scoreStatus.HasStatus(ActionStatusType.None) || currentEnergy.Value == 0)
+        if (!scoreStatus.HasStatus(ActionStatusType.None) || currentEnergy.Value == 0 || goalZone == null ||
+            !goalZone.IsActive || goalZone.GoalStatus == GoalStatus.Destroyed || goalZone.Team == CurrentTeam.Team)
         {
             return;
         }
@@ -584,7 +653,7 @@ public class PlayerManager : NetworkBehaviour
 
         playerMovement.CanMove = false;
         scoreStatus.Cooldown = 0;
-        BattleUIManager.instance.SetEnergyBallState(true);
+        if (IsLocalHuman) BattleUIManager.instance.SetEnergyBallState(true);
     }
 
     private void HandleScoring()
@@ -595,6 +664,11 @@ public class PlayerManager : NetworkBehaviour
         }
 
         // A hindrance may have started while protected and outlived the shield.
+        if (goalZone == null || !goalZone.IsActive || goalZone.GoalStatus == GoalStatus.Destroyed)
+        {
+            EndScoring();
+            return;
+        }
         if (scoreStatus.HasStatus(ActionStatusType.Stunned) && !IsRayquazaScoringProtected)
         {
             EndScoring();
@@ -613,7 +687,7 @@ public class PlayerManager : NetworkBehaviour
         }
 
         scoreStatus.Cooldown += Time.deltaTime;
-        BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
+        if (IsLocalHuman) BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
         scoreGuageValue.Value = scoreStatus.Cooldown / maxScoreTime;
 
         if (scoreStatus.Cooldown >= maxScoreTime)
@@ -632,9 +706,9 @@ public class PlayerManager : NetworkBehaviour
         isScoring = false;
         scoreStatus.Cooldown = 0;
         playerMovement.CanMove = true;
-        BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
+        if (IsLocalHuman) BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);
         scoreGuageValue.Value = scoreStatus.Cooldown / maxScoreTime;
-        BattleUIManager.instance.SetEnergyBallState(false);
+        if (IsLocalHuman) BattleUIManager.instance.SetEnergyBallState(false);
     }
 
     private void ScorePoints()
@@ -819,7 +893,7 @@ public class PlayerManager : NetworkBehaviour
 
     public void UpdateEnergyGraphic()
     {
-        if (IsOwner)
+        if (IsLocalHuman)
         {
             BattleUIManager.instance.UpdateEnergyUI(currentEnergy.Value, maxEnergyCarry);
         }

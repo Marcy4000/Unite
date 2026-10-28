@@ -86,12 +86,34 @@ public class LobbyController : MonoBehaviour
     public GameSessionPlayer Player => localPlayer;
     public ISession Session => session;
     public List<PlayerNetworkManager> PlayerNetworkManagers => playerNetworkManagers;
+    public PlayerNetworkManager BotRoster => playerNetworkManagers.Find(manager => manager != null &&
+        manager.IsSpawned && manager.OwnerClientId == Unity.Netcode.NetworkManager.ServerClientId);
+    public bool CanManageBots => IsPartyLeader && !lobbyOperationInProgress && hostWriteGate.CurrentCount > 0 &&
+        playerWriteGate.CurrentCount > 0 && !startingGame && !isSearching && partyLobby != null &&
+        !partyLobby.IsLocked && !IsAnyPlayerInResultScreen() && SceneManager.GetActiveScene().name == "LobbyScene" && BotRoster != null &&
+        BotRoster.SupportsBots;
+
+    public void FillLobbyWithBots() { if (CanManageBots) BotRoster.FillEmptySlotsWithBots(); }
+    public void ClearLobbyBots() { if (CanManageBots) BotRoster.ClearBots(); }
+    public void RefreshParticipants() => SyncSession();
+    public void CaptureMatchParticipants()
+    {
+        if (partyLobby == null) return;
+        gamePlayers.Clear();
+        foreach (var player in partyLobby.Players)
+        {
+            var snapshot = new GameSessionPlayer(player.Id, player.IsBot);
+            snapshot.Apply(player.Data);
+            gamePlayers[player.Id] = snapshot;
+        }
+    }
     public bool ShouldLoadResultsScreen { get => loadResultsScreen; set => loadResultsScreen = value; }
     public GameResults GameResults { get => gameResults; set => gameResults = value; }
     public RaceGameResults RaceGameResults { get => raceGameResults; set => raceGameResults = value; }
     public UniteRoyaleGameResults UniteRoyaleGameResults { get => uniteRoyaleGameResults; set => uniteRoyaleGameResults = value; }
     public bool IsMatchmaking => isSearching;
     public SessionFailureReason LastConnectionFailure { get; private set; }
+    public string LastOperationError { get; private set; }
     public bool IsHandlingConnectionFailure => handlingSessionLoss;
     public LobbyType CurrentLobbyType => currentLobbyType;
     private bool IsPartyLeader => session != null && session.IsHost;
@@ -100,7 +122,11 @@ public class LobbyController : MonoBehaviour
     public event Action<GameSessionPlayer> onPlayerDataChanged;
     public event Action<SessionFailureReason> onConnectionFailure;
 
-    public void DismissConnectionFailure() => LastConnectionFailure = SessionFailureReason.None;
+    public void DismissConnectionFailure()
+    {
+        LastConnectionFailure = SessionFailureReason.None;
+        LastOperationError = null;
+    }
 
     private void Awake()
     {
@@ -240,7 +266,7 @@ public class LobbyController : MonoBehaviour
             ? selectedMap : new SessionProperty(NumberEncoder.ToBase64<short>(0));
         properties["LobbyType"] = new SessionProperty(type.ToString());
         properties["HostDisplayName"] = new SessionProperty(localPlayer.Data["PlayerName"].Value);
-        properties["GameVersion"] = new SessionProperty("sessions-v1", VisibilityPropertyOptions.Public, PropertyIndex.String1);
+        properties[SessionCompatibility.PropertyName] = new SessionProperty(SessionCompatibility.Current, VisibilityPropertyOptions.Public, PropertyIndex.String1);
 #if UNITY_EDITOR
         if (treatCustomAsMatchmaking && type == LobbyType.Custom)
             properties["IsMatchmakingLobby"] = MemberSessionProperty("true");
@@ -271,6 +297,7 @@ public class LobbyController : MonoBehaviour
     {
         if (lobbyOperationInProgress || isSearching || handlingSessionLoss) return false;
         lobbyOperationInProgress = true;
+        LastOperationError = null;
         var gateTaken = false;
         try
         {
@@ -302,6 +329,8 @@ public class LobbyController : MonoBehaviour
             try { await LeaveCurrentSessionAsync(); }
             catch (Exception cleanupException) { Debug.LogWarning($"Session cleanup failed: {cleanupException.Message}"); }
             ResetMatchState();
+            LastOperationError = exception is SessionVersionMismatchException ? exception.Message :
+                "We couldn't connect to the session. Check your connection and lobby code, then try again.";
             if (showMainMenuOnFailure) lobbyUI?.ShowMainMenuUI();
             return false;
         }
@@ -325,7 +354,11 @@ public class LobbyController : MonoBehaviour
             await SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty> { ["PlayerName"] = new PlayerProperty(playerName) });
             StartCoroutine(LoadLobbyAsync());
         }
-        catch (Exception exception) { Debug.LogException(exception); }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+            LastOperationError = "We couldn't sign in with this player name. Check your connection and name, then try again.";
+        }
     }
 
     public async void CreateLobby(LobbyType type = LobbyType.Custom)
@@ -415,7 +448,7 @@ public class LobbyController : MonoBehaviour
         {
             new FilterOption(FilterField.AvailableSlots, "0", FilterOperation.Greater),
             new FilterOption(FilterField.IsLocked, "0", FilterOperation.Equal),
-            new FilterOption(FilterField.StringIndex1, "sessions-v1", FilterOperation.Equal)
+            new FilterOption(FilterField.StringIndex1, SessionCompatibility.Current, FilterOperation.Equal)
         };
     }
 
@@ -431,6 +464,13 @@ public class LobbyController : MonoBehaviour
 
     private async Task ActivateSessionAsync(ISession activeSession)
     {
+        try { SessionCompatibility.Validate(activeSession.Properties); }
+        catch (SessionVersionMismatchException)
+        {
+            try { await activeSession.LeaveAsync(); }
+            catch (Exception exception) { Debug.LogWarning($"Could not leave incompatible session: {exception.Message}"); }
+            throw;
+        }
         session = activeSession;
         var generation = failureGuard.Activate();
         LastConnectionFailure = SessionFailureReason.None;
@@ -471,6 +511,7 @@ public class LobbyController : MonoBehaviour
         partyLobby.Apply(session, localPlayer, pendingPlayerProperties);
         if (partyLobby.Data.TryGetValue("LobbyType", out var lobbyType) && Enum.TryParse(lobbyType.Value, out LobbyType parsed))
             currentLobbyType = parsed;
+        BotRoster?.ComposeParticipants(partyLobby);
         onLobbyUpdate?.Invoke(partyLobby);
         foreach (var player in partyLobby.Players)
             onPlayerDataChanged?.Invoke(player);
@@ -605,7 +646,20 @@ public class LobbyController : MonoBehaviour
     }
     public void UpdatePlayerClothes(PlayerClothesInfo clothesInfo) => SetPlayerProperty("ClothingInfo", clothesInfo.Serialize(), VisibilityPropertyOptions.Public);
     public void UpdatePlayerHeldItems(string heldItems) => SetPlayerProperty("HeldItems", heldItems);
-    public void ChangePlayerCharacter(short characterID) => SetPlayerProperty("SelectedCharacter", NumberEncoder.ToBase64(characterID));
+    public void ChangePlayerCharacter(short characterID)
+    {
+        if (characterID >= 0 && BotRoster != null && BotRoster.UsesBotSelection)
+        {
+            BotRoster.SelectParticipantCharacterRpc(characterID);
+            return;
+        }
+        SetPlayerProperty("SelectedCharacter", NumberEncoder.ToBase64(characterID));
+    }
+
+    public void PersistPlayerCharacter() => ObserveTask(SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
+    {
+        ["SelectedCharacter"] = MemberPlayerProperty(Player.Data["SelectedCharacter"].Value)
+    }));
     public void ChangePlayerBattleItem(string battleItemID) => SetPlayerProperty("BattleItem", battleItemID);
     public void UpdatePlayerRank()
     {
@@ -669,12 +723,21 @@ public class LobbyController : MonoBehaviour
 
     public void ChangeLobbyMap(MapInfo map)
     {
-        if (!IsPartyLeader || isSearching) return;
+        if (!IsPartyLeader || isSearching || !CanSwitchToMap(map)) return;
         var capacity = currentLobbyType == LobbyType.Standards ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
         ObserveTask(UpdateHostAsync(host => host.SetProperty("SelectedMap", new SessionProperty(
             NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)))), capacity));
         // Each member fixes its own team/slot on the resulting session event;
         // this avoids unauthorized writes to another player's properties.
+    }
+
+    public bool CanSwitchToMap(MapInfo map)
+    {
+        if (map == null || partyLobby == null) return false;
+        int capacity = IsStandardsLobby() ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
+        int humans = 0;
+        foreach (var player in partyLobby.Players) if (!player.IsBot) humans++;
+        return humans <= capacity;
     }
 
     public void ChangeLobbyType(LobbyType newType)
@@ -702,6 +765,11 @@ public class LobbyController : MonoBehaviour
     public async void KickPlayer(string playerID)
     {
         if (!IsPartyLeader || playerID == localPlayer.Id) return;
+        if (GetPlayerByID(playerID)?.IsBot == true)
+        {
+            if (CanManageBots) BotRoster.RemoveBot(playerID);
+            return;
+        }
         try { await session.AsHost().RemovePlayerAsync(playerID); }
         catch (Exception exception) { Debug.LogException(exception); }
     }
@@ -722,8 +790,12 @@ public class LobbyController : MonoBehaviour
 
     public List<Unity.Services.Matchmaker.Models.Player> GetMatchmakerPlayersWithTeam()
     {
-        return partyLobby.Players.Select(player => new Unity.Services.Matchmaker.Models.Player(player.Id,
-            new Dictionary<string, string> { ["Team"] = player.Data["PlayerTeam"].Value })).ToList();
+        return partyLobby.Players.Where(player => !player.IsBot).Select(player => new Unity.Services.Matchmaker.Models.Player(player.Id,
+            new Dictionary<string, string>
+            {
+                ["Team"] = player.Data["PlayerTeam"].Value,
+                [SessionCompatibility.PropertyName] = SessionCompatibility.Current
+            })).ToList();
     }
 
     public async void FindMatch()
@@ -769,6 +841,8 @@ public class LobbyController : MonoBehaviour
         catch (Exception exception)
         {
             Debug.LogError($"Party matchmaking failed: {exception.Message}");
+            LastOperationError = exception is SessionVersionMismatchException ? exception.Message :
+                "Matchmaking is currently unavailable. Please try again in a moment.";
             if (session == sourceSession) await StopPartySearchAsync();
         }
         finally
@@ -816,6 +890,7 @@ public class LobbyController : MonoBehaviour
             isInMatchmakingGame = true;
             isSearching = false;
             var results = await partyMatchmaker.GetResultsAsync(matchId, lifetimeCancellation.Token);
+            SessionCompatibility.ValidateRoster(results.MatchProperties.Players);
             var roster = new MatchRoster(results.MatchProperties, CharactersList.Instance.GetMapFromID(0).maxTeamSize);
             expectedMatchPlayerIds = roster.Players.Keys.ToArray();
             if (!roster.Players.TryGetValue(localPlayer.Id, out var assignment))
@@ -1121,7 +1196,9 @@ public class LobbyController : MonoBehaviour
 
     public async void StartGame()
     {
-        if (!IsPartyLeader || startingGame) return;
+        // Matchmaking intentionally starts from inside TransitionToMatchAsync's
+        // lifecycle operation. Only an unfinished custom-lobby operation blocks.
+        if (!IsPartyLeader || startingGame || (lobbyOperationInProgress && !isInMatchmakingGame)) return;
         if (IsStandardsLobby()) { FindMatch(); return; }
         startingGame = true;
         var targetSession = session;
@@ -1129,6 +1206,12 @@ public class LobbyController : MonoBehaviour
         {
             await UpdateHostAsync(host => { host.IsLocked = true; host.IsPrivate = true; });
             if (session != targetSession || !session.IsHost) return;
+            if (BotRoster != null && !BotRoster.ValidateBotRosterForStart())
+            {
+                Debug.LogWarning("Bot match cannot start: the map or participant slots are invalid.");
+                await UpdateHostAsync(host => host.IsLocked = false);
+                return;
+            }
             var mapMode = CharactersList.Instance.GetCurrentLobbyMap().characterSelectType switch
             {
                 CharacterSelectType.Draft => "DraftSelect",

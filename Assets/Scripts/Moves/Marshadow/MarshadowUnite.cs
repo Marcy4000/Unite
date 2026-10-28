@@ -102,21 +102,21 @@ public class MarshadowCopiedUnite : MarshadowMoveBase
         base.Start(controller);
         if (MarshadowCopyRules.Targeted(Source.move))
         {
-            Aim.Instance.HideSkillshotAim(); Aim.Instance.InitializeAutoAim(AimRange, 90f, AimTarget.NonAlly);
-            target = Aim.Instance.SureHitAim()?.GetComponent<Pokemon>();
+            ActorAim.HideSkillshotAim(); ActorAim.InitializeAutoAim(AimRange, 90f, AimTarget.NonAlly);
+            target = ActorAim.SureHitAim()?.GetComponent<Pokemon>();
         }
     }
     public override void Update()
     {
         if (!executing && Time.time >= expiresAt) { Expire(); return; }
         base.Update();
-        if (IsActive && MarshadowCopyRules.Targeted(Source.move)) target = Aim.Instance.SureHitAim()?.GetComponent<Pokemon>();
+        if (IsActive && MarshadowCopyRules.Targeted(Source.move)) target = ActorAim.SureHitAim()?.GetComponent<Pokemon>();
     }
     public override void Finish()
     {
         if (!IsActive || executing) return;
         if (MarshadowCopyRules.Targeted(Source.move) && !MarshadowMoveRuntime.CanHit(playerManager, target)) { Cancel(); return; }
-        Aim.Instance.HideAutoAim();
+        ActorAim.HideAutoAim();
         Begin(); released = false; start = playerManager.transform.position;
         playerManager.MovesController.SpendMarshadowUnite();
         MarshadowMoveRuntime.PlayAction(playerManager, "pm0883_ba21_tokusyu02");
@@ -189,7 +189,7 @@ public class MarshadowCopiedUnite : MarshadowMoveBase
     }
     public override void Cancel()
     {
-        if (IsActive) Aim.Instance.HideAutoAim();
+        if (IsActive) ActorAim.HideAutoAim();
         base.Cancel();
     }
     private void Expire()

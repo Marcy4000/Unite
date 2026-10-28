@@ -31,7 +31,7 @@ public class AbsolBasicAtk : ChargedBasicAttackBase
     public override void Perform(bool wildPriority)
     {
         range = PursuitReady ? AbsolMoveRules.PursuitRange : AbsolMoveRules.BasicRange;
-        var target = Aim.Instance.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
+        var target = playerManager.Aim.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
         if (target == null && (PursuitReady || playerManager.PlayerMovement.IsMoving)) return;
         playerManager.MovesController.RequestServerBasicAttack(target != null ? target.GetComponent<Pokemon>().NetworkObjectId : ulong.MaxValue);
     }
@@ -148,7 +148,7 @@ public class AbsolBasicAtk : ChargedBasicAttackBase
         var visible = new HashSet<Pokemon>();
         if (PursuitReady)
             foreach (var target in CombatTargeting.SphereTargets(playerManager.transform.position + Vector3.up * 0.8f, AbsolMoveRules.PursuitRange))
-                if (AbsolMoveRules.CanHit(playerManager, target) && Aim.Instance.CanPokemonBeTargeted(target.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam, false))
+                if (AbsolMoveRules.CanHit(playerManager, target) && playerManager.Aim.CanPokemonBeTargeted(target.gameObject, AimTarget.NonAlly, playerManager.CurrentTeam, false))
                 {
                     visible.Add(target);
                     if (backs.ContainsKey(target)) continue;
@@ -164,7 +164,8 @@ public class AbsolBasicAtk : ChargedBasicAttackBase
         if (attackRoutine != null && playerManager != null) playerManager.StopCoroutine(attackRoutine);
         attackRoutine = null; charge = 0; pursuitUntil = 0;
         foreach (var view in backs.Values) Object.Destroy(view); backs.Clear();
-        if (playerManager != null && playerManager.IsServer && playerManager.IsSpawned)
+        if (playerManager != null && playerManager.IsServer && playerManager.IsSpawned &&
+            playerManager.MovesController != null && playerManager.MovesController.IsSpawned)
         {
             playerManager.MovesController.PresentServerAttackRPC(false, Vector3.zero, "", 0, playerManager.Pokemon.CurrentHp <= 0);
             Synchronize();

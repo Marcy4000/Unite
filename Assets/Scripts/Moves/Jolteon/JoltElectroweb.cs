@@ -7,10 +7,10 @@ public class JoltElectroweb : MoveBase
     public override void Start(PlayerManager controller)
     {
         base.Start(controller);
-        Aim.Instance.InitializeSkillshotAim(JoltMoveRules.WebRange);
-        direction = Aim.Instance.SkillshotAim();
+        ActorAim.InitializeSkillshotAim(JoltMoveRules.WebRange);
+        direction = ActorAim.SkillshotAim();
     }
-    public override void Update() { if (IsActive) direction = Aim.Instance.SkillshotAim(); }
+    public override void Update() { if (IsActive) direction = ActorAim.SkillshotAim(); }
     public override void Finish()
     {
         if (IsActive && direction.sqrMagnitude > 0.001f)
@@ -21,9 +21,9 @@ public class JoltElectroweb : MoveBase
             playerManager.StopMovementForTime(0.15f, false);
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         base.Finish();
     }
-    public override void Cancel() { Aim.Instance.HideSkillshotAim(); base.Cancel(); }
+    public override void Cancel() { ActorAim.HideSkillshotAim(); base.Cancel(); }
     public override void ResetMove() { Cancel(); }
 }

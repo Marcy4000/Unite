@@ -25,9 +25,9 @@ public static class MarshadowMoveRuntime
         if (id != 0 && actor != null && actor.IsSpawned) actor.MovesController.EndMarshadowEffectRPC(id);
         id = 0;
     }
-    public static void ShowWindow(int slot, float duration)
+    public static void ShowWindow(PlayerManager actor, int slot, float duration)
     {
-        if (BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(slot, duration);
+        if (actor != null && actor.IsLocalHuman && BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(slot, duration);
     }
     public static void BreakStealth(PlayerManager actor)
     {
@@ -41,7 +41,7 @@ public static class MarshadowMoveRuntime
     public static void ReturnToLocomotion(PlayerManager actor)
     {
         if (actor == null || actor.Pokemon.CurrentHp <= 0 || actor.Pokemon.HasAnyStatusEffect(Interrupts)) return;
-        bool moving = actor.PlayerMovement.CanMove && actor.PlayerControls.Movement.Move.ReadValue<Vector2>().sqrMagnitude > 0.01f;
+        bool moving = actor.PlayerMovement.CanMove && actor.MovementInput.sqrMagnitude > 0.01f;
         actor.AnimationManager.SetBool("Walking", moving);
         actor.AnimationManager.PlayAnimation(moving ? "pm0883_fi21_run01" : "pm0883_ba10_waitA01");
     }
@@ -91,10 +91,10 @@ public abstract class MarshadowMoveBase : MoveBase
     {
         if (executing || (RequiresMovement && controller.Pokemon.HasStatusEffect(StatusType.Immobilized))) return;
         base.Start(controller);
-        if (UsesDashAim) Aim.Instance.InitializeDashAim(AimRange); else Aim.Instance.InitializeSkillshotAim(AimRange);
+        if (UsesDashAim) ActorAim.InitializeDashAim(AimRange); else ActorAim.InitializeSkillshotAim(AimRange);
         direction = ReadAim();
     }
-    protected Vector3 ReadAim() => MarshadowMoveRules.Direction(UsesDashAim ? Aim.Instance.DashAim() : Aim.Instance.SkillshotAim(), playerManager.transform.forward);
+    protected Vector3 ReadAim() => MarshadowMoveRules.Direction(UsesDashAim ? ActorAim.DashAim() : ActorAim.SkillshotAim(), playerManager.transform.forward);
     public override void Update()
     {
         if (executing && (playerManager.Pokemon.HasAnyStatusEffect(MarshadowMoveRuntime.Interrupts)
@@ -131,8 +131,8 @@ public abstract class MarshadowMoveBase : MoveBase
     }
     protected void HideAim()
     {
-        if (Aim.Instance == null) return;
-        if (UsesDashAim) Aim.Instance.HideDashAim(); else Aim.Instance.HideSkillshotAim();
+        if (ActorAim == null) return;
+        if (UsesDashAim) ActorAim.HideDashAim(); else ActorAim.HideSkillshotAim();
     }
     public override void Cancel() { if (IsActive) HideAim(); base.Cancel(); }
     public override void ResetMove()

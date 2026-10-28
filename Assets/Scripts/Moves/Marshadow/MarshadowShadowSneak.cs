@@ -26,7 +26,7 @@ public class MarshadowShadowSneak : MoveBase
         playerManager.Pokemon.AddStatChange(new StatChange(20, Stat.Speed, 3.6f, true, true, true, MarshadowMoveRules.SneakSpeed));
         playerManager.PlayerMovement.IsFlying = true;
         effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.ShadowSneak, 3.6f);
-        MarshadowMoveRuntime.ShowWindow(1, 3.5f);
+        MarshadowMoveRuntime.ShowWindow(playerManager, 1, 3.5f);
     }
     private void Emerge()
     {
@@ -46,7 +46,7 @@ public class MarshadowShadowSneak : MoveBase
         playerManager.Pokemon.RemoveStatusEffectWithID(MarshadowMoveRules.SneakInvisible);
         playerManager.Pokemon.RemoveAllStatChangeWithIDRPC(MarshadowMoveRules.SneakSpeed);
         MarshadowMoveRuntime.EndEffect(playerManager, ref effect);
-        MarshadowMoveRuntime.ShowWindow(1, 0);
+        MarshadowMoveRuntime.ShowWindow(playerManager, 1, 0);
     }
     public override void ResetMove()
     {

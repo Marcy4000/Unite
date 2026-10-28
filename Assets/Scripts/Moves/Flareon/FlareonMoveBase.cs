@@ -23,21 +23,21 @@ public abstract class FlareonMoveBase : MoveBase
         if (pending || executing) return;
         base.Start(controller);
         executingKind = CanRecast ? FlareonCast.Slam : Kind;
-        if (FlareonMoveRules.Targeted(executingKind)) Aim.Instance.InitializeAutoAim(FlareonMoveRules.Range(executingKind), 60, AimTarget.NonAlly);
-        else if (executingKind == FlareonCast.HeatWave || executingKind == FlareonCast.Swift) Aim.Instance.InitializeSimpleCircle(FlareonMoveRules.Range(executingKind));
-        else if (FlareonMoveRules.Driven(executingKind)) Aim.Instance.InitializeDashAim(FlareonMoveRules.Range(executingKind));
-        else Aim.Instance.InitializeSkillshotAim(FlareonMoveRules.Range(executingKind));
+        if (FlareonMoveRules.Targeted(executingKind)) playerManager.Aim.InitializeAutoAim(FlareonMoveRules.Range(executingKind), 60, AimTarget.NonAlly);
+        else if (executingKind == FlareonCast.HeatWave || executingKind == FlareonCast.Swift) playerManager.Aim.InitializeSimpleCircle(FlareonMoveRules.Range(executingKind));
+        else if (FlareonMoveRules.Driven(executingKind)) playerManager.Aim.InitializeDashAim(FlareonMoveRules.Range(executingKind));
+        else playerManager.Aim.InitializeSkillshotAim(FlareonMoveRules.Range(executingKind));
         ReadAim();
     }
     private void ReadAim()
     {
         if (FlareonMoveRules.Targeted(executingKind))
         {
-            target = executingKind == FlareonCast.Slam ? playerManager.MovesController.FlareonRecastTarget : Aim.Instance.SureHitAim()?.GetComponent<Pokemon>();
+            target = executingKind == FlareonCast.Slam ? playerManager.MovesController.FlareonRecastTarget : playerManager.Aim.SureHitAim()?.GetComponent<Pokemon>();
             direction = FlareonMoveRules.Direction(target != null ? target.transform.position - playerManager.transform.position : Vector3.zero, playerManager.transform.forward);
         }
-        else direction = FlareonMoveRules.Direction(FlareonMoveRules.Driven(executingKind) ? Aim.Instance.DashAim()
-            : executingKind == FlareonCast.Flamethrower ? Aim.Instance.SkillshotAim() : playerManager.transform.forward, playerManager.transform.forward);
+        else direction = FlareonMoveRules.Direction(FlareonMoveRules.Driven(executingKind) ? playerManager.Aim.DashAim()
+            : executingKind == FlareonCast.Flamethrower ? playerManager.Aim.SkillshotAim() : playerManager.transform.forward, playerManager.transform.forward);
     }
     public override void Finish()
     {
@@ -72,8 +72,7 @@ public abstract class FlareonMoveBase : MoveBase
         string clip = executingKind == FlareonCast.Unite ? "pm0136_ba01_uniteMove" : executingKind == FlareonCast.Slam ? "pm0136_ba01_landA01"
             : executingKind == FlareonCast.Flamethrower ? "pm0136_ba21_tokusyu01" : executingKind == FlareonCast.HeatWave ? "pm0136_ba02_roar01"
             : executingKind == FlareonCast.Tackle ? "ani_leafeonspell2_bat_0133" : "pm0136_fi21_run01";
-        Animator animator = playerManager.AnimationManager.Animator;
-        if (animator != null && animator.HasState(0, Animator.StringToHash(clip))) playerManager.AnimationManager.PlayAnimation(clip);
+        playerManager.AnimationManager.PlayAnimation(clip);
     }
     public override void Update()
     {
@@ -137,11 +136,11 @@ public abstract class FlareonMoveBase : MoveBase
     }
     private void HideAim()
     {
-        if (Aim.Instance == null) return;
-        if (FlareonMoveRules.Targeted(executingKind)) Aim.Instance.HideAutoAim();
-        else if (executingKind == FlareonCast.HeatWave || executingKind == FlareonCast.Swift) Aim.Instance.HideSimpleCircle();
-        else if (FlareonMoveRules.Driven(executingKind)) Aim.Instance.HideDashAim();
-        else Aim.Instance.HideSkillshotAim();
+        if (playerManager == null || playerManager.Aim == null) return;
+        if (FlareonMoveRules.Targeted(executingKind)) playerManager.Aim.HideAutoAim();
+        else if (executingKind == FlareonCast.HeatWave || executingKind == FlareonCast.Swift) playerManager.Aim.HideSimpleCircle();
+        else if (FlareonMoveRules.Driven(executingKind)) playerManager.Aim.HideDashAim();
+        else playerManager.Aim.HideSkillshotAim();
     }
     // Cancelling aim does not delete a committed aura. Hard interruption does cancel a running action.
     public override void Cancel()

@@ -15,9 +15,10 @@ public class HeldItemInfo : ScriptableObject
     {
         get
         {
-            string desc = description;
-            foreach (HeldItemStatBoost boost in statBoosts)
+            string desc = description ?? string.Empty;
+            foreach (HeldItemStatBoost boost in StatBoosts)
             {
+                if (boost == null) continue;
                 desc += $"\n{boost.AffectedStat} +{boost.BoostAmount}{(boost.IsPercentage ? "%" : "")}";
             }
             return desc;
@@ -32,7 +33,10 @@ public class HeldItemInfo : ScriptableObject
 
     public Sprite icon;
 
-    public HeldItemStatBoost[] statBoosts;
+    public HeldItemStatBoost[] statBoosts = System.Array.Empty<HeldItemStatBoost>();
+    // Empty/legacy assets can omit the serialized list. An unequipped slot is
+    // valid and must not abort player or character-select initialization.
+    public HeldItemStatBoost[] StatBoosts => statBoosts ?? System.Array.Empty<HeldItemStatBoost>();
 }
 
 [System.Serializable]

@@ -12,7 +12,7 @@ public class EmboarBasicAtk : ChargedBasicAttackBase
     public override void Perform(bool wildPriority)
     {
         range = EmboarMoveRules.BasicRange(playerManager.Pokemon.CurrentLevel);
-        GameObject target = Aim.Instance.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
+        GameObject target = playerManager.Aim.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
         if (target == null || !target.TryGetComponent(out Pokemon pokemon)) return;
         Vector3 direction = EmboarMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward);
         playerManager.transform.rotation = Quaternion.LookRotation(direction);

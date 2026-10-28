@@ -43,7 +43,7 @@ public class MapSelector : MonoBehaviour
     {
         if (value)
         {
-            if (mapInfo.maxTeamSize*2 < LobbyController.Instance.Lobby.Players.Count)
+            if (!LobbyController.Instance.CanSwitchToMap(mapInfo))
             {
                 UpdateSelectedMap();
                 return;

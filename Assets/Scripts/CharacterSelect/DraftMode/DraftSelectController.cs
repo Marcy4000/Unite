@@ -14,7 +14,7 @@ using UnityEngine.UI;
 
 public enum DraftPhase : byte { Banning, Picking, Preparation, Starting, Waiting }
 
-public class DraftSelectController : NetworkBehaviour
+public partial class DraftSelectController : NetworkBehaviour
 {
     public static DraftSelectController Instance { get; private set; }
 
@@ -74,6 +74,7 @@ public class DraftSelectController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        if (IsServer) LobbyController.Instance.BotRoster?.BeginBotDraft();
         blueTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Blue).ToList();
         orangeTeamPlayers = LobbyController.Instance.GetTeamPlayers(Team.Orange).ToList();
 
@@ -118,6 +119,7 @@ public class DraftSelectController : NetworkBehaviour
 
     private void OnDisable()
     {
+        ClearPokemonPreview();
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.SceneManager != null)
             NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoaded;
         if (LobbyController.Instance != null)
@@ -131,6 +133,9 @@ public class DraftSelectController : NetworkBehaviour
         if (LobbyController.Instance != null)
             LobbyController.Instance.onPlayerDataChanged -= OnSessionPlayerDataChanged;
         selectedCharacters.Clear();
+        committedDraftPicks.Clear();
+        botBanRequests.Clear();
+        botTurn = -1;
     }
 
     private void OnSessionPlayerDataChanged(Player player)
@@ -350,9 +355,14 @@ public class DraftSelectController : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.Server)]
-    private void ConfirmSelectionRPC(string playerID, int selectedCharacter)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void ConfirmSelectionRPC(string playerID, int selectedCharacter, RpcParams rpcParams = default)
     {
+        if (rpcParams.Receive.SenderClientId != Unity.Netcode.NetworkManager.ServerClientId)
+        {
+            var sender = LobbyController.Instance.PlayerNetworkManagers.Find(manager => manager != null && manager.OwnerClientId == rpcParams.Receive.SenderClientId);
+            if (sender?.LocalPlayer?.Id != playerID) return;
+        }
         int index = GetPlayerIndex(playerID);
         if (index == -1)
         {
@@ -366,6 +376,10 @@ public class DraftSelectController : NetworkBehaviour
             Debug.LogWarning($"PlayerID {playerID} is not in the current player list.");
             return;
         }
+        if (playerStates[index] == (byte)DraftPlayerState.Confirmed || playerStates[index] == (byte)DraftPlayerState.BanningConfirmed) return;
+        if (currentDraftPhase.Value != DraftPhase.Banning && currentDraftPhase.Value != DraftPhase.Picking) return;
+        if (selectedCharacter >= CharactersList.Instance.Characters.Length || selectedCharacter < -1 ||
+            (selectedCharacter >= 0 && (CharactersList.Instance.GetCharacterFromID((short)selectedCharacter).Hidden || UnavailableDraftPicks().Contains((short)selectedCharacter)))) return;
 
         if (currentDraftPhase.Value == DraftPhase.Banning)
         {
@@ -374,6 +388,9 @@ public class DraftSelectController : NetworkBehaviour
         }
         else if (currentDraftPhase.Value == DraftPhase.Picking)
         {
+            if (selectedCharacter < 0) return;
+            committedDraftPicks[playerID] = (short)selectedCharacter;
+            if (LobbyController.Instance.BotRoster?.HasBots == true) LobbyController.Instance.BotRoster.CommitDraftPick(playerID, (short)selectedCharacter);
             playerStates[index] = (byte)DraftPlayerState.Confirmed; // Update state after picking
         }
 
@@ -385,6 +402,7 @@ public class DraftSelectController : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void HandlePlayerConfirmationRPC(string playerID, int selectedCharacter, bool isBan)
     {
+        if (!isBan) UpdatePlayerSelectedCharacter(playerID, (short)selectedCharacter);
         // Notify clients and progress
         OnPlayerConfirmed?.Invoke(playerID, selectedCharacter);
 
@@ -530,7 +548,7 @@ public class DraftSelectController : NetworkBehaviour
         else
         {
             // Picking phase logic: total turns is the sum of both team sizes
-            totalTurns = 1 + (blueTeamPlayers.Count + orangeTeamPlayers.Count) / 2;
+            totalTurns = Unite.Multiplayer.DraftTurnRules.PickTurns(blueTeamPlayers.Count, orangeTeamPlayers.Count);
         }
 
         // Check if the current turn index has reached or exceeded the total turns
@@ -553,7 +571,7 @@ public class DraftSelectController : NetworkBehaviour
         else
         {
             // Picking phase logic: total turns is the sum of both team sizes
-            totalTurns = 1 + (blueTeamPlayers.Count + orangeTeamPlayers.Count) / 2;
+            totalTurns = Unite.Multiplayer.DraftTurnRules.PickTurns(blueTeamPlayers.Count, orangeTeamPlayers.Count);
         }
 
         // Check if the current turn index has reached or exceeded the total turns
@@ -641,6 +659,12 @@ public class DraftSelectController : NetworkBehaviour
 
     private void StartMatch()
     {
+        if (LobbyController.Instance.BotRoster?.HasBots == true &&
+            (committedDraftPicks.Count != LobbyController.Instance.Lobby.Players.Count ||
+             committedDraftPicks.Values.Distinct().Count() != committedDraftPicks.Count))
+        {
+            AbortExhaustedBotDraft(); return;
+        }
         Debug.Log("Draft phase complete! Starting match...");
         GetComponent<LaneSelectionNetwork>()?.StopSelection();
         ShowLoadingScreenRpc();
@@ -656,17 +680,21 @@ public class DraftSelectController : NetworkBehaviour
         AudioManager.PlaySound(DefaultAudioSounds.Play_Load17051302578487348);
         LoadingScreen.Instance.ShowMatchLoadingScreen();
 
-        if (characterSelectModelHandle.IsValid())
-        {
-            Addressables.Release(characterSelectModelHandle);
-        }
+        ClearPokemonPreview();
     }
 
     private void Update()
     {
+        if (IsServer && currentDraftPhase.Value == DraftPhase.Picking)
+        {
+            int turn = currentTurnIndex.Value;
+            int size = Unite.Multiplayer.DraftTurnRules.IsBlueTurn(turn) ? blueTeamPlayers.Count : orangeTeamPlayers.Count;
+            if (Unite.Multiplayer.DraftTurnRules.PickCount(size, turn) == 0) { ProgressTurn(); return; }
+        }
+        TickDraftBots();
         if (IsServer && draftTimer.Value > 0)
         {
-            draftTimer.Value -= Time.deltaTime;
+            draftTimer.Value = Mathf.Max(0f, draftTimer.Value - Time.unscaledDeltaTime);
         }
 
         if (draftTimer.Value <= 0 && IsServer)
@@ -693,8 +721,15 @@ public class DraftSelectController : NetworkBehaviour
             int playerIndex = GetPlayerIndex(playerID);
 
             // If the player hasn't confirmed, auto-confirm the selection
-            if (playerIndex != -1 && playerStates[playerIndex] != (byte)DraftPlayerState.Confirmed)
+            if (playerIndex != -1 && playerStates[playerIndex] != (byte)DraftPlayerState.Confirmed && playerStates[playerIndex] != (byte)DraftPlayerState.BanningConfirmed)
             {
+                if (LobbyController.Instance.GetPlayerByID(playerID)?.IsBot == true)
+                {
+                    short choice = currentDraftPhase.Value == DraftPhase.Banning ? (short)-1 : LobbyController.Instance.BotRoster.ChooseDraftCharacter(UnavailableDraftPicks());
+                    if (currentDraftPhase.Value == DraftPhase.Picking && choice < 0) { AbortExhaustedBotDraft(); return; }
+                    ConfirmSelectionRPC(playerID, choice);
+                    continue;
+                }
                 // Auto-confirm the current selection or perform other timeout actions
                 bool isPlayerOrangeTeam = !IsPlayerOnYourTeam(playerID);
 
@@ -702,12 +737,14 @@ public class DraftSelectController : NetworkBehaviour
                     ? draftPlayerHolderOrange.PlayerIcons.First(icon => icon.AssignedPlayer.Id == playerID)
                     : draftPlayerHolderBlue.PlayerIcons.First(icon => icon.AssignedPlayer.Id == playerID);
 
-                int noSelectionCharacterID = currentDraftPhase.Value == DraftPhase.Banning ? -1 : CharactersList.Instance.GetCharacterID(GetRandomValidCharacter());
                 CharacterInfo selectedCharacter = currentDraftPhase.Value == DraftPhase.Banning ? playerIcon.BannedCharacter : playerIcon.SelectedCharacter;
-
-                int selectedCharacterID = selectedCharacter == null ? noSelectionCharacterID : CharactersList.Instance.GetCharacterID(selectedCharacter);
-
-                OnPlayerConfirmed?.Invoke(playerID, selectedCharacterID);
+                short selectedCharacterID = selectedCharacter != null ? CharactersList.Instance.GetCharacterID(selectedCharacter) : (short)-1;
+                if (selectedCharacterID >= 0 && UnavailableDraftPicks().Contains(selectedCharacterID)) selectedCharacterID = -1;
+                if (currentDraftPhase.Value == DraftPhase.Picking && selectedCharacterID < 0)
+                {
+                    selectedCharacterID = CharactersList.Instance.GetCharacterID(GetRandomValidCharacter());
+                    if (selectedCharacterID < 0) { AbortExhaustedBotDraft(); return; }
+                }
                 ConfirmSelectionRPC(playerID, selectedCharacterID);
             }
         }
@@ -715,65 +752,23 @@ public class DraftSelectController : NetworkBehaviour
 
     private CharacterInfo GetRandomValidCharacter()
     {
-        List<CharacterInfo> availableCharacters = CharactersList.Instance.Characters.Where(character => !bannedCharacters.Contains(CharactersList.Instance.GetCharacterID(character))).ToList();
-
-        bool isValid = false;
-        int index = 0;
-
-        while (!isValid)
-        {
-            index = UnityEngine.Random.Range(0, availableCharacters.Count);
-            isValid = true;
-
-            foreach (var player in LobbyController.Instance.Lobby.Players)
-            {
-                if (player.Data.ContainsKey("SelectedCharacter"))
-                {
-                    if (NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value) == CharactersList.Instance.GetCharacterID(availableCharacters[index]))
-                    {
-                        isValid = false;
-                        break;
-                    }
-                }
-            }
-        }
-
-        return availableCharacters[index];
+        var unavailable = UnavailableDraftPicks();
+        var fallbackPool = LobbyController.Instance.BotRoster?.HasBots == true ? LobbyController.Instance.BotRoster.SupportedBotCharacters() : null;
+        var available = CharactersList.Instance.Characters.Where(character => character != null && !character.Hidden &&
+            !unavailable.Contains(CharactersList.Instance.GetCharacterID(character)) &&
+            (fallbackPool == null || fallbackPool.Contains(CharactersList.Instance.GetCharacterID(character)))).ToArray();
+        return available.Length == 0 ? null : available[UnityEngine.Random.Range(0, available.Length)];
     }
 
     private List<string> GetPickTurnPlayers()
     {
-        List<string> currentTurnPlayers = new List<string>();
-
-        // First pick by the blue team
-        if (currentTurnIndex.Value == 0)
-        {
-            currentTurnPlayers.Add(blueTeamPlayers[0].Id); // Blue Team first pick
-        }
-        else if (currentTurnIndex.Value < blueTeamPlayers.Count*2)
-        {
-            int currentPlayerIndex = currentTurnIndex.Value / 2;
-
-            // Alternate picks between teams, allowing 2 players to pick simultaneously
-            if (currentTurnIndex.Value % 2 == 0)
-            {
-                currentTurnPlayers.Add(blueTeamPlayers[currentPlayerIndex].Id);
-                if (currentPlayerIndex + 1 < blueTeamPlayers.Count)
-                {
-                    currentTurnPlayers.Add(blueTeamPlayers[currentPlayerIndex + 1].Id);
-                }
-            }
-            else
-            {
-                currentTurnPlayers.Add(orangeTeamPlayers[currentPlayerIndex].Id);
-                if (currentPlayerIndex + 1 < orangeTeamPlayers.Count)
-                {
-                    currentTurnPlayers.Add(orangeTeamPlayers[currentPlayerIndex + 1].Id);
-                }
-            }
-        }
-
-        return currentTurnPlayers;
+        var players = new List<string>();
+        int turn = currentTurnIndex.Value;
+        var team = Unite.Multiplayer.DraftTurnRules.IsBlueTurn(turn) ? blueTeamPlayers : orangeTeamPlayers;
+        int start = Unite.Multiplayer.DraftTurnRules.PickStart(turn);
+        int count = Unite.Multiplayer.DraftTurnRules.PickCount(team.Count, turn);
+        for (int i = 0; i < count; i++) players.Add(team[start + i].Id);
+        return players;
     }
 
     private string GetBanTurnPlayer()
@@ -814,7 +809,7 @@ public class DraftSelectController : NetworkBehaviour
     {
         if (IsLocalTeamTurn() && !IsCurrentPlayerTurn(LobbyController.Instance.Player.Id))
         {
-            ShowRequestRPC(LobbyController.Instance.Player.Id, CharactersList.Instance.GetCharacterID(draftCharacterSelector.HoveredCharacter), true);
+            SubmitBanRequestRpc(CharactersList.Instance.GetCharacterID(draftCharacterSelector.HoveredCharacter));
             StartCoroutine(BanRequestCooldown());
         }
     }
@@ -956,17 +951,7 @@ public class DraftSelectController : NetworkBehaviour
             return;
         }
 
-        if (currentPokemon != null)
-        {
-            Destroy(currentPokemon);
-            currentPokemon = null;
-        }
-
-        // Release the previous addressable handle if valid
-        if (characterSelectModelHandle.IsValid())
-        {
-            Addressables.Release(characterSelectModelHandle);
-        }
+        ClearPokemonPreview();
 
         background.SetActive(true);
 
@@ -974,8 +959,31 @@ public class DraftSelectController : NetworkBehaviour
         characterSelectModelHandle.Completed += OnCharacterSelectModelLoaded;
     }
 
+    private void ClearPokemonPreview()
+    {
+        if (currentPokemon != null)
+        {
+            Destroy(currentPokemon);
+            currentPokemon = null;
+        }
+
+        // Releasing a pending load does not cancel its completion callback.
+        if (characterSelectModelHandle.IsValid())
+        {
+            var handle = characterSelectModelHandle;
+            characterSelectModelHandle = default;
+            handle.Completed -= OnCharacterSelectModelLoaded;
+            Addressables.Release(handle);
+        }
+    }
+
     private void OnCharacterSelectModelLoaded(AsyncOperationHandle<GameObject> obj)
     {
+        if (!characterSelectModelHandle.IsValid() || !obj.IsValid() || !obj.Equals(characterSelectModelHandle))
+        {
+            return;
+        }
+
         if (obj.Status == AsyncOperationStatus.Succeeded)
         {
             currentPokemon = Instantiate(obj.Result, pokemonSpawnPoint);

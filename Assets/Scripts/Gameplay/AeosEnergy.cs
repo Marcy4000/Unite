@@ -19,7 +19,8 @@ public class AeosEnergy : NetworkBehaviour
         {
             IsBigEnergy = localBigEnergy;
         }
-        SnapToGround();
+        OnValueChange(false, isBigEnergy.Value);
+        if (IsServer) SnapToGround();
     }
 
     private void OnValueChange(bool prev, bool curr)
@@ -34,13 +35,18 @@ public class AeosEnergy : NetworkBehaviour
         }
     }
 
-    void SnapToGround()
+    public bool SnapToGround()
     {
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position+(Vector3.up*3f), Vector3.down, out hit, 10f, groundLayer))
-        {
-            transform.position = new Vector3(transform.position.x, hit.point.y+(model.transform.localScale.x/2f), transform.position.z);
-        }
+        if (!GroundPlacement.TryGetGround(transform.position, groundLayer, out var point)) return false;
+        float diameter = (IsSpawned ? IsBigEnergy : localBigEnergy) ? 0.4f : 0.3f;
+        transform.position = point + Vector3.up * (diameter * 0.5f);
+        return true;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        isBigEnergy.OnValueChanged -= OnValueChange;
+        base.OnNetworkDespawn();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -50,7 +56,7 @@ public class AeosEnergy : NetworkBehaviour
             if (IsServer)
             {
                 PlayerManager playerManager = other.GetComponent<PlayerManager>();
-                if (playerManager.IsEnergyFull())
+                if (playerManager == null || playerManager.Pokemon == null || playerManager.Pokemon.CurrentHp <= 0 || playerManager.IsEnergyFull())
                 {
                     return;
                 }

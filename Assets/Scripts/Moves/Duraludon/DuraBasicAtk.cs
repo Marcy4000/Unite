@@ -26,6 +26,7 @@ public class DuraBasicAtk : ChargedBasicAttackBase
     public bool IsInCannonMode => isInCannonMode;
     public DuraBoostedObj Combat => boostedObjInstance != null && boostedObjInstance.IsInitialized ? boostedObjInstance : null;
     private bool cannonRestrictionApplied;
+    private CameraController cannonCamera;
     public event System.Action onExitCannonMode;
 
     public override void Initialize(PlayerManager manager)
@@ -48,7 +49,7 @@ public class DuraBasicAtk : ChargedBasicAttackBase
     {
         range = isInCannonMode ? cannonRange : baseRange;
         PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
-        GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
+        GameObject closestEnemy = ActorAim.AimInCircle(range, priority);
 
         if (closestEnemy != null)
         {
@@ -132,7 +133,21 @@ public class DuraBasicAtk : ChargedBasicAttackBase
 
         playerManager.HPBar.ShowGenericGuage(true);
 
-        CameraController.Instance.ZoomCamera(new Vector3(0f, 27.7f, -28.9f));
+        SetCannonCamera(true);
+    }
+
+    private void SetCannonCamera(bool active)
+    {
+        if (active && playerManager.IsLocalHuman)
+        {
+            cannonCamera = CameraController.Instance;
+            cannonCamera?.SetZoomOverride(this, new Vector3(0f, 27.7f, -28.9f), priority: 10);
+        }
+        else if (!active)
+        {
+            cannonCamera?.ReleaseZoomOverride(this);
+            cannonCamera = null;
+        }
     }
 
     private IEnumerator CannonModeRoutine()
@@ -173,7 +188,7 @@ public class DuraBasicAtk : ChargedBasicAttackBase
         }
         playerManager.AnimationManager.SetTrigger("EndCannon");
         playerManager.HPBar.ShowGenericGuage(false);
-        CameraController.Instance.ResetZoom();
+        SetCannonCamera(false);
         onExitCannonMode?.Invoke();
     }
 

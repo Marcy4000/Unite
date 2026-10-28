@@ -34,7 +34,7 @@ public class MarshadowAuraSphere : MarshadowMoveBase
             direction = MarshadowMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward);
             Begin(); phase = Phase.Lunging;
             traversal.Begin(playerManager.PlayerMovement);
-            MarshadowMoveRuntime.ShowWindow(0, 0);
+            MarshadowMoveRuntime.ShowWindow(playerManager, 0, 0);
             MarshadowMoveRuntime.EndEffect(playerManager, ref markEffect);
             effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.Rush, 0.45f, stage: 2);
         }
@@ -94,7 +94,7 @@ public class MarshadowAuraSphere : MarshadowMoveBase
         phase = Phase.Marked; deadline = Time.time + MarshadowMoveRules.AuraWindow;
         target.OnDeath += OnTargetDeath;
         markEffect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.AuraMark, MarshadowMoveRules.AuraWindow, targetId);
-        MarshadowMoveRuntime.ShowWindow(0, MarshadowMoveRules.AuraWindow);
+        MarshadowMoveRuntime.ShowWindow(playerManager, 0, MarshadowMoveRules.AuraWindow);
     }
     private bool ValidTarget() => MarshadowMoveRuntime.CanHit(playerManager, target)
         && (target.transform.position - playerManager.transform.position).sqrMagnitude <= 100f;
@@ -104,7 +104,7 @@ public class MarshadowAuraSphere : MarshadowMoveBase
         traversal.End();
         if (target != null) target.OnDeath -= OnTargetDeath;
         target = null; phase = Phase.Idle;
-        MarshadowMoveRuntime.ShowWindow(0, 0);
+        MarshadowMoveRuntime.ShowWindow(playerManager, 0, 0);
         MarshadowMoveRuntime.EndEffect(playerManager, ref markEffect);
         // Also invalidates a pending local projectile presentation; server-side
         // projectile lifetime is independently cancelled by caster death.

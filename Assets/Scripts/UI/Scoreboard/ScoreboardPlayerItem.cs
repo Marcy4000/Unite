@@ -11,7 +11,7 @@ public class ScoreboardPlayerItem : MonoBehaviour
     [SerializeField] private Sprite blueBG, orangeBG;
 
     private PlayerManager player;
-    PlayerNetworkManager playerNetworkManager;
+    private int shownSeconds = -1;
 
     public void SetPlayerInfo(PlayerManager player)
     {
@@ -40,12 +40,7 @@ public class ScoreboardPlayerItem : MonoBehaviour
         player.Pokemon.OnDeath += OnDeath;
         player.OnRespawn += OnRespawn;
 
-        if (GameManager.Instance.TryGetPlayerNetworkManager(player.OwnerClientId, out PlayerNetworkManager playerNetworkManager))
-        {
-            this.playerNetworkManager = playerNetworkManager;
-            playerNetworkManager.OnDeathTimerChanged += UpdateDeathTimer;
-            playerNetworkManager.OnPlayerStatsChanged += UpdatePlayerStats;
-        }
+        player.OnPlayerStatsChanged += UpdatePlayerStats;
 
         UpdatePlayerStats(player.PlayerStats);
     }
@@ -67,9 +62,16 @@ public class ScoreboardPlayerItem : MonoBehaviour
         playerLevel.text = $"{player.Pokemon.CurrentLevel + 1}";
     }
 
-    private void UpdateDeathTimer(float time)
+    private void Update()
     {
-        deathTimer.text = Mathf.RoundToInt(time).ToString();
+        if (player == null) return;
+        bool dead = player.PlayerState == PlayerState.Dead || player.Pokemon.CurrentHp <= 0;
+        deathTimerBG.SetActive(dead);
+        if (dead)
+        {
+            int seconds = Mathf.CeilToInt(player.DeathTimer);
+            if (seconds != shownSeconds) { shownSeconds = seconds; deathTimer.SetText(seconds.ToString()); }
+        }
     }
 
     private void OnDeath(DamageInfo info)
@@ -90,12 +92,7 @@ public class ScoreboardPlayerItem : MonoBehaviour
             player.Pokemon.OnLevelChange -= UpdatePokemonInfo;
             player.Pokemon.OnDeath -= OnDeath;
             player.OnRespawn -= OnRespawn;
-        }
-
-        if (playerNetworkManager != null)
-        {
-            playerNetworkManager.OnDeathTimerChanged -= UpdateDeathTimer;
-            playerNetworkManager.OnPlayerStatsChanged -= UpdatePlayerStats;
+            player.OnPlayerStatsChanged -= UpdatePlayerStats;
         }
     }
 }

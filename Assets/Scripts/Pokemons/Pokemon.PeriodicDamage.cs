@@ -9,6 +9,7 @@ public partial class Pokemon
         public PeriodicDamageClock Clock;
     }
     private readonly List<PeriodicStatus> periodicStatuses = new List<PeriodicStatus>();
+    private PeriodicStatus[] periodicSnapshot = new PeriodicStatus[4];
 
     private void RegisterPeriodicStatus(StatusEffect effect, bool refresh = false)
     {
@@ -37,8 +38,11 @@ public partial class Pokemon
 
     public bool HasDamageOverTime(StatusType type, ulong sourceId)
     {
-        foreach (StatusEffect effect in statusEffects)
+        for (int i = 0; i < statusEffects.Count; i++)
+        {
+            StatusEffect effect = statusEffects[i];
             if (effect.Type == type && effect.PeriodicDamage.Enabled && effect.PeriodicDamage.Damage.attackerId == sourceId) return true;
+        }
         return false;
     }
 
@@ -70,8 +74,12 @@ public partial class Pokemon
     {
         if (periodicStatuses.Count == 0) return;
         // Damage can cause death, cleanse and new statuses. Never enumerate the live collection through those callbacks.
-        foreach (var state in periodicStatuses.ToArray())
+        int count = periodicStatuses.Count;
+        if (periodicSnapshot.Length < count) System.Array.Resize(ref periodicSnapshot, Mathf.NextPowerOfTwo(count));
+        periodicStatuses.CopyTo(periodicSnapshot);
+        for (int i = 0; i < count; i++)
         {
+            var state = periodicSnapshot[i];
             StatusEffect effect = state.Effect;
             if (CurrentHp <= 0 || baseStats == null || !HasStatusEffect(effect)
                 || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(effect.PeriodicDamage.Damage.attackerId, out var obj)
@@ -84,5 +92,6 @@ public partial class Pokemon
             while (CurrentHp > 0 && HasStatusEffect(effect) && catchup++ < 32 && state.Clock.TryTick(Time.timeAsDouble))
                 TakeDamageRPC(effect.PeriodicDamage.TickDamage(GetMaxHp(), (effect.PeriodicDamage.Damage.type == DamageType.Special) != source.SwitchAtkStat ? source.GetSpAttack() : source.GetAttack(), source.CurrentLevel, Type != PokemonType.Player));
         }
+        System.Array.Clear(periodicSnapshot, 0, count);
     }
 }

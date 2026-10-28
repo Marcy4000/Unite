@@ -25,8 +25,11 @@ public partial class MovesController
         marshadowCopyUI = Instantiate(source);
         marshadowCopyUI.moveName = "Shadow Copy: " + source.moveName;
         marshadowCopyUI.description = MarshadowCopyRules.Description(source.move);
-        BattleUIManager.instance.InitializeMoveUI(marshadowCopyUI, uniteMove);
-        BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(15f);
+        if (playerManager.IsLocalHuman)
+        {
+            BattleUIManager.instance.InitializeMoveUI(marshadowCopyUI, uniteMove);
+            BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(15f);
+        }
         OnMoveLearnedRPC(source.move);
     }
     public void RestoreMarshadowUnite(MarshadowCopiedUnite copy)
@@ -35,7 +38,7 @@ public partial class MovesController
         LearnMove(pokemon.BaseStats.GetUniteMove());
         if (marshadowCopyUI != null) Destroy(marshadowCopyUI);
         marshadowCopyUI = null;
-        BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(0);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowUniteMoveSecondaryCooldown(0);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]

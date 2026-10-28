@@ -23,7 +23,7 @@ public class SylvSwift : MoveBase
     {
         base.Start(controller);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        Aim.Instance.InitializeSkillshotAim(distance);
+        ActorAim.InitializeSkillshotAim(distance);
     }
 
     public override void Update()
@@ -37,7 +37,7 @@ public class SylvSwift : MoveBase
         {
             return;
         }
-        direction = Aim.Instance.SkillshotAim();
+        direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
@@ -49,7 +49,7 @@ public class SylvSwift : MoveBase
 
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
         Debug.Log($"Finished {Name}!");
         base.Finish();
     }
@@ -79,7 +79,7 @@ public class SylvSwift : MoveBase
     public override void Cancel()
     {
         base.Cancel();
-        Aim.Instance.HideSkillshotAim();
+        ActorAim.HideSkillshotAim();
     }
 
     public override void ResetMove()

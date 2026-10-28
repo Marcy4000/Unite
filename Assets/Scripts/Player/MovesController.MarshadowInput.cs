@@ -9,7 +9,7 @@ public partial class MovesController
 
     private void BufferMarshadowInput(int slot, bool released)
     {
-        if (!IsLivingMarshadow || playerManager.PlayerState != PlayerState.Alive || Aim.Instance == null) return;
+        if (!IsLivingMarshadow || playerManager.PlayerState != PlayerState.Alive || playerManager.Aim == null) return;
         if (released)
         {
             if (marshadowBufferedSlot == slot) marshadowBufferReleased = true;
@@ -21,12 +21,12 @@ public partial class MovesController
         if (!inCast) return;
         marshadowBufferedSlot = slot; marshadowBufferReleased = false;
         marshadowBufferUntil = Time.time + 0.18f;
-        marshadowBufferDirection = Aim.Instance.SkillshotAim();
+        marshadowBufferDirection = playerManager.Aim.SkillshotAim();
     }
     private void ProcessMarshadowBufferedInput()
     {
         if (marshadowBufferedSlot < 0) return;
-        if (controls.Movement.CancelMove.WasPressedThisFrame()) { ClearMarshadowBufferedInput(); return; }
+        if (playerManager.IsLocalHuman && controls.Movement.CancelMove.WasPressedThisFrame()) { ClearMarshadowBufferedInput(); return; }
         if (!IsLivingMarshadow || Time.time > marshadowBufferUntil) { ClearMarshadowBufferedInput(); return; }
         int slot = marshadowBufferedSlot;
         if (!moveStatuses[slot].HasStatus(ActionStatusType.None)) return;

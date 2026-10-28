@@ -25,7 +25,7 @@ public class MarshadowCloseCombat : MarshadowMoveBase
         if (!IsActive || executing) return;
         if (hasWindow && Time.time >= windowEnd) { Complete(); return; }
         if (!committed) strike = 0; else strike++;
-        hasWindow = false; MarshadowMoveRuntime.ShowWindow(0, 0);
+        hasWindow = false; MarshadowMoveRuntime.ShowWindow(playerManager, 0, 0);
         Begin(); sweepFrom = playerManager.transform.position; sweepTimer = 0;
         dash.Begin(playerManager.PlayerMovement, direction, AimRange);
         // The model has no basic-attack clips. Dash strikes are expressed by
@@ -58,14 +58,14 @@ public class MarshadowCloseCombat : MarshadowMoveBase
             else
             {
                 hasWindow = true; windowEnd = Time.time + MarshadowMoveRules.RushWindow;
-                MarshadowMoveRuntime.ShowWindow(0, MarshadowMoveRules.RushWindow);
+                MarshadowMoveRuntime.ShowWindow(playerManager, 0, MarshadowMoveRules.RushWindow);
             }
         }
     }
     protected override void Complete()
     {
         dash.End();
-        hasWindow = false; MarshadowMoveRuntime.ShowWindow(0, 0);
+        hasWindow = false; MarshadowMoveRuntime.ShowWindow(playerManager, 0, 0);
         base.Complete();
     }
 }

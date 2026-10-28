@@ -20,20 +20,20 @@ public abstract class CinderMoveBase : MoveBase
     {
         if (pending || executing) return;
         base.Start(controller);
-        if (CinderMoveRules.Targeted(Kind)) Aim.Instance.InitializeAutoAim(CinderMoveRules.Range(Kind), 90, AimTarget.NonAlly);
-        else if (CinderMoveRules.Dash(Kind)) Aim.Instance.InitializeDashAim(CinderMoveRules.DashDistance);
-        else if (Kind == CinderCast.PyroBall) Aim.Instance.InitializeSkillshotAim(CinderMoveRules.Range(Kind));
+        if (CinderMoveRules.Targeted(Kind)) playerManager.Aim.InitializeAutoAim(CinderMoveRules.Range(Kind), 90, AimTarget.NonAlly);
+        else if (CinderMoveRules.Dash(Kind)) playerManager.Aim.InitializeDashAim(CinderMoveRules.DashDistance);
+        else if (Kind == CinderCast.PyroBall) playerManager.Aim.InitializeSkillshotAim(CinderMoveRules.Range(Kind));
         ReadAim();
     }
     private void ReadAim()
     {
         if (CinderMoveRules.Targeted(Kind))
         {
-            var go = Aim.Instance.SureHitAim(); target = go != null ? go.GetComponent<Pokemon>() : null;
+            var go = playerManager.Aim.SureHitAim(); target = go != null ? go.GetComponent<Pokemon>() : null;
             direction = target != null ? target.transform.position - playerManager.transform.position : playerManager.transform.forward;
         }
-        else if (CinderMoveRules.Dash(Kind)) direction = Aim.Instance.DashAim();
-        else if (Kind == CinderCast.PyroBall) direction = Aim.Instance.SkillshotAim();
+        else if (CinderMoveRules.Dash(Kind)) direction = playerManager.Aim.DashAim();
+        else if (Kind == CinderCast.PyroBall) direction = playerManager.Aim.SkillshotAim();
         else direction = playerManager.transform.forward;
         direction = CinderMoveRules.Direction(direction, playerManager.transform.forward);
     }
@@ -84,7 +84,7 @@ public abstract class CinderMoveBase : MoveBase
                 rebounding = true; elapsed = 0;
                 playerManager.MovesController.CinderaceMovementPhaseRPC(cast, false, playerManager.transform.position);
                 playerManager.AnimationManager.PlayAnimation("ani_spell1b2_bat_0815");
-                Vector2 input = playerManager.MovesController.Controls.Movement.Move.ReadValue<Vector2>();
+                Vector2 input = playerManager.MovementInput;
                 Vector3 rebound = CinderMoveRules.Direction(new Vector3(input.x, 0, input.y), -approach);
                 BeginDrive(rebound, CinderMoveRules.ReboundDistance);
             }
@@ -132,10 +132,10 @@ public abstract class CinderMoveBase : MoveBase
     }
     private void HideAim()
     {
-        if (Aim.Instance == null) return;
-        if (CinderMoveRules.Targeted(Kind)) Aim.Instance.HideAutoAim();
-        else if (CinderMoveRules.Dash(Kind)) Aim.Instance.HideDashAim();
-        else if (Kind == CinderCast.PyroBall) Aim.Instance.HideSkillshotAim();
+        if (playerManager == null || playerManager.Aim == null) return;
+        if (CinderMoveRules.Targeted(Kind)) playerManager.Aim.HideAutoAim();
+        else if (CinderMoveRules.Dash(Kind)) playerManager.Aim.HideDashAim();
+        else if (Kind == CinderCast.PyroBall) playerManager.Aim.HideSkillshotAim();
     }
     public override void Cancel() { if (IsActive) HideAim(); base.Cancel(); }
     public override void ResetMove()

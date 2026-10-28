@@ -22,10 +22,10 @@ public abstract class EmboarMoveBase : MoveBase
         if (CanBrake) { recast = true; return; }
         if (pending || executing) return;
         base.Start(controller);
-        if (Kind == EmboarCast.Ember) Aim.Instance.InitializeAutoAim(EmboarMoveRules.Range(Kind), 60, AimTarget.NonAlly);
+        if (Kind == EmboarCast.Ember) playerManager.Aim.InitializeAutoAim(EmboarMoveRules.Range(Kind), 60, AimTarget.NonAlly);
         else if (Kind == EmboarCast.HeatCrash || Kind == EmboarCast.Unite)
-            Aim.Instance.InitializeSizedCircleAreaIndicator(EmboarMoveRules.Range(Kind), Kind == EmboarCast.Unite ? EmboarMoveRules.UniteRadius : EmboarMoveRules.CrashRadius);
-        else if (Kind != EmboarCast.FirePledge) Aim.Instance.InitializeSkillshotAim(EmboarMoveRules.Range(Kind));
+            playerManager.Aim.InitializeSizedCircleAreaIndicator(EmboarMoveRules.Range(Kind), Kind == EmboarCast.Unite ? EmboarMoveRules.UniteRadius : EmboarMoveRules.CrashRadius);
+        else if (Kind != EmboarCast.FirePledge) playerManager.Aim.InitializeSkillshotAim(EmboarMoveRules.Range(Kind));
         ReadAim();
     }
     private void ReadAim()
@@ -33,17 +33,17 @@ public abstract class EmboarMoveBase : MoveBase
         Vector3 forward = playerManager.transform.forward;
         if (Kind == EmboarCast.Ember)
         {
-            GameObject target = Aim.Instance.SureHitAim();
+            GameObject target = playerManager.Aim.SureHitAim();
             hasTarget = target != null && target.TryGetComponent<Unity.Netcode.NetworkObject>(out _);
             targetId = hasTarget ? target.GetComponent<Unity.Netcode.NetworkObject>().NetworkObjectId : 0;
             direction = hasTarget ? EmboarMoveRules.Direction(target.transform.position - playerManager.transform.position, forward) : forward;
         }
         else if (Kind == EmboarCast.HeatCrash || Kind == EmboarCast.Unite)
         {
-            destination = EmboarMoveRules.Destination(playerManager.transform.position, Aim.Instance.CircleAreaAim(), EmboarMoveRules.Range(Kind));
+            destination = EmboarMoveRules.Destination(playerManager.transform.position, playerManager.Aim.CircleAreaAim(), EmboarMoveRules.Range(Kind));
             direction = EmboarMoveRules.Direction(destination - playerManager.transform.position, forward);
         }
-        else direction = EmboarMoveRules.Direction(Kind == EmboarCast.FirePledge ? forward : Aim.Instance.SkillshotAim(), forward);
+        else direction = EmboarMoveRules.Direction(Kind == EmboarCast.FirePledge ? forward : playerManager.Aim.SkillshotAim(), forward);
     }
     public override void Finish()
     {
@@ -82,8 +82,7 @@ public abstract class EmboarMoveBase : MoveBase
     }
     private void Play(string clip)
     {
-        Animator animator = playerManager.AnimationManager.Animator;
-        if (animator != null && animator.HasState(0, Animator.StringToHash(clip))) playerManager.AnimationManager.PlayAnimation(clip);
+        playerManager.AnimationManager.PlayAnimation(clip);
     }
     public override void Update()
     {
@@ -97,7 +96,7 @@ public abstract class EmboarMoveBase : MoveBase
             if (playerManager.Pokemon.HasStatusEffect(StatusType.Immobilized)) { ResetMove(); return; }
             if (Kind == EmboarCast.FlameCharge)
             {
-                Vector2 input = playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>();
+                Vector2 input = playerManager.MovementInput;
                 Vector3 desired = new Vector3(input.x, 0, input.y);
                 if (desired.sqrMagnitude > 0.01f) direction = Vector3.RotateTowards(direction, desired.normalized, 3.5f * Time.deltaTime, 0);
                 Vector3 step = direction * EmboarMoveRules.ChargeSpeed(elapsed, empowered) * Mathf.Min(Time.deltaTime, Mathf.Max(0, EmboarMoveRules.ChargeDuration - previous));
@@ -153,10 +152,10 @@ public abstract class EmboarMoveBase : MoveBase
     }
     private void HideAim()
     {
-        if (Aim.Instance == null) return;
-        if (Kind == EmboarCast.Ember) Aim.Instance.HideAutoAim();
-        else if (Kind == EmboarCast.HeatCrash || Kind == EmboarCast.Unite) Aim.Instance.HideCircleAreaIndicator();
-        else if (Kind != EmboarCast.FirePledge) Aim.Instance.HideSkillshotAim();
+        if (playerManager == null || playerManager.Aim == null) return;
+        if (Kind == EmboarCast.Ember) playerManager.Aim.HideAutoAim();
+        else if (Kind == EmboarCast.HeatCrash || Kind == EmboarCast.Unite) playerManager.Aim.HideCircleAreaIndicator();
+        else if (Kind != EmboarCast.FirePledge) playerManager.Aim.HideSkillshotAim();
     }
     public override void Cancel() { if (IsActive) HideAim(); recast = false; base.Cancel(); }
     public override void ResetMove()

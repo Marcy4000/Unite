@@ -11,6 +11,10 @@ public class SoldierPokemon : NetworkBehaviour
     private NavMeshAgent agent;
     private WildPokemon wildPokemon;
     private int currentTargetIndex = 0;
+    private bool initialized;
+    private bool navigationFailed;
+    private int recoveryAttempts;
+    private float nextRecovery;
 
     public TeamMember CurrentTeam => wildPokemon.Pokemon.TeamMember;
     public WildPokemon WildPokemon => wildPokemon;
@@ -53,17 +57,19 @@ public class SoldierPokemon : NetworkBehaviour
         wildPokemon.Pokemon.OnPokemonInitialized += UpdateSpeed;
         wildPokemon.Pokemon.OnStatChange += UpdateSpeed;
 
-        targets.Add(transform.position);
+        targets.Clear();
+        currentTargetIndex = 0;
+        initialized = true;
 
         Team rotomPathTeam = orangeTeam == Team.Orange ? Team.Blue : Team.Orange;
 
         Vector3[] positions = GameManager.Instance.GetRotomPath(rotomPathTeam, laneID);
-        foreach (var pos in positions)
+        if (positions != null) foreach (var pos in positions)
         {
             targets.Add(pos);
         }
 
-        MoveToNextTarget();
+        if (EnsureNavigation()) MoveToNextTarget();
 
         InitializeClientsRPC();
     }
@@ -86,21 +92,48 @@ public class SoldierPokemon : NetworkBehaviour
 
     private void MoveToNextTarget()
     {
-        if (currentTargetIndex < targets.Count)
+        if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh && currentTargetIndex < targets.Count)
         {
-            agent.SetDestination(targets[currentTargetIndex]);
-            currentTargetIndex++;
+            if (agent.SetDestination(targets[currentTargetIndex])) currentTargetIndex++;
         }
+    }
+
+    private bool EnsureNavigation()
+    {
+        if (agent == null || navigationFailed) return false;
+        if (agent.isActiveAndEnabled && agent.isOnNavMesh) return true;
+        if (Time.time < nextRecovery) return false;
+        nextRecovery = Time.time + 0.5f;
+        var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+        if (NavMesh.SamplePosition(transform.position, out var hit, 5, filter))
+        {
+            // Disabled agents cannot Warp. Place first, then bind to the mesh.
+            agent.enabled = false;
+            transform.position = hit.position;
+            agent.enabled = true;
+            if (agent.isOnNavMesh && agent.Warp(hit.position))
+            {
+                if (currentTargetIndex > 0) currentTargetIndex--;
+                return true;
+            }
+        }
+        if (++recoveryAttempts >= 6)
+        {
+            navigationFailed = true;
+            agent.enabled = false;
+            Debug.LogWarning($"{name} could not recover its NavMesh binding after 6 attempts; navigation disabled.", this);
+        }
+        return false;
     }
 
     private void Update()
     {
-        if (!IsServer)
+        if (!IsServer || !initialized || !EnsureNavigation())
         {
             return;
         }
 
-        if (agent.remainingDistance < 0.1f)
+        if (!agent.pathPending && (!agent.hasPath || agent.remainingDistance < 0.1f))
         {
             MoveToNextTarget();
         }

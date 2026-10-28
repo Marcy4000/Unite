@@ -89,6 +89,41 @@ public class CameraControllerPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator CannonActivationAndCleanupCannotOverrideOpenJumpSelection()
+    {
+        object pad = new object();
+        object cannon = new object();
+        var jumpOffset = new Vector3(0, 57.7f, -61);
+        var cannonOffset = new Vector3(0, 27.7f, -28.9f);
+        Invoke("SetZoomOverride", pad, jumpOffset, 30f, 100, 0.05f);
+        yield return WaitForZoom(jumpOffset, 30f);
+        Invoke("SetZoomOverride", cannon, cannonOffset, 25f, 10, 0.05f);
+        Invoke("ResetZoom");
+        Invoke("ReleaseZoomOverride", cannon, 0.05f);
+        yield return WaitForZoom(jumpOffset, 30f);
+        Invoke("ReleaseZoomOverride", new object(), 0.05f);
+        yield return WaitForZoom(jumpOffset, 30f);
+        Invoke("ReleaseZoomOverride", pad, 0.05f);
+        yield return WaitForZoom(NormalOffset, 25f);
+    }
+
+    [UnityTest]
+    public IEnumerator ReleasingJumpSelectionRestoresStillActiveCannonOverride()
+    {
+        object pad = new object();
+        object cannon = new object();
+        var jumpOffset = new Vector3(0, 57.7f, -61);
+        var cannonOffset = new Vector3(0, 27.7f, -28.9f);
+        Invoke("SetZoomOverride", cannon, cannonOffset, 25f, 10, 0.05f);
+        Invoke("SetZoomOverride", pad, jumpOffset, 30f, 100, 0.05f);
+        yield return WaitForZoom(jumpOffset, 30f);
+        Invoke("ReleaseZoomOverride", pad, 0.05f);
+        yield return WaitForZoom(cannonOffset, 25f);
+        Invoke("ReleaseZoomOverride", cannon, 0.05f);
+        yield return WaitForZoom(NormalOffset, 25f);
+    }
+
+    [UnityTest]
     public IEnumerator NewZoomInterruptsThePreviousTransitionWithoutLaterOverwritingIt()
     {
         Invoke("ZoomCamera", new Vector3(0f, 57.7f, -61f), 30f, 0.3f);

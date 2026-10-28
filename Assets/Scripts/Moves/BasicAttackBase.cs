@@ -5,6 +5,7 @@ using UnityEngine;
 public abstract class BasicAttackBase
 {
     public PlayerManager playerManager;
+    protected Aim ActorAim => playerManager != null ? playerManager.Aim : null;
     public float range = 0f;
 
     public virtual void Initialize(PlayerManager manager)

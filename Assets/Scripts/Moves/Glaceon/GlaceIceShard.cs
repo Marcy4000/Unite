@@ -85,7 +85,7 @@ public class GlaceIceShard : MoveBase
             return;
         }
 
-        GameObject closestEnemy = Aim.Instance.AimInCircle(range);
+        GameObject closestEnemy = ActorAim.AimInCircle(range);
 
         // If an enemy is found, launch a homing projectile towards it
         if (closestEnemy != null)

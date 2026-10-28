@@ -85,7 +85,7 @@ public partial class MovesController : NetworkBehaviour
         }
 
         pokemon.OnLevelChange += CheckIfCanLearnMove;
-        MoveLearnPanel.onSelectedMove += OnMoveSelectedFromPanel;
+        if (playerManager.IsLocalHuman) MoveLearnPanel.onSelectedMove += OnMoveSelectedFromPanel;
 
         SelectBattleItem();
         battleItemStatus.OnStatusChange += UpdateBattleItemUI;
@@ -122,6 +122,7 @@ public partial class MovesController : NetworkBehaviour
 
     private void Update()
     {
+        TickUniteReadiness();
         UpdateCresseliaServer();
         UpdateVaporeonRuntime();
         UpdateCinderaceRuntime();
@@ -140,18 +141,19 @@ public partial class MovesController : NetworkBehaviour
 
         if (playerManager.PlayerState == PlayerState.Alive)
         {
-            if (controls.Movement.CancelMove.WasPressedThisFrame()) ClearServerAttackBufferedInput();
+            bool human = playerManager.IsLocalHuman;
+            if (human && controls.Movement.CancelMove.WasPressedThisFrame()) ClearServerAttackBufferedInput();
             ProcessServerAttackBufferedInput();
-            bool show = controls.Movement.BasicAttack.IsPressed() || controls.Movement.BasicAttackWild.IsPressed();
-            Aim.Instance.ShowBasicAtk(show, basicAttack.range);
+            bool show = human && (controls.Movement.BasicAttack.IsPressed() || controls.Movement.BasicAttackWild.IsPressed());
+            if (human) playerManager.Aim.ShowBasicAtk(show, basicAttack.range);
 
-            bool freshBufferedMove = ServerAttackBufferDuration > 0 && (controls.Movement.MoveA.WasPressedThisFrame()
+            bool freshBufferedMove = human && ServerAttackBufferDuration > 0 && (controls.Movement.MoveA.WasPressedThisFrame()
                 || controls.Movement.MoveB.WasPressedThisFrame() || controls.Movement.UniteMove.WasPressedThisFrame());
-            if (!freshBufferedMove && controls.Movement.BasicAttack.IsPressed())
+            if (human && !freshBufferedMove && controls.Movement.BasicAttack.IsPressed())
             {
                 TryPerformingBasicAttack(false);
             }
-            else if (!freshBufferedMove && controls.Movement.BasicAttackWild.IsPressed())
+            else if (human && !freshBufferedMove && controls.Movement.BasicAttackWild.IsPressed())
             {
                 TryPerformingBasicAttack(true);
             }
@@ -168,20 +170,20 @@ public partial class MovesController : NetworkBehaviour
                 BasicAttackStatus.RemoveStatus(ActionStatusType.Cooldown);
             }
 
-            if (controls.Movement.MoveA.WasPressedThisFrame())
+            if (human && controls.Movement.MoveA.WasPressedThisFrame())
             {
                 TryUsingMove(0);
             }
-            if (controls.Movement.MoveB.WasPressedThisFrame())
+            if (human && controls.Movement.MoveB.WasPressedThisFrame())
             {
                 TryUsingMove(1);
             }
-            if (controls.Movement.UniteMove.WasPressedThisFrame())
+            if (human && controls.Movement.UniteMove.WasPressedThisFrame())
             {
                 TryUsingUniteMove();
             }
 
-            if (controls.Movement.BattleItem.WasPressedThisFrame())
+            if (human && controls.Movement.BattleItem.WasPressedThisFrame())
             {
                 TryUsingBattleItem();
             }
@@ -201,7 +203,7 @@ public partial class MovesController : NetworkBehaviour
 
             battleItem.Update();
 
-            if (controls.Movement.CancelMove.WasPressedThisFrame())
+            if (human && controls.Movement.CancelMove.WasPressedThisFrame())
             {
                 ClearMarshadowBufferedInput();
                 ClearVaporeonBufferedInput();
@@ -216,20 +218,20 @@ public partial class MovesController : NetworkBehaviour
                 battleItem.Cancel();
             }
 
-            if (controls.Movement.MoveA.WasReleasedThisFrame())
+            if (human && controls.Movement.MoveA.WasReleasedThisFrame())
             {
                 TryFinishingMove(0);
             }
-            if (controls.Movement.MoveB.WasReleasedThisFrame())
+            if (human && controls.Movement.MoveB.WasReleasedThisFrame())
             {
                 TryFinishingMove(1);
             }
-            if (controls.Movement.UniteMove.WasReleasedThisFrame())
+            if (human && controls.Movement.UniteMove.WasReleasedThisFrame())
             {
                 TryFinishingUniteMove();
             }
 
-            if (controls.Movement.BattleItem.WasReleasedThisFrame())
+            if (human && controls.Movement.BattleItem.WasReleasedThisFrame())
             {
                 TryFinishingBattleItem();
             }
@@ -244,7 +246,7 @@ public partial class MovesController : NetworkBehaviour
             }
             else if (moveStatuses[i].HasStatus(ActionStatusType.Cooldown))
             {
-                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_CDOver);
+                if (playerManager.IsLocalHuman) AudioManager.PlaySound(DefaultAudioSounds.Play_UI_CDOver);
                 moveStatuses[i].RemoveStatus(ActionStatusType.Cooldown);
             }
         }
@@ -292,6 +294,17 @@ public partial class MovesController : NetworkBehaviour
             var filtered = RemoveAlreadyLearnedMoves(learnableMove);
             if (filtered.moves != null && filtered.moves.Length > 0)
             {
+                if (playerManager.IsBot)
+                {
+                    MoveAsset selected = filtered.moves[0];
+                    var build = playerManager.BotLoadout;
+                    if (build != null)
+                        foreach (var candidate in filtered.moves)
+                            if ((build.moveA != null && candidate.move == build.moveA.move) ||
+                                (build.moveB != null && candidate.move == build.moveB.move)) { selected = candidate; break; }
+                    LearnMove(selected);
+                    continue;
+                }
                 isProcessingMoveLearnQueue = true;
                 BattleUIManager.instance.InitializeMoveLearnPanel(filtered.moves);
                 return;
@@ -350,7 +363,7 @@ public partial class MovesController : NetworkBehaviour
             : actualMoveType != moveTypeToClassType[moveType];
     }
 
-    private void TryPerformingBasicAttack(bool wildPriority)
+    public void TryPerformingBasicAttack(bool wildPriority)
     {
         if (ServerAttackInputHasPriority()) return;
         if (!basicAttackStatus.HasStatus(ActionStatusType.None))
@@ -500,7 +513,7 @@ public partial class MovesController : NetworkBehaviour
         else if (status.Cooldown <= 0 && wasCoolingDown)
         {
             status.RemoveStatus(ActionStatusType.Cooldown);
-            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_CDOver);
+            if (playerManager.IsLocalHuman) AudioManager.PlaySound(DefaultAudioSounds.Play_UI_CDOver);
         }
     }
 
@@ -535,7 +548,7 @@ public partial class MovesController : NetworkBehaviour
 
     private void UpdateMoveUI(int index)
     {
-        if (BattleUIManager.instance == null) return;
+        if (playerManager == null || !playerManager.IsLocalHuman || BattleUIManager.instance == null) return;
         bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned) || moveStatuses[index].HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetMoveLock(index, showLock);
 
@@ -581,6 +594,7 @@ public partial class MovesController : NetworkBehaviour
 
     private void UpdateBattleItemUI()
     {
+        if (playerManager == null || !playerManager.IsLocalHuman || BattleUIManager.instance == null) return;
         bool showLock = battleItemStatus.HasStatus(ActionStatusType.Disabled) || battleItemStatus.HasStatus(ActionStatusType.Stunned) || battleItemStatus.HasStatus(ActionStatusType.Busy);
 
         BattleUIManager.instance.SetBattleItemLock(showLock);
@@ -593,7 +607,7 @@ public partial class MovesController : NetworkBehaviour
 
     private void UpdateUniteMoveUI()
     {
-        if (BattleUIManager.instance == null) return;
+        if (playerManager == null || !playerManager.IsLocalHuman || BattleUIManager.instance == null) return;
         bool showLock = uniteMoveStatus.HasStatus(ActionStatusType.Disabled) || uniteMoveStatus.HasStatus(ActionStatusType.Stunned) || uniteMoveStatus.HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetUniteMoveDisabledLock(showLock);
 
@@ -685,14 +699,14 @@ public partial class MovesController : NetworkBehaviour
                 break;
         }
 
-        if (move != lockedMove)
+        if (move != lockedMove && playerManager.IsLocalHuman)
         {
             AudioManager.PlaySound(DefaultAudioSounds.Play_UI_LearnSkill);
         }
 
         MoveBase learnedMove = GetMove(move.moveType);
         learnedMove?.UpdateStoredUses(Time.time, pokemon.GetCDR());
-        BattleUIManager.instance.InitializeMoveUI(move, learnedMove);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.InitializeMoveUI(move, learnedMove);
         int slot = move.moveType == MoveType.MoveA ? 0 : move.moveType == MoveType.MoveB ? 1 : -1;
         if (slot >= 0)
         {
@@ -722,11 +736,11 @@ public partial class MovesController : NetworkBehaviour
 
     private void SelectBattleItem()
     {
-        BattleItemAsset selectedBattleItem = CharactersList.Instance.GetBattleItemByID(int.Parse(LobbyController.Instance.Player.Data["BattleItem"].Value));
+        BattleItemAsset selectedBattleItem = CharactersList.Instance.GetBattleItemByID(int.Parse(playerManager.LobbyPlayer.Data["BattleItem"].Value));
 
         battleItem = BattleItemDatabase.GetBattleItem(selectedBattleItem.battleItemType);
 
-        BattleUIManager.instance.InitializeBattleItemUI(selectedBattleItem);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.InitializeBattleItemUI(selectedBattleItem);
 
         battleItem.onBattleItemOver += OnBattleItemOver;
     }

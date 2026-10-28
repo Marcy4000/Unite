@@ -11,6 +11,8 @@ public class PartyScreenUI : MonoBehaviour
     [SerializeField] private GameObject playerIconPrefab;
     [SerializeField] private GameObject playerIconHolder;
     [SerializeField] private Button startGameButton;
+    [SerializeField] private Button addBotsButton;
+    [SerializeField] private Button clearBotsButton;
     [SerializeField] private TMP_Text lobbyCodeText;
     [SerializeField] private Toggle openLobbyToggle;
     [SerializeField] private Toggle customLobbyToggle;
@@ -38,6 +40,7 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
 
     private void Start()
     {
+        BindBotButtons();
         openLobbyToggle.onValueChanged.AddListener((value) => LobbyController.Instance.ChangeLobbyVisibility(!value));
         customLobbyToggle.onValueChanged.AddListener(OnCustomLobbyToggleChanged);
         standardsLobbyToggle.onValueChanged.AddListener(OnStandardsLobbyToggleChanged);
@@ -121,8 +124,29 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
 
     private void Update()
     {
+        if (addBotsButton != null)
+        {
+            bool visible = IsLocalPlayerHost() && LobbyController.Instance.IsCustomLobby() &&
+                LobbyController.Instance.BotRoster?.SupportsBots == true;
+            addBotsButton.gameObject.SetActive(visible);
+            clearBotsButton.gameObject.SetActive(visible);
+            addBotsButton.interactable = LobbyController.Instance.CanManageBots &&
+                LobbyController.Instance.Lobby.Players.Count < LobbyController.Instance.GetMaxPartyMembers();
+            clearBotsButton.interactable = LobbyController.Instance.CanManageBots && LobbyController.Instance.BotRoster.HasBots;
+        }
         startGameButton.interactable = !LobbyController.Instance.IsAnyPlayerInResultScreen();
         UpdateMatchmakingUI();
+    }
+
+    private void BindBotButtons()
+    {
+        if (addBotsButton == null || clearBotsButton == null)
+        {
+            Debug.LogError("PartyScreenUI requires the authored Add Bots and Clear Bots buttons.", this);
+            return;
+        }
+        addBotsButton.onClick.AddListener(() => LobbyController.Instance.FillLobbyWithBots());
+        clearBotsButton.onClick.AddListener(() => LobbyController.Instance.ClearLobbyBots());
     }
 
     private void UpdateMatchmakingUI()

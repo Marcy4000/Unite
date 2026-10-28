@@ -27,7 +27,7 @@ public class VaporDive : MoveBase
         playerManager.PlayerMovement.BeginVaporeonDiveTraversal();
         playerManager.MovesController.BeginVaporeonDiveRPC();
         VaporMoveRuntime.Animate(playerManager, "Armature_pm0134_00_ba01_landA01_gfbanm", speed: 3);
-        BattleUIManager.instance.ShowMoveSecondaryCooldown(1, VaporMoveRules.DiveDuration);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowMoveSecondaryCooldown(1, VaporMoveRules.DiveDuration);
         // No normal cooldown/resource event until resurfacing. The B slot remains a recast.
     }
     public override void Update()
@@ -50,7 +50,7 @@ public class VaporDive : MoveBase
         Vector3 exit = playerManager.PlayerMovement.EndVaporeonDiveTraversal();
         playerManager.MovesController.EndVaporeonDiveRPC(true, exit);
         VaporMoveRuntime.Animate(playerManager, "Armature_pm0134_00_ba01_landC01_gfbanm", speed: 3);
-        BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
         Cooldown = VaporMoveRules.DiveCooldown(IsUpgraded);
         wasMoveSuccessful = true; base.Finish();
     }
@@ -68,7 +68,7 @@ public class VaporDive : MoveBase
         Vector3 exit = playerManager != null ? playerManager.PlayerMovement.EndVaporeonDiveTraversal() : Vector3.zero;
         if (submerged && playerManager != null && playerManager.IsSpawned)
             playerManager.MovesController.EndVaporeonDiveRPC(false, exit);
-        if (submerged && BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
+        if (submerged && playerManager.IsLocalHuman && BattleUIManager.instance != null) BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
         Complete(); elapsed = 0; wasMoveSuccessful = false;
     }
 }

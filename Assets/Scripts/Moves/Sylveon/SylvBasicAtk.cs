@@ -24,7 +24,7 @@ public class SylvBasicAtk : ChargedBasicAttackBase
     public override void Perform(bool wildPriority)
     {
         PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
-        GameObject closestEnemy = Aim.Instance.AimInCircle(range, priority);
+        GameObject closestEnemy = ActorAim.AimInCircle(range, priority);
 
         // If an enemy is found, launch a homing projectile towards it
         if (closestEnemy != null)

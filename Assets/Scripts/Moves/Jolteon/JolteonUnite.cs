@@ -20,18 +20,18 @@ public class JolteonUnite : MoveBase
     {
         if (dashing) return;
         base.Start(controller);
-        Aim.Instance.InitializeDashAim(5f);
-        direction = Aim.Instance.DashAim();
+        ActorAim.InitializeDashAim(5f);
+        direction = ActorAim.DashAim();
     }
 
     public override void Update()
     {
-        if (IsActive) direction = Aim.Instance.DashAim();
+        if (IsActive) direction = ActorAim.DashAim();
         if (!dashing) return;
         float delta = Mathf.Min(Time.deltaTime, remaining);
         // Movement input steers on keyboard and controller, preserving the
         // current control scheme and the established wall-bounce behaviour.
-        Vector2 input = playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>();
+        Vector2 input = playerManager.MovementInput;
         Vector3 steer = new Vector3(input.x, 0, input.y);
         if (steer.sqrMagnitude > 0.05f)
             direction = Vector3.RotateTowards(direction, steer.normalized, turningFactor * delta, 0).normalized;
@@ -81,7 +81,7 @@ public class JolteonUnite : MoveBase
     public override void Finish()
     {
         if (!IsActive || dashing) return;
-        Aim.Instance.HideDashAim();
+        ActorAim.HideDashAim();
         if (direction.sqrMagnitude > 0.001f)
         {
             direction.Normalize();
@@ -112,6 +112,6 @@ public class JolteonUnite : MoveBase
         (playerManager.PassiveController.Passive as JoltPassive)?.UniteFillCharge(5f);
     }
 
-    public override void Cancel() { if (IsActive) Aim.Instance.HideDashAim(); base.Cancel(); }
+    public override void Cancel() { if (IsActive) ActorAim.HideDashAim(); base.Cancel(); }
     public override void ResetMove() { Cancel(); EndDash(false); }
 }

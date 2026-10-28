@@ -1,8 +1,10 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class MinimapManager : MonoBehaviour
 {
     public static MinimapManager Instance;
+    private readonly Dictionary<PlayerManager, MapPlayerIcon> playerIcons = new();
 
     public RectTransform minimapRect;
 
@@ -24,10 +26,26 @@ public class MinimapManager : MonoBehaviour
 
     public void CreatePlayerIcon(PlayerManager player)
     {
+        if (player == null || player.Pokemon == null) return;
+        if (playerIcons.TryGetValue(player, out var existing) && existing != null) return;
         GameObject icon = Instantiate(playerIconPrefab, minimapLayers[0]);
         MapPlayerIcon playerIcon = icon.GetComponent<MapPlayerIcon>();
+        playerIcons[player] = playerIcon;
         playerIcon.Initialize(player);
         playerIcon.MinimapIcon.Initialize(minimapRect, worldSizeX, worldSizeZ);
+    }
+
+    public void RemovePlayerIcon(PlayerManager player)
+    {
+        if (!playerIcons.TryGetValue(player, out var icon)) return;
+        playerIcons.Remove(player);
+        if (icon != null) Destroy(icon.gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        playerIcons.Clear();
+        if (Instance == this) Instance = null;
     }
 
     public void CreateGoalzoneIcon(GoalZone goalZone)

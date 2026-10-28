@@ -5,6 +5,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.AI;
 
 public class WildPokemon : NetworkBehaviour
 {
@@ -28,6 +29,8 @@ public class WildPokemon : NetworkBehaviour
     private ObjectiveType objectiveType;
 
     private AsyncOperationHandle<PokemonBase> pokemonLoadHandle;
+    private GameManager subscribedMatch;
+    private int contentGeneration;
 
     public Pokemon Pokemon => pokemon;
     public WildPokemonInfo WildPokemonInfo { get => wildPokemonInfo; set { wildPokemonInfo = value; } }
@@ -91,7 +94,8 @@ public class WildPokemon : NetworkBehaviour
         }
 
         pokemon.GainExperienceRPC(totalExp);
-        GameManager.Instance.onFarmLevelUps += LevelUpWildMon;
+        subscribedMatch = GameManager.Instance;
+        if (subscribedMatch != null) subscribedMatch.onFarmLevelUps += LevelUpWildMon;
     }
 
     private int CalculateTimeHits()
@@ -335,14 +339,17 @@ public class WildPokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void SpawnSoldierRPC(Team orangeTeam)
     {
-        Vector3 groundPosition = transform.position;
-        groundPosition.y += 5;
-        if (Physics.Raycast(groundPosition, Vector3.down, out RaycastHit hit, Mathf.Infinity, LayerMask.GetMask("Default")))
+        var templateAgent = soldierPrefab.GetComponent<NavMeshAgent>();
+        var filter = new NavMeshQueryFilter { agentTypeID = templateAgent.agentTypeID, areaMask = templateAgent.areaMask };
+        Vector3 origin = transform.position;
+        if (GroundPlacement.TryGetGround(origin, LayerMask.GetMask("Default"), out var ground)) origin = ground;
+        if (!NavMesh.SamplePosition(origin, out var hit, 5, filter))
         {
-            groundPosition = hit.point;
+            Debug.LogWarning($"Could not place {soldierToSpawn} near {origin}: no compatible NavMesh. Soldier was not spawned.", this);
+            return;
         }
 
-        SoldierPokemon soldier = Instantiate(soldierPrefab, groundPosition, transform.rotation).GetComponent<SoldierPokemon>();
+        SoldierPokemon soldier = Instantiate(soldierPrefab, hit.position, transform.rotation).GetComponent<SoldierPokemon>();
         soldier.GetComponent<NetworkObject>().Spawn(true);
         soldier.InitializeRPC(orangeTeam, soldierToSpawn, SoldierLaneID);
     }
@@ -397,9 +404,11 @@ public class WildPokemon : NetworkBehaviour
     {
         wildPokemonInfo = CharactersList.Instance.WildPokemons[infoID];
         pokemon = GetComponent<Pokemon>();
+        int generation = ++contentGeneration;
         pokemonLoadHandle = Addressables.LoadAssetAsync<PokemonBase>(wildPokemonInfo.PokemonBase);
         pokemonLoadHandle.Completed += (handle) =>
         {
+            if (this == null || !IsSpawned || generation != contentGeneration || pokemon == null || !pokemon.IsSpawned) return;
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
                 pokemon.SetNewPokemon(handle.Result);
@@ -458,8 +467,23 @@ public class WildPokemon : NetworkBehaviour
         {
             Addressables.Release(pokemonLoadHandle);
         }
-        GameManager.Instance.onFarmLevelUps -= LevelUpWildMon;
+        DetachMatch();
         base.OnDestroy();
+    }
+
+    private void DetachMatch()
+    {
+        contentGeneration++;
+        if (subscribedMatch != null) subscribedMatch.onFarmLevelUps -= LevelUpWildMon;
+        subscribedMatch = null;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        DetachMatch();
+        StopAllCoroutines();
+        transform.DOKill();
+        base.OnNetworkDespawn();
     }
 
     private void Update()
