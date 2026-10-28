@@ -1585,15 +1585,6 @@ public partial class Pokemon : NetworkBehaviour
     {
         Pokemon attacker = NetworkManager.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
 
-        Dictionary<int, (float koerExp, float proximityExp)> expDistribution = new Dictionary<int, (float, float)>
-        {
-            {1, (1.0f, 0.0f)},
-            {2, (1.0f, 0.5f)},
-            {3, (1.0f, 0.25f)},
-            {4, (1.0f, 0.1667f)},
-            {5, (1.0f, 0.125f)}
-        };
-
         List<Pokemon> playersInProximity;
 
         if (attacker.TryGetComponent(out PlayerManager player))
@@ -1605,7 +1596,12 @@ public partial class Pokemon : NetworkBehaviour
             return;
         }
 
-        DistributeExperience(attacker, playersInProximity, baseExp, expDistribution);
+        if (!playersInProximity.Contains(attacker))
+        {
+            playersInProximity.Add(attacker);
+        }
+
+        DistributeExperience(playersInProximity, baseExp);
     }
 
     private List<Pokemon> FindPlayersInProximity(Vector3 koPosition, float range, Team team)
@@ -1624,24 +1620,15 @@ public partial class Pokemon : NetworkBehaviour
         return playersInProximity;
     }
 
-    private void DistributeExperience(Pokemon attacker, List<Pokemon> playersInProximity, float baseExp, Dictionary<int, (float koerExp, float proximityExp)> expDistribution)
+    private void DistributeExperience(List<Pokemon> playersInProximity, float baseExp)
     {
         int playersCount = playersInProximity.Count;
-        if (!expDistribution.TryGetValue(playersCount, out var expValues))
-        {
-            expValues = expDistribution[1];
-        }
+        float totalExp = playersCount == 1 ? baseExp : baseExp * 1.3f;
+        int experiencePerPlayer = Mathf.FloorToInt(totalExp / playersCount);
 
-        float attackerExp = baseExp * expValues.koerExp;
-        attacker.GainExperienceRPC(Mathf.FloorToInt(attackerExp));
-
-        float proximityExp = baseExp * expValues.proximityExp;
         foreach (var player in playersInProximity)
         {
-            if (player != attacker)
-            {
-                player.GainExperienceRPC(Mathf.FloorToInt(proximityExp));
-            }
+            player.GainExperienceRPC(experiencePerPlayer);
         }
     }
 

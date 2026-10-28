@@ -135,7 +135,12 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
     protected abstract IEnumerator Execute();
     private IEnumerator Run() { yield return Execute(); Despawn(); }
     private IEnumerator Watchdog() { yield return new WaitForSeconds(maximumLifetime); Despawn(); }
-    private void OnDeath(DamageInfo damage) { CancelDrivenMovementRPC(); Despawn(); }
+    private void OnDeath(DamageInfo damage)
+    {
+        if (!IsSpawned) return;
+        CancelDrivenMovementRPC();
+        Despawn();
+    }
     protected virtual void Update()
     {
         if (IsServer && initialized && (Actor == null || !Actor.IsSpawned || Actor.Pokemon.CurrentHp <= 0)) Despawn();

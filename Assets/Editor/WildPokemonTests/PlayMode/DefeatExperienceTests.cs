@@ -170,18 +170,61 @@ public abstract class DefeatExperienceTests
         yield return PreparePlayers(attacker, ally);
         // Same entry point used by the server-only WildPokemon.Die handler.
         Call(defeated, "GiveExpRpc", (ulong)Get(attacker, "NetworkObjectId"), Vector3.zero, 40f);
-        yield return AssertExperience(attacker, 40);
-        yield return AssertExperience(ally, 20);
+        yield return AssertExperience(attacker, 26);
+        yield return AssertExperience(ally, 26);
     }
 
     [UnityTest]
-    public IEnumerator RemotePlayerWildKillAwardsLastHitAndProximityXpOnce() => ServerReward(true, false);
+    public IEnumerator RemotePlayerWildKillSplitsXpEquallyOnce() => ServerReward(true, false);
 
     [UnityTest]
-    public IEnumerator ServerPlayerWildKillAwardsLastHitAndProximityXpOnce() => ServerReward(false, false);
+    public IEnumerator ServerPlayerWildKillSplitsXpEquallyOnce() => ServerReward(false, false);
 
     [UnityTest]
     public IEnumerator ExtraConnectedClientDoesNotMultiplyDefeatXp() => ServerReward(true, true);
+
+    private IEnumerator GroupReward(int playerCount, float baseExp, int expected, bool rangedAttacker = false)
+    {
+        var players = new Component[playerCount];
+        for (int index = 0; index < playerCount; index++)
+        {
+            players[index] = Spawn("Player", (ulong)Get(server, "LocalClientId"));
+        }
+        var excludedAlly = Spawn("Player", (ulong)Get(server, "LocalClientId"));
+        var opponent = Spawn("Player", (ulong)Get(server, "LocalClientId"));
+        var defeated = Spawn("Wild", (ulong)Get(server, "LocalClientId"));
+        yield return PreparePlayers(players.Concat(new[] { excludedAlly, opponent }).ToArray());
+        excludedAlly.transform.position = new Vector3(20f, 0f, 0f);
+        Call(opponent, "UpdateTeamRPC", Enum.Parse(GameType("Team"), "Orange"));
+        if (rangedAttacker) players[0].transform.position = new Vector3(20f, 0f, 0f);
+
+        Call(defeated, "GiveExpRpc", (ulong)Get(players[0], "NetworkObjectId"), Vector3.zero, baseExp);
+
+        foreach (var player in players) yield return AssertExperience(player, expected);
+        yield return AssertExperience(excludedAlly, 0);
+        yield return AssertExperience(opponent, 0);
+    }
+
+    [UnityTest]
+    public IEnumerator SoloKillAwardsFullXp() => GroupReward(1, 40f, 40);
+
+    [UnityTest]
+    public IEnumerator ThreePlayersSplitOneHundredThirtyPercent() => GroupReward(3, 60f, 26);
+
+    [UnityTest]
+    public IEnumerator FourPlayersSplitOneHundredThirtyPercent() => GroupReward(4, 40f, 13);
+
+    [UnityTest]
+    public IEnumerator FivePlayersSplitOneHundredThirtyPercent() => GroupReward(5, 100f, 26);
+
+    [UnityTest]
+    public IEnumerator FractionalSharesRoundDownEqually() => GroupReward(3, 40f, 17);
+
+    [UnityTest]
+    public IEnumerator RangedSoloAttackerStillReceivesFullXp() => GroupReward(1, 40f, 40, true);
+
+    [UnityTest]
+    public IEnumerator RangedAttackerCountsTowardSharedXp() => GroupReward(2, 40f, 26, true);
 
     [UnityTest]
     public IEnumerator OwnerRequestedPlayerKoRewardStillReachesTheServerOnce()
@@ -193,6 +236,19 @@ public abstract class DefeatExperienceTests
         // PlayerManager.OnPokemonDeath currently requests the reward on its owner.
         Call(Remote(defeated, clients[0]), "GiveExpRpc", (ulong)Get(attacker, "NetworkObjectId"), Vector3.zero, 40f);
         yield return AssertExperience(attacker, 40);
+    }
+
+    [UnityTest]
+    public IEnumerator OwnerRequestedPlayerKoSplitsXpEqually()
+    {
+        var attacker = Spawn("Player", (ulong)Get(server, "LocalClientId"));
+        var ally = Spawn("Player", (ulong)Get(server, "LocalClientId"));
+        var defeated = Spawn("Player", (ulong)Get(clients[0], "LocalClientId"));
+        yield return PreparePlayers(attacker, ally);
+        yield return Until(() => Remote(defeated, clients[0]) != null, "Defeated player did not replicate.");
+        Call(Remote(defeated, clients[0]), "GiveExpRpc", (ulong)Get(attacker, "NetworkObjectId"), Vector3.zero, 40f);
+        yield return AssertExperience(attacker, 26);
+        yield return AssertExperience(ally, 26);
     }
 }
 

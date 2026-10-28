@@ -267,6 +267,61 @@ public class AbsolServerTests
     }
 
     [UnityTest]
+    public IEnumerator EarlierDeathListenerCanDespawnEffectWithoutAbortingDeathOrHpNotifications()
+    {
+        Component effect = null;
+        int completions = 0;
+        int deaths = 0;
+        int hpChanges = 0;
+        Vector3 death = new Vector3(0, -50, -50);
+        Action cancel = () => { Call(effect, "Despawn"); actor.transform.position = death; };
+        Action recordDeath = () => deaths++;
+        Action recordHp = () => hpChanges++;
+        var deathEvent = actor.GetType().GetEvent("OnDeath");
+        var hpEvent = actor.GetType().GetEvent("OnHpChange");
+        var parameter = System.Linq.Expressions.Expression.Parameter(T("DamageInfo"), "damage");
+        var cancelCallback = System.Linq.Expressions.Expression.Lambda(deathEvent.EventHandlerType,
+            System.Linq.Expressions.Expression.Invoke(System.Linq.Expressions.Expression.Constant(cancel)), parameter).Compile();
+        var deathCallback = System.Linq.Expressions.Expression.Lambda(deathEvent.EventHandlerType,
+            System.Linq.Expressions.Expression.Invoke(System.Linq.Expressions.Expression.Constant(recordDeath)), parameter).Compile();
+        deathEvent.AddEventHandler(actor, cancelCallback);
+        hpEvent.AddEventHandler(actor, recordHp);
+        try
+        {
+            effect = Effect("AbsolFeint");
+            var completedEvent = effect.GetType().GetEvent("Completed");
+            var completedParameter = System.Linq.Expressions.Expression.Parameter(T("PrefabMoveEffect"), "effect");
+            Action recordCompletion = () => completions++;
+            var completedCallback = System.Linq.Expressions.Expression.Lambda(completedEvent.EventHandlerType,
+                System.Linq.Expressions.Expression.Invoke(System.Linq.Expressions.Expression.Constant(recordCompletion)), completedParameter).Compile();
+            completedEvent.AddEventHandler(effect, completedCallback);
+            deathEvent.AddEventHandler(actor, deathCallback);
+            yield return new WaitForSeconds(0.1f);
+            Call(actor, "ResolveDamage", Damage(actor, 6000));
+            Assert.That(Hp(actor), Is.Zero);
+            Assert.That(deaths, Is.EqualTo(1));
+            Assert.That(hpChanges, Is.EqualTo(1));
+            Assert.That(completions, Is.EqualTo(1));
+            Assert.That((bool)Get(effect, "IsSpawned"), Is.False);
+            Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
+            Assert.That(actor.transform.position, Is.EqualTo(death));
+            Variable(actor, "currentHp", 5000);
+            Vector3 respawn = new Vector3(-20, 0, 0); actor.transform.position = respawn;
+            yield return new WaitForSeconds(0.5f);
+            Assert.That(actor.transform.position, Is.EqualTo(respawn));
+            Assert.That(deaths, Is.EqualTo(1));
+            Assert.That(hpChanges, Is.EqualTo(2));
+            Assert.That(completions, Is.EqualTo(1));
+        }
+        finally
+        {
+            deathEvent.RemoveEventHandler(actor, cancelCallback);
+            deathEvent.RemoveEventHandler(actor, deathCallback);
+            hpEvent.RemoveEventHandler(actor, recordHp);
+        }
+    }
+
+    [UnityTest]
     public IEnumerator DeathTeleportAndImmediateRespawnCannotBeOverwrittenByOldMovement()
     {
         Vector3 death = new Vector3(0, -50, -50);

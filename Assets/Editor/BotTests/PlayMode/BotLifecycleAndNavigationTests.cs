@@ -9,6 +9,15 @@ using UnityEngine.AI;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
+public class TeleportTriggerContacts : MonoBehaviour
+{
+    public int Enters { get; private set; }
+    public int Exits { get; private set; }
+
+    private void OnTriggerEnter(Collider other) => Enters++;
+    private void OnTriggerExit(Collider other) => Exits++;
+}
+
 public class BotLifecycleAndNavigationTests
 {
     private static Type GameType(string name) => AppDomain.CurrentDomain.GetAssemblies()
@@ -56,6 +65,91 @@ public class BotLifecycleAndNavigationTests
         Assert.That(Vector3.Distance(root.transform.position, nextSpawn), Is.LessThan(0.001f));
         Assert.That(movement.GetType().GetProperty("IsDashing").GetValue(movement), Is.False);
         Assert.That(movement.GetType().GetField("lastValidPosition", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(movement), Is.EqualTo(nextSpawn));
+    }
+
+    [UnityTest]
+    public IEnumerator TeleportLeavesTriggersWithoutLosingExitOrReenteringAnUnchangedOverlap()
+        => VerifyTeleportTriggerLifecycle(false);
+
+    [UnityTest]
+    public IEnumerator TeleportLeavesConvexMeshHitboxesWithoutLosingExit()
+        => VerifyTeleportTriggerLifecycle(true);
+
+    private IEnumerator VerifyTeleportTriggerLifecycle(bool useMesh)
+    {
+        root = new GameObject("Teleport trigger regression");
+        root.transform.position = new Vector3(10000, 0, 10000);
+        var zone = new GameObject("Persistent area");
+        zone.transform.SetParent(root.transform, false);
+        Collider trigger;
+        if (useMesh)
+        {
+            var source = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            source.transform.SetParent(root.transform, false);
+            source.SetActive(false);
+            var mesh = zone.AddComponent<MeshCollider>();
+            mesh.sharedMesh = source.GetComponent<MeshFilter>().sharedMesh;
+            mesh.convex = true;
+            zone.transform.localScale = Vector3.one * 4;
+            trigger = mesh;
+        }
+        else
+        {
+            var box = zone.AddComponent<BoxCollider>();
+            box.size = Vector3.one * 4;
+            trigger = box;
+        }
+        trigger.isTrigger = true;
+        var body = zone.AddComponent<Rigidbody>();
+        body.isKinematic = true;
+        body.useGravity = false;
+        var contacts = zone.AddComponent<TeleportTriggerContacts>();
+        var actor = new GameObject("Teleporting player");
+        actor.transform.SetParent(root.transform, false);
+        var controller = actor.AddComponent<CharacterController>();
+        var movement = actor.AddComponent(GameType("PlayerMovement"));
+        ((Behaviour)movement).enabled = false;
+        Set(movement, "characterController", controller);
+        Physics.SyncTransforms();
+        yield return new WaitForFixedUpdate();
+        yield return null;
+        Assert.That(contacts.Enters, Is.EqualTo(1));
+
+        Call(movement, "Teleport", root.transform.position + Vector3.right * 0.5f, Quaternion.identity, true);
+        Physics.SyncTransforms();
+        yield return new WaitForFixedUpdate();
+        yield return null;
+        Assert.That(contacts.Enters, Is.EqualTo(1), "Teleporting within an area must not apply its effect twice.");
+        Assert.That(contacts.Exits, Is.Zero);
+
+        Call(movement, "Teleport", root.transform.position + Vector3.right * 5, Quaternion.identity, true);
+        Physics.SyncTransforms();
+        yield return new WaitForFixedUpdate();
+        yield return null;
+        Assert.That(contacts.Exits, Is.EqualTo(1), "Teleporting out must release persistent zone and damage effects.");
+        Assert.That(controller.enabled, Is.True);
+
+        Call(movement, "Teleport", root.transform.position, Quaternion.identity, true);
+        Physics.SyncTransforms();
+        yield return new WaitForFixedUpdate();
+        yield return null;
+        Assert.That(contacts.Enters, Is.EqualTo(2), "Returning to the area must apply its effect again.");
+    }
+
+    [UnityTest]
+    public IEnumerator TeleportDoesNotEnableADisabledController()
+    {
+        root = new GameObject("Disabled controller teleport");
+        var controller = root.AddComponent<CharacterController>();
+        controller.enabled = false;
+        var movement = root.AddComponent(GameType("PlayerMovement"));
+        ((Behaviour)movement).enabled = false;
+        Set(movement, "characterController", controller);
+        var destination = new Vector3(10000, 0, 10000);
+        Call(movement, "Teleport", destination, Quaternion.Euler(0, 90, 0), true);
+        Assert.That(root.transform.position, Is.EqualTo(destination));
+        Assert.That(controller.enabled, Is.False);
+        yield return null;
     }
 
     [UnityTest]

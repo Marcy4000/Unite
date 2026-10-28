@@ -17,16 +17,134 @@ public enum AudioAudibility : byte
 }
 
 /// <summary>
-/// Manages spatial audio playback with vision-based and team-based filtering.
+/// Manages screen-relative proximity audio with vision-based and team-based filtering.
 /// Sounds are only played if the source is visible to the local player's team.
 /// </summary>
+[DefaultExecutionOrder(10000)]
 public class SpatialAudioManager : NetworkBehaviour
 {
     public static SpatialAudioManager Instance { get; private set; }
 
+    [Tooltip("Fraction of each screen edge used to fade positional sounds to silence.")]
+    [SerializeField, Range(0.01f, 0.5f)]
+    private float screenEdgeFadeWidth = 0.1f;
+
+    private readonly List<ProximitySound> proximitySounds = new List<ProximitySound>();
+
+    private struct ProximitySound
+    {
+        public SoundChannelHelper Helper;
+        public Vector3 Position;
+        public Transform Source;
+        public float OriginalSpatialBlend;
+    }
+
     private void Awake()
     {
         Instance = this;
+    }
+
+    private void OnDisable()
+    {
+        AudioManager.OnSoundPlayed -= OnSoundPlayed;
+        foreach (var sound in proximitySounds)
+        {
+            if (sound.Helper == null) continue;
+            sound.Helper.Stop();
+            sound.Helper.AudioSource.spatialBlend = sound.OriginalSpatialBlend;
+        }
+        proximitySounds.Clear();
+    }
+
+    private void LateUpdate()
+    {
+        Camera camera = Camera.main;
+        for (int index = proximitySounds.Count - 1; index >= 0; index--)
+        {
+            ProximitySound sound = proximitySounds[index];
+            if (sound.Helper == null || !sound.Helper.isActiveAndEnabled)
+            {
+                if (sound.Helper != null) sound.Helper.AudioSource.spatialBlend = sound.OriginalSpatialBlend;
+                proximitySounds.RemoveAt(index);
+                continue;
+            }
+
+            if (sound.Source != null)
+            {
+                sound.Position = sound.Source.position;
+                proximitySounds[index] = sound;
+            }
+
+            ApplyProximityVolume(sound, camera);
+        }
+    }
+
+    private static float GetProximityGain(Camera camera, Vector3 position, float fadeWidth)
+    {
+        if (camera == null || !camera.isActiveAndEnabled) return 0f;
+
+        Vector3 viewport = camera.WorldToViewportPoint(position);
+        if (viewport.z < camera.nearClipPlane || viewport.z > camera.farClipPlane) return 0f;
+
+        float edgeDistance = Mathf.Min(Mathf.Min(viewport.x, 1f - viewport.x), Mathf.Min(viewport.y, 1f - viewport.y));
+        return Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(edgeDistance / Mathf.Clamp(fadeWidth, 0.01f, 0.5f)));
+    }
+
+    private void ApplyProximityVolume(ProximitySound sound, Camera camera)
+    {
+        SoundChannelHelper helper = sound.Helper;
+        AudioSource audioSource = helper.AudioSource;
+        float volume = helper.Volume;
+        SoundFileObject file = helper.AudioFile;
+        if (file.fadeInOut && audioSource.clip != null)
+        {
+            float length = audioSource.clip.length;
+            float fadeOutTime = file.fadeOutDuration * length;
+            if (audioSource.time >= length - fadeOutTime)
+            {
+                if (fadeOutTime > 0f) volume *= Mathf.Clamp01((length - audioSource.time) / fadeOutTime);
+            }
+            else
+            {
+                float fadeInTime = file.fadeInDuration * length;
+                if (fadeInTime > 0f) volume *= Mathf.Clamp01(audioSource.time / fadeInTime);
+            }
+        }
+
+        audioSource.volume = volume * GetProximityGain(camera, sound.Position, screenEdgeFadeWidth);
+    }
+
+    private void OnSoundPlayed(SoundChannelHelper helper, SoundFileObject file)
+    {
+        for (int index = proximitySounds.Count - 1; index >= 0; index--)
+        {
+            if (proximitySounds[index].Helper == helper) proximitySounds.RemoveAt(index);
+        }
+    }
+
+    private bool PlayProximitySound<T>(T sound, Vector3 position, Transform source = null) where T : System.Enum
+    {
+        Camera camera = Camera.main;
+        if (GetProximityGain(camera, position, screenEdgeFadeWidth) <= 0f) return false;
+
+        AudioManager.OnSoundPlayed -= OnSoundPlayed;
+        AudioManager.OnSoundPlayed += OnSoundPlayed;
+        SoundChannelHelper helper = source != null
+            ? AudioManager.PlaySound(sound, source)
+            : AudioManager.PlaySound(sound, position);
+        if (helper == null) return false;
+
+        var proximitySound = new ProximitySound
+        {
+            Helper = helper,
+            Position = position,
+            Source = source,
+            OriginalSpatialBlend = helper.AudioSource.spatialBlend
+        };
+        helper.AudioSource.spatialBlend = 0f;
+        proximitySounds.Add(proximitySound);
+        ApplyProximityVolume(proximitySound, camera);
+        return true;
     }
 
     #region Server-Side Methods (Call from Server)
@@ -208,7 +326,7 @@ public class SpatialAudioManager : NetworkBehaviour
     /// <param name="sound">The sound to play.</param>
     /// <param name="position">World position of the sound.</param>
     /// <param name="sourceVision">Optional: Vision component for accurate visibility check.</param>
-    /// <returns>True if the sound was played, false if not visible.</returns>
+    /// <returns>True if playback started, false if hidden, offscreen, or unavailable.</returns>
     public bool PlayLocalSoundWithVisionCheck<T>(T sound, Vector3 position, Vision sourceVision = null) where T : System.Enum
     {
         Team localTeam = VisionManager.Instance.LocalPlayerTeam;
@@ -225,17 +343,16 @@ public class SpatialAudioManager : NetworkBehaviour
 
         if (!isVisible) return false;
 
-        AudioManager.PlaySound(sound, position);
-        return true;
+        return PlayProximitySound(sound, position);
     }
 
     /// <summary>
     /// Plays a sound locally without any visibility check.
-    /// Use this for UI sounds or sounds that should always play.
+    /// Still applies screen-edge proximity attenuation. Use AudioManager directly for global/UI sounds.
     /// </summary>
     public void PlayLocalSound<T>(T sound, Vector3 position) where T : System.Enum
     {
-        AudioManager.PlaySound(sound, position);
+        PlayProximitySound(sound, position);
     }
 
     /// <summary>
@@ -243,7 +360,7 @@ public class SpatialAudioManager : NetworkBehaviour
     /// </summary>
     public void PlayLocalSound<T>(T sound, Transform source) where T : System.Enum
     {
-        AudioManager.PlaySound(sound, source);
+        if (source != null) PlayProximitySound(sound, source.position, source);
     }
 
     private bool IsPositionVisibleToLocalPlayer(Vector3 position)
@@ -272,7 +389,7 @@ public class SpatialAudioManager : NetworkBehaviour
     {
         // Convert back to enum and play
         DefaultAudioSounds sound = (DefaultAudioSounds)soundIndex;
-        AudioManager.PlaySound(sound, position);
+        PlayProximitySound(sound, position);
     }
 
     #endregion

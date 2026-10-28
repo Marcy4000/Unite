@@ -409,12 +409,10 @@ public partial class PlayerMovement : NetworkBehaviour
         knockupTween = null;
         isKnockedUp = isDashing = isMoving = false;
         currentMovement = inputMovement = Vector3.zero;
-        bool restoreController = characterController != null && characterController.enabled;
-        if (restoreController) characterController.enabled = false;
         transform.SetPositionAndRotation(position, rotation);
+        Physics.SyncTransforms();
         if (recordSafePosition) lastValidPosition = position;
         UpdateActiveWalkmesh();
-        if (restoreController) characterController.enabled = true;
     }
 
     public void StartDash()
