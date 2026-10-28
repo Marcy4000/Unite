@@ -79,15 +79,73 @@ public class SharedGameplayRegressionTests
     }
 
     [TestCase("Active", true, true)]
-    [TestCase("Active", false, false)]
+    [TestCase("Active", false, true)]
     [TestCase("Weakened", true, false)]
+    [TestCase("Weakened", false, false)]
     [TestCase("Destroyed", true, false)]
-    public void OnlyAnActiveEnabledGoalProvidesDefense(string status, bool active, bool expected)
+    [TestCase("Destroyed", false, false)]
+    public void HealthyGoalsProvideDefenseRegardlessOfScoringActivation(string status, bool active, bool expected)
     {
         var goal = Node("goal", false).AddComponent(T("GoalZone"));
         Variable(goal, "isActive", active);
         Variable(goal, "goalStatus", Enum.Parse(T("GoalStatus"), status));
         Assert.That(goal.GetType().GetProperty("ProvidesDefense").GetValue(goal), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void GoalShieldUsesGpuAnimationAndAnIndependentMaterial()
+    {
+        var shader = Shader.Find("Unite/Goal Zone Shield");
+        Assert.That(shader, Is.Not.Null);
+        Assert.That(ShaderUtil.ShaderHasError(shader), Is.False);
+        var shared = new Material(shader); created.Add(shared);
+        var root = Node("shield", false);
+        var renderer = root.AddComponent<MeshRenderer>(); renderer.sharedMaterial = shared;
+        var shield = root.AddComponent(T("GoalZoneShield"));
+        Set(shield, "shieldRenderer", renderer);
+        UnityEngine.TestTools.LogAssert.Expect(LogType.Error,
+            "Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.");
+        Call(shield, "Awake");
+        var instance = renderer.sharedMaterial; created.Add(instance);
+        Assert.That(instance, Is.Not.SameAs(shared));
+        Assert.That(instance.GetVector("_ShieldFade").y, Is.Zero);
+        Assert.That(instance.GetFloat("_ScrollSpeed"), Is.EqualTo(0.5f));
+        root.SetActive(true);
+        Color teamColor = new Color(0, 2, 4, 1);
+        Call(shield, "SetShieldColor", teamColor);
+        Call(shield, "ShowShield");
+        Assert.That(instance.GetColor("_EmissionColor"), Is.EqualTo(teamColor));
+        var shown = instance.GetVector("_ShieldFade");
+        Assert.That(shown.y, Is.EqualTo(1));
+        Assert.That(shown.w, Is.EqualTo(1f / 0.3f));
+        Call(shield, "ShowShield");
+        Assert.That(instance.GetVector("_ShieldFade"), Is.EqualTo(shown));
+        Set(shield, "shieldFade", new Vector4(0, 1, Time.time - 0.15f, 1f / 0.3f));
+        Call(shield, "HideShield");
+        Assert.That(instance.GetVector("_ShieldFade").x, Is.EqualTo(0.5f).Within(0.01f));
+        Assert.That(instance.GetVector("_ShieldFade").y, Is.Zero);
+        Assert.That(shared.GetVector("_ShieldFade"), Is.EqualTo(Vector4.zero));
+        Assert.That(shield.GetType().GetMethod("Update", Private), Is.Null);
+        Call(shield, "ShowShield");
+        root.SetActive(false);
+        Call(shield, "OnDisable");
+        var hidden = instance.GetVector("_ShieldFade");
+        Assert.That(hidden.x, Is.Zero);
+        Assert.That(hidden.y, Is.Zero);
+    }
+
+    [Test]
+    public void GoalPrefabShieldUsesTheAnimatedShaderAndOriginalMask()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/GoalZone.prefab");
+        var shield = prefab.GetComponentInChildren(T("GoalZoneShield"), true);
+        Assert.That(shield, Is.Not.Null);
+        var data = new SerializedObject(shield);
+        var renderer = (MeshRenderer)data.FindProperty("shieldRenderer").objectReferenceValue;
+        var material = renderer.sharedMaterial;
+        Assert.That(material.shader.name, Is.EqualTo("Unite/Goal Zone Shield"));
+        Assert.That(material.GetTexture("_EmissionMap"), Is.Not.Null);
+        Assert.That(material.GetVector("_ShieldFade").y, Is.Zero);
     }
 
     [TestCase(1, 9, 3, 2, true)]

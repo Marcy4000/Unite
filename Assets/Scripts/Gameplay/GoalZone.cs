@@ -42,7 +42,7 @@ public class GoalZone : NetworkBehaviour
     private StatChange statChange = new StatChange(60, Stat.Speed, 0, false, true, true, GoalSpeedId);
     private float nextHeal;
     private readonly HashSet<PlayerManager> boostedPlayers = new();
-    public bool ProvidesDefense => IsActive && GoalStatus == GoalStatus.Active;
+    public bool ProvidesDefense => GoalStatus == GoalStatus.Active;
 
     private NetworkVariable<bool> isActive = new NetworkVariable<bool>();
 

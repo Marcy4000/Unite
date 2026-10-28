@@ -185,4 +185,14 @@ public class ClothesSelector : MonoBehaviour
         isShowingColorPickers = false;
         colorPickersHolder.SetActive(isShowingColorPickers);
     }
+
+    #if UNITY_EDITOR
+    private void Update()
+    {
+        if (UnityEngine.InputSystem.Keyboard.current.pKey.wasPressedThisFrame)
+        { 
+            Debug.Log("Clothing Info: " + localPlayerClothesInfo.Serialize());
+        }
+    }
+    #endif
 }

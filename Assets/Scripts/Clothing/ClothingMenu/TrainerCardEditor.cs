@@ -132,14 +132,5 @@ public class TrainerCardEditor : MonoBehaviour
         backgroundMenu.gameObject.SetActive(index == 1);
         frameMenu.gameObject.SetActive(index == 2);
     }
-
-    #if UNITY_EDITOR
-    private void Update()
-    {
-        if (UnityEngine.InputSystem.Keyboard.current.rightShiftKey.wasPressedThisFrame)
-        {
-            Debug.Log("Trainer Card Info: " + GetPlayerClothesInfo().TrainerCardInfo.Serialize());
-        }
-    }
-    #endif
+    
 }

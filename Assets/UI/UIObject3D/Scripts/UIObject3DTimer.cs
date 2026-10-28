@@ -53,10 +53,21 @@ namespace UI.ThreeDimensional
         private static bool IsQuitting { get; set; }
 
 #if UNITY_2018_1_OR_NEWER
-        [RuntimeInitializeOnLoadMethod()]
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void OnLoad()
         {
-            Application.quitting += () => IsQuitting = true;
+            IsQuitting = false;
+            _timerComponent = null;
+#if UNITY_EDITOR
+            delayedEditorActions.Clear();
+#endif
+            Application.quitting -= OnQuitting;
+            Application.quitting += OnQuitting;
+        }
+
+        private static void OnQuitting()
+        {
+            IsQuitting = true;
         }
 #endif
 

@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 public class GoalZoneShield : MonoBehaviour
@@ -8,73 +7,62 @@ public class GoalZoneShield : MonoBehaviour
 
     [SerializeField] [ColorUsage(true, true)] private Color shieldColor;
 
-    private bool isShieldActive = false;
+    private const float FadeDuration = 0.3f;
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+    private static readonly int ScrollSpeedId = Shader.PropertyToID("_ScrollSpeed");
+    private static readonly int ShieldFadeId = Shader.PropertyToID("_ShieldFade");
+    private bool isShieldActive;
     private Material material;
-    private Material ShieldMaterial => material != null ? material : material = shieldRenderer.material;
+    private Vector4 shieldFade;
+
+    private bool EnsureMaterial()
+    {
+        if (shieldRenderer == null) return false;
+        if (material != null) return true;
+        material = shieldRenderer.material;
+        material.SetColor(EmissionColorId, shieldColor);
+        material.SetFloat(ScrollSpeedId, shieldSpeed);
+        material.SetVector(ShieldFadeId, shieldFade);
+        return true;
+    }
 
     private void Awake()
     {
-        isShieldActive = false;
-        HideShield();
+        if (EnsureMaterial()) SetVisibility(false, true);
     }
 
     public void SetShieldColor(Color color)
     {
         shieldColor = color;
+        if (material != null) material.SetColor(EmissionColorId, color);
     }
 
     public void ShowShield()
     {
-        if (shieldRenderer == null || !isActiveAndEnabled) return;
-        if (isShieldActive) return;
-        initialized = true;
-        isShieldActive = true;
-        ShieldMaterial.SetFloat("_Smoothness", 0.5f);
-
-        Color shieldColor = this.shieldColor;
-        StopAllCoroutines();
-        StartCoroutine(TransitionColor(shieldColor, 0.3f));
+        if (!isActiveAndEnabled || isShieldActive || !EnsureMaterial()) return;
+        SetVisibility(true, false);
     }
 
     public void HideShield()
     {
-        if (shieldRenderer == null) return;
-        if (initialized && !isShieldActive) return;
-        initialized = true;
-        isShieldActive = false;
-        ShieldMaterial.SetFloat("_Smoothness", 0);
-
-        Color shieldColor = this.shieldColor;
-        StopAllCoroutines();
-        if (isActiveAndEnabled) StartCoroutine(TransitionColor(Color.clear, 0.3f));
-        else ShieldMaterial.SetColor("_EmissionColor", Color.clear);
+        if (!EnsureMaterial()) return;
+        if (!isActiveAndEnabled) SetVisibility(false, true);
+        else if (isShieldActive) SetVisibility(false, false);
     }
 
-    private bool initialized;
-
-    private IEnumerator TransitionColor(Color targetColor, float duration)
+    private void SetVisibility(bool visible, bool immediate)
     {
-        Color startColor = ShieldMaterial.GetColor("_EmissionColor");
-        float elapsedTime = 0;
-
-        while (elapsedTime < duration)
-        {
-            ShieldMaterial.SetColor("_EmissionColor", Color.Lerp(startColor, targetColor, elapsedTime / duration));
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        ShieldMaterial.SetColor("_EmissionColor", targetColor);
+        float target = visible ? 1f : 0f;
+        float current = Mathf.Lerp(shieldFade.x, shieldFade.y,
+            Mathf.Clamp01((Time.time - shieldFade.z) * shieldFade.w));
+        shieldFade = new Vector4(immediate ? target : current, target, Time.time, 1f / FadeDuration);
+        isShieldActive = visible;
+        material.SetVector(ShieldFadeId, shieldFade);
     }
 
-    private void Update()
+    private void OnDisable()
     {
-        ShieldMaterial.SetTextureOffset("_BaseMap", new Vector2(Time.time * shieldSpeed % 1, 0));
-
-        if (isShieldActive)
-        {
-            ShieldMaterial.SetColor("_EmissionColor", shieldColor * (1 - Mathf.Sin(Time.time * 5) * 0.1f));
-        }
+        if (material != null) SetVisibility(false, true);
     }
 
     private void OnDestroy() { if (material != null) Destroy(material); }

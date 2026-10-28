@@ -103,9 +103,20 @@ public class SharedUiTests
     [Test]
     public void ErrorOverlayUsesOpaqueHighContrastUiAndSelectableDismissal()
     {
+        var prefab = Resources.Load<GameObject>("UI/ConnectionFailureDialog");
+        Assert.That(prefab, Is.Not.Null);
+        var dialog = prefab.GetComponent(GameType("ConnectionFailureDialog"));
+        Assert.That(dialog, Is.Not.Null);
+        foreach (var field in new[] { "titleText", "messageText", "dismissButton" })
+        {
+            var reference = (Component)dialog.GetType().GetField(field, Private).GetValue(dialog);
+            Assert.That(reference, Is.Not.Null, field);
+            Assert.That(reference.transform.IsChildOf(prefab.transform), Is.True, field);
+        }
         var notice = root.AddComponent(GameType("ConnectionFailureNotice"));
-        Call(notice, "BuildOverlay");
+        Assert.That(Call(notice, "BuildOverlay"), Is.True);
         var overlay = (GameObject)notice.GetType().GetField("overlay", Private).GetValue(notice);
+        Assert.That(overlay.activeSelf, Is.False);
         Assert.That(overlay.transform.Find("Backdrop/Dialog"), Is.Not.Null);
         var title = notice.GetType().GetField("titleText", Private).GetValue(notice);
         Assert.That(title.GetType().GetProperty("color").GetValue(title), Is.EqualTo(Color.white));
@@ -114,5 +125,36 @@ public class SharedUiTests
         Assert.That(dismiss.gameObject.name, Is.EqualTo("OK"));
         Assert.That(dismiss.GetType().GetProperty("interactable").GetValue(dismiss), Is.True);
         Assert.That(notice.GetType().GetMethod("OnGUI", Private), Is.Null);
+    }
+
+    [Test]
+    public void ErrorDialogPreservesPrefabStylingAndDismissesErrors()
+    {
+        var instance = GameType("LobbyController").GetProperty("Instance");
+        var previousController = instance.GetValue(null);
+        var prefab = Object.Instantiate(Resources.Load<GameObject>("UI/ConnectionFailureDialog"), root.transform);
+        try
+        {
+            var dialog = prefab.GetComponent(GameType("ConnectionFailureDialog"));
+            var title = dialog.GetType().GetProperty("TitleText").GetValue(dialog);
+            title.GetType().GetProperty("fontSize").SetValue(title, 42f);
+            var controller = root.AddComponent(GameType("LobbyController"));
+            instance.SetValue(null, controller);
+            controller.GetType().GetProperty("LastOperationError").SetValue(controller, "Test connection error");
+            var notice = root.AddComponent(GameType("ConnectionFailureNotice"));
+            notice.GetType().GetField("dialogPrefab", Private).SetValue(notice, dialog);
+            Call(notice, "Update");
+            var overlay = (GameObject)notice.GetType().GetField("overlay", Private).GetValue(notice);
+            Assert.That(overlay.activeSelf, Is.True);
+            var shownTitle = notice.GetType().GetField("titleText", Private).GetValue(notice);
+            Assert.That(shownTitle.GetType().GetProperty("fontSize").GetValue(shownTitle), Is.EqualTo(42f));
+            var dismiss = notice.GetType().GetField("dismissButton", Private).GetValue(notice);
+            var click = dismiss.GetType().GetProperty("onClick").GetValue(dismiss);
+            click.GetType().GetMethod("Invoke").Invoke(click, null);
+            Assert.That(controller.GetType().GetProperty("LastOperationError").GetValue(controller), Is.Null);
+            Call(notice, "Update");
+            Assert.That(overlay.activeSelf, Is.False);
+        }
+        finally { instance.SetValue(null, previousController); }
     }
 }
