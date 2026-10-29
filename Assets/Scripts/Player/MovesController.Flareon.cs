@@ -39,7 +39,7 @@ public partial class MovesController
     }
     private void UpdateFlareonRuntime()
     {
-        if (!IsFlareon) return;
+        if (!IsSpawned || !IsFlareon || !pokemon.IsSpawned) return;
         if (playerManager != null && playerManager.IsLocalHuman && flareonShownRecast != flareonRecastUntil.Value)
         {
             flareonShownRecast = flareonRecastUntil.Value;
@@ -58,6 +58,7 @@ public partial class MovesController
     }
     private void SyncFlareonCombo()
     {
+        if (!IsServer || !IsSpawned || pokemon == null || !pokemon.IsSpawned) return;
         if (flareonStacks.Value != flareonCombo.Stacks)
         {
             pokemon.RemoveAllStatChangeWithIDRPC(FlareonMoveRules.AttackBuff);
@@ -92,7 +93,7 @@ public partial class MovesController
         if (!IsServer || !FlareonMoveRules.CanHit(playerManager, target)) return;
         flareonRecastTarget.Value = target.NetworkObjectId; flareonRecastUntil.Value = FlareonNow + duration;
     }
-    private void ClearFlareonRecast() { if (!IsServer) return; flareonRecastTarget.Value = ulong.MaxValue; flareonRecastUntil.Value = 0; }
+    private void ClearFlareonRecast() { if (!IsServer || !IsSpawned) return; flareonRecastTarget.Value = ulong.MaxValue; flareonRecastUntil.Value = 0; }
     public bool HitFlareonTarget(Pokemon target, DamageInfo damage, float burnDuration = 0)
     {
         if (!IsServer || !FlareonMoveRules.CanHit(playerManager, target)) return false;
@@ -275,7 +276,7 @@ public partial class MovesController
             if (uniteMove is FlareonMoveBase) uniteMove.ResetMove();
         }
         if (pokemon != null && flareonBound) { pokemon.OnDeath -= OnFlareonDeath; pokemon.OnHpChange -= OnFlareonHpChange; pokemon.OnDamageDealt -= OnFlareonDamage; }
-        if (IsServer && flareonBound) OnFlareonDeath(default);
+        if (flareonBound) OnFlareonDeath(default);
         flareonBound = false;
     }
 }

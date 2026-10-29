@@ -3,6 +3,8 @@
 ## Using bots
 
 - Create a custom **Remoat Stadium** or **Theia Sky Ruins** blind-pick or draft lobby.
+  Bots also support **Electrode Volleyball (3v3)**, **Psyduck Racing (six racers)**
+  and **Unite Royale (four solo participants)** in custom lobbies.
 - The host has **Add Bots** (fills empty slots) and **Clear Bots** buttons.
   Individual bot slots can also be kicked. Both buttons are authored and bound
   directly in `Assets/Scenes/LobbyScene.unity`, using the start-button styling;
@@ -101,6 +103,46 @@ and hides on use/death. Owners report changes to the server; updates and initial
 snapshots are sent only to allied human clients. Actor-owned aiming keeps bot
 casts separate from the local human's input and HUD.
 
+### Special-mode policies
+
+Special modes instantiate `BotVolleyballBrain`, `BotRacingBrain` or
+`BotRoyaleBrain`, never the lane/farming `BotBrain`. `BotModeBrain` shares only
+normal movement/combat actuators and lifecycle handling. No lane scoring,
+goal-recovery loop or final-boss rotation is inherited by these modes.
+
+- **Volleyball:** one stable bot per team is the primary defender, independent
+  of Pokemon class. It tracks the actual incoming landing position and fights
+  without chasing. Defensive coverage withholds displacement spells/Unites;
+  melee targets must remain within coverage. An available attacker temporarily
+  covers a KO'd, immobilized-outside-zone or too-late defender. Other bots pressure
+  the enemy court, with one handling the opening serve. Returns use the real
+  landing-zone occupancy mechanic. Bots start their hallway approach during the
+  first round countdown, without waiting at spawn; configured moves/upgrades are
+  auto-selected without a movement pause. Combat waits for the rally to begin.
+  Subsequent round countdowns still lock movement normally. Human controls and
+  countdown timing are unchanged. Round movement locks/reset/respawn include
+  server bots, and only the human's camera is panned.
+- **Racing:** bots use the ready screen's forced racing character and empty
+  loadout, with steering fed into `PsyduckRacePassive`. Ordered checkpoint route
+  segments have editable intermediate guides; the checkpoint-9 approach explicitly
+  enters the physical launchpad. Bots slow through bends and occasionally use
+  dash/acquired item-moves. A stalled racer steers sideways toward the track
+  interior to escape physical rotating obstacles absent from the baked NavMesh;
+  it never teleports or advances a checkpoint as recovery. Checkpoint/lap progression is exclusively through
+  normal trigger crossings. Finishing locks movement/actions without moving the
+  host camera or replacing its lap HUD with a bot's. Launchpad callbacks are
+  per-actor and item-spawn callbacks are one-shot.
+- **Royale:** bots alternate committed patrol/objective tasks, engage visible
+  opponents and disengage when critically low. `BotArenaContext` binds patrol
+  positions and the four actual objective spawners. Rankings, statistics, results
+  and trainer companions bind gameplay participants rather than requiring an
+  extra human network coordinator for every bot.
+
+**Tools > Bots > Create missing special-mode bindings** authors missing Royale
+patrol/objective bindings and racing route segments. It preserves existing
+bindings and rejects dirty scenes. Inspect/tune the authored route guides in
+`Assets/Scenes/PsyduckRacing.unity` and patrols in `Assets/Scenes/UniteRoyale.unity`.
+
 ## Implementation boundaries
 
 - `PlayerNetworkManager.Bots.cs`: host-owned persistent participant/selection
@@ -117,7 +159,7 @@ casts separate from the local human's input and HUD.
 - Supported move/attack implementations use their actor's Aim. `Aim.Instance`
   remains the local human's presentation instance.
 
-Other maps/modes, matchmaking fill policies, disconnect replacement and
+Other maps/modes beyond those listed above, matchmaking fill policies, disconnect replacement and
 dedicated-server support are not enabled. Extend the
 supported map gate only alongside its navigation/farming policy. Extend the
 Pokemon pool only after auditing its input, aiming and owner-only HUD usage.
@@ -195,3 +237,63 @@ stale queued kill-notification reference surfaced during this longer match;
 notifications now skip already-despawned victims/attackers safely.
 Validation for this follow-up: 142 selected EditMode and 32 selected PlayMode
 checks passed (bot, draft loadout, HP-bar and Emboar coverage).
+
+### Special-mode iteration
+
+- Final focused EditMode run: **292/293 passed** across bots, lane picker,
+  network resilience, draft and clothing. The sole failure is the unrelated
+  `SharedUiTests.ErrorOverlayUsesOpaqueHighContrastUiAndSelectableDismissal`
+  at `Assets/Editor/NetworkResilienceTests/SharedUiTests.cs:121` (expected
+  `Backdrop/Dialog` hierarchy not found).
+  Special-mode tests cover supported formats, backup eligibility, isolated brain
+  construction, scene bindings, the required racing launchpad, physical-stall
+  recovery direction and completion after finished/unfinished racer departures.
+- **121/121 PlayMode checks passed** across racing passive/animations, bot
+  navigation/lifecycle, HP bars, wild-Pokemon combat and trainer clothing.
+- Live private Volleyball 3v3: stable defenders, enemy-court pressure and an
+  attacker switching to temporary landing coverage after a defender KO were
+  observed. Results returned to the lobby without console errors.
+- Live private Royale: all four gameplay participants and trainer companions
+  were present. Bots fought, died/respawned, wandered and pursued objectives.
+  Kill/death rankings and results included all three bots plus the human;
+  results returned to the lobby without console errors.
+- Live six-racer match: all five bots crossed the required launchpad, used
+  acquired item-moves and naturally finished three laps (135–148 seconds of game
+  time). After the opening eight seconds, this smoke ran at 2x time scale.
+  The idle human remained on lap 1; bot finishes neither panned its camera nor
+  changed its lap HUD. Only the idle human's final completion was simulated to
+  exercise results: six distinct participants ranked 1–6. Results returned to the
+  lobby with zero remaining gameplay avatars and no console errors. The earlier
+  probe exposed a rotating-table snag; recovery direction has a regression test,
+  although the final random item/steering run did not require a recovery.
+- Racing finish/disconnect handling uses remaining active counters, not a count
+  comparison against historical results, and preserves confirmed finish places.
+  Event subscriptions/coroutines are detached on despawn; the human lap-HUD
+  binding is released on UI teardown.
+- Private test sessions were closed, temporary observers/state removed, time
+  scale restored to 1 and the Editor left out of Play mode on `BootScene`.
+  After the clean match/results/lobby check, closing the private session logged
+  an RTT poll against disposed transport storage from the unchanged
+  `Assets/Scripts/UI/GameStatsUI.cs:63` and a Unity Services Wire WebSocket
+  shutdown exception. These separate shutdown diagnostics were not changed here.
+
+These are host-only checks. Remote-client synchronization and exhaustive coverage
+of all configured Pokemon builds remain outside this validation pass.
+
+### Volleyball opening hallway follow-up
+
+The initial three-second `RoundStarting` gate previously stopped the bot brain
+even though the opening hallways were available. Bots now approach immediately
+during that first countdown, without enabling early combat. Later round resets
+retain their normal movement lock; the human input/selection flow is untouched.
+The existing automatic loadout selection already drains the bot's move queue
+without a timed wait, so no extra move-selection delay is introduced.
+
+Validation: **183/183 bot EditMode checks passed**, including seven opening versus
+later-round gating cases. In a live 3v3 opening, all five bots had their A/B/Unite
+moves selected and had travelled about one unit by 0.25 seconds, four units by
+one second and 10–11 units by 2.5 seconds, while the first countdown was still
+running. No bot selected a combat target during that approach.
+After a controlled test point, all five bots correctly returned to zero input
+and locked movement for the next round's countdown. No gameplay console errors
+were reported during this check.

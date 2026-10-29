@@ -34,9 +34,19 @@ public class VolleyballManager : NetworkBehaviour
     public VolleyballLandSpot BlueLandSpot => blueLandSpot;
     public VolleyballLandSpot OrangeLandSpot => orangeLandSpot;
     public VolleyballState CurrentState => currentState.Value;
+    public bool CanBotsApproach => openingRound && CurrentState == VolleyballState.RoundStarting;
+    public VolleyballElectrode Ball => ball.GetComponent<VolleyballElectrode>();
+    public Vector3 DefensiveAnchor(Team team)
+    {
+        var spots = team == Team.Blue ? blueLandSpots : orangeLandSpots;
+        Vector3 center = Vector3.zero;
+        foreach (var spot in spots) center += spot.position;
+        return spots.Length > 0 ? center / spots.Length : (team == Team.Blue ? blueLandSpot : orangeLandSpot).transform.position;
+    }
 
     private bool finalStretchTriggered = false;
     private bool hasPlayedFirstRoundTransition = false;
+    private bool openingRound;
 
     private void Awake()
     {
@@ -65,6 +75,11 @@ public class VolleyballManager : NetworkBehaviour
             }
         }
     }
+    public override void OnNetworkDespawn()
+    {
+        if (GameManager.Instance != null) GameManager.Instance.onGameStateChanged -= OnGameStateChanged;
+        base.OnNetworkDespawn();
+    }
 
     private void TransitionTo(VolleyballState newState, float timer = 0)
     {
@@ -75,6 +90,9 @@ public class VolleyballManager : NetworkBehaviour
         switch (newState)
         {
             case VolleyballState.RoundStarting:
+                // The first countdown overlaps the opening hallway approach.
+                // Later countdowns still lock everybody for the round reset.
+                openingRound = !hasPlayedFirstRoundTransition;
                 if (!finalStretchTriggered)
                 {
                     int bluePointsToWin = MAX_POINTS - GameManager.Instance.BlueTeamScore;
@@ -153,13 +171,12 @@ public class VolleyballManager : NetworkBehaviour
     {
         foreach (var player in GameManager.Instance.Players)
         {
-            if (player == null || !player.IsLocalPlayer) continue;
+            if (player == null || !(player.IsLocalHuman || (IsServer && player.IsBot))) continue;
 
-            CameraController.Instance.ForcePan(true);
+            if (player.IsLocalHuman) CameraController.Instance.ForcePan(true);
             player.PlayerMovement.CanMove = false;
             player.UpdatePosAndRotRPC(new Vector3(0, -50, -50), Quaternion.identity);
 
-            break;
         }
     }
 
@@ -176,13 +193,12 @@ public class VolleyballManager : NetworkBehaviour
     {
         foreach (var player in GameManager.Instance.Players)
         {
-            if (player == null || !player.IsLocalPlayer) continue;
+            if (player == null || !(player.IsLocalHuman || (IsServer && player.IsBot))) continue;
 
             player.Respawn();
             Transform spawnpoint = GetSpawnPoint(player);
             player.UpdatePosAndRotRPC(spawnpoint.position, spawnpoint.rotation);
 
-            break;
         }
     }
 
@@ -295,9 +311,8 @@ public class VolleyballManager : NetworkBehaviour
     {
         foreach (var player in GameManager.Instance.Players)
         {
-            if (player == null || !player.IsLocalPlayer) continue;
-            player.PlayerMovement.CanMove = canMove;
-            break;
+            if (player == null || !(player.IsLocalHuman || (IsServer && player.IsBot))) continue;
+            player.PlayerMovement.CanMove = canMove || (player.IsBot && CanBotsApproach);
         }
     }
 }

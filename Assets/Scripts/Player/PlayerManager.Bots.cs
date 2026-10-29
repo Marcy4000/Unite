@@ -65,7 +65,13 @@ public partial class PlayerManager
             pokemon.OnDamageDealt += RecordBotDamageDealt;
             movesController.OnMoveLearned += RecordBotMove;
             onGoalScored += RecordBotScore;
-            gameObject.AddComponent<BotBrain>();
+            switch (Unite.Multiplayer.BotModeRules.ForScene(GameManager.Instance.CurrentMap.sceneName))
+            {
+                case Unite.Multiplayer.BotGameMode.Volleyball: gameObject.AddComponent<BotVolleyballBrain>(); break;
+                case Unite.Multiplayer.BotGameMode.Racing: gameObject.AddComponent<BotRacingBrain>(); break;
+                case Unite.Multiplayer.BotGameMode.Royale: gameObject.AddComponent<BotRoyaleBrain>(); break;
+                default: gameObject.AddComponent<BotBrain>(); break;
+            }
         }
         botReady = true;
     }
@@ -113,11 +119,7 @@ public partial class PlayerManager
             botPointsSinceDeath, GameManager.Instance.MAX_GAME_TIME - GameManager.Instance.GameTime);
         botKillsSinceDeath = botPointsSinceDeath = 0;
         botMovement = Vector2.zero;
-        PresentBotKillRpc(info);
     }
-
-    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
-    private void PresentBotKillRpc(DamageInfo info) => BattleUIManager.instance.ShowKill(info, pokemon, null);
 
     private void RecordBotKill(ulong id)
     {

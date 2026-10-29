@@ -4,7 +4,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-public class LoadingManagerTracker : NetworkBehaviour
+public partial class LoadingManagerTracker : NetworkBehaviour
 {
     [SerializeField]
     GameObject m_ProgressTrackerPrefab;
@@ -91,6 +91,7 @@ public class LoadingManagerTracker : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        NetworkObject.DestroyWithScene = false;
         NetworkedLoadingProgressTracker.Spawned += RegisterTracker;
         NetworkedLoadingProgressTracker.Despawned += UnregisterTracker;
 
@@ -114,6 +115,7 @@ public class LoadingManagerTracker : NetworkBehaviour
     }
     public override void OnNetworkDespawn()
     {
+        ResetSelectionTransition();
         UnsubscribeNetworkEvents();
         m_IsLoading = false;
         m_LocalLoadOperation = null;
@@ -125,6 +127,7 @@ public class LoadingManagerTracker : NetworkBehaviour
 
     public override void OnDestroy()
     {
+        ResetSelectionTransition();
         UnsubscribeNetworkEvents();
         base.OnDestroy();
     }
@@ -143,6 +146,7 @@ public class LoadingManagerTracker : NetworkBehaviour
 
     void Update()
     {
+        UpdateSelectionTransition();
         if (m_IsLoading)
         {
             if (m_LocalLoadOperation != null)

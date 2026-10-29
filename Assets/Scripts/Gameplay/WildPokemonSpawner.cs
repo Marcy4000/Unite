@@ -321,16 +321,20 @@ public class WildPokemonSpawner : NetworkBehaviour
 
     public void DespawnPokemon(bool canRespawn)
     {
-        if (wildPokemon == null || !IsServer)
+        if (!IsServer)
         {
             return;
         }
 
         if (!canRespawn)
         {
+            firstSpawnTime = Mathf.Infinity;
+            timer = 0f;
             respawnType = RespawnType.NoRespawn;
             specificRespawnTimes.Clear();
         }
+
+        if (wildPokemon == null) return;
 
         wildPokemon.Pokemon.TakeDamageRPC(new DamageInfo(wildPokemon.NetworkObjectId, 999f, 999, 9999, DamageType.True));
     }

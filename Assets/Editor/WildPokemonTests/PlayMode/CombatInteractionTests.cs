@@ -574,6 +574,63 @@ public abstract class CombatInteractionTests
     }
 
     [UnityTest]
+    public IEnumerator KnockoutPayloadsKeepServerStreaksAndSurviveImmediateObjectiveDespawn()
+    {
+        var battleType = T("BattleUIManager");
+        var lobbyProperty = T("LobbyController").GetProperty("Instance");
+        object previousBattle = battleType.GetField("instance").GetValue(null);
+        object previousLobby = lobbyProperty.GetValue(null);
+        var uiRoot = Node("Inactive queued KO UI");
+        uiRoot.SetActive(false);
+        var ui = uiRoot.AddComponent(T("KillNotificationUI"));
+        var battle = uiRoot.AddComponent(battleType);
+        var lobby = uiRoot.AddComponent(T("LobbyController"));
+        Set(battle, "killNotificationUI", ui);
+        object localPlayer = Activator.CreateInstance(T("Unite.Multiplayer.GameSessionPlayer"), "local", false);
+        var properties = (IDictionary)Get(localPlayer, "Data");
+        properties["PlayerTeam"] = Activator.CreateInstance(T("Unity.Services.Multiplayer.PlayerProperty"),
+            "Blue", E("Unity.Services.Multiplayer.VisibilityPropertyOptions", "Public"));
+        Set(lobby, "localPlayer", localPlayer);
+        try
+        {
+            battleType.GetField("instance").SetValue(null, battle);
+            lobbyProperty.SetValue(null, lobby);
+            var source = Spawn();
+            var victims = new[] { Spawn(), Spawn(), Spawn(), Spawn() };
+            yield return Replicate(victims.Concat(new[] { source }).ToArray());
+            foreach (var pokemon in victims.Concat(new[] { source }))
+            {
+                Set(pokemon, "type", E("PokemonType", "Player"));
+                foreach (var client in clients) Set(Remote(pokemon, client), "type", E("PokemonType", "Player"));
+            }
+            var objective = victims[3];
+            Set(objective, "type", E("PokemonType", "Objective"));
+            foreach (var client in clients) Set(Remote(objective, client), "type", E("PokemonType", "Objective"));
+            foreach (var victim in victims.Take(3)) Call(victim, "TakeDamageRPC", Damage(source, 6000, "True"));
+            Assert.That(Get(source, "KillStreak"), Is.EqualTo(3));
+            Field(source, "killStreak").GetType().GetProperty("Value").SetValue(Field(source, "killStreak"), 0);
+            Call(objective, "TakeDamageRPC", Damage(source, 6000, "True"));
+            Call(objective.GetComponent(T("Unity.Netcode.NetworkObject")), "Despawn", true);
+            object queue = Field(ui, "killQueue");
+            int receivers = clients.Count + (Host ? 1 : 0);
+            yield return Until(() => Count(queue) == receivers * 4, "A peer lost or duplicated a KO notification.");
+            Call(source.GetComponent(T("Unity.Netcode.NetworkObject")), "Despawn", true);
+            yield return null;
+            var entries = ((IEnumerable)queue).Cast<object>().ToArray();
+            foreach (int streak in new[] { 1, 2, 3 })
+                Assert.That(entries.Count(entry => (int)Get(entry, "Streak") == streak), Is.EqualTo(receivers));
+            Assert.That(entries.Count(entry => Get(entry, "VictimType").ToString() == "Objective"), Is.EqualTo(receivers));
+            Assert.That(entries.All(entry => !entry.GetType().GetFields(Private)
+                .Any(field => typeof(Component).IsAssignableFrom(field.FieldType))), Is.True);
+        }
+        finally
+        {
+            battleType.GetField("instance").SetValue(null, previousBattle);
+            lobbyProperty.SetValue(null, previousLobby);
+        }
+    }
+
+    [UnityTest]
     public IEnumerator TwoClientsCanBurstDamageHealingAndEffectsWithoutLostUpdates()
     {
         var source = Spawn(); var target = Spawn(); yield return Replicate(source, target);

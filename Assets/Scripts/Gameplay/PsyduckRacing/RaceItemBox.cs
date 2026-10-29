@@ -48,11 +48,13 @@ public class RaceItemBox : NetworkBehaviour
         if (isActive && other.gameObject.CompareTag("Player"))
         {
             PlayerManager playerController = other.gameObject.GetComponent<PlayerManager>();
-            RaceLapCounter lapCounter = RaceManager.Instance.PlayerLapCounters[playerController.NetworkObjectId];
+            if (!RaceManager.Instance.PlayerLapCounters.TryGetValue(playerController.NetworkObjectId, out RaceLapCounter lapCounter) || lapCounter.RaceFinished || items.Count == 0) return;
 
-            RaceItemsSelection selection = items[lapCounter.CurrentPlace - 1];
+            int index = Mathf.Clamp(lapCounter.CurrentPlace - 1, 0, items.Count - 1);
+            RaceItemsSelection selection = items[index];
+            if (selection.moves == null || selection.moves.Count == 0) return;
 
-            LearnMoveRPC(lapCounter.CurrentPlace - 1, Random.Range(0, selection.moves.Count), playerController.NetworkObjectId, RpcTarget.Single(playerController.OwnerClientId, RpcTargetUse.Temp));
+            LearnMoveRPC(index, Random.Range(0, selection.moves.Count), playerController.NetworkObjectId, RpcTarget.Single(playerController.OwnerClientId, RpcTargetUse.Temp));
 
             isActive = false;
             timer = 2f;

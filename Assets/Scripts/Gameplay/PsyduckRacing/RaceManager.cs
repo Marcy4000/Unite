@@ -18,6 +18,9 @@ public class RaceManager : NetworkBehaviour
     private List<RaceCheckpoint> checkpointList = new List<RaceCheckpoint>();
 
     private List<RacePlayerResult> racePlayerResults = new List<RacePlayerResult>();
+    private bool raceEnded;
+    private GameManager subscribedGame;
+    private NetworkManager subscribedNetwork;
 
     public Dictionary<ulong, RaceLapCounter> PlayerLapCounters => playerLapCounters;
     public event System.Action OnInitializedPlayers;
@@ -28,23 +31,27 @@ public class RaceManager : NetworkBehaviour
     {
         Instance = this;
 
-        if (IsServer)
-        {
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
-        }
     }
 
-    private void OnDisable()
+    public override void OnNetworkDespawn()
     {
-        if (IsServer)
-        {
-            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
-        }
+        if (subscribedNetwork != null) subscribedNetwork.OnClientDisconnectCallback -= OnClientDisconnect;
+        if (subscribedGame != null) subscribedGame.onGameStateChanged -= OnGameStateChanged;
+        subscribedNetwork = null; subscribedGame = null;
+        StopAllCoroutines();
+        playerLapCounters.Clear();
+        base.OnNetworkDespawn();
     }
 
     public override void OnNetworkSpawn()
     {
-        GameManager.Instance.onGameStateChanged += OnGameStateChanged;
+        subscribedGame = GameManager.Instance;
+        subscribedGame.onGameStateChanged += OnGameStateChanged;
+        if (IsServer)
+        {
+            subscribedNetwork = NetworkManager;
+            subscribedNetwork.OnClientDisconnectCallback += OnClientDisconnect;
+        }
 
         checkpointList.AddRange(Object.FindObjectsByType<RaceCheckpoint>(FindObjectsSortMode.None));
 
@@ -58,11 +65,19 @@ public class RaceManager : NetworkBehaviour
             return;
         }
 
-        if (playerLapCounters.ContainsKey(clientId))
+        var departed = new List<ulong>();
+        foreach (var entry in playerLapCounters)
+            if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(entry.Key, out var avatar) || avatar.OwnerClientId == clientId) departed.Add(entry.Key);
+        foreach (ulong id in departed)
         {
-            playerLapCounters.Remove(clientId);
-
+            var counter = playerLapCounters[id];
+            if (counter != null && counter.IsSpawned) counter.NetworkObject.Despawn();
+            playerLapCounters.Remove(id);
+        }
+        if (departed.Count > 0)
+        {
             NotifyPlayersInitializedRPC();
+            TryFinishRace();
         }
     }
 
@@ -176,22 +191,35 @@ public class RaceManager : NetworkBehaviour
             return;
         }
 
-        if (lapCounter.LapCount > TOTAL_LAPS)
+        if (!raceEnded && !lapCounter.RaceFinished && lapCounter.LapCount > TOTAL_LAPS)
         {
             PlayerManager player = NetworkManager.Singleton.SpawnManager.SpawnedObjects[lapCounter.AssignedPlayerID].GetComponent<PlayerManager>();
 
-            racePlayerResults.Add(new RacePlayerResult(player.LobbyPlayer.Id, lapCounter.CurrentPlace, GameManager.Instance.GameTime));
+            short finishedPlace = (short)(racePlayerResults.Count + 1);
+            racePlayerResults.Add(new RacePlayerResult(player.LobbyPlayer.Id, finishedPlace, GameManager.Instance.GameTime));
+            lapCounter.SetCurrentPlaceRPC(finishedPlace);
             lapCounter.SetRaceFinishedRPC(true);
 
-            if (racePlayerResults.Count == playerLapCounters.Count)
-            {
-                EndGameRPC(GenerateRaceResults());
-            }
-            else
-            {
-                PlayerRaceCompletedRPC(lapCounter.AssignedPlayerID, RpcTarget.Single(player.OwnerClientId, RpcTargetUse.Temp));
-            }
+            PlayerRaceCompletedRPC(lapCounter.AssignedPlayerID, RpcTarget.Single(player.OwnerClientId, RpcTargetUse.Temp));
+            TryFinishRace();
         }
+    }
+
+    private bool AreRemainingRacersFinished()
+    {
+        if (playerLapCounters.Count == 0) return false;
+        foreach (var counter in playerLapCounters.Values)
+            if (counter == null || !counter.RaceFinished) return false;
+        return true;
+    }
+
+    private void TryFinishRace()
+    {
+        // Historical finish results can include disconnected players. Comparing
+        // their count with the live roster can finish early or never finish.
+        if (raceEnded || !AreRemainingRacersFinished()) return;
+        raceEnded = true;
+        EndGameRPC(GenerateRaceResults());
     }
 
     [Rpc(SendTo.SpecifiedInParams)]
@@ -202,7 +230,9 @@ public class RaceManager : NetworkBehaviour
         player.MovesController.LockEveryAction();
         player.PlayerMovement.CanMove = false;
 
-        CameraController.Instance.ForcePan(true);
+        if (player.PassiveController.Passive is PsyduckRacePassive racer) { racer.CanMove = false; racer.CurrentVelocity = Vector3.zero; }
+        player.SetBotMovement(Vector2.zero);
+        if (player.IsLocalHuman) CameraController.Instance.ForcePan(true);
 
         player.UpdatePosAndRotRPC(new Vector3(-100f, -50f, 0f), Quaternion.identity);
     }
@@ -241,6 +271,7 @@ public class RaceManager : NetworkBehaviour
         player.MovesController.LearnMove(dashMove);
 
         player.PlayerMovement.CanMove = false;
+        if (player.PassiveController.Passive is PsyduckRacePassive racer) racer.CanMove = true;
     }
 
     private void UpdatePlayerPositions()
@@ -252,7 +283,7 @@ public class RaceManager : NetworkBehaviour
 
         foreach (var player in playerLapCounters)
         {
-            if (player.Value == null)
+            if (player.Value == null || player.Value.RaceFinished)
             {
                 continue;
             }
@@ -263,23 +294,14 @@ public class RaceManager : NetworkBehaviour
 
     private short GetPlayerPlace(RaceLapCounter lapCounter)
     {
+        if (lapCounter.RaceFinished) return lapCounter.CurrentPlace;
         // Create a sorted list of players based on laps, checkpoints, and distance to next checkpoint
         List<RaceLapCounter> sortedLapCounters = new List<RaceLapCounter>(playerLapCounters.Values);
 
-        sortedLapCounters.RemoveAll(lap => lap == null); // Remove null references
+        sortedLapCounters.RemoveAll(lap => lap == null || lap.RaceFinished);
 
         sortedLapCounters.Sort((a, b) =>
         {
-            // If both players have finished, compare their confirmed positions
-            if (a.RaceFinished && b.RaceFinished)
-            {
-                return a.CurrentPlace.CompareTo(b.CurrentPlace);
-            }
-
-            // If one has finished, it should be ranked higher
-            if (a.RaceFinished) return -1;
-            if (b.RaceFinished) return 1;
-
             // Compare Lap Count
             int lapComparison = b.LapCount.CompareTo(a.LapCount);
             if (lapComparison != 0) return lapComparison;
@@ -299,7 +321,7 @@ public class RaceManager : NetworkBehaviour
         });
 
         // Return the 1-based position of the given lapCounter
-        return (short)(sortedLapCounters.IndexOf(lapCounter) + 1);
+        return (short)(racePlayerResults.Count + sortedLapCounters.IndexOf(lapCounter) + 1);
     }
 
     private Transform GetNextCheckpoint(RaceLapCounter lapCounter)
@@ -314,18 +336,18 @@ public class RaceManager : NetworkBehaviour
 
     public RaceLapCounter GetNextPlayer(ulong playerID)
     {
-        if (!playerLapCounters.ContainsKey(playerID))
+        if (!playerLapCounters.TryGetValue(playerID, out var currentPlayer) || currentPlayer == null)
         {
             return null; // Return null if the player doesn't exist
         }
 
-        short currentPlayerPlace = playerLapCounters[playerID].CurrentPlace;
+        short currentPlayerPlace = currentPlayer.CurrentPlace;
 
         // Filter players who haven't finished the race
         var eligiblePlayers = new List<RaceLapCounter>();
         foreach (var lapCounter in playerLapCounters.Values)
         {
-            if (!lapCounter.RaceFinished && lapCounter.AssignedPlayerID != playerID)
+            if (lapCounter != null && !lapCounter.RaceFinished && lapCounter.AssignedPlayerID != playerID)
             {
                 eligiblePlayers.Add(lapCounter);
             }
@@ -340,9 +362,10 @@ public class RaceManager : NetworkBehaviour
         eligiblePlayers.Sort((a, b) => a.CurrentPlace.CompareTo(b.CurrentPlace));
 
         // Find the next player in the standings
-        foreach (var lapCounter in eligiblePlayers)
+        for (int index = eligiblePlayers.Count - 1; index >= 0; index--)
         {
-            if (lapCounter.CurrentPlace > currentPlayerPlace)
+            var lapCounter = eligiblePlayers[index];
+            if (lapCounter.CurrentPlace < currentPlayerPlace)
             {
                 return lapCounter; // Return the first player ahead in the standings
             }

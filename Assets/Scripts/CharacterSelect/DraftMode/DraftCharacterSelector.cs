@@ -60,8 +60,16 @@ public class DraftCharacterSelector : MonoBehaviour
     {
         foreach (var icon in icons)
         {
-            icon.SetEnabled(IsCharacterAvailable(icon.Info), DraftSelectController.Instance.BannedCharacters.Contains(CharactersList.Instance.GetCharacterID(icon.Info)));
-            icon.Toggle.isOn = false;
+            bool available = IsCharacterAvailable(icon.Info);
+            icon.SetEnabled(available, DraftSelectController.Instance.BannedCharacters.Contains(CharactersList.Instance.GetCharacterID(icon.Info)));
+            if (!available)
+            {
+                icon.Toggle.SetIsOnWithoutNotify(false);
+                if (HoveredCharacter == icon.Info)
+                {
+                    HoveredCharacter = null;
+                }
+            }
         }
     }
 

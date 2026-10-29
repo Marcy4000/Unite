@@ -22,11 +22,14 @@ disagree, the detailed RSB takes precedence, as in Duraludon's implementation.
   attacks. Shield absorption and overkill do not contribute to this healing.
   Landing damage against wild Pokemon is capped at 2000. The six-second Unite
   movement/CDR buffs and max-HP shield use ordinary stats/shields.
+  A ground warning reuses the legacy Unite circle during the airborne wind-up,
+  follows Sylveon, matches the five-unit damage radius, and hides on landing.
 - Adaptability/Pixilate: damage dealt/taken refreshes a 1.5-second window with
   up to four 5% stacks; evolved Sylveon also gains Sp. Defense.
 - Basic attacks retain their damage/three-hit sequence, with authored fairy
   projectiles. Evolved boosted attacks grant the speed buff on impact, not cast.
-- Swift's existing implementation is retained.
+- Swift's existing implementation is retained, with its projectile hitbox radius
+  enlarged from 0.2 to 0.5 world units without changing the graphics or damage.
 
 **Hyper Voice is deliberately unchanged:** its scripts, prefab, damage, range,
 cooldown, six-to-seven-wave upgrade and existing displayed level-10 upgrade

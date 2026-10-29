@@ -7,11 +7,14 @@ public class SylvFairyFrolicEffect : PrefabMoveEffect
 {
     [SerializeField] private SphereCollider landingArea;
     [SerializeField] private GameObject airborne, landing, buff;
+    [SerializeField] private GameObject landingWarning;
     private bool ownerLocked, healing;
     private bool landingDamage;
 
     protected override void BeginPresentation()
     {
+        transform.position = Actor.transform.position;
+        landingWarning.SetActive(true);
         airborne.SetActive(true); landing.SetActive(false); buff.SetActive(false);
         if (Actor.IsOwner)
         {
@@ -64,6 +67,7 @@ public class SylvFairyFrolicEffect : PrefabMoveEffect
     [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
     private void LandRPC()
     {
+        landingWarning.SetActive(false);
         airborne.SetActive(false); landing.SetActive(true); buff.SetActive(true);
         ReleaseOwner();
         StartCoroutine(HideLanding());
@@ -84,6 +88,7 @@ public class SylvFairyFrolicEffect : PrefabMoveEffect
     }
     protected override void Cleanup()
     {
+        if (landingWarning != null) landingWarning.SetActive(false);
         ReleaseOwner();
         if (IsServer && Actor != null)
         {

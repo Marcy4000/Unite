@@ -37,7 +37,9 @@ public class RaceCheckpoint : NetworkBehaviour
                     if (raceLapCounter.LapCount <= RaceManager.TOTAL_LAPS)
                     {
                         DefaultAudioSounds sfx = raceLapCounter.LapCount == RaceManager.TOTAL_LAPS ? DefaultAudioSounds.snd_wanfa_KeDaYa19 : DefaultAudioSounds.snd_wanfa_KeDaYa18;
-                        PlaySoundEffectRPC(sfx, RpcTarget.Single(raceLapCounter.OwnerClientId, RpcTargetUse.Temp));
+                        if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(raceLapCounter.AssignedPlayerID, out var avatar) &&
+                            avatar.TryGetComponent(out PlayerManager actor) && !actor.IsBot)
+                            PlaySoundEffectRPC(sfx, RpcTarget.Single(raceLapCounter.OwnerClientId, RpcTargetUse.Temp));
                     }
                 }
 

@@ -124,7 +124,6 @@ public class WildPokemon : NetworkBehaviour
 
         if (pokemon.Type == PokemonType.Objective)
         {
-            ShowKillRpc(info);
             if (pokemonLoadHandle.IsValid())
             {
                 HandleObjectiveBehaviour(objectiveType, info);
@@ -352,12 +351,6 @@ public class WildPokemon : NetworkBehaviour
         SoldierPokemon soldier = Instantiate(soldierPrefab, hit.position, transform.rotation).GetComponent<SoldierPokemon>();
         soldier.GetComponent<NetworkObject>().Spawn(true);
         soldier.InitializeRPC(orangeTeam, soldierToSpawn, SoldierLaneID);
-    }
-
-    [Rpc(SendTo.ClientsAndHost)]
-    private void ShowKillRpc(DamageInfo info)
-    {
-        BattleUIManager.instance.ShowKill(info, pokemon, wildPokemonInfo.KillNotification);
     }
 
     private IEnumerator DumbDespawn()

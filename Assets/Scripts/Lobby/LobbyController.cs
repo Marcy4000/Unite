@@ -292,7 +292,7 @@ public class LobbyController : MonoBehaviour
     }
 
     private async Task<bool> RunLobbyOperationAsync(Func<Task> operation, bool showMainMenuOnFailure = true,
-        bool showLoadingScreen = true,
+        bool showLoadingScreen = true, bool showFailureNotice = true,
         [System.Runtime.CompilerServices.CallerMemberName] string operationName = null)
     {
         if (lobbyOperationInProgress || isSearching || handlingSessionLoss) return false;
@@ -329,8 +329,9 @@ public class LobbyController : MonoBehaviour
             try { await LeaveCurrentSessionAsync(); }
             catch (Exception cleanupException) { Debug.LogWarning($"Session cleanup failed: {cleanupException.Message}"); }
             ResetMatchState();
-            LastOperationError = exception is SessionVersionMismatchException ? exception.Message :
-                "We couldn't connect to the session. Check your connection and lobby code, then try again.";
+            if (showFailureNotice)
+                LastOperationError = exception is SessionVersionMismatchException ? exception.Message :
+                    "We couldn't connect to the session. Check your connection and lobby code, then try again.";
             if (showMainMenuOnFailure) lobbyUI?.ShowMainMenuUI();
             return false;
         }
@@ -439,7 +440,7 @@ public class LobbyController : MonoBehaviour
                 if (loadingScreenShown && LoadingScreen.Instance != null)
                     LoadingScreen.Instance.HideGenericLoadingScreen();
             }
-        }, showMainMenuOnFailure: false, showLoadingScreen: false);
+        }, showMainMenuOnFailure: false, showLoadingScreen: false, showFailureNotice: false);
     }
 
     private static List<FilterOption> GetBrowserFilters()
@@ -1217,7 +1218,8 @@ public class LobbyController : MonoBehaviour
                 CharacterSelectType.PsyduckRacing => "RacingReadyScreen",
                 _ => "CharacterSelect"
             };
-            NetworkManager.Singleton.SceneManager.LoadScene(mapMode, LoadSceneMode.Single);
+            if (LoadingScreen.Instance == null || !LoadingScreen.Instance.BeginMatchTransition(mapMode))
+                Debug.LogWarning("[MatchTransition] Match start requires a spawned loading coordinator with no transition in progress.");
         }
         catch (Exception exception) { Debug.LogException(exception); }
         finally { startingGame = false; }

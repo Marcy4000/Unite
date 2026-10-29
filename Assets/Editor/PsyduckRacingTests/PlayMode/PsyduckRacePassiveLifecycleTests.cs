@@ -117,6 +117,45 @@ public class PsyduckRacePassiveLifecycleTests
     }
 
     [Test]
+    public void RejectedDashDoesNotSpendStoredUses()
+    {
+        GameType("PsyduckRacePassive").GetProperty("CanMove").SetValue(passive, false);
+        object dash = Activator.CreateInstance(GameType("PsyduckRaceDash"));
+        Call(dash, "Start", player); Call(dash, "Finish");
+        Assert.That(Get(dash, "StoredUses"), Is.EqualTo(2));
+        Assert.That(GameType("PsyduckRacePassive").GetField("isDashing", Private).GetValue(passive), Is.False);
+    }
+
+    [Test]
+    public void MovementRestrictionInterruptsDashAndOverridesFreezeSliding()
+    {
+        GameType("PsyduckRacePassive").GetProperty("CanMove").SetValue(passive, true);
+        Assert.That(Call(passive, "TryDash"), Is.True);
+        Call(passive, "FreezePlayer", true);
+        GameType("PsyduckRacePassive").GetProperty("CurrentVelocity").SetValue(passive, Vector3.forward * 20);
+        GameType("PsyduckRacePassive").GetProperty("CanMove").SetValue(passive, false);
+        Vector3 position = root.transform.position;
+        Call(passive, "Update");
+        Assert.That(root.transform.position, Is.EqualTo(position));
+        Assert.That(Get(passive, "CurrentVelocity"), Is.EqualTo(Vector3.zero));
+        Assert.That(GameType("PsyduckRacePassive").GetField("isDashing", Private).GetValue(passive), Is.False);
+        Assert.That(Call(passive, "TryDash"), Is.False);
+    }
+
+    [Test]
+    public void FreezePreventsNewDashAndInterruptsExistingDash()
+    {
+        GameType("PsyduckRacePassive").GetProperty("CanMove").SetValue(passive, true);
+        Assert.That(Call(passive, "TryDash"), Is.True);
+        Call(passive, "FreezePlayer", true);
+        Assert.That(Call(passive, "TryDash"), Is.False);
+        Call(passive, "Update");
+        Assert.That(GameType("PsyduckRacePassive").GetField("isDashing", Private).GetValue(passive), Is.False);
+        Call(passive, "FreezePlayer", false);
+        Assert.That(Call(passive, "TryDash"), Is.True);
+    }
+
+    [Test]
     public void NonRacingPassiveDoesNotSelectTheRacingBranch()
     {
 #if UNITY_EDITOR

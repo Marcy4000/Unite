@@ -313,6 +313,10 @@ public class GameManager : NetworkBehaviour
     private void GameStateChanged(GameState previous, GameState current)
     {
         onGameStateChanged?.Invoke(current);
+        if (current == GameState.Starting)
+        {
+            LoadingScreen.Instance.HideMatchLoadingScreen();
+        }
     }
 
     public IEnumerator StartGameRoutine()
@@ -321,8 +325,6 @@ public class GameManager : NetworkBehaviour
         {
             gameState.Value = GameState.Starting;
         }
-        LoadingScreen.Instance.HideMatchLoadingScreen();
-
         yield break;
     }
     
@@ -528,6 +530,9 @@ public class GameManager : NetworkBehaviour
 
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out Pokemon pokemon))
         {
+            PlayerManager scorer = pokemon.GetComponent<PlayerManager>();
+            RecordResultScore(pokemon.TeamMember.Team, info.scoredPoints, scorer != null ? scorer.LobbyPlayer.Id : string.Empty);
+
             if (pokemon.Type == PokemonType.Player)
                 ShowGoalScoredRpc(info);
 
@@ -586,14 +591,18 @@ public class GameManager : NetworkBehaviour
         {
             AudioManager.PlaySound(DefaultAudioSounds.AnnouncerWhatAGoal);
         }
+    }
 
-        if (scorer.CurrentTeam.IsOnSameTeam(Team.Orange))
+    private void RecordResultScore(Team team, ushort scoredPoints, string playerID)
+    {
+        ResultScoreInfo score = new ResultScoreInfo(scoredPoints, playerID, gameTime.Value);
+        if (team == Team.Orange)
         {
-            orangeTeamScores.Add(new ResultScoreInfo(info.scoredPoints, scorer.LobbyPlayer.Id, gameTime.Value));
+            orangeTeamScores.Add(score);
         }
         else
         {
-            blueTeamScores.Add(new ResultScoreInfo(info.scoredPoints, scorer.LobbyPlayer.Id, gameTime.Value));
+            blueTeamScores.Add(score);
         }
     }
 

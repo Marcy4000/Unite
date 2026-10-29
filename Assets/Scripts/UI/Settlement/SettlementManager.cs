@@ -1,6 +1,5 @@
 using JSAM;
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -155,13 +154,7 @@ public class SettlementManager : MonoBehaviour
     private IEnumerator ShowScoreRoutine()
     {
         bool finished = false;
-        int blueScoreValue = 0;
-        int orangeScoreValue = 0;
-
         GameResults gameResults = LobbyController.Instance.GameResults;
-
-        List<ResultScoreInfo> blueTeamScores = new List<ResultScoreInfo>(gameResults.BlueTeamScores);
-        List<ResultScoreInfo> orangeTeamScores = new List<ResultScoreInfo>(gameResults.OrangeTeamScores);
 
         yield return new WaitForSeconds(1.5f);
 
@@ -179,33 +172,16 @@ public class SettlementManager : MonoBehaviour
 
             float interpolatedTime = Mathf.Lerp(0f, totalTime, timeElapsed / animationDuration);
 
-            for (int i = blueTeamScores.Count - 1; i >= 0; i--)
-            {
-                if (blueTeamScores[i].Time <= interpolatedTime)
-                {
-                    blueScoreValue += blueTeamScores[i].ScoredPoints;
-                    Debug.Log($"Blue Score {blueTeamScores[i].ScoredPoints} + At Time {blueTeamScores[i].Time} (Current time: {interpolatedTime})");
-                    blueTeamScores.RemoveAt(i);
-                }
-            }
-
-            for (int i = orangeTeamScores.Count - 1; i >= 0; i--)
-            {
-                if (orangeTeamScores[i].Time <= interpolatedTime)
-                {
-                    orangeScoreValue += orangeTeamScores[i].ScoredPoints;
-                    Debug.Log($"Orange Score {orangeTeamScores[i].ScoredPoints} + At Time {orangeTeamScores[i].Time} (Current time: {interpolatedTime})");
-                    orangeTeamScores.RemoveAt(i);
-                }
-            }
+            finished = timeElapsed >= animationDuration;
+            blueScoreValue = gameResults.GetAnimatedScore(Team.Blue, interpolatedTime, finished);
+            orangeScoreValue = gameResults.GetAnimatedScore(Team.Orange, interpolatedTime, finished);
 
             UpdateTimerText(totalTime - interpolatedTime);
 
             resultBarsUI.SetBars(blueScoreValue, orangeScoreValue);
 
-            if (timeElapsed >= animationDuration)
+            if (finished)
             {
-                finished = true;
                 UpdateTimerText(0f);
                 yield return new WaitForSeconds(1f);
                 OnShowScoreEnded();

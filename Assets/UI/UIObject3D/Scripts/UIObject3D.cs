@@ -323,6 +323,8 @@ namespace UI.ThreeDimensional
         /// <summary>True after the preview's startup/rebuild has finished creating its target.</summary>
         public bool IsReady => started && displayReady && _target != null;
 
+        public bool HasRendered { get; private set; }
+
         /// <summary>Disable when the owning UI controls visibility while loading its model.</summary>
         public bool ManageImageVisibility { get; set; } = true;
 
@@ -563,6 +565,7 @@ namespace UI.ThreeDimensional
         public void Cleanup()
         {
             displayReady = false;
+            HasRendered = false;
             renderQueued = false;
             DestroyResources();
             _texture2D = null;
@@ -663,6 +666,7 @@ namespace UI.ThreeDimensional
                 imageComponent.color = hiddenImageColor.Value;
                 hiddenImageColor = null;
             }
+            HasRendered = _target != null;
             renderQueued = false;
         }
 

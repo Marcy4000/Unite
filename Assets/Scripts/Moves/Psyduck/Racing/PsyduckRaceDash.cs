@@ -28,10 +28,9 @@ public class PsyduckRaceDash : MoveBase
 
     public override void Finish()
     {
-        if (IsActive)
+        if (IsActive && psyduckRacePassive != null)
         {
-            psyduckRacePassive.Dash();
-            wasMoveSuccessful = true;
+            wasMoveSuccessful = psyduckRacePassive.TryDash();
         }
         base.Finish();
     }

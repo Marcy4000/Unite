@@ -310,6 +310,7 @@ public partial class MovesController
     {
         basicAttack?.Dispose();
         DisposeMeowsticRuntime();
+        DisposeFlareonRuntime();
         DisposeEmboarRuntime();
         DisposeFlygonRuntime();
         DisposeCinderaceRuntime();

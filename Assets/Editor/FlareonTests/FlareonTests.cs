@@ -14,6 +14,71 @@ public class FlareonTests
     private static object Call(object target, string method, params object[] args) => target.GetType().GetMethod(method).Invoke(target, args);
     private static object Get(object target, string field) => target.GetType().GetField(field).GetValue(target);
 
+    [TestCase(false, false)]
+    [TestCase(true, false)]
+    [TestCase(false, true)]
+    public void ComboSyncDoesNotSendStatRpcsWhenEitherBehaviourIsUnspawned(bool controllerSpawned, bool pokemonSpawned)
+    {
+        const BindingFlags privateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+        var root = new GameObject("Flareon unspawned combo cleanup");
+        Component controller = null;
+        Component pokemon = null;
+        Type networkBehaviour = Type("Unity.Netcode.NetworkBehaviour");
+        try
+        {
+            root.AddComponent(Type("Unity.Netcode.NetworkObject"));
+            pokemon = root.AddComponent(Type("Pokemon"));
+            controller = root.AddComponent(Type("MovesController"));
+            controller.GetType().GetField("pokemon", privateInstance).SetValue(controller, pokemon);
+            object combo = controller.GetType().GetField("flareonCombo", privateInstance).GetValue(controller);
+            Call(combo, "AddStack", 0d);
+            networkBehaviour.GetProperty("IsServer").SetValue(controller, true);
+            networkBehaviour.GetProperty("IsSpawned").SetValue(controller, controllerSpawned);
+            networkBehaviour.GetProperty("IsSpawned").SetValue(pokemon, pokemonSpawned);
+            Assert.DoesNotThrow(() => controller.GetType().GetMethod("SyncFlareonCombo", privateInstance).Invoke(controller, null));
+            Assert.That(controller.GetType().GetProperty("FlareonAttackStacks").GetValue(controller), Is.Zero);
+        }
+        finally
+        {
+            if (controller != null)
+            {
+                networkBehaviour.GetProperty("IsSpawned").SetValue(controller, false);
+                networkBehaviour.GetProperty("IsServer").SetValue(controller, false);
+            }
+            if (pokemon != null) networkBehaviour.GetProperty("IsSpawned").SetValue(pokemon, false);
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public void RepeatedUnspawnedTeardownClearsLocalComboAndUnbindsRuntime(bool wasServer)
+    {
+        const BindingFlags privateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+        var root = new GameObject("Flareon repeated teardown");
+        Component controller = null;
+        try
+        {
+            root.AddComponent(Type("Unity.Netcode.NetworkObject"));
+            controller = root.AddComponent(Type("MovesController"));
+            object combo = controller.GetType().GetField("flareonCombo", privateInstance).GetValue(controller);
+            Call(combo, "AddStack", 0d);
+            Call(combo, "ConfirmBasic", 0d);
+            controller.GetType().GetField("flareonBound", privateInstance).SetValue(controller, true);
+            Type("Unity.Netcode.NetworkBehaviour").GetProperty("IsServer").SetValue(controller, wasServer);
+            for (int attempt = 0; attempt < 2; attempt++)
+                Assert.DoesNotThrow(() => controller.GetType().GetMethod("DisposeFlareonRuntime", privateInstance).Invoke(controller, null));
+            Assert.That(combo.GetType().GetProperty("Stacks").GetValue(combo), Is.Zero);
+            Assert.That(combo.GetType().GetProperty("AttackCharge").GetValue(combo), Is.Zero);
+            Assert.That(controller.GetType().GetField("flareonBound", privateInstance).GetValue(controller), Is.False);
+        }
+        finally
+        {
+            if (controller != null) Type("Unity.Netcode.NetworkBehaviour").GetProperty("IsServer").SetValue(controller, false);
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
     [TestCase("Swift", "FlareonSwift", 7.5f, 0)]
     [TestCase("Tackle", "FlareonTackle", 6f, 1)]
     [TestCase("HeatWave", "FlareonHeatWave", 9f, 0)]

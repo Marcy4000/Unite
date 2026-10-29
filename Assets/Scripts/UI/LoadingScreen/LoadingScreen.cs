@@ -20,6 +20,13 @@ public class LoadingScreen : MonoBehaviour
 
     private List<LoadingScreenPlayer> playerList = new List<LoadingScreenPlayer>();
     private Coroutine missingTrackersWarning;
+    private Coroutine selectionTransitionRoutine;
+    private Coroutine selectionOpeningRoutine;
+    private LoadingManagerTracker selectionCoordinator;
+    private int selectionGeneration;
+    private string selectionScene;
+    private bool selectionTransitionActive;
+    private bool selectionScreenReady;
 
     private void Awake()
     {
@@ -113,6 +120,7 @@ public class LoadingScreen : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance != this) return;
+        CancelSelectionTransition(selectionGeneration);
         if (loadingProgressManager != null)
         {
             loadingProgressManager.onTrackersUpdated -= OnTrackersUpdated;
@@ -145,14 +153,85 @@ public class LoadingScreen : MonoBehaviour
     {
         int bluePlayers = LobbyController.Instance.GetTeamPlayers(Team.Blue).Length;
         int orangePlayers = LobbyController.Instance.GetTeamPlayers(Team.Orange).Length;
-        gameBeginScreenUI.gameObject.SetActive(true);
         gameBeginScreenUI.InitializeUI(bluePlayers, orangePlayers);
         gameBeginScreenUI.FadeIn();
     }
 
     public void HideGameBeginScreen()
     {
+        if (selectionTransitionActive)
+        {
+            selectionScreenReady = true;
+            return;
+        }
         gameBeginScreenUI.FadeOut();
+    }
+
+    public bool BeginMatchTransition(string sceneName) => loadingProgressManager != null &&
+        loadingProgressManager.BeginSelectionTransition(sceneName);
+
+    public void BeginSelectionTransition(int generation, string sceneName, double closeAt, LoadingManagerTracker coordinator)
+    {
+        CancelSelectionTransition(selectionGeneration);
+        selectionGeneration = generation;
+        selectionScene = sceneName;
+        selectionCoordinator = coordinator;
+        selectionTransitionActive = true;
+        selectionScreenReady = false;
+        selectionTransitionRoutine = StartCoroutine(CloseSelectionTransition(generation, closeAt));
+    }
+
+    private IEnumerator CloseSelectionTransition(int generation, double closeAt)
+    {
+        while (selectionCoordinator != null && selectionCoordinator.NetworkManager.ServerTime.Time < closeAt)
+            yield return null;
+        if (!selectionTransitionActive || selectionGeneration != generation || selectionCoordinator == null) yield break;
+        ShowGameBeginScreen();
+        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Matching);
+        while (!gameBeginScreenUI.IsClosed) yield return null;
+        if (selectionCoordinator == null || !selectionCoordinator.IsSpawned) yield break;
+        selectionCoordinator.SelectionClosedRpc(generation);
+        while (selectionTransitionActive && selectionGeneration == generation)
+        {
+            if (selectionScreenReady && SceneManager.GetActiveScene().name == selectionScene)
+            {
+                if (selectionCoordinator != null && selectionCoordinator.IsSpawned)
+                    selectionCoordinator.SelectionScreenReadyRpc(generation);
+                yield break;
+            }
+            yield return null;
+        }
+    }
+
+    public void OpenSelectionTransition(int generation, double openAt)
+    {
+        if (!selectionTransitionActive || selectionGeneration != generation || selectionOpeningRoutine != null) return;
+        selectionOpeningRoutine = StartCoroutine(OpenSelectionTransitionRoutine(generation, openAt));
+    }
+
+    private IEnumerator OpenSelectionTransitionRoutine(int generation, double openAt)
+    {
+        while (selectionCoordinator != null && selectionCoordinator.NetworkManager.ServerTime.Time < openAt)
+            yield return null;
+        if (!selectionTransitionActive || selectionGeneration != generation) yield break;
+        selectionTransitionActive = false;
+        gameBeginScreenUI.FadeOut();
+        selectionOpeningRoutine = null;
+    }
+
+    public void CancelSelectionTransition(int generation)
+    {
+        if (generation != selectionGeneration) return;
+        if (selectionTransitionRoutine != null) StopCoroutine(selectionTransitionRoutine);
+        if (selectionOpeningRoutine != null) StopCoroutine(selectionOpeningRoutine);
+        selectionTransitionRoutine = null;
+        selectionOpeningRoutine = null;
+        selectionTransitionActive = false;
+        selectionScreenReady = false;
+        selectionCoordinator = null;
+        selectionScene = null;
+        selectionGeneration = 0;
+        if (gameBeginScreenUI != null) gameBeginScreenUI.HideImmediately();
     }
 
     private void InitializeLoadingScreen()
@@ -230,7 +309,7 @@ public class LoadingScreen : MonoBehaviour
                     loadingProgressManager.LocalLoadOperation = sceneEvent.AsyncOperation;
                 }
 
-                if (sceneEvent.SceneName.Equals("CharacterSelect") || sceneEvent.SceneName.Equals("DraftSelect") || sceneEvent.SceneName.Equals("RacingReadyScreen"))
+                if (LoadingManagerTracker.IsSelectionScene(sceneEvent.SceneName) && sceneEvent.SceneName != selectionScene)
                 {
                     ShowGameBeginScreen();
                     AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Matching);

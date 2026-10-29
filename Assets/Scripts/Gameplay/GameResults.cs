@@ -26,6 +26,30 @@ public struct GameResults : INetworkSerializable
         PlayerStats = playerStats;
     }
 
+    public int GetAnimatedScore(Team team, float elapsedTime, bool completed)
+    {
+        int total = team == Team.Orange ? OrangeTeamScore : BlueTeamScore;
+        if (completed)
+        {
+            return total;
+        }
+
+        ResultScoreInfo[] scores = team == Team.Orange ? OrangeTeamScores : BlueTeamScores;
+        int animatedScore = 0;
+        if (scores != null)
+        {
+            foreach (ResultScoreInfo score in scores)
+            {
+                if (score.Time <= elapsedTime)
+                {
+                    animatedScore += score.ScoredPoints;
+                }
+            }
+        }
+
+        return System.Math.Min(animatedScore, total);
+    }
+
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref WinningTeam);

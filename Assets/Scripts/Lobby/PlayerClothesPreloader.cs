@@ -45,11 +45,12 @@ public class PlayerClothesPreloader : MonoBehaviour
     {
         foreach (var player in currentLobby.Players)
         {
-            if (!playerModels.ContainsKey(player.Id))
+            if (!playerModels.TryGetValue(player.Id, out var model) || model == null)
             {
+                playerModels.Remove(player.Id);
                 LoadPlayerModel(player);
             }
-            else if (playerModels.ContainsKey(player.Id))
+            else
             {
                 TryUpdatingPlayerModel(player);
             }
@@ -69,11 +70,12 @@ public class PlayerClothesPreloader : MonoBehaviour
 
     private void LoadPlayerModel(Player player)
     {
+        if (trainerModelPrefab == null || !player.Data.TryGetValue("ClothingInfo", out var clothing)) return;
         var playerModel = Instantiate(trainerModelPrefab, transform).GetComponent<TrainerModel>();
         playerModel.transform.position = new Vector3(0, -100, 0);
         playerModel.name = player.Id;
         playerModels.Add(player.Id, playerModel);
-        var playerClothes = PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value);
+        var playerClothes = PlayerClothesInfo.Deserialize(clothing.Value);
 
         playerModel.InitializeClothes(playerClothes);
         DontDestroyOnLoad(playerModel.gameObject);
@@ -81,7 +83,8 @@ public class PlayerClothesPreloader : MonoBehaviour
 
     private void TryUpdatingPlayerModel(Player player)
     {
-        var playerClothes = PlayerClothesInfo.Deserialize(player.Data["ClothingInfo"].Value);
+        if (!player.Data.TryGetValue("ClothingInfo", out var clothing)) return;
+        var playerClothes = PlayerClothesInfo.Deserialize(clothing.Value);
         var playerModel = playerModels[player.Id];
 
         if (!playerModel.PlayerClothesInfo.Equals(playerClothes))
@@ -94,7 +97,7 @@ public class PlayerClothesPreloader : MonoBehaviour
     {
         if (playerModels.ContainsKey(playerId))
         {
-            Destroy(playerModels[playerId].gameObject);
+            if (playerModels[playerId] != null) Destroy(playerModels[playerId].gameObject);
             playerModels.Remove(playerId);
         }
     }
@@ -103,17 +106,22 @@ public class PlayerClothesPreloader : MonoBehaviour
     {
         foreach (var playerModel in playerModels)
         {
-            Destroy(playerModel.Value.gameObject);
+            if (playerModel.Value != null) Destroy(playerModel.Value.gameObject);
         }
         playerModels.Clear();
     }
 
     public GameObject GetPlayerModel(string playerId)
     {
-        if (playerModels.ContainsKey(playerId))
+        if (string.IsNullOrEmpty(playerId)) return null;
+        if (playerModels.TryGetValue(playerId, out var model) && model != null)
         {
-            return playerModels[playerId].gameObject;
+            return model.gameObject;
         }
-        return null;
+        playerModels.Remove(playerId);
+        var player = currentLobby?.Players.Find(candidate => candidate.Id == playerId);
+        if (player == null) return null;
+        LoadPlayerModel(player);
+        return playerModels.TryGetValue(playerId, out model) && model != null ? model.gameObject : null;
     }
 }

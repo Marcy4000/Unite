@@ -17,12 +17,18 @@ public class UniteRoyalePositionUI : MonoBehaviour
     private bool localPlayer;
 
     public PlayerNetworkManager PlayerNetworkManager => playerNetworkManager;
+    public PlayerManager Player => player;
 
     public void AssignPlayer(PlayerNetworkManager playerNetworkManager)
     {
         this.playerNetworkManager = playerNetworkManager;
-        player = playerNetworkManager.Player;
-        Unite.Multiplayer.GameSessionPlayer lobbyPlayer = playerNetworkManager.LocalPlayer;
+        AssignPlayer(playerNetworkManager.Player);
+    }
+
+    public void AssignPlayer(PlayerManager actor)
+    {
+        player = actor;
+        Unite.Multiplayer.GameSessionPlayer lobbyPlayer = player.LobbyPlayer;
 
         playerName.text = $"0 | {lobbyPlayer.Data["PlayerName"].Value}";
 
@@ -35,7 +41,7 @@ public class UniteRoyalePositionUI : MonoBehaviour
             pokemonIconFrame.color = new Color(1f, 1f, 1f, 1f);
         }
 
-        playerNetworkManager.OnPlayerStatsChanged += UpdatePlayerStats;
+        player.OnPlayerStatsChanged += UpdatePlayerStats;
         player.Pokemon.OnEvolution += UpdatePokemonInfo;
         player.Pokemon.OnLevelChange += UpdatePokemonInfo;
 
@@ -51,7 +57,7 @@ public class UniteRoyalePositionUI : MonoBehaviour
 
     public void UpdatePlayerStats(PlayerStats playerStats)
     {
-        playerName.text = $"{playerStats.kills} | {playerNetworkManager.LocalPlayer.Data["PlayerName"].Value}";
+        playerName.text = $"{playerStats.kills} | {player.LobbyPlayer.Data["PlayerName"].Value}";
         UpdateShownPosition();
     }
 
@@ -66,7 +72,7 @@ public class UniteRoyalePositionUI : MonoBehaviour
     {
         string prevText = playerName.text;
 
-        playerName.text = $"{playerNetworkManager.PlayerStats.kills} | {playerNetworkManager.LocalPlayer.Data["PlayerName"].Value}";
+        playerName.text = $"{player.PlayerStats.kills} | {player.LobbyPlayer.Data["PlayerName"].Value}";
 
         if (playerName.text != prevText && localPlayer)
         {
@@ -77,5 +83,12 @@ public class UniteRoyalePositionUI : MonoBehaviour
     public void SetCrownActive(bool active)
     {
         crownIcon.SetActive(active);
+    }
+    private void OnDestroy()
+    {
+        if (player == null) return;
+        player.OnPlayerStatsChanged -= UpdatePlayerStats;
+        player.Pokemon.OnEvolution -= UpdatePokemonInfo;
+        player.Pokemon.OnLevelChange -= UpdatePokemonInfo;
     }
 }

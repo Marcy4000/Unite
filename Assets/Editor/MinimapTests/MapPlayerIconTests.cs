@@ -117,4 +117,42 @@ public class MapPlayerIconTests
         Call(icon, "SetVisibility", false);
         AssertVisible(false);
     }
+
+    [Test]
+    public void LocalHumanIconStaysAbovePlayersAddedLater()
+    {
+        var player = (Component)icon.GetType().GetField("player", Private).GetValue(icon);
+        player.GetType().GetProperty("IsOwner").SetValue(player, true);
+        var earlierIcon = new GameObject("Earlier player");
+        earlierIcon.transform.SetParent(root.transform);
+
+        Call(icon, "LateUpdate");
+        Assert.That(icon.transform.GetSiblingIndex(), Is.EqualTo(root.transform.childCount - 1));
+
+        var laterIcon = new GameObject("Later player");
+        laterIcon.transform.SetParent(root.transform);
+        Assert.That(laterIcon.transform.GetSiblingIndex(), Is.GreaterThan(icon.transform.GetSiblingIndex()));
+
+        Call(icon, "LateUpdate");
+        Assert.That(icon.transform.GetSiblingIndex(), Is.EqualTo(root.transform.childCount - 1));
+        Assert.That(earlierIcon.transform.GetSiblingIndex(), Is.LessThan(laterIcon.transform.GetSiblingIndex()));
+    }
+
+    [TestCase(false, false)]
+    [TestCase(true, true)]
+    public void RemotePlayersAndHostOwnedBotsDoNotPromoteTheirIcons(bool owner, bool bot)
+    {
+        var player = (Component)icon.GetType().GetField("player", Private).GetValue(icon);
+        player.GetType().GetProperty("IsOwner").SetValue(player, owner);
+        var botControlled = player.GetType().GetField("botControlled", Private).GetValue(player);
+        botControlled.GetType().GetProperty("Value").SetValue(botControlled, bot);
+        var laterIcon = new GameObject("Local human icon");
+        laterIcon.transform.SetParent(root.transform);
+        int originalIndex = icon.transform.GetSiblingIndex();
+
+        Call(icon, "LateUpdate");
+
+        Assert.That(icon.transform.GetSiblingIndex(), Is.EqualTo(originalIndex));
+        Assert.That(laterIcon.transform.GetSiblingIndex(), Is.EqualTo(root.transform.childCount - 1));
+    }
 }

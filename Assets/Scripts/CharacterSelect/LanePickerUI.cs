@@ -8,6 +8,8 @@ public class LanePickerUI : MonoBehaviour
     [SerializeField] private GameObject compactRoot;
     [SerializeField] private GameObject expandedRoot;
     [SerializeField] private Button openButton;
+    [Tooltip("Additional buttons that open this same picker, including buttons on other selection/preparation panels.")]
+    [SerializeField] private List<Button> additionalOpenButtons = new List<Button>();
     [SerializeField] private Button closeButton;
     [SerializeField] private Transform optionsHolder;
     [SerializeField] private LanePickerOption optionTemplate;
@@ -18,6 +20,7 @@ public class LanePickerUI : MonoBehaviour
     [SerializeField] private float preparationScale = 0.45f;
 
     private readonly List<LanePickerOption> options = new List<LanePickerOption>();
+    private readonly HashSet<Button> subscribedOpenButtons = new HashSet<Button>();
     private LaneSelectionNetwork selection;
     private LobbyController lobby;
 
@@ -46,9 +49,8 @@ public class LanePickerUI : MonoBehaviour
             }
         }
 
-        openButton.onClick.RemoveListener(Open);
+        SubscribeOpenButtons();
         closeButton.onClick.RemoveListener(Close);
-        openButton.onClick.AddListener(Open);
         closeButton.onClick.AddListener(Close);
         Subscribe();
         Refresh();
@@ -56,20 +58,63 @@ public class LanePickerUI : MonoBehaviour
 
     private void OnEnable()
     {
+        SubscribeOpenButtons();
         Subscribe();
         if (selection != null) Refresh();
     }
 
     private void OnDisable()
     {
+        UnsubscribeOpenButtons();
         Unsubscribe();
         Close();
     }
 
     private void OnDestroy()
     {
-        if (openButton != null) openButton.onClick.RemoveListener(Open);
+        UnsubscribeOpenButtons();
         if (closeButton != null) closeButton.onClick.RemoveListener(Close);
+    }
+
+    public void RegisterOpener(Button button)
+    {
+        if (button == null) return;
+        if (button != openButton && !additionalOpenButtons.Contains(button)) additionalOpenButtons.Add(button);
+        if (isActiveAndEnabled) SubscribeOpener(button);
+    }
+
+    public void UnregisterOpener(Button button)
+    {
+        if (button == null) return;
+        if (openButton == button) openButton = null;
+        additionalOpenButtons.RemoveAll(opener => opener == button);
+        if (subscribedOpenButtons.Remove(button)) button.onClick.RemoveListener(Open);
+    }
+
+    private void SubscribeOpenButtons()
+    {
+        UnsubscribeOpenButtons();
+        if (!isActiveAndEnabled) return;
+        SubscribeOpener(openButton);
+        foreach (var button in additionalOpenButtons) SubscribeOpener(button);
+    }
+
+    private void SubscribeOpener(Button button)
+    {
+        if (button == null || !subscribedOpenButtons.Add(button)) return;
+        button.onClick.AddListener(Open);
+        button.interactable = selection != null && selection.CanSelect;
+    }
+
+    private void UnsubscribeOpenButtons()
+    {
+        foreach (var button in subscribedOpenButtons)
+        {
+            if (button == null) continue;
+            button.onClick.RemoveListener(Open);
+            button.interactable = false;
+        }
+        subscribedOpenButtons.Clear();
     }
 
     private void Subscribe()
@@ -94,7 +139,8 @@ public class LanePickerUI : MonoBehaviour
         bool available = selection.IsAvailable;
         compactRoot.SetActive(available);
         if (!available || !selection.CanSelect) Close();
-        openButton.interactable = selection.CanSelect;
+        foreach (var button in subscribedOpenButtons)
+            if (button != null) button.interactable = selection.CanSelect;
         if (!available) return;
 
         string lane = selection.GetLane(lobby.Player.Id);
@@ -129,7 +175,7 @@ public class LanePickerUI : MonoBehaviour
 
     public void Open()
     {
-        if (selection == null || !selection.CanSelect) return;
+        if (!isActiveAndEnabled || selection == null || !selection.CanSelect) return;
         expandedRoot.SetActive(true);
         Refresh();
     }

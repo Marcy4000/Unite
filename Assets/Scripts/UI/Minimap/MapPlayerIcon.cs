@@ -83,6 +83,15 @@ public class MapPlayerIcon : MonoBehaviour
         displayedEnergy = player.CurrentEnergy;
     }
 
+    private void LateUpdate()
+    {
+        if (player != null && player.IsLocalHuman && transform.parent != null &&
+            transform.GetSiblingIndex() != transform.parent.childCount - 1)
+        {
+            transform.SetAsLastSibling();
+        }
+    }
+
     public void HideIcon()
     {
         SetVisibility(false);

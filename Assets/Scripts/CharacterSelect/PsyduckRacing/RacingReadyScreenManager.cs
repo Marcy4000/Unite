@@ -20,6 +20,7 @@ public class RacingReadyScreenManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        if (IsServer) LobbyController.Instance.BotRoster?.PrepareRacingBots(initialCharacter);
         placeholderStarted = false;
         transitionRequested = false;
         subscribedNetworkManager = NetworkManager;

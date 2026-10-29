@@ -109,10 +109,14 @@ public partial class PlayerMovement : NetworkBehaviour
         pokemon.OnLevelChange += UpdateSpeed;
         pokemon.OnPokemonInitialized += UpdateSpeed;
         pokemon.OnStatChange += UpdateSpeed;
+        UpdateSpeed();
         canMove = IsOwner;
         
         // Initialize walkmesh references
-        InitializeWalkmeshes();
+        // Racing uses its dedicated CharacterController passive and physical
+        // track, not the lane maps' tagged walkmesh boundaries.
+        if (Unite.Multiplayer.BotModeRules.ForScene(GameManager.Instance?.CurrentMap?.sceneName) != Unite.Multiplayer.BotGameMode.Racing)
+            InitializeWalkmeshes();
         
         // Initialize last valid position to current position
         lastValidPosition = transform.position;
@@ -314,6 +318,11 @@ public partial class PlayerMovement : NetworkBehaviour
 
     private void UpdateSpeed()
     {
+        if (pokemon == null || pokemon.BaseStats == null)
+        {
+            return;
+        }
+
         moveSpeed = pokemon.GetSpeed() / 1000f;
     }
 

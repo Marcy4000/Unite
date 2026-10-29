@@ -1495,10 +1495,25 @@ public partial class Pokemon : NetworkBehaviour
             {
                 killStreak.Value = killStreak.Value + 1;
                 killStreakTimer = 5f;
-                killStreakTimer = 5f;
+            }
+            if (killedPokemon.type == PokemonType.Player ||
+                (killedPokemon.type == PokemonType.Objective && targetID != NetworkObjectId))
+            {
+                killedPokemon.PresentKnockoutRpc(NetworkObjectId, killStreak.Value);
             }
         }
         OnOtherPokemonKilled?.Invoke(targetID);
+    }
+
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    private void PresentKnockoutRpc(ulong attackerId, int streak)
+    {
+        if (BattleUIManager.instance == null ||
+            !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(attackerId, out var attackerObject) ||
+            !attackerObject.TryGetComponent(out Pokemon attacker)) return;
+        string notification = type == PokemonType.Objective && TryGetComponent(out WildPokemon wildPokemon) && wildPokemon.WildPokemonInfo != null
+            ? wildPokemon.WildPokemonInfo.KillNotification : null;
+        BattleUIManager.instance.ShowKill(attacker, this, streak, notification);
     }
 
     [Rpc(SendTo.Server)]

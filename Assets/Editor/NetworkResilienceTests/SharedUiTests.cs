@@ -2,8 +2,12 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
+using Unity.Services.Multiplayer;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 public class SharedUiTests
@@ -156,6 +160,26 @@ public class SharedUiTests
         controller.GetType().GetField("handlingSessionLoss", Private).SetValue(controller, true);
         controller.GetType().GetMethod("ReturnToHomeWithoutLeavingLobby").Invoke(controller, null);
         Assert.That(controller.GetType().GetProperty("IsHandlingConnectionFailure").GetValue(controller), Is.True);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task LobbyOperationWarningsOnlyShowFailureNoticeWhenRequested(bool showFailureNotice)
+    {
+        var controller = root.AddComponent(GameType("LobbyController"));
+        controller.GetType().GetField("authenticationTask", Private).SetValue(controller, Task.CompletedTask);
+        var exception = new SessionException("No open lobbies found", SessionError.Unknown, null);
+        Func<Task> operation = () => Task.FromException(exception);
+        LogAssert.Expect(LogType.Warning, new Regex("Session operation 'QuickJoin' failed"));
+
+        var result = (Task<bool>)Call(controller, "RunLobbyOperationAsync", operation, false, false,
+            showFailureNotice, "QuickJoin");
+
+        Assert.That(await result, Is.False);
+        var error = controller.GetType().GetProperty("LastOperationError").GetValue(controller);
+        if (showFailureNotice) Assert.That(error, Is.Not.Null.And.Not.Empty);
+        else Assert.That(error, Is.Null);
+        Assert.That(controller.GetType().GetField("lobbyOperationInProgress", Private).GetValue(controller), Is.False);
     }
 
     [Test]

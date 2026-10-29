@@ -49,6 +49,7 @@ public class UniteRoyaleManager : NetworkBehaviour
     public event System.Action OnPlayerStatsChanged;
     public List<UniteRoyalePlayerStats> PlayerStats { get; private set; }
     public PlayerNetworkManager[] PlayersInGame => playersInGame;
+    public PlayerManager[] Participants { get; private set; } = System.Array.Empty<PlayerManager>();
 
     public int HighestKills
     {
@@ -76,14 +77,6 @@ public class UniteRoyaleManager : NetworkBehaviour
     {
         GameManager.Instance.onGameStateChanged += OnGameStateChanged;
         playersInGame = FindObjectsByType<PlayerNetworkManager>(FindObjectsSortMode.None);
-        if (IsServer)
-        {
-            foreach (var player in playersInGame)
-            {
-                playerStats.Add(new UniteRoyalePlayerStats(player.LocalPlayer.Id, player.NetworkObjectId));
-                player.OnPlayerStatsChanged += OnPlayerStatsChangedHandler;
-            }
-        }
 
         playerStats.OnListChanged += (NetworkListEvent<UniteRoyalePlayerStats> changeEvent) =>
         {
@@ -100,7 +93,7 @@ public class UniteRoyaleManager : NetworkBehaviour
             return;
         }
 
-        foreach (var player in playersInGame)
+        foreach (var player in Participants)
         {
             if (player == null || playerTrainers.ContainsKey(player.NetworkObjectId))
             {
@@ -108,8 +101,8 @@ public class UniteRoyaleManager : NetworkBehaviour
             }
 
             // Spawn trainer at player position
-            Vector3 spawnPosition = player.transform.position + Vector3.right * 2f;
-            GameObject trainerObj = Instantiate(trainerPrefab, spawnPosition, Quaternion.identity);
+            Vector3 spawnPosition = player.transform.position - player.transform.forward * 2f;
+            GameObject trainerObj = Instantiate(trainerPrefab, spawnPosition, Quaternion.Euler(0, player.transform.eulerAngles.y, 0));
             NetworkObject trainerNetObj = trainerObj.GetComponent<NetworkObject>();
             
             if (trainerNetObj != null)
@@ -146,7 +139,8 @@ public class UniteRoyaleManager : NetworkBehaviour
 
     public override void OnDestroy()
     {
-        foreach (var player in playersInGame)
+        if (GameManager.Instance != null) GameManager.Instance.onGameStateChanged -= OnGameStateChanged;
+        foreach (var player in Participants)
         {
             if (player != null)
                 player.OnPlayerStatsChanged -= OnPlayerStatsChangedHandler;
@@ -162,6 +156,14 @@ public class UniteRoyaleManager : NetworkBehaviour
         switch (state)
         {
             case GameState.Starting:
+                Participants = GameManager.Instance.Players.ToArray();
+                playerStats.Clear();
+                foreach (var actor in Participants)
+                {
+                    playerStats.Add(new UniteRoyalePlayerStats(actor.LobbyPlayer.Id, actor.NetworkObjectId));
+                    actor.OnPlayerStatsChanged += OnPlayerStatsChangedHandler;
+                    OnPlayerStatsChangedHandler(actor.PlayerStats);
+                }
                 foreach (var player in GameManager.Instance.Players)
                 {
                     player.Pokemon.GainExperienceRPC(100000);
@@ -170,13 +172,6 @@ public class UniteRoyaleManager : NetworkBehaviour
                 NotifyPlayersInitializedRPC();
                 break;
             case GameState.Ended:
-                List<PlayerStats> finalStats = new List<PlayerStats>();
-
-                foreach (var playerNetworkManager in playersInGame)
-                {
-                    finalStats.Add(playerNetworkManager.PlayerStats);
-                }
-
                 UniteRoyaleGameResults gameResults = GenerateGameResults();
 
                 EndGameRPC(gameResults);
@@ -198,6 +193,8 @@ public class UniteRoyaleManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void NotifyPlayersInitializedRPC()
     {
+        Participants = GameManager.Instance.Players.ToArray();
+        PlayerStats = GetSortedPlayerStats();
         OnInitializedPlayers?.Invoke();
     }
 
@@ -220,7 +217,9 @@ public class UniteRoyaleManager : NetworkBehaviour
                 previousKills = stats.kills;
             }
 
-            PlayerStats playerStats = playersInGame.Where(p => p.NetworkObjectId == stats.playerID).First().PlayerStats;
+            var actor = System.Array.Find(Participants, p => p != null && p.NetworkObjectId == stats.playerID);
+            if (actor == null) continue;
+            PlayerStats playerStats = actor.PlayerStats;
             finalStats.Add(new UniteRoyalePlayerResult(playerStats, position));
         }
 

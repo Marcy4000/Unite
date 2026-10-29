@@ -433,7 +433,6 @@ public partial class PlayerNetworkManager : NetworkBehaviour
             currentStats.moveAUpgraded, currentStats.moveBUpgraded, currentStats.uniteMoveUpgraded
         );
 
-        ShowKillRpc(info);
         localDeathTimer = RespawnSystem.CalculateRespawnTime(playerManager.Pokemon.CurrentLevel, killsSinceLastDeath, pointsSinceLastDeath, GameManager.Instance.MAX_GAME_TIME - GameManager.Instance.GameTime);
         deathTimer.Value = localDeathTimer;
         BattleUIManager.instance.ShowDeathScreen();
@@ -442,12 +441,6 @@ public partial class PlayerNetworkManager : NetworkBehaviour
 
         killsSinceLastDeath = 0;
         pointsSinceLastDeath = 0;
-    }
-
-    [Rpc(SendTo.ClientsAndHost)]
-    private void ShowKillRpc(DamageInfo info)
-    {
-        BattleUIManager.instance.ShowKill(info, playerManager.Pokemon, null);
     }
 
     #region Move Tracking

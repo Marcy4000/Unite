@@ -3,7 +3,6 @@ using JSAM;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,89 +30,56 @@ public class KillNotificationUI : MonoBehaviour
 
     public void EnqueueKill(KillInfo killInfo)
     {
-        killQueue.Enqueue(killInfo);
+        if (killInfo != null)
+            killQueue.Enqueue(killInfo);
     }
 
     private void ShowKill(KillInfo killInfo)
     {
-        // Wild Pokemon can despawn while a previous notification is animating.
-        // Skip stale queued entries rather than dereferencing destroyed actors.
-        var network = NetworkManager.Singleton;
-        if (killInfo == null || killInfo.killed == null || network == null || network.SpawnManager == null ||
-            !network.SpawnManager.SpawnedObjects.TryGetValue(killInfo.info.attackerId, out var attackerObject) ||
-            !attackerObject.TryGetComponent(out Pokemon attacker)) return;
-        // Set the image to the killer's avatar
-
-        background.sprite = ChooseBackground(attacker, killInfo.killed);
-        SetStreakText(attacker, killInfo.killed);
-
-        leftPreview.sprite = attacker.Portrait;
-        rightPreview.sprite = killInfo.killed.Portrait;
-
-        notificationHolder.SetActive(!string.IsNullOrEmpty(killInfo.killNotification));
-        notificationText.text = FormatKillNotificationText(killInfo.killNotification, attacker);
-
-        PlayCorrectSound(attacker, killInfo.killed);
+        if (killInfo == null) return;
+        ApplyPresentation(killInfo);
+        DefaultAudioSounds? sound = ChooseSound(killInfo);
+        if (sound.HasValue)
+            AudioManager.PlaySound(sound.Value);
 
         StartCoroutine(KillAnimation());
     }
 
-    private string FormatKillNotificationText(string killNotification, Pokemon attacker)
+    private void ApplyPresentation(KillInfo killInfo)
     {
-        if (string.IsNullOrEmpty(killNotification))
-        {
-            return "";
-        }
-
-        string newNotification = killNotification.Replace("{teamName}", attacker.TeamMember.Team.ToString());
-
-        string teamFriendlyName = LobbyController.Instance.GetLocalPlayerTeam() == attacker.TeamMember.Team ? "Ally" : "Opposing";
-        newNotification = newNotification.Replace("{teamFriendlyName}", teamFriendlyName);
-        newNotification = newNotification.Replace("{!teamFriendlyName}", teamFriendlyName == "Ally" ? "Opposing" : "Ally");
-
-        return newNotification;
+        background.sprite = ChooseBackground(killInfo);
+        SetStreakText(killInfo);
+        leftPreview.sprite = killInfo.AttackerPortrait;
+        rightPreview.sprite = killInfo.VictimPortrait;
+        notificationHolder.SetActive(!string.IsNullOrEmpty(killInfo.Notification));
+        notificationText.text = killInfo.Notification;
     }
 
-    private void SetStreakText(Pokemon attacker, Pokemon killed)
+    private void SetStreakText(KillInfo killInfo)
     {
-        if (attacker.KillStreak < 2 || attacker.Type != PokemonType.Player || killed.Type != PokemonType.Player)
+        if (killInfo.Streak < 2 || killInfo.AttackerType != PokemonType.Player || killInfo.VictimType != PokemonType.Player)
         {
             streakImage.gameObject.SetActive(false);
             return;
         }
-
         streakImage.gameObject.SetActive(true);
-
-        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
-        attacker.TryGetComponent(out PlayerManager playerManager);
-
-        bool sameTeam = playerManager.CurrentTeam.IsOnSameTeam(localTeam);
-
-        int index = Mathf.Clamp(attacker.KillStreak - 2, 0, 3);
-
-        streakImage.sprite = sameTeam ? blueKoSprites[index] : orangeKoSprites[index];
+        int index = Mathf.Clamp(killInfo.Streak - 2, 0, 3);
+        streakImage.sprite = killInfo.AttackerIsAlly ? blueKoSprites[index] : orangeKoSprites[index];
     }
 
-    private Sprite ChooseBackground(Pokemon attacker, Pokemon killed)
+    private Sprite ChooseBackground(KillInfo killInfo)
     {
-        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
-        attacker.TryGetComponent(out PlayerManager attackerPlayer);
-        killed.TryGetComponent(out PlayerManager killedPlayer);
-
-        if (attackerPlayer != null && killedPlayer != null)
+        if (killInfo.AttackerIsPlayer && killInfo.VictimIsPlayer)
         {
-            bool sameTeam = attackerPlayer.CurrentTeam.IsOnSameTeam(localTeam);
-            return sameTeam ? backgrounds[1] : backgrounds[0];
+            return killInfo.AttackerIsAlly ? backgrounds[1] : backgrounds[0];
         }
-        else if (attackerPlayer != null && killedPlayer == null)
+        else if (killInfo.AttackerIsPlayer && !killInfo.VictimIsPlayer)
         {
-            bool sameTeam = attackerPlayer.CurrentTeam.IsOnSameTeam(localTeam);
-            return sameTeam ? backgrounds[3] : backgrounds[2];
+            return killInfo.AttackerIsAlly ? backgrounds[3] : backgrounds[2];
         }
-        else if (attackerPlayer == null && killedPlayer != null)
+        else if (!killInfo.AttackerIsPlayer && killInfo.VictimIsPlayer)
         {
-            bool sameTeam = killedPlayer.CurrentTeam.IsOnSameTeam(localTeam);
-            return sameTeam ? backgrounds[5] : backgrounds[4];
+            return killInfo.VictimIsAlly ? backgrounds[5] : backgrounds[4];
         }
         else
         {
@@ -121,55 +87,39 @@ public class KillNotificationUI : MonoBehaviour
         }
     }
 
-    private void PlayCorrectSound(Pokemon attacker, Pokemon killed)
+    private DefaultAudioSounds? ChooseSound(KillInfo killInfo)
     {
-        attacker.TryGetComponent(out PlayerManager attackerPlayer);
-        killed.TryGetComponent(out PlayerManager killedPlayer);
-
-        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
-
-        if (attackerPlayer != null && killedPlayer != null)
+        if (killInfo.AttackerIsPlayer && killInfo.VictimIsPlayer)
         {
-            if (attackerPlayer.CurrentTeam.IsOnSameTeam(localPlayerTeam))
+            if (killInfo.AttackerIsAlly)
             {
-                switch (attacker.KillStreak)
+                switch (killInfo.Streak)
                 {
                     case 2:
-                        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_DoubleKillr);
-                        break;
+                        return DefaultAudioSounds.Play_UI_DoubleKillr;
                     case 3:
-                        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_TripleKillr);
-                        break;
+                        return DefaultAudioSounds.Play_UI_TripleKillr;
                     case 4:
-                        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_QuadraKillr);
-                        break;
+                        return DefaultAudioSounds.Play_UI_QuadraKillr;
                     case 5:
-                        AudioManager.PlaySound(DefaultAudioSounds.Play_UI_PentaKillr);
-                        break;
+                        return DefaultAudioSounds.Play_UI_PentaKillr;
                     default:
-                        if (attacker.KillStreak > 5)
-                        {
-                            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_PentaKillr);
-                        }
-                        else
-                        {
-                            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_SingleKillr);
-                        }
-                        break;
+                        return killInfo.Streak > 5 ? DefaultAudioSounds.Play_UI_PentaKillr : DefaultAudioSounds.Play_UI_SingleKillr;
                 }
             }
         }
-        else if (attackerPlayer != null && killedPlayer == null)
+        else if (killInfo.AttackerIsPlayer && !killInfo.VictimIsPlayer)
         {
-            if (killed.Type == PokemonType.Objective)
+            if (killInfo.VictimType == PokemonType.Objective)
             {
-                AudioManager.PlaySound(DefaultAudioSounds.Play_UI_Boss_Defeat);
+                return DefaultAudioSounds.Play_UI_Boss_Defeat;
             }
         }
-        else if (attackerPlayer == null && killedPlayer != null)
+        else if (!killInfo.AttackerIsPlayer && killInfo.VictimIsPlayer)
         {
-            AudioManager.PlaySound(DefaultAudioSounds.Play_UI_CheckPoint_CommonEvent);
+            return DefaultAudioSounds.Play_UI_CheckPoint_CommonEvent;
         }
+        return null;
     }
 
     private void Update()
@@ -205,14 +155,33 @@ public class KillNotificationUI : MonoBehaviour
 
 public class KillInfo
 {
-    public DamageInfo info;
-    public Pokemon killed;
-    public string killNotification;
+    public Sprite AttackerPortrait { get; }
+    public Sprite VictimPortrait { get; }
+    public PokemonType AttackerType { get; }
+    public PokemonType VictimType { get; }
+    public bool AttackerIsPlayer { get; }
+    public bool VictimIsPlayer { get; }
+    public bool AttackerIsAlly { get; }
+    public bool VictimIsAlly { get; }
+    public int Streak { get; }
+    public string Notification { get; }
 
-    public KillInfo(DamageInfo info, Pokemon killed, string killNotification)
+    public KillInfo(Pokemon attacker, Pokemon killed, int streak, string killNotification, Team localTeam)
     {
-        this.info = info;
-        this.killed = killed;
-        this.killNotification = killNotification;
+        AttackerPortrait = attacker.Portrait;
+        VictimPortrait = killed.Portrait;
+        AttackerType = attacker.Type;
+        VictimType = killed.Type;
+        AttackerIsPlayer = attacker.TryGetComponent<PlayerManager>(out _);
+        VictimIsPlayer = killed.TryGetComponent<PlayerManager>(out _);
+        Team attackerTeam = attacker.TeamMember.Team;
+        AttackerIsAlly = attackerTeam == localTeam;
+        VictimIsAlly = killed.TeamMember.Team == localTeam;
+        Streak = streak;
+        string teamFriendlyName = AttackerIsAlly ? "Ally" : "Opposing";
+        Notification = (killNotification ?? string.Empty)
+            .Replace("{teamName}", attackerTeam.ToString())
+            .Replace("{teamFriendlyName}", teamFriendlyName)
+            .Replace("{!teamFriendlyName}", AttackerIsAlly ? "Opposing" : "Ally");
     }
 }

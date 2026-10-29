@@ -21,6 +21,14 @@ public class VolleyballLandSpot : NetworkBehaviour
     }
 
     public Team AssignedTeam => assignedTeam;
+    public float CoverageRadius
+    {
+        get
+        {
+            var area = GetComponentInChildren<Collider>();
+            return area != null ? Mathf.Max(.5f, Mathf.Min(area.bounds.extents.x, area.bounds.extents.z) * .7f) : 1;
+        }
+    }
     public bool HasPlayersInside 
     {
         get 
@@ -30,7 +38,7 @@ public class VolleyballLandSpot : NetworkBehaviour
                 if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerId, out NetworkObject netObj))
                 {
                     PlayerManager player = netObj.GetComponent<PlayerManager>();
-                    if (player != null && player.CurrentTeam.IsOnSameTeam(assignedTeam))
+                    if (player != null && player.PlayerState == PlayerState.Alive && player.Pokemon.CurrentHp > 0 && player.CurrentTeam.IsOnSameTeam(assignedTeam))
                     {
                         return true;
                     }
@@ -48,7 +56,7 @@ public class VolleyballLandSpot : NetworkBehaviour
             if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(playerId, out NetworkObject netObj))
             {
                 PlayerManager player = netObj.GetComponent<PlayerManager>();
-                if (player != null && player.CurrentTeam.IsOnSameTeam(assignedTeam))
+                if (player != null && player.PlayerState == PlayerState.Alive && player.Pokemon.CurrentHp > 0 && player.CurrentTeam.IsOnSameTeam(assignedTeam))
                 {
                     validPlayers.Add(player);
                 }
@@ -90,7 +98,7 @@ public class VolleyballLandSpot : NetworkBehaviour
             PlayerManager playerManager = other.GetComponent<PlayerManager>();
             if (playerManager.CurrentTeam.IsOnSameTeam(assignedTeam))
             {
-                networkPlayerList.Add(playerManager.NetworkObjectId);
+                if (!networkPlayerList.Contains(playerManager.NetworkObjectId)) networkPlayerList.Add(playerManager.NetworkObjectId);
             }
         }
     }

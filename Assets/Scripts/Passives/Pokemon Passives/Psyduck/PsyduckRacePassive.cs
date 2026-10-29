@@ -118,9 +118,23 @@ public class PsyduckRacePassive : PassiveBase
 
     public override void Update()
     {
+        if (!canMove || playerManager.PlayerMovement.IsKnockedUp)
+        {
+            isDashing = false;
+            dashDuration = 0.3f;
+            currentVelocity = Vector3.zero;
+            SetWalking(false);
+            UpdateAnimations();
+            return;
+        }
+        if (isFrozen && isDashing)
+        {
+            isDashing = false;
+            dashDuration = 0.3f;
+        }
         if (isDashing)
         {
-            Vector2 dashInput = playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>();
+            Vector2 dashInput = playerManager.MovementInput;
             if (dashInput.magnitude > 0.1f)
             {
                 Vector3 dashInputDir = new Vector3(dashInput.x, 0, dashInput.y).normalized;
@@ -137,7 +151,7 @@ public class PsyduckRacePassive : PassiveBase
         }
         else
         {
-            HandleMovement(playerManager.PlayerControls.Movement.Move.ReadValue<Vector2>());
+            HandleMovement(isFrozen ? Vector2.zero : playerManager.MovementInput);
         }
 
         UpdateAnimations();
@@ -162,6 +176,7 @@ public class PsyduckRacePassive : PassiveBase
         Vector3 inputDirection = new Vector3(input.x, 0, input.y).normalized;
 
         float modifiedMaxSpeed = maxSpeed * speedModifier;
+        if (playerManager.IsBot) modifiedMaxSpeed *= Mathf.Clamp(input.magnitude, .2f, 1);
 
         if (inputDirection.magnitude > 0.1f)
         {
@@ -204,18 +219,21 @@ public class PsyduckRacePassive : PassiveBase
 
     public void Dash()
     {
-        if (!isDashing)
-        {
-            isDashing = true;
-        }
+        TryDash();
+    }
+
+    public bool TryDash()
+    {
+        if (disposed || isDashing || isFrozen || !canMove || playerManager.PlayerMovement.IsKnockedUp) return false;
+        isDashing = true;
+        return true;
     }
 
     public void Dash(float dashDuration)
     {
-        if (!isDashing)
+        if (float.IsFinite(dashDuration) && dashDuration > 0 && TryDash())
         {
             this.dashDuration = dashDuration;
-            isDashing = true;
         }
     }
 

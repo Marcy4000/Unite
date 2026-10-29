@@ -97,22 +97,25 @@ public class PlayerLoadoutInitializationTests
     }
 
     [Test]
-    public void QueuedKillWithDestroyedVictimDoesNotTouchUiOrNetwork()
+    public void QueuedKillRetainsVictimDataAfterDestruction()
     {
-        var uiRoot = new GameObject("stale kill notification"); uiRoot.SetActive(false);
+        var attackerRoot = new GameObject("notification attacker"); attackerRoot.SetActive(false);
         var victimRoot = new GameObject("despawned victim"); victimRoot.SetActive(false);
         try
         {
-            var ui = uiRoot.AddComponent(GameType("KillNotificationUI"));
+            var attacker = attackerRoot.AddComponent(GameType("Pokemon"));
             var victim = victimRoot.AddComponent(GameType("Pokemon"));
-            var info = Activator.CreateInstance(GameType("KillInfo"), Activator.CreateInstance(GameType("DamageInfo")), victim, "");
+            var info = Activator.CreateInstance(GameType("KillInfo"), attacker, victim, 3, "Objective defeated", Enum.Parse(GameType("Team"), "Blue"));
             UnityEngine.Object.DestroyImmediate(victimRoot);
-            Assert.DoesNotThrow(() => ui.GetType().GetMethod("ShowKill", Private).Invoke(ui, new[] { info }));
+            UnityEngine.Object.DestroyImmediate(attackerRoot);
+            Assert.That(info.GetType().GetProperty("Notification").GetValue(info), Is.EqualTo("Objective defeated"));
+            Assert.That(info.GetType().GetProperty("Streak").GetValue(info), Is.EqualTo(3));
+            Assert.That(info.GetType().GetFields(Private).Any(field => typeof(Component).IsAssignableFrom(field.FieldType)), Is.False);
         }
         finally
         {
             if (victimRoot != null) UnityEngine.Object.DestroyImmediate(victimRoot);
-            UnityEngine.Object.DestroyImmediate(uiRoot);
+            if (attackerRoot != null) UnityEngine.Object.DestroyImmediate(attackerRoot);
         }
     }
 }

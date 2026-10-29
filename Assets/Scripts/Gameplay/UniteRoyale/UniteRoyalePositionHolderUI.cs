@@ -22,7 +22,7 @@ public class UniteRoyalePositionHolderUI : MonoBehaviour
         uniteRoyalePositionUIs.Clear();
         UniteRoyaleManager.Instance.OnPlayerStatsChanged += ReorderRacePositions;
 
-        foreach (var player in UniteRoyaleManager.Instance.PlayersInGame)
+        foreach (var player in UniteRoyaleManager.Instance.Participants)
         {
             GameObject spawnedObject = Instantiate(prefab, transform);
             UniteRoyalePositionUI uniteRoyalePositionUI = spawnedObject.GetComponent<UniteRoyalePositionUI>();
@@ -37,7 +37,7 @@ public class UniteRoyalePositionHolderUI : MonoBehaviour
 
     private void ReorderRacePositions()
     {
-        uniteRoyalePositionUIs.Sort((a, b) => b.PlayerNetworkManager.PlayerStats.kills.CompareTo(a.PlayerNetworkManager.PlayerStats.kills));
+        uniteRoyalePositionUIs.Sort((a, b) => b.Player.PlayerStats.kills.CompareTo(a.Player.PlayerStats.kills));
 
         for (int i = 0; i < uniteRoyalePositionUIs.Count; i++)
         {

@@ -1,90 +1,91 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 public class PsyduckRacingShieldObject : NetworkBehaviour
 {
+    private static readonly Dictionary<PlayerManager, PsyduckRacingShieldObject> shields = new Dictionary<PlayerManager, PsyduckRacingShieldObject>();
     private PlayerManager assignedPlayer;
-
     private float timer = 12f;
+    private bool consumed;
 
-    private StatusEffect unstoppableEffect = new StatusEffect(StatusType.HindranceResistance, 0, false, 0);
-
-    public void Initialize(ulong assigndPlayerID)
+    public void Initialize(ulong assignedPlayerID)
     {
-        assignedPlayer = NetworkManager.Singleton.SpawnManager.SpawnedObjects[assigndPlayerID].gameObject.GetComponent<PlayerManager>();
-
-        unstoppableEffect.ID = (ushort)Random.Range(70, ushort.MaxValue-1);
-
-        if (assignedPlayer == null)
+        if (!IsServer || assignedPlayer != null) return;
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(assignedPlayerID, out var owner)
+            || !owner.TryGetComponent(out assignedPlayer) || assignedPlayer.Pokemon == null)
         {
-            Debug.LogError("Failed to find player manager for player ID: " + assigndPlayerID);
-            DespawnRPC();
+            NetworkObject.Despawn(true);
             return;
         }
-
+        if (shields.TryGetValue(assignedPlayer, out var previous) && previous != null) previous.Consume();
+        shields[assignedPlayer] = this;
         transform.position = assignedPlayer.transform.position;
-
-        assignedPlayer.Pokemon.OnStatusChange += OnStatusChange;
-        assignedPlayer.Pokemon.OnStatChange += OnStatChange;
-
-        assignedPlayer.Pokemon.AddStatusEffect(unstoppableEffect);
+        assignedPlayer.Pokemon.BeforeStatusEffect += BeforeStatusEffect;
+        assignedPlayer.Pokemon.BeforeStatChange += BeforeStatChange;
     }
 
-    private void OnStatusChange(StatusEffect status, bool added)
+    public static bool TryBlock(PlayerManager player)
     {
-        if (!added)
-            return;
-
-        if (status.Type == StatusType.Incapacitated || (status.Type == StatusType.Scriptable && status.ID == 20))
-        {
-            assignedPlayer.Pokemon.RemoveStatusEffectRPC(status);
-            DespawnRPC();
-        }
+        if (!shields.TryGetValue(player, out var shield) || shield == null || !shield.IsSpawned || shield.consumed) return false;
+        shield.Consume();
+        return true;
     }
 
-    private void OnStatChange(NetworkListEvent<StatChange> changeEvent)
+    private bool BeforeStatusEffect(StatusEffect status)
     {
-        if (changeEvent.Type != NetworkListEvent<StatChange>.EventType.Add)
-            return;
+        if (consumed || (!status.IsNegativeStatus() && !(status.Type == StatusType.Scriptable && status.ID == 20))) return true;
+        Consume();
+        return false;
+    }
 
-        if (assignedPlayer.Pokemon.StatChanges[changeEvent.Index].AffectedStat == Stat.Speed)
-        {
-            assignedPlayer.Pokemon.RemoveStatChangeRPC(assignedPlayer.Pokemon.StatChanges[changeEvent.Index]);
-            DespawnRPC();
-        }
+    private StatChange? BeforeStatChange(StatChange stat)
+    {
+        if (consumed || stat.AffectedStat != Stat.Speed || stat.IsBuff) return stat;
+        Consume();
+        return null;
     }
 
     private void Update()
     {
-        if (assignedPlayer != null)
+        if (!IsServer || !IsSpawned || consumed) return;
+        timer -= Time.deltaTime;
+        if (assignedPlayer == null || !assignedPlayer.IsSpawned || timer <= 0)
         {
-            transform.position = assignedPlayer.transform.position;
-
-            timer -= Time.deltaTime;
-            if (timer <= 0)
-            {
-                timer = 12f;
-                DespawnRPC();
-            }
+            Consume();
+            return;
         }
+        transform.position = assignedPlayer.transform.position;
     }
 
-    [Rpc(SendTo.Server)]
-    private void DespawnRPC()
+    private void Consume()
     {
-        if (assignedPlayer != null)
-            assignedPlayer.Pokemon.RemoveStatusEffectWithID(unstoppableEffect.ID);
+        if (consumed) return;
+        consumed = true;
+        Cleanup();
+        if (IsServer && IsSpawned) NetworkObject.Despawn(true);
+    }
 
-        NetworkObject.Despawn(true);
+    private void Cleanup()
+    {
+        if (assignedPlayer == null) return;
+        if (assignedPlayer.Pokemon != null)
+        {
+            assignedPlayer.Pokemon.BeforeStatusEffect -= BeforeStatusEffect;
+            assignedPlayer.Pokemon.BeforeStatChange -= BeforeStatChange;
+        }
+        if (shields.TryGetValue(assignedPlayer, out var current) && current == this) shields.Remove(assignedPlayer);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        Cleanup();
+        base.OnNetworkDespawn();
     }
 
     public override void OnDestroy()
     {
-        if (assignedPlayer != null)
-        {
-            assignedPlayer.Pokemon.OnStatusChange -= OnStatusChange;
-            assignedPlayer.Pokemon.OnStatChange -= OnStatChange;
-        }
+        Cleanup();
         base.OnDestroy();
     }
 }

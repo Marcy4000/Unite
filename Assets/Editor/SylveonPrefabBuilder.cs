@@ -44,6 +44,7 @@ public static class SylveonPrefabBuilder
             BasicAttack(false); BasicAttack(true);
         }
         finally { EditorSceneManager.ClosePreviewScene(preview); }
+        AddMissingLandingWarning();
         foreach (string name in new[] { "SylvMysticalFire", "SylvDrainingKiss", "SylvBabyDollEyes", "SylvCalmMind", "SylvFairyFrolic", "SylvBasicAttack", "SylvBoostedAttack" })
             Register(Folder + name + ".prefab");
         ConfigureMoves(); ConfigureAnimations();
@@ -166,7 +167,43 @@ public static class SylveonPrefabBuilder
         MeshNode("HealingAura", buff.transform, ring, pink, Vector3.up * 0.12f, Vector3.one);
         Sparks(buff.transform, new Color(1, 0.7f, 0.9f), 0.85f, 10);
         Set(effect, "landingArea", area); Set(effect, "airborne", air); Set(effect, "landing", landing); Set(effect, "buff", buff);
+        AddLandingWarning(graphics, effect, area);
         landing.SetActive(false); buff.SetActive(false);
+    }
+
+    // Upgrade an already-authored prefab without rebuilding its hand-edited art.
+    [MenuItem("Tools/Sylveon/Add Missing Unite Landing Warning")]
+    public static void AddMissingLandingWarning()
+    {
+        string path = Folder + "SylvFairyFrolic.prefab";
+        var root = PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var effect = root.GetComponent<SylvFairyFrolicEffect>();
+            var serialized = new SerializedObject(effect);
+            if (serialized.FindProperty("landingWarning").objectReferenceValue != null) return;
+            AddLandingWarning(root.transform.Find("Graphics").gameObject, effect,
+                (SphereCollider)serialized.FindProperty("landingArea").objectReferenceValue);
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+        }
+        finally { PrefabUtility.UnloadPrefabContents(root); }
+    }
+
+    private static void AddLandingWarning(GameObject graphics, SylvFairyFrolicEffect effect, SphereCollider area)
+    {
+        var legacy = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "SylveonUnite.prefab");
+        var warning = Object.Instantiate(legacy.transform.Find("GroundCircle").gameObject, graphics.transform, false);
+        warning.name = "LandingWarning";
+        var renderers = warning.GetComponentsInChildren<SpriteRenderer>();
+        Bounds bounds = renderers[0].bounds;
+        foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+        // Reuse the old quarter-circle sprites, but match the current damage
+        // radius exactly rather than inheriting the old prefab's approximate scale.
+        float diameter = Mathf.Max(bounds.size.x, bounds.size.z);
+        warning.transform.localScale *= area.radius * 2 / diameter;
+        warning.transform.localPosition = new Vector3(area.center.x, 0.05f, area.center.z);
+        warning.SetActive(false);
+        Set(effect, "landingWarning", warning);
     }
 
     private static void ConfigureMoves()

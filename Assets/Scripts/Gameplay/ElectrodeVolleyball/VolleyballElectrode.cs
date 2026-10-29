@@ -21,6 +21,10 @@ public class VolleyballElectrode : NetworkBehaviour
     private Tween currentMoveTween;
     private Vector3 startPosition;
     private VolleyballLandSpot currentLandingZone;
+    public bool InFlight => isMoving.Value;
+    public Team IncomingTeam => !isMoving.Value ? Team.Neutral : lastHitTeam.Value.Team == Team.Blue ? Team.Orange : Team.Blue;
+    public Vector3 LandingPosition { get; private set; }
+    public float RemainingFlightTime => remainingFlightTime.Value;
 
     public override void OnNetworkSpawn()
     {
@@ -56,6 +60,7 @@ public class VolleyballElectrode : NetworkBehaviour
 
         int randomSpot = Random.Range(0, landSpots.Length);
         Vector3 targetPosition = landSpots[randomSpot].position;
+        LandingPosition = targetPosition;
 
         // Mostra l'indicatore nel punto di atterraggio
         if (direction < 0)
@@ -204,6 +209,7 @@ public class VolleyballElectrode : NetworkBehaviour
 
         int randomSpot = Random.Range(0, targetSpots.Length);
         Vector3 nextTarget = targetSpots[randomSpot].position;
+        LandingPosition = nextTarget;
 
         // Aggiorna gli indicatori
         if (landSpot.AssignedTeam == Team.Blue)
@@ -249,5 +255,10 @@ public class VolleyballElectrode : NetworkBehaviour
         VolleyballManager.Instance.OrangeLandSpot.ShowCircleIndicator(false);
 
         animationManager.SetBool("Walking", false);
+    }
+    public override void OnNetworkDespawn()
+    {
+        currentMoveTween?.Kill(); currentMoveTween = null;
+        base.OnNetworkDespawn();
     }
 }

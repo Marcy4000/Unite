@@ -7,22 +7,29 @@ public class PsyduckRaceBarrierWall : NetworkBehaviour
     private float activeTime = 5f;
 
     private ulong ignoredObjectID;
+    private bool initialized;
 
-    [Rpc(SendTo.Everyone)]
+    private void Awake()
+    {
+        if (boxCollider == null) boxCollider = GetComponent<BoxCollider>();
+        boxCollider.isTrigger = true;
+        PsyduckRaceHit.PrepareTrigger(gameObject);
+    }
+
+    [Rpc(SendTo.Server)]
     public void InitializeRPC(Vector3 pos, Vector3 rot, ulong ignoredObjectID)
     {
-        if (IsOwner)
-        {
-            transform.position = pos;
-            transform.eulerAngles = rot;
-            boxCollider.enabled = false;
-        }
+        if (initialized) return;
+        transform.position = pos;
+        transform.eulerAngles = rot;
+        boxCollider.enabled = true;
         this.ignoredObjectID = ignoredObjectID;
+        initialized = true;
     }
 
     private void Update()
     {
-        if (!IsServer)
+        if (!IsServer || !IsSpawned)
         {
             return;
         }
@@ -34,25 +41,18 @@ public class PsyduckRaceBarrierWall : NetworkBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer)
+        if (!IsServer || !IsSpawned || !initialized)
         {
             return;
         }
 
-        if (collision.gameObject.CompareTag("Player"))
+        var playerManager = other.GetComponentInParent<PlayerManager>();
+        if (playerManager != null && playerManager.NetworkObjectId != ignoredObjectID)
         {
-            if (collision.gameObject.TryGetComponent(out PlayerManager playerManager))
-            {
-                if (playerManager.NetworkObjectId == ignoredObjectID)
-                {
-                    return;
-                }
-                playerManager.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0));
-
+            if (PsyduckRaceHit.Apply(playerManager, new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0)))
                 NetworkObject.Despawn(true);
-            }     
         }
     }
 }

@@ -293,6 +293,7 @@ public partial class DraftSelectController : NetworkBehaviour
             switchController.SetPrepPhaseSwitch(true);
         }
 
+        UpdateUIForCurrentTurn();
         OnPhaseChanged?.Invoke(current);
     }
 
@@ -317,7 +318,7 @@ public partial class DraftSelectController : NetworkBehaviour
 
     private void OnTurnIndexChanged(int previous, int current)
     {
-        UpdatePlayerIcons();
+        UpdateUIForCurrentTurn();
 
         switchButton.interactable = true;
 
@@ -414,6 +415,9 @@ public partial class DraftSelectController : NetworkBehaviour
                 LobbyController.Instance.ChangePlayerCharacter((short)selectedCharacter);
                 SpawnPokemon(selectedCharacterInfo);
                 draftCharacterSelector.gameObject.SetActive(false);
+                confirmButton.gameObject.SetActive(false);
+                switchButton.gameObject.SetActive(false);
+                banRequestButton.gameObject.SetActive(false);
                 battlePrepButton.gameObject.SetActive(true);
                 pkmnListSideInfo.gameObject.SetActive(true);
                 pkmnListSideInfo.SetPokemonInfo(selectedCharacterInfo);
@@ -608,9 +612,17 @@ public partial class DraftSelectController : NetworkBehaviour
         UpdatePlayerIcons();
 
         bool isCurrentPlayer = IsCurrentPlayerTurn(LobbyController.Instance.Player.Id);
-        DraftPlayerState currentPlayerState = (DraftPlayerState)playerStates[GetPlayerIndex(LobbyController.Instance.Player.Id)];
+        int localPlayerIndex = GetPlayerIndex(LobbyController.Instance.Player.Id);
+        DraftPlayerState currentPlayerState = localPlayerIndex >= 0 && localPlayerIndex < playerStates.Count
+            ? (DraftPlayerState)playerStates[localPlayerIndex] : DraftPlayerState.Idle;
+        bool isSelecting = currentDraftPhase.Value == DraftPhase.Banning || currentDraftPhase.Value == DraftPhase.Picking;
+        bool hasPicked = currentDraftPhase.Value == DraftPhase.Preparation ||
+            (currentDraftPhase.Value == DraftPhase.Picking && currentPlayerState == DraftPlayerState.Confirmed);
+        draftCharacterSelector.gameObject.SetActive(isSelecting && !hasPicked);
+        battlePrepButton.gameObject.SetActive(hasPicked);
+        pkmnListSideInfo.gameObject.SetActive(hasPicked);
         confirmButton.gameObject.SetActive(isCurrentPlayer && currentDraftPhase.Value != DraftPhase.Preparation && (currentPlayerState == DraftPlayerState.Banning || currentPlayerState == DraftPlayerState.Picking));
-        switchButton.gameObject.SetActive(!isCurrentPlayer && currentDraftPhase.Value == DraftPhase.Picking && IsLocalTeamTurn());
+        switchButton.gameObject.SetActive(!isCurrentPlayer && currentDraftPhase.Value == DraftPhase.Picking && !hasPicked && IsLocalTeamTurn());
         banRequestButton.gameObject.SetActive(!isCurrentPlayer && currentDraftPhase.Value == DraftPhase.Banning && IsLocalTeamTurn());
     }
 

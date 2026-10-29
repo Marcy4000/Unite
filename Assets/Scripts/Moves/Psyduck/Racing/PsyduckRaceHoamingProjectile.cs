@@ -9,69 +9,69 @@ public class PsyduckRaceHoamingProjectile : NetworkBehaviour
     public float rotationSpeed = 5f;
 
     private Transform target;
+    private NetworkObject targetNetworkObject;
     private GameObject pokemonToIgnore;
 
-    private StatusType[] statuses = new StatusType[] { StatusType.Scriptable, StatusType.Incapacitated };
+    private float timer = 10f;
+    private bool initialized;
+
+    private void Awake() { PsyduckRaceHit.PrepareTrigger(gameObject); }
 
     [Rpc(SendTo.Server)]
     public void SetTargetRPC(ulong newTarget, ulong pokemonToIgnore, Vector3 startingPos)
     {
+        if (initialized) return;
         transform.position = startingPos;
-
-        try
-        {
-            target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[newTarget].transform;
-            this.pokemonToIgnore = NetworkManager.Singleton.SpawnManager.SpawnedObjects[pokemonToIgnore].gameObject;
-        }
-        catch (System.Exception)
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(newTarget, out var targetObject)
+            || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(pokemonToIgnore, out var owner))
         {
             NetworkObject.Despawn(true);
+            return;
         }
+        target = targetObject.transform;
+        targetNetworkObject = targetObject;
+        this.pokemonToIgnore = owner.gameObject;
+        initialized = true;
     }
 
     void Update()
     {
-        if (!IsServer || target == null)
+        if (!IsServer || !IsSpawned)
         {
             return;
         }
+
+        timer -= Time.deltaTime;
+        if (timer <= 0 || (initialized && (target == null || targetNetworkObject == null || !targetNetworkObject.IsSpawned)))
+        {
+            NetworkObject.Despawn(true);
+            return;
+        }
+        if (!initialized) return;
 
         // Move towards the target
         transform.position = Vector3.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
 
         // Rotate towards the target
         Vector3 direction = (target.position - transform.position).normalized;
+        if (direction.sqrMagnitude < 0.0001f) return;
         Quaternion lookRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, rotationSpeed * Time.deltaTime);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer)
+        if (!IsServer || !IsSpawned || !initialized)
         {
             return;
         }
 
-        if (other.CompareTag("Player") && other.gameObject != pokemonToIgnore)
+        var playerController = other.GetComponentInParent<PlayerManager>();
+        if (playerController != null && playerController.gameObject != pokemonToIgnore)
         {
-            // Deal damage to the target
-            PlayerManager playerController = other.GetComponent<PlayerManager>();
-            if (playerController.Pokemon.HasAnyStatusEffect(statuses))
-            {
-                return;
-            }
-
-            if (isFreeze)
-            {
-                playerController.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Scriptable, 1f, true, 20));
-            }
-            else
-            {
-                playerController.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1f, true, 0));
-            }
-
-            // Destroy the projectile
-            NetworkObject.Despawn(true);
+            var effect = isFreeze ? new StatusEffect(StatusType.Scriptable, 1f, true, 20)
+                : new StatusEffect(StatusType.Incapacitated, 1f, true, 0);
+            if (PsyduckRaceHit.Apply(playerController, effect)) NetworkObject.Despawn(true);
         }
     }
 }

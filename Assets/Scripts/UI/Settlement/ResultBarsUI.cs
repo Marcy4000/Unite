@@ -10,27 +10,13 @@ public class ResultBarsUI : MonoBehaviour
     {
         this.maxPoints = maxPoints;
 
-        if (maxPoints == 0)
-        {
-            blueBar.transform.localScale = Vector3.zero;
-            orangeBar.transform.localScale = Vector3.zero;
-            return;
-        }
-
         SetBars(0, 0);
     }
 
     public void SetBars(int blueValue, int orangeValue)
     {
-        if (maxPoints == 0)
-        {
-            blueBar.transform.localScale = Vector3.zero;
-            orangeBar.transform.localScale = Vector3.zero;
-            return;
-        }
-
-        float blueScaleY = (float)blueValue / maxPoints;
-        float orangeScaleY = (float)orangeValue / maxPoints;
+        float blueScaleY = maxPoints > 0 ? Mathf.Clamp01((float)blueValue / maxPoints) : 0f;
+        float orangeScaleY = maxPoints > 0 ? Mathf.Clamp01((float)orangeValue / maxPoints) : 0f;
 
         blueBar.transform.localScale = new Vector3(blueBar.transform.localScale.x, blueScaleY, blueBar.transform.localScale.z);
         orangeBar.transform.localScale = new Vector3(orangeBar.transform.localScale.x, orangeScaleY, orangeBar.transform.localScale.z);

@@ -187,7 +187,7 @@ public class SylveonTests
         var calm = new SerializedObject(AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "SylvCalmMind.prefab").GetComponent(GameType("SylvCalmMindEffect")));
         foreach (string field in new[] { "graphics", "guard", "shield" }) Assert.That(calm.FindProperty(field).objectReferenceValue, Is.Not.Null);
         var frolic = new SerializedObject(AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "SylvFairyFrolic.prefab").GetComponent(GameType("SylvFairyFrolicEffect")));
-        foreach (string field in new[] { "graphics", "airborne", "landing", "buff", "landingArea" }) Assert.That(frolic.FindProperty(field).objectReferenceValue, Is.Not.Null);
+        foreach (string field in new[] { "graphics", "airborne", "landing", "buff", "landingArea", "landingWarning" }) Assert.That(frolic.FindProperty(field).objectReferenceValue, Is.Not.Null);
         var hitbox = (SphereCollider)frolic.FindProperty("landingArea").objectReferenceValue;
         Assert.That(hitbox.radius, Is.EqualTo(5)); Assert.That(hitbox.enabled, Is.False); Assert.That(hitbox.isTrigger, Is.True);
         var boosted = new SerializedObject(AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "SylvBoostedAttack.prefab").GetComponent(GameType("HomingProjectile")));
@@ -196,6 +196,37 @@ public class SylveonTests
         Assert.That(buff.FindPropertyRelative("Amount").intValue, Is.EqualTo(75));
         Assert.That(buff.FindPropertyRelative("Duration").floatValue, Is.EqualTo(1));
         Assert.That(buff.FindPropertyRelative("IsBuff").boolValue, Is.True);
+    }
+
+    [Test]
+    public void SwiftHasALargerHitboxWithoutEnlargingItsGraphics()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "SylvSwift.prefab");
+        var collider = prefab.GetComponent<SphereCollider>();
+        Assert.That(prefab.transform.localScale, Is.EqualTo(Vector3.one * 0.4f));
+        Assert.That(collider.radius * prefab.transform.localScale.x, Is.EqualTo(0.5f).Within(0.001f));
+        Assert.That(collider.enabled && collider.isTrigger, Is.True);
+    }
+
+    [Test]
+    public void UniteWarningReusesTheLegacyCircleAndMatchesTheDamageRadius()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "SylvFairyFrolic.prefab");
+        var effect = new SerializedObject(prefab.GetComponent(GameType("SylvFairyFrolicEffect")));
+        var warning = (GameObject)effect.FindProperty("landingWarning").objectReferenceValue;
+        var area = (SphereCollider)effect.FindProperty("landingArea").objectReferenceValue;
+        Assert.That(warning.activeSelf, Is.False, "Shown only during the airborne wind-up.");
+        Assert.That(warning.GetComponentsInChildren<Collider>(true), Is.Empty);
+        var sprites = warning.GetComponentsInChildren<SpriteRenderer>(true);
+        var legacy = AssetDatabase.LoadAssetAtPath<GameObject>(Folder + "SylveonUnite.prefab");
+        var originalSprites = legacy.transform.Find("GroundCircle").GetComponentsInChildren<SpriteRenderer>(true);
+        Assert.That(sprites.Length, Is.EqualTo(originalSprites.Length));
+        Assert.That(sprites.All(s => s.sprite == originalSprites[0].sprite), Is.True);
+        Bounds bounds = sprites[0].bounds;
+        foreach (var sprite in sprites) bounds.Encapsulate(sprite.bounds);
+        Assert.That(bounds.size.x, Is.EqualTo(area.radius * 2).Within(0.01f));
+        Assert.That(bounds.size.z, Is.EqualTo(area.radius * 2).Within(0.01f));
+        Assert.That(warning.transform.localPosition.y, Is.EqualTo(0.05f).Within(0.001f));
     }
 
     [Test]

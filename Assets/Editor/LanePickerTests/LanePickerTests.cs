@@ -340,6 +340,58 @@ public class LanePickerTests
         Assert.That(((GameObject)Get(ui, "expandedRoot")).activeSelf, Is.False);
     }
 
+    private Component CreateOpener(string name)
+    {
+        var button = new GameObject(name, typeof(RectTransform));
+        button.transform.SetParent(instance.transform, false);
+        return button.AddComponent(GameType("UnityEngine.UI.Button"));
+    }
+
+    [Test]
+    public void MultipleOpenersIgnoreDuplicatesAndResubscribeAfterDisabling()
+    {
+        instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
+        var ui = instance.GetComponent(GameType("LanePickerUI"));
+        var primary = (Component)Get(ui, "openButton");
+        var extra = CreateOpener("Additional opener");
+        var buttons = (IList)Get(ui, "additionalOpenButtons");
+        buttons.Clear();
+        buttons.Add(null);
+        buttons.Add(primary);
+        buttons.Add(extra);
+        buttons.Add(extra);
+        Call(ui, "SubscribeOpenButtons");
+        var subscribed = (IEnumerable)Get(ui, "subscribedOpenButtons");
+        Assert.That(subscribed.Cast<object>(), Is.EquivalentTo(new object[] { primary, extra }));
+        Assert.That(extra.GetType().GetProperty("interactable").GetValue(extra), Is.False);
+
+        Call(ui, "OnDisable");
+        Assert.That(subscribed.Cast<object>(), Is.Empty);
+        Call(ui, "OnEnable");
+        Assert.That(subscribed.Cast<object>(), Is.EquivalentTo(new object[] { primary, extra }));
+    }
+
+    [Test]
+    public void RuntimeOpenersCanBeRegisteredAndRemovedWithoutRemovingOtherListeners()
+    {
+        instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
+        var ui = instance.GetComponent(GameType("LanePickerUI"));
+        var extra = CreateOpener("Runtime opener");
+        var clicks = (UnityEngine.Events.UnityEvent)extra.GetType().GetProperty("onClick").GetValue(extra);
+        int unrelatedClicks = 0;
+        clicks.AddListener(() => unrelatedClicks++);
+        Call(ui, "RegisterOpener", extra);
+        Call(ui, "RegisterOpener", extra);
+        Assert.That(((IList)Get(ui, "additionalOpenButtons")).Cast<object>().Count(button => Equals(button, extra)), Is.EqualTo(1));
+        Assert.That(((IEnumerable)Get(ui, "subscribedOpenButtons")).Cast<object>(), Has.Member(extra));
+
+        Call(ui, "UnregisterOpener", extra);
+        Assert.That(((IList)Get(ui, "additionalOpenButtons")).Cast<object>(), Has.No.Member(extra));
+        Assert.That(((IEnumerable)Get(ui, "subscribedOpenButtons")).Cast<object>(), Has.No.Member(extra));
+        clicks.Invoke();
+        Assert.That(unrelatedClicks, Is.EqualTo(1));
+    }
+
     [TestCase("CharacterSelect", "CharacterSelectController")]
     [TestCase("DraftSelect", "DraftSelectController")]
     public void SceneHasOneSharedPickerOutsidePhaseSpecificRoots(string sceneName, string controllerType)

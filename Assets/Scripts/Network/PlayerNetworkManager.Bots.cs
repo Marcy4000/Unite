@@ -37,11 +37,9 @@ public partial class PlayerNetworkManager
             var lobby = LobbyController.Instance;
             if (lobby?.Lobby == null || CharactersList.Instance == null) return false;
             var map = CharactersList.Instance.GetCurrentLobbyMap();
-            return lobby != null && lobby.IsCustomLobby() && map != null && map.maxTeamSize == 5 &&
-                map.availableTeams.Count == 2 && map.availableTeams.Contains(Team.Blue) &&
-                map.availableTeams.Contains(Team.Orange) && map.SupportsLaneSelection &&
-                (map.sceneName == "TheiaSkyRuins" || map.sceneName == "RemoatStadium") &&
-                (map.characterSelectType == CharacterSelectType.BlindPick || map.characterSelectType == CharacterSelectType.Draft) && SupportedBotCharacters().Length >= 5;
+            return lobby.IsCustomLobby() && map != null && BotModeRules.Supports(map.sceneName, map.availableTeams.Count, map.maxTeamSize) &&
+                (BotModeRules.ForScene(map.sceneName) != BotGameMode.Lanes || map.SupportsLaneSelection) &&
+                (map.characterSelectType == CharacterSelectType.PsyduckRacing || SupportedBotCharacters().Length >= map.maxTeamSize);
         }
     }
 
@@ -117,7 +115,8 @@ public partial class PlayerNetworkManager
                 player.Data["PlayerPos"] = new PlayerProperty(NumberEncoder.ToBase64(bot.Position));
                 player.Data["SelectedCharacter"] = new PlayerProperty(NumberEncoder.ToBase64(bot.Character));
                 var build = BotRosterConfig.Instance != null ? BotRosterConfig.Instance.GetBuild(bot.Loadout) : null;
-                player.Data["BattleItem"] = new PlayerProperty(build != null ? System.Array.IndexOf(CharactersList.Instance.BattleItems, build.battleItem).ToString() : "1");
+                bool racing = BotModeRules.ForScene(CharactersList.Instance.GetCurrentLobbyMap().sceneName) == BotGameMode.Racing;
+                player.Data["BattleItem"] = new PlayerProperty(racing ? "0" : build != null ? System.Array.IndexOf(CharactersList.Instance.BattleItems, build.battleItem).ToString() : "1");
                 player.Data["HeldItems"] = new PlayerProperty(HeldItemDatabase.SerializeHeldItems(build != null ? build.heldItems : new byte[] { 0, 0, 0 }));
                 player.Data["ClothingInfo"] = new PlayerProperty(bot.Outfit.Length > 0 ? bot.Outfit.ToString() : "AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA=");
                 player.Data["PlayerRank"] = new PlayerProperty(PlayerRankData.GetDefault().Serialize());
@@ -174,10 +173,11 @@ public partial class PlayerNetworkManager
         if (!HasBots) return true;
         if (!SupportsBots) return false;
         var players = LobbyController.Instance.Lobby.Players;
-        return players.Count <= 10 && players.All(player =>
-            (player.Data["PlayerTeam"].Value == Team.Blue.ToString() || player.Data["PlayerTeam"].Value == Team.Orange.ToString()) &&
+        var map = CharactersList.Instance.GetCurrentLobbyMap();
+        return players.Count <= map.maxTeamSize * map.availableTeams.Count && players.All(player =>
+            map.availableTeams.Contains(TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value)) &&
             NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value) >= 0 &&
-            NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value) < 5) &&
+            NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value) < map.maxTeamSize) &&
             players.Select(player => player.Data["PlayerTeam"].Value + ":" + player.Data["PlayerPos"].Value).Distinct().Count() == players.Count;
     }
 
@@ -271,7 +271,7 @@ public partial class PlayerNetworkManager
     {
         if (!IsServer || !UsesBotSelection || charactersFrozen) return;
         charactersPublished |= publish;
-        foreach (var team in new[] { Team.Blue, Team.Orange })
+        foreach (var team in CharactersList.Instance.GetCurrentLobbyMap().availableTeams)
         {
             var players = LobbyController.Instance.GetTeamPlayers(team);
             var preferences = players.Where(player => player.IsBot).ToDictionary(player => player.Id, player => botPreferences[player.Id]);
@@ -288,7 +288,7 @@ public partial class PlayerNetworkManager
     public void FreezeBotCharacters()
     {
         if (!IsServer || !UsesBotSelection || charactersFrozen) return;
-        foreach (var team in new[] { Team.Blue, Team.Orange })
+        foreach (var team in CharactersList.Instance.GetCurrentLobbyMap().availableTeams)
         {
             var players = LobbyController.Instance.GetTeamPlayers(team);
             var used = new HashSet<short>(players.Where(player => !player.IsBot).Select(player => GetSelectedCharacter(player.Id)));
@@ -368,6 +368,22 @@ public partial class PlayerNetworkManager
         // Draft has its own authenticated confirmation flow. Enabling the
         // blind-pick arbitrator here would swallow human session writes/swaps.
         botSelectionActive.Value = false;
+    }
+
+    public void PrepareRacingBots(CharacterInfo character)
+    {
+        if (!IsServer || !HasBots) return;
+        ResetCommittedCharactersRpc(); participantCharacters.Clear(); matchBotLanes.Clear();
+        botSelectionActive.Value = false; charactersFrozen = true;
+        short id = CharactersList.Instance.GetCharacterID(character);
+        for (int i = 0; i < bots.Count; i++)
+        {
+            var bot = bots[i]; bot.Character = id; bot.Loadout = -1; bots[i] = bot;
+            participantCharacters.Add(new ParticipantCharacter { Id = bot.Id, Character = id });
+        }
+        var snapshot = new List<ParticipantCharacter>();
+        foreach (var entry in participantCharacters) snapshot.Add(entry);
+        CommitCharactersRpc(snapshot.ToArray());
     }
 
     public void CommitDraftPick(string id, short character)
