@@ -297,6 +297,14 @@ public static class MoveDatabase
             case AvailableMoves.AbsolSuckerPunch: return new AbsolSuckerPunch();
             case AvailableMoves.AbsolMidnightSlash: return new AbsolMidnightSlash();
 
+            case AvailableMoves.NinetalesPowderSnow: return new NinetalesPowderSnow();
+            case AvailableMoves.NinetalesIcyWind: return new NinetalesIcyWind();
+            case AvailableMoves.NinetalesAvalanche: return new NinetalesAvalanche();
+            case AvailableMoves.NinetalesDazzlingGleam: return new NinetalesDazzlingGleam();
+            case AvailableMoves.NinetalesBlizzard: return new NinetalesBlizzard();
+            case AvailableMoves.NinetalesAuroraVeil: return new NinetalesAuroraVeil();
+            case AvailableMoves.NinetalesSnowGlobe: return new NinetalesSnowGlobe();
+
             default:
                 return null;
         }
@@ -423,5 +431,12 @@ public enum AvailableMoves : uint
     AbsolPursuit,
     AbsolPsychoCut,
     AbsolSuckerPunch,
-    AbsolMidnightSlash
+    AbsolMidnightSlash,
+    NinetalesPowderSnow,
+    NinetalesIcyWind,
+    NinetalesAvalanche,
+    NinetalesDazzlingGleam,
+    NinetalesBlizzard,
+    NinetalesAuroraVeil,
+    NinetalesSnowGlobe
 }

@@ -2,6 +2,43 @@ using UnityEngine;
 
 public partial class PlayerMovement
 {
+    private bool dashWallCollisionOverride;
+    private LayerMask dashOriginalIncludeLayers, dashOriginalExcludeLayers;
+    private int dashOriginalCollisionPriority;
+
+    // Legacy StartDash uses CharacterController.Move on the no-walls walkmesh.
+    // Preserve its wall-crossing semantics when a temporary wall locally opts
+    // into player collisions, without changing the global collision matrix.
+    private void SetDashWallCollisionOverride(bool active)
+    {
+        if (characterController == null || active == dashWallCollisionOverride) return;
+        if (active)
+        {
+            dashOriginalIncludeLayers = characterController.includeLayers;
+            dashOriginalExcludeLayers = characterController.excludeLayers;
+            dashOriginalCollisionPriority = characterController.layerOverridePriority;
+            int walls = LayerMask.GetMask("Wall");
+            characterController.includeLayers &= ~walls;
+            characterController.excludeLayers |= walls;
+            characterController.layerOverridePriority = Mathf.Max(2, dashOriginalCollisionPriority);
+        }
+        else
+        {
+            characterController.includeLayers = dashOriginalIncludeLayers;
+            characterController.excludeLayers = dashOriginalExcludeLayers;
+            characterController.layerOverridePriority = dashOriginalCollisionPriority;
+        }
+        dashWallCollisionOverride = active;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        teleportGeneration++;
+        isDashing = false;
+        SetDashWallCollisionOverride(false);
+        base.OnNetworkDespawn();
+    }
+
     private static bool WallCrossingFinite(Vector3 point) => float.IsFinite(point.x) && float.IsFinite(point.y) && float.IsFinite(point.z);
 
     private static bool WallCrossingContains(Collider mesh, float height, Vector3 point)

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum MoveAimStyle { None, Target, Direction, Dash, Circle }
+public enum MoveAimStyle { None, Target, Direction, Dash, Circle, Ground }
 
 /// <summary>Normal MoveBase input/cooldown flow for a server-owned, authored effect.</summary>
 public abstract class PrefabMove : MoveBase
@@ -9,6 +9,8 @@ public abstract class PrefabMove : MoveBase
     public abstract string PrefabPath { get; }
     public virtual MoveAimStyle AimStyle => MoveAimStyle.None;
     public virtual float Range => 0;
+    public virtual float AreaRadius => 1;
+    public virtual float EffectiveCooldown(bool upgraded) => Cooldown;
     public virtual bool CooldownOnEffectEnd => false;
     public override bool CooldownOnFinish => !CooldownOnEffectEnd;
     public virtual bool IsOffensive => true;
@@ -32,6 +34,7 @@ public abstract class PrefabMove : MoveBase
             case MoveAimStyle.Direction: playerManager.Aim.InitializeSkillshotAim(Range); break;
             case MoveAimStyle.Dash: playerManager.Aim.InitializeDashAim(Range); break;
             case MoveAimStyle.Circle: playerManager.Aim.InitializeSimpleCircle(Range); break;
+            case MoveAimStyle.Ground: playerManager.Aim.InitializeSizedCircleAreaIndicator(Range, AreaRadius); break;
         }
         UpdateAim();
         if (IndicatorPath != null) playerManager.Aim.ShowCustomIndicator(IndicatorPath, IndicatorScale, MirrorsIndicator);
@@ -42,6 +45,7 @@ public abstract class PrefabMove : MoveBase
         if (AimStyle == MoveAimStyle.Target) target = playerManager.Aim.SureHitAim()?.GetComponent<Pokemon>();
         else if (AimStyle == MoveAimStyle.Direction) direction = playerManager.Aim.SkillshotAim();
         else if (AimStyle == MoveAimStyle.Dash) direction = playerManager.Aim.DashAim();
+        else if (AimStyle == MoveAimStyle.Ground) direction = playerManager.Aim.CircleAreaAim() - playerManager.transform.position;
         if (IndicatorPath != null) playerManager.Aim.UpdateCustomIndicator(direction);
     }
 
@@ -51,7 +55,7 @@ public abstract class PrefabMove : MoveBase
     {
         if (!IsActive) return;
         UpdateAim();
-        bool valid = AimStyle == MoveAimStyle.Target ? target != null : direction.sqrMagnitude > 0.001f;
+        bool valid = AimStyle == MoveAimStyle.Target ? target != null : AimStyle == MoveAimStyle.Ground || direction.sqrMagnitude > 0.001f;
         HideAim();
         if (valid)
         {
@@ -80,6 +84,7 @@ public abstract class PrefabMove : MoveBase
             case MoveAimStyle.Direction: playerManager.Aim.HideSkillshotAim(); break;
             case MoveAimStyle.Dash: playerManager.Aim.HideDashAim(); break;
             case MoveAimStyle.Circle: playerManager.Aim.HideSimpleCircle(); break;
+            case MoveAimStyle.Ground: playerManager.Aim.HideCircleAreaIndicator(); break;
         }
     }
 

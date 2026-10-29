@@ -308,6 +308,7 @@ public partial class MovesController
 
     public override void OnNetworkDespawn()
     {
+        DisposeNinetalesRuntime();
         basicAttack?.Dispose();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();

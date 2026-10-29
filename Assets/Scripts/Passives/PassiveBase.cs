@@ -48,6 +48,8 @@ public static class PassiveDatabase
                 return new SerperiorPassive();
             case AvailablePassives.AbsolPassive:
                 return new AbsolPassive();
+            case AvailablePassives.NinetalesPassive:
+                return new NinetalesPassive();
             default:
                 return new EmptyPassive();
         }
@@ -71,4 +73,5 @@ public enum AvailablePassives
     PsyduckRacePassive,
     SerperiorPassive,
     AbsolPassive,
+    NinetalesPassive,
 }

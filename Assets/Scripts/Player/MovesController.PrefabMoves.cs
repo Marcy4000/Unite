@@ -47,7 +47,8 @@ public partial class MovesController
         double now = NetworkManager.ServerTime.Time;
         if (prefabLearnedMoves[slot] != move) { RejectPrefabExecutionRPC(move); return; }
         direction.y = 0;
-        direction = direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
+        direction = definition.AimStyle == MoveAimStyle.Ground ? Vector3.ClampMagnitude(direction, definition.Range)
+            : direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
         if (definition.CooldownOnEffectEnd && activePrefabMoves[slot] != null)
         {
             if (ServerActionLocks == 0 && activePrefabMoves[slot].TryRecast(direction))
@@ -69,8 +70,9 @@ public partial class MovesController
                 || Vector3.Distance(transform.position, target.transform.position) > definition.Range + 0.5f) return;
         }
         direction.y = 0;
-        direction = direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
-        prefabNextCast[slot] = now + Mathf.Max(0.25f, definition.Cooldown * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
+        direction = definition.AimStyle == MoveAimStyle.Ground ? Vector3.ClampMagnitude(direction, definition.Range)
+            : direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
+        prefabNextCast[slot] = now + Mathf.Max(0.25f, definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
         if (definition.CooldownOnEffectEnd) prefabNextCast[slot] = double.PositiveInfinity;
         int generation = ++prefabGenerations[slot];
         int sequence = ++prefabCastSequences[slot];
@@ -94,7 +96,8 @@ public partial class MovesController
                 if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition);
                 return;
             }
-            GameObject instance = Instantiate(asset.Result, transform.position + Vector3.up * 0.8f, Quaternion.LookRotation(castDirection));
+            GameObject instance = Instantiate(asset.Result, transform.position + Vector3.up * 0.8f,
+                Quaternion.LookRotation(castDirection.sqrMagnitude > 0.001f ? castDirection : transform.forward));
             var effect = instance.GetComponent<PrefabMoveEffect>();
             if (effect == null) { Destroy(instance); Addressables.Release(asset); FinishPrefabExecution(slot, move, definition); return; }
             effect.HoldAsset(asset);

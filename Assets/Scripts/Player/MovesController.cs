@@ -129,6 +129,7 @@ public partial class MovesController : NetworkBehaviour
         UpdateEmboarRuntime();
         UpdateFlareonRuntime();
         UpdateMeowsticRuntime();
+        UpdateNinetalesRuntime();
         if (!IsOwner)
         {
             return;
@@ -981,6 +982,7 @@ public partial class MovesController : NetworkBehaviour
     {
         basicAttack?.Dispose();
         DisposeServerAttack();
+        DisposeNinetalesRuntime();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();

@@ -414,6 +414,7 @@ public partial class PlayerMovement : NetworkBehaviour
     public void Teleport(Vector3 position, Quaternion rotation, bool recordSafePosition = true)
     {
         teleportGeneration++;
+        SetDashWallCollisionOverride(false);
         knockupTween?.Kill();
         knockupTween = null;
         isKnockedUp = isDashing = isMoving = false;
@@ -460,6 +461,7 @@ public partial class PlayerMovement : NetworkBehaviour
         if (!isDashing)
         {
             isDashing = true;
+            SetDashWallCollisionOverride(true);
             dashDirection = direction.normalized;
             currentDashDistance = distance;
             currentDashDuration = duration;
@@ -515,6 +517,7 @@ public partial class PlayerMovement : NetworkBehaviour
             {
                 // Can't dash at all in this direction - cancel dash
                 isDashing = false;
+                SetDashWallCollisionOverride(false);
                 activeWalkmesh = previousWalkmesh;
                 yield break;
             }
@@ -523,6 +526,7 @@ public partial class PlayerMovement : NetworkBehaviour
         yield return new WaitForSeconds(duration);
         if (generation != teleportGeneration) yield break;
         isDashing = false;
+        SetDashWallCollisionOverride(false);
         
         // Switch back to appropriate mesh after dash (respect flying state)
         UpdateActiveWalkmesh();

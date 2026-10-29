@@ -1,7 +1,7 @@
 using System;
 using Unity.Netcode;
 
-public enum StatusType : byte { Immobilized, Incapacitated, Asleep, Frozen, Bound, Unstoppable, Invincible, Untargetable, HindranceResistance, Invisible, VisionObscuring, Scriptable, Burned, Poisoned, RedBuff, BlueBuff }
+public enum StatusType : byte { Immobilized, Incapacitated, Asleep, Frozen, Bound, Unstoppable, Invincible, Untargetable, HindranceResistance, Invisible, VisionObscuring, Scriptable, Burned, Poisoned, RedBuff, BlueBuff, SnowMarked }
 
 public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
 {
@@ -43,7 +43,7 @@ public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
 
     public bool IsNegativeStatus()
     {
-        return Type == StatusType.Immobilized || Type == StatusType.Incapacitated || Type == StatusType.Asleep || Type == StatusType.Frozen || Type == StatusType.Bound || Type == StatusType.VisionObscuring;
+        return Type == StatusType.Immobilized || Type == StatusType.Incapacitated || Type == StatusType.Asleep || Type == StatusType.Frozen || Type == StatusType.Bound || Type == StatusType.VisionObscuring || Type == StatusType.SnowMarked;
     }
 
     public bool Equals(StatusEffect other)

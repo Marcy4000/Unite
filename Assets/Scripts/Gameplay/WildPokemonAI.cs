@@ -4,7 +4,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class WildPokemonAI : NetworkBehaviour
+public partial class WildPokemonAI : NetworkBehaviour
 {
     private Collider[] noticeColliders = new Collider[16];
     private readonly HashSet<Pokemon> noticeTargets = new();
@@ -86,11 +86,11 @@ public class WildPokemonAI : NetworkBehaviour
         if (state != WildPokemonState.Stunned)
         {
             previousState = state;
-            previousTargetPosition = agent.destination;
+            if (agent.isActiveAndEnabled && agent.isOnNavMesh) previousTargetPosition = agent.destination;
         }
 
         state = WildPokemonState.Stunned;
-        rb.isKinematic = false;
+        rb.isKinematic = displacing;
         agent.enabled = false;
 
         currentTarget = null;
@@ -103,7 +103,11 @@ public class WildPokemonAI : NetworkBehaviour
         rb.isKinematic = true;
         agent.enabled = true;
 
-        agent.SetDestination(previousTargetPosition);
+        if (agent.isOnNavMesh)
+        {
+            agent.isStopped = displacing;
+            agent.SetDestination(previousTargetPosition);
+        }
     }
 
     public void Initialize(WildPokemonAISettings settings)
@@ -205,12 +209,13 @@ public class WildPokemonAI : NetworkBehaviour
         }
 
         UpdateCooldowns();
+        if (displacing) return;
         HandleAnimations();
     }
 
     private void FixedUpdate()
     {
-        if (!IsServer)
+        if (!IsServer || displacing)
         {
             return;
         }

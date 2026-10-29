@@ -82,6 +82,8 @@ public static class BasicAttacksDatabase
                 return new DuraBasicAtk();
             case "absol":
                 return new AbsolBasicAtk();
+            case "alolan ninetales":
+                return new NinetalesBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }
