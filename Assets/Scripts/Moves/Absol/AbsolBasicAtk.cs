@@ -50,7 +50,7 @@ public class AbsolBasicAtk : ChargedBasicAttackBase
         bool pursuit = PursuitReady && primary != null;
         bool boosted = charge == 2;
         interrupted = false;
-        float scale = AbsolMoveRules.BasicTimingScale(playerManager.MovesController.GetAtkSpeedCooldown());
+        float scale = AbsolMoveRules.AttackTimingScale(playerManager.MovesController.GetAtkSpeedCooldown(), boosted, pursuit);
         float windup = (pursuit ? AbsolMoveRules.PursuitAttackWindup : boosted ? AbsolMoveRules.BoostedWindup : AbsolMoveRules.BasicWindup) * scale;
         float recovery = (pursuit ? AbsolMoveRules.PursuitAttackRecovery : boosted ? AbsolMoveRules.BoostedRecovery : AbsolMoveRules.BasicRecovery) * scale;
         float bonusDelay = boosted && !pursuit ? AbsolMoveRules.BoostedHitDelay * scale : 0;

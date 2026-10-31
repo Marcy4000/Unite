@@ -84,6 +84,8 @@ public static class BasicAttacksDatabase
                 return new AbsolBasicAtk();
             case "alolan ninetales":
                 return new NinetalesBasicAtk();
+            case "zoroark":
+                return new ZoroarkBasicAtk();
             default:
                 return new EmptyBasicAtk();
         }

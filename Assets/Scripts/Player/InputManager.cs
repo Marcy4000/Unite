@@ -47,6 +47,8 @@ public class InputManager : MonoBehaviour
 
     private void Update()
     {
+        if (playerControls.Movement.AuxiliaryAction.WasPressedThisFrame() && (SettingsManager.Instance == null || !SettingsManager.Instance.IsMenuOpen))
+            AuxiliaryActionUI.AuxiliaryAction?.TryActivate();
         var mouse = Mouse.current;
         var mouseActive = mouse != null && (mouse.delta.ReadValue().sqrMagnitude > 0.01f ||
             mouse.scroll.ReadValue().sqrMagnitude > 0f || mouse.leftButton.wasPressedThisFrame ||

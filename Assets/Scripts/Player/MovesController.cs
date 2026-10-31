@@ -130,6 +130,7 @@ public partial class MovesController : NetworkBehaviour
         UpdateFlareonRuntime();
         UpdateMeowsticRuntime();
         UpdateNinetalesRuntime();
+        UpdateZoroarkRuntime();
         if (!IsOwner)
         {
             return;
@@ -386,7 +387,7 @@ public partial class MovesController : NetworkBehaviour
         }
 
         if (moves[index].IsStoredMove) SynchronizeStoredMove(index);
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastZoroark(index) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
         {
             BufferMarshadowInput(index, false);
             BufferCresseliaInput(index, false);
@@ -436,7 +437,7 @@ public partial class MovesController : NetworkBehaviour
             return;
         }
 
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastZoroark(index) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
         {
             BufferMarshadowInput(index, true);
             BufferCresseliaInput(index, true);
@@ -499,7 +500,8 @@ public partial class MovesController : NetworkBehaviour
 
     private float GetMoveCooldown(MoveBase move)
     {
-        return move.Cooldown - (move.Cooldown * (pokemon.GetCDR() / 100f));
+        float duration = move is PrefabMove prefab ? prefab.EffectiveCooldown(move.IsUpgraded) : move.Cooldown;
+        return duration * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
     }
 
     private void SynchronizeStoredMove(int index)
@@ -553,7 +555,11 @@ public partial class MovesController : NetworkBehaviour
         bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned) || moveStatuses[index].HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetMoveLock(index, showLock);
 
-        if (!moves[index].IsStoredMove && moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
+        if (index == 0 && ZoroarkAerialOpen)
+        {
+            BattleUIManager.instance.ShowMoveCooldown(index, 0, GetMoveCooldown(moves[index]));
+        }
+        else if (!moves[index].IsStoredMove && moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
         {
             BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown, GetMoveCooldown(moves[index]));
         }
@@ -983,6 +989,7 @@ public partial class MovesController : NetworkBehaviour
         basicAttack?.Dispose();
         DisposeServerAttack();
         DisposeNinetalesRuntime();
+        DisposeZoroarkRuntime();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();

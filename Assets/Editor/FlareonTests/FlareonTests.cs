@@ -141,6 +141,36 @@ public class FlareonTests
     [TestCase("FlareBlitz", 11, true)]
     public void UpgradeLevelsMatchTheLicense(string kind, int level, bool expected) => Assert.That(Rule("Upgraded", Kind(kind), level), Is.EqualTo(expected));
     [Test]
+    public void SwiftUsesReducedPulseDamageAndRetainsCrits()
+    {
+        object damage = Rule("Damage", 8UL, Kind("Swift"), false, false, false);
+        Assert.That(Get(damage, "attackerId"), Is.EqualTo(8UL));
+        Assert.That(Get(damage, "ratio"), Is.EqualTo(0.7f));
+        Assert.That(Get(damage, "slider"), Is.EqualTo(4));
+        Assert.That(Get(damage, "baseDmg"), Is.EqualTo(100));
+        Assert.That(Get(damage, "type").ToString(), Is.EqualTo("Physical"));
+        Assert.That(Get(damage, "proprieties").ToString(), Is.EqualTo("CanCrit"));
+    }
+    [TestCase(false, false, 1f, 6, 160)]
+    [TestCase(true, false, 1f, 6, 160)]
+    [TestCase(false, true, 1.05f, 7, 200)]
+    [TestCase(true, true, 1.05f, 7, 200)]
+    public void HeatWaveUsesReducedNonCriticalDamageForBothUpgradeStates(bool upgraded, bool burned, float ratio, int slider, int baseDamage)
+    {
+        object damage = Rule("Damage", 8UL, Kind("HeatWave"), upgraded, burned, false);
+        Assert.That(Get(damage, "attackerId"), Is.EqualTo(8UL));
+        Assert.That(Get(damage, "ratio"), Is.EqualTo(ratio));
+        Assert.That(Get(damage, "slider"), Is.EqualTo(slider));
+        Assert.That(Get(damage, "baseDmg"), Is.EqualTo(baseDamage));
+        Assert.That(Get(damage, "type").ToString(), Is.EqualTo("Physical"));
+        Assert.That(Get(damage, "proprieties").ToString(), Is.EqualTo("None"));
+    }
+    [Test]
+    public void HeatWaveSpeedBonusIsTenPercent()
+    {
+        Assert.That(Type("FlareonMoveRules").GetField("HeatSpeedBonus").GetRawConstantValue(), Is.EqualTo(10));
+    }
+    [Test]
     public void BurnPayoffsAndUniteFlagsArePreserved()
     {
         object normal = Rule("Damage", 8UL, Kind("Takedown"), false, false, false);

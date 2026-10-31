@@ -50,6 +50,8 @@ public static class PassiveDatabase
                 return new AbsolPassive();
             case AvailablePassives.NinetalesPassive:
                 return new NinetalesPassive();
+            case AvailablePassives.ZoroarkPassive:
+                return new ZoroarkPassive();
             default:
                 return new EmptyPassive();
         }
@@ -74,4 +76,5 @@ public enum AvailablePassives
     SerperiorPassive,
     AbsolPassive,
     NinetalesPassive,
+    ZoroarkPassive,
 }

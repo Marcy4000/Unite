@@ -64,6 +64,16 @@ public class HPBar : MonoBehaviour
     private Dictionary<string, IHPBarModule> moduleRegistry = new Dictionary<string, IHPBarModule>();
     private Dictionary<string, GaugeModule> dynamicGauges = new Dictionary<string, GaugeModule>();
     private readonly Vector3[] moduleCorners = new Vector3[4];
+    private bool presentationOverride;
+    private string realDisplayName;
+    private string copiedName;
+    private int copiedHp, copiedMax, copiedLevel, copiedShield, copiedEnergy;
+    private bool copiedPlayer;
+    private Sprite realHpSprite;
+    private Sprite copiedHpSprite;
+    private Vector2 realBarSize, copiedBarSize;
+    private readonly Dictionary<CanvasGroup, float> overriddenModules = new Dictionary<CanvasGroup, float>();
+    public string DisplayName => realDisplayName ?? "";
 
     public Pokemon Pokemon => pokemon;
     public bool IsInitialized => isInitialized;
@@ -176,6 +186,7 @@ public class HPBar : MonoBehaviour
 
     public void UpdatePlayerName(string playerName)
     {
+        realDisplayName = playerName;
         if (playerNameText != null)
         {
             playerNameText.text = playerName;
@@ -372,6 +383,7 @@ public class HPBar : MonoBehaviour
 
     public void CreateHPMarkers(int maxHP)
     {
+        if (presentationOverride) maxHP = copiedMax;
         if (linesHolder == null || linePrefab == null) return;
 
         foreach (Transform child in linesHolder.transform)
@@ -649,9 +661,80 @@ public class HPBar : MonoBehaviour
 
     private void LateUpdate()
     {
+        ApplyPresentationOverride();
         // Also catches modules toggled directly through SetVisibility/gameObject,
         // and gauges whose size/position changes independently of this HP bar.
         UpdateBoostedAttackCounterLayout();
+    }
+
+    // A view-only override: never rebind the bar to the copied Pokemon or touch
+    // gameplay team/HP. Existing event subscriptions keep tracking the real actor.
+    public void SetPresentationOverride(string name, int hp, int maxHp, int level, int shield, int energy, bool player)
+    {
+        if (!presentationOverride)
+        {
+            if (hpBar != null) realHpSprite = hpBar.sprite;
+            if (barRectTransform != null) realBarSize = copiedBarSize = barRectTransform.sizeDelta;
+        }
+        presentationOverride = true;
+        copiedName = name; copiedHp = hp; copiedMax = Mathf.Max(1, maxHp); copiedLevel = level;
+        copiedShield = shield; copiedEnergy = energy; copiedPlayer = player;
+        copiedHpSprite = hpBarColors != null && hpBarColors.Length >= 3 ? hpBarColors[2] : realHpSprite;
+        StopAllCoroutines();
+        CreateHPMarkers(copiedMax);
+        ApplyPresentationOverride();
+    }
+
+    private void ApplyPresentationOverride()
+    {
+        if (!presentationOverride) return;
+        if (barRectTransform != null) barRectTransform.sizeDelta = copiedBarSize;
+        if (hpBar != null) { hpBar.fillAmount = Mathf.Clamp01(copiedHp / (float)copiedMax); hpBar.sprite = copiedHpSprite; }
+        if (damageBar != null) damageBar.fillAmount = Mathf.Clamp01(copiedHp / (float)copiedMax);
+        if (shieldBar != null) shieldBar.fillAmount = copiedShield / (float)copiedMax;
+        if (playerNameText != null) playerNameText.text = copiedName;
+        if (lvText != null) lvText.text = copiedPlayer ? (copiedLevel + 1).ToString() : "";
+        if (energyText != null) energyText.text = copiedPlayer ? copiedEnergy.ToString() : "";
+        if (energyBG != null) { energyBG.gameObject.SetActive(copiedPlayer); if (copiedPlayer) energyBG.sprite = blueEnergyBG; }
+        foreach (var module in activeModules)
+        {
+            if (!(module is MonoBehaviour behaviour) || behaviour == null) continue;
+            var group = behaviour.GetComponent<CanvasGroup>();
+            if (group == null) group = behaviour.gameObject.AddComponent<CanvasGroup>();
+            if (!overriddenModules.ContainsKey(group)) overriddenModules[group] = group.alpha;
+            group.alpha = 0;
+        }
+    }
+
+    public void SetPresentationStyle(HPBar source, bool asAlly)
+    {
+        if (!presentationOverride || source == null) return;
+        if (source.barRectTransform != null) copiedBarSize = source.barRectTransform.sizeDelta;
+        if (!asAlly && source.hpBar != null) copiedHpSprite = source.hpBar.sprite;
+        ApplyPresentationOverride();
+        CreateHPMarkers(copiedMax);
+    }
+
+    public void ClearPresentationOverride()
+    {
+        if (!presentationOverride) return;
+        presentationOverride = false;
+        if (hpBar != null) hpBar.sprite = realHpSprite;
+        if (barRectTransform != null) barRectTransform.sizeDelta = realBarSize;
+        if (playerNameText != null) playerNameText.text = DisplayName;
+        foreach (var entry in overriddenModules)
+            if (entry.Key != null) entry.Key.alpha = entry.Value;
+        overriddenModules.Clear();
+        if (pokemon == null) return;
+        UpdateHPUI(); UpdateShieldsUI(); UpdateLevel();
+        if (pokemon.TryGetComponent(out PlayerManager actor))
+        {
+            if (energyBG != null) energyBG.gameObject.SetActive(!actor.IsLocalHuman);
+            if (energyText != null) energyText.gameObject.SetActive(!actor.IsLocalHuman);
+            InitializeEnergyUI(PokemonType.Player, actor.CurrentTeam.Team, actor.IsLocalHuman);
+            UpdateEnergyAmount(actor.CurrentEnergy);
+        }
+        CreateHPMarkers(pokemon.GetMaxHp());
     }
 
     private void UpdateBoostedAttackCounterLayout()

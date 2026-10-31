@@ -54,6 +54,12 @@ Below 30% HP they seek functioning allied goals, resuming tasks above 58%.
 Recovery combat uses basic attacks with movement constrained inside the goal;
 movement spells are withheld there. Below 14% they disengage and use the normal
 three-second recall when no enemy is nearby. Damage/death interrupt recall.
+Main-base healing checks registered participants' current teams and positions
+inside the authored spawn volume on the server every 0.5 seconds, restoring 15%
+of maximum HP. It does not depend on trigger-enter/exit events, so late bot
+initialization, recall teleports and controller resets cannot lose membership.
+Only living, initialized allies heal during active play; base healing is not
+credited as player healing in match statistics.
 At each final-objective spawn bots independently roll 97% attendance once; the
 decision is retained for that spawn. Critical recovery still takes priority.
 

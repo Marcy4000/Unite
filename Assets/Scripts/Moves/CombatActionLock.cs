@@ -9,15 +9,15 @@ public sealed class CombatActionLock : IDisposable
     private readonly List<IDisposable> leases = new List<IDisposable>();
     private bool movement, server;
 
-    public CombatActionLock(PlayerManager actor, bool lockMovement, bool lockServer = true, bool lockMoves = true)
+    public CombatActionLock(PlayerManager actor, bool lockMovement, bool lockServer = true, bool lockMoves = true, bool lockBattleItems = true, int unlockedMoveSlot = -1)
     {
         this.actor = actor;
         if (actor.IsServer && lockServer) { actor.MovesController.ServerActionLocks++; server = true; }
         if (!actor.IsOwner) return;
         if (lockMoves)
-            for (int i = 0; i < 3; i++) leases.Add(actor.MovesController.AcquireMoveStatus(i, ActionStatusType.Busy));
+            for (int i = 0; i < 3; i++) if (i != unlockedMoveSlot) leases.Add(actor.MovesController.AcquireMoveStatus(i, ActionStatusType.Busy));
         leases.Add(actor.MovesController.BasicAttackStatus.AcquireStatus(ActionStatusType.Busy));
-        leases.Add(actor.MovesController.BattleItemStatus.AcquireStatus(ActionStatusType.Busy));
+        if (lockBattleItems) leases.Add(actor.MovesController.BattleItemStatus.AcquireStatus(ActionStatusType.Busy));
         leases.Add(actor.ScoreStatus.AcquireStatus(ActionStatusType.Busy));
         leases.Add(actor.RecallStatus.AcquireStatus(ActionStatusType.Busy));
         if (lockMovement) { actor.PlayerMovement.AddMovementRestriction(); movement = true; }

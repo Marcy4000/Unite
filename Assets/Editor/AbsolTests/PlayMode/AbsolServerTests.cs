@@ -177,7 +177,7 @@ public class AbsolServerTests
     [UnityTest]
     public IEnumerator NightSlashRequiresHitAndOffersOnlyOneRecast()
     {
-        var target = Pokemon(new Vector3(-1.4f, 0, 2)); Physics.SyncTransforms(); var effect = Effect("AbsolNightSlash");
+        var target = Pokemon(new Vector3(1.4f, 0, 2)); Physics.SyncTransforms(); var effect = Effect("AbsolNightSlash");
         yield return new WaitForSeconds(NightFirstReady);
         Assert.That(Hp(target), Is.LessThan(5000)); Assert.That(Call(effect, "TryRecast", Vector3.back), Is.True);
         Assert.That(Call(effect, "TryRecast", Vector3.forward), Is.False);
@@ -226,7 +226,7 @@ public class AbsolServerTests
     [UnityTest]
     public IEnumerator NightSlashUpgradeHealsFromShieldDamage()
     {
-        Pokemon(new Vector3(-1.4f, 0, 2)); var shielded = Pokemon(Vector3.forward * 2); Physics.SyncTransforms();
+        Pokemon(new Vector3(1.4f, 0, 2)); var shielded = Pokemon(Vector3.forward * 2); Physics.SyncTransforms();
         var shield = Activator.CreateInstance(T("ShieldInfo"), 1000, (ushort)78, (ushort)0, 10f, true, (ushort)0); Call(shielded, "AddShieldRPC", shield);
         Variable(actor, "currentHp", 3000); var effect = Effect("AbsolNightSlash", null, true);
         yield return new WaitForSeconds(NightFirstReady); Assert.That(Call(effect, "TryRecast", Vector3.back), Is.True);
@@ -395,9 +395,67 @@ public class AbsolServerTests
     }
 
     [UnityTest]
+    public IEnumerator FastBoostedAttackKeepsBothTickTimesAndProcsMuscleBandAndScarfOnlyOnce()
+    {
+        Set(Get(actor, "BaseStats"), "atkSpeed", Enumerable.Repeat(200f, 15).ToArray());
+        var target = Pokemon(Vector3.forward * 1.5f); Physics.SyncTransforms();
+        var muscle = Activator.CreateInstance(T("MuscleBand"));
+        muscle.GetType().GetMethod("Initialize").Invoke(muscle, new object[] { player });
+        var scarf = Activator.CreateInstance(T("RapidFireScarf"));
+        scarf.GetType().GetMethod("Initialize").Invoke(scarf, new object[] { player });
+        var times = new List<float>(); var basicHits = 0; var muscleHits = 0; var total = 0;
+        var callback = ObserveDamage((victim, damage, amount) =>
+        {
+            if (!ReferenceEquals(victim, target)) return;
+            var flags = damage.GetType().GetField("proprieties").GetValue(damage).ToString();
+            if (flags.Contains("IsMuscleBand")) muscleHits++;
+            else if (flags.Contains("IsBasicAttack")) { basicHits++; times.Add(Time.time); }
+            else return;
+            total += amount;
+        });
+        try
+        {
+            var attack = Get(moves, "ServerBasicAttack"); Set(attack, "charge", 2);
+            float started = Time.time;
+            Assert.That((float)Call(moves, "GetAtkSpeedCooldown"), Is.LessThan(0.4f));
+            Call(attack, "PerformOnServer", target); yield return new WaitForSeconds(BoostedComplete);
+            Assert.That(basicHits, Is.EqualTo(2), "Both attack ticks still deal damage.");
+            Assert.That(times.Count, Is.EqualTo(2));
+            Assert.That(times[0] - started, Is.GreaterThanOrEqualTo(Rule("BoostedWindup") - 0.01f), "Boosted windup stays fixed at low attack cooldown.");
+            Assert.That(times[1] - times[0], Is.GreaterThanOrEqualTo(Rule("BoostedHitDelay") - 0.01f));
+            Assert.That(muscleHits, Is.EqualTo(1), "MakeDamageAsOnce must suppress the second on-hit dispatch.");
+            Assert.That(Hp(target), Is.EqualTo(5000 - total));
+            Assert.That(scarf.GetType().GetField("stacks", Private).GetValue(scarf), Is.EqualTo(1));
+            Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
+        }
+        finally { actor.GetType().GetEvent("OnDamageApplied").RemoveEventHandler(actor, callback); }
+    }
+
+    [UnityTest]
+    public IEnumerator BoostedBonusDoesNotConsumeASecondPsychoCutMark()
+    {
+        var target = Pokemon(Vector3.forward * 1.5f); Physics.SyncTransforms();
+        var effect = Effect("AbsolPsychoCut"); yield return new WaitForSeconds(0.65f);
+        var attack = Get(moves, "ServerBasicAttack"); Set(attack, "charge", 2);
+        Call(attack, "PerformOnServer", target); yield return new WaitForSeconds(BoostedComplete);
+        var marks = (IDictionary)effect.GetType().GetField("marks", Private).GetValue(effect);
+        Assert.That(marks.Contains(target), Is.True);
+        Assert.That(marks[target].GetType().GetField("remaining").GetValue(marks[target]), Is.EqualTo(2));
+    }
+
+    [UnityTest]
+    public IEnumerator SuckerPunchCannotBeginBeyondFiveUnits()
+    {
+        var target = Pokemon(Vector3.forward * 5.01f); Physics.SyncTransforms(); Effect("AbsolSuckerPunch", target);
+        yield return new WaitForSeconds(0.1f);
+        Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
+        Assert.That(Hp(target), Is.EqualTo(5000)); Assert.That(actor.transform.position, Is.EqualTo(Vector3.zero));
+    }
+
+    [UnityTest]
     public IEnumerator NightSlashSecondDashStaysStillDuringItsWindup()
     {
-        Pokemon(new Vector3(-1.4f, 0, 2)); Physics.SyncTransforms(); var effect = Effect("AbsolNightSlash");
+        Pokemon(new Vector3(1.4f, 0, 2)); Physics.SyncTransforms(); var effect = Effect("AbsolNightSlash");
         yield return new WaitForSeconds(NightFirstReady);
         Vector3 origin = actor.transform.position;
         Assert.That(Call(effect, "TryRecast", Vector3.back), Is.True);

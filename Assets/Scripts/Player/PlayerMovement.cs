@@ -328,6 +328,16 @@ public partial class PlayerMovement : NetworkBehaviour
 
     void Update()
     {
+        if (IsOwner && player != null && player.MovesController.HandleZoroarkMovement(player.MovementInput))
+        {
+            currentMovement = inputMovement = Vector3.zero;
+            if (isMoving)
+            {
+                isMoving = false;
+                if (!animationManager.IsAnimatorNull()) animationManager.SetBool("Walking", false);
+            }
+            return;
+        }
         if (!CanMove || !IsOwner || isKnockedUp || (player != null && (player.PlayerState == PlayerState.Dead || pokemon.CurrentHp <= 0)))
         {
             return;

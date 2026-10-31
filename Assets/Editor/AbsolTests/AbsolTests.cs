@@ -12,6 +12,22 @@ public class AbsolTests
     private static object E(string type, string value) => Enum.Parse(T(type), value);
     private static object Rule(string name, params object[] args) => T("AbsolMoveRules").GetMethod(name).Invoke(null, args);
     private static V Field<V>(object target, string name) => (V)target.GetType().GetField(name).GetValue(target);
+    [Serializable]
+    private class DumpSkill
+    {
+        public int CDTime, EnergyCostVal, IndicatorRange, MaxAttackDis, AtkSpdNotAnim, AtkSpdNotAtkInter;
+        public int CameraOffsetBySkillBtn, CameraOffsetBySkillBtnLerpBackDelay, MakeDamageAsOnce;
+        public string IconPath;
+    }
+    private static DumpSkill Dump(string id)
+    {
+        string text = File.ReadAllText("Assets/Moves/Dumps/absol_skills.json");
+        int start = text.IndexOf("\"" + id + "\": {", StringComparison.Ordinal);
+        Assert.That(start, Is.GreaterThanOrEqualTo(0));
+        start = text.IndexOf('{', start);
+        int end = text.IndexOf("\n  }", start, StringComparison.Ordinal) + 4;
+        return JsonUtility.FromJson<DumpSkill>(text.Substring(start, end - start));
+    }
 
     [TestCase("AbsolFeint", 8)]
     [TestCase("AbsolSlash", 6)]
@@ -283,11 +299,11 @@ public class AbsolTests
     {
         var feint = Activator.CreateInstance(T("AbsolFeint"));
         var mirrored = feint.GetType().GetProperty("MirrorsIndicator");
-        Assert.That(mirrored.GetValue(feint), Is.False);
-        feint.GetType().GetMethod("OnCommitted", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(feint, null);
         Assert.That(mirrored.GetValue(feint), Is.True);
+        feint.GetType().GetMethod("OnCommitted", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(feint, null);
+        Assert.That(mirrored.GetValue(feint), Is.False);
         var night = Activator.CreateInstance(T("AbsolNightSlash"));
-        Assert.That(night.GetType().GetProperty("MirrorsIndicator").GetValue(night), Is.True);
+        Assert.That(night.GetType().GetProperty("MirrorsIndicator").GetValue(night), Is.False);
         night.GetType().GetMethod("OnExecutionState", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(night, new object[] { false });
         Assert.That(night.GetType().GetProperty("IndicatorPath").GetValue(night), Is.Null);
     }
@@ -324,5 +340,62 @@ public class AbsolTests
         Assert.That(Field<float>(bonus, "ratio"), Is.EqualTo(0.375f));
         Assert.That(Field<short>(bonus, "slider"), Is.EqualTo(1));
         Assert.That(Field<short>(bonus, "baseDmg"), Is.EqualTo(20));
+        Assert.That(Field<bool>(bonus, "suppressOnHitEffects"), Is.True);
+        Assert.That(Rule("CanConsumeMark", bonus), Is.False);
+        Assert.That(Rule("IsDirectDamage", bonus), Is.True, "An additional tick still counts as incoming damage for dodging.");
+        Assert.That(Field<bool>(Rule("BasicDamage", 12ul, true, false), "suppressOnHitEffects"), Is.False);
+    }
+
+    [TestCase("AbsolFeint", "9335907")]
+    [TestCase("AbsolSlash", "9335904")]
+    [TestCase("AbsolNightSlash", "9335908")]
+    [TestCase("AbsolNightSlash", "93359081")]
+    [TestCase("AbsolPursuit", "9335906")]
+    [TestCase("AbsolPursuit", "93359061")]
+    [TestCase("AbsolPsychoCut", "9335905")]
+    [TestCase("AbsolPsychoCut", "93359051")]
+    [TestCase("AbsolSuckerPunch", "9335909")]
+    [TestCase("AbsolSuckerPunch", "93359091")]
+    [TestCase("AbsolMidnightSlash", "9335910")]
+    public void ActiveSkillDumpMatchesAimCooldownCameraAndIconConfiguration(string name, string id)
+    {
+        var reference = Dump(id); var move = Activator.CreateInstance(T(name));
+        Assert.That((float)move.GetType().GetProperty("IndicatorRange").GetValue(move), Is.EqualTo(reference.IndicatorRange / 1000f));
+        Assert.That(Field<float>(move, "Cooldown"), Is.EqualTo(reference.CDTime / 1000f));
+        Assert.That((float)move.GetType().GetProperty("CameraReturnDelay").GetValue(move), Is.EqualTo(reference.CameraOffsetBySkillBtnLerpBackDelay / 1000f));
+        if (reference.CameraOffsetBySkillBtn != 0) Assert.That(reference.CameraOffsetBySkillBtnLerpBackDelay, Is.GreaterThan(0));
+        var asset = new SerializedObject(AssetDatabase.LoadMainAssetAtPath("Assets/Moves/Absol/" + name + ".asset"));
+        Assert.That(Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(asset.FindProperty("icon").objectReferenceValue)), Is.EqualTo(reference.IconPath));
+        Assert.That(asset.FindProperty("uniteEnergyCost").intValue, Is.EqualTo(reference.EnergyCostVal));
+        if (name == "AbsolNightSlash")
+        {
+            move.GetType().GetMethod("OnExecutionState", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(move, new object[] { false });
+            Assert.That(move.GetType().GetProperty("IndicatorRange").GetValue(move), Is.EqualTo(Dump("93359080").IndicatorRange / 1000f));
+        }
+    }
+
+    [TestCase("9335900", false, false)]
+    [TestCase("9335902", true, false)]
+    [TestCase("9335903", false, true)]
+    public void ActiveSkillDumpKeepsA3A4AnimationTimingFixedButNotTheirAttackInterval(string id, bool boosted, bool pursuit)
+    {
+        var reference = Dump(id);
+        Assert.That(reference.AtkSpdNotAtkInter, Is.Zero);
+        Assert.That(reference.MakeDamageAsOnce, Is.EqualTo(1));
+        Assert.That((float)Rule("AttackTimingScale", 0.466665f, boosted, pursuit), Is.EqualTo(reference.AtkSpdNotAnim == 1 ? 1 : 0.5f).Within(0.0001f));
+        if (pursuit) Assert.That(T("AbsolMoveRules").GetField("PursuitRange").GetRawConstantValue(), Is.EqualTo(reference.IndicatorRange / 1000f));
+    }
+
+    [Test]
+    public void SuckerPunchHonorsTheDumpCastBoundaryWithoutSharedTargetTolerance()
+    {
+        var move = Activator.CreateInstance(T("AbsolSuckerPunch"));
+        float range = Dump("9335909").MaxAttackDis / 1000f;
+        var valid = move.GetType().GetMethod("IsTargetInCastRange");
+        Assert.That(valid.Invoke(move, new object[] { Vector3.zero, Vector3.forward * range }), Is.True);
+        Assert.That(valid.Invoke(move, new object[] { Vector3.zero, Vector3.forward * (range + 0.01f) }), Is.False);
+        Assert.That(valid.Invoke(move, new object[] { Vector3.zero, new Vector3(float.NaN, 0, 0) }), Is.False);
+        Assert.That(Activator.CreateInstance(T("AbsolFeint")).GetType().GetProperty("Range").GetValue(Activator.CreateInstance(T("AbsolFeint"))), Is.EqualTo(4f));
+        Assert.That(T("AbsolMoveRules").GetField("PursuitDistance").GetRawConstantValue(), Is.EqualTo(4f));
     }
 }

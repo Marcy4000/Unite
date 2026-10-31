@@ -304,6 +304,13 @@ public static class MoveDatabase
             case AvailableMoves.NinetalesBlizzard: return new NinetalesBlizzard();
             case AvailableMoves.NinetalesAuroraVeil: return new NinetalesAuroraVeil();
             case AvailableMoves.NinetalesSnowGlobe: return new NinetalesSnowGlobe();
+            case AvailableMoves.ZoroarkSlash: return new ZoroarkSlash();
+            case AvailableMoves.ZoroarkFurySwipes: return new ZoroarkFurySwipes();
+            case AvailableMoves.ZoroarkShadowClaw: return new ZoroarkShadowClaw();
+            case AvailableMoves.ZoroarkCut: return new ZoroarkCut();
+            case AvailableMoves.ZoroarkNightSlash: return new ZoroarkNightSlash();
+            case AvailableMoves.ZoroarkFeintAttack: return new ZoroarkFeintAttack();
+            case AvailableMoves.ZoroarkNightfallDaze: return new ZoroarkNightfallDaze();
 
             default:
                 return null;
@@ -438,5 +445,12 @@ public enum AvailableMoves : uint
     NinetalesDazzlingGleam,
     NinetalesBlizzard,
     NinetalesAuroraVeil,
-    NinetalesSnowGlobe
+    NinetalesSnowGlobe,
+    ZoroarkSlash,
+    ZoroarkFurySwipes,
+    ZoroarkShadowClaw,
+    ZoroarkCut,
+    ZoroarkNightSlash,
+    ZoroarkFeintAttack,
+    ZoroarkNightfallDaze
 }

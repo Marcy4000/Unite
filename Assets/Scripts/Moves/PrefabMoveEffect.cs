@@ -23,6 +23,7 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
     public event Action<PrefabMoveEffect> Completed;
     public event Action RecastReady;
     public virtual bool TryRecast(Vector3 direction) => false;
+    public virtual bool TryRecast(Vector3 direction, ulong targetId) => TryRecast(direction);
     protected void OfferRecast() { if (IsServer) RecastReady?.Invoke(); }
     private CombatActionLock actionLock;
     private WallCrossingTraversal traversal;
@@ -106,6 +107,11 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
     private void DriveRPC(Vector3 origin, Vector3 destination, float duration, float bow, double began)
     {
         if (Actor == null || (!IsServer && !Actor.IsOwner)) return;
+        // Consecutive phases can start in the same frame that the previous
+        // coroutine reaches its final yield. Only one path may own traversal.
+        if (driveRoutine != null) StopCoroutine(driveRoutine);
+        driveRoutine = null;
+        traversal?.End(); traversal = null;
         driveRoutine = StartCoroutine(DrivePath(origin, destination, duration, bow, began));
     }
 
@@ -120,8 +126,10 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
             t = Mathf.Clamp01((float)(NetworkManager.ServerTime.Time - began) / Mathf.Max(0.01f, duration));
             Vector3 point = Vector3.Lerp(origin, destination, t) + right * (Mathf.Sin(t * Mathf.PI) * bow);
             traversal.Move(point - Actor.transform.position);
-            yield return null;
+            if (t < 1) yield return null;
         }
+        if (Actor != null && Actor.IsSpawned && Actor.Pokemon.CurrentHp > 0
+            && !Actor.Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)) traversal.Move(destination - Actor.transform.position);
         if (Actor != null && Actor.IsSpawned && Actor.Pokemon.CurrentHp > 0) traversal.End(); else traversal.Cancel();
         traversal = null; driveRoutine = null;
     }

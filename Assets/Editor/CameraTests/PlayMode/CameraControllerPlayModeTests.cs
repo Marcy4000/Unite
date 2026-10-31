@@ -89,6 +89,28 @@ public class CameraControllerPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator SkillAimReturnsOverRealFramesAndCancellationDoesNotWait()
+    {
+        ((Behaviour)controller).enabled = true;
+        object owner = new object();
+        Invoke("UpdateSkillAim", owner, Vector3.forward, 7f, 0.1f);
+        Transform proxy = camera.Follow;
+        Assert.That(proxy, Is.Not.Null); Assert.That(proxy, Is.Not.SameAs(target));
+        Invoke("EndSkillAim", owner, false);
+        yield return new WaitForSeconds(0.04f);
+        Assert.That(camera.Follow, Is.SameAs(proxy));
+        yield return new WaitForSeconds(0.12f);
+        Assert.That(camera.Follow, Is.SameAs(target));
+        Invoke("UpdateSkillAim", owner, Vector3.left, 8f, 2.2f);
+        Invoke("EndSkillAim", owner, true);
+        Assert.That(camera.Follow, Is.SameAs(target));
+        Invoke("UpdateSkillAim", owner, Vector3.forward, 7f, 0.7f);
+        Assert.That(camera.Follow, Is.Not.SameAs(target));
+        ((Behaviour)controller).enabled = false;
+        Assert.That(camera.Follow, Is.SameAs(target), "Disabling the camera controller releases its skill aim immediately.");
+    }
+
+    [UnityTest]
     public IEnumerator CannonActivationAndCleanupCannotOverrideOpenJumpSelection()
     {
         object pad = new object();

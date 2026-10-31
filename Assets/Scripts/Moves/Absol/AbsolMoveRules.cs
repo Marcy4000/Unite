@@ -14,6 +14,8 @@ public static class AbsolMoveRules
     public const float BoostedDefenseDuration = 2f;
     public const float FeintCooldown = 8f, SlashCooldown = 6f, NightCooldown = 5.5f, PursuitCooldown = 5.5f, PsychoCooldown = 7f, SuckerCooldown = 5f;
     public const float DashDistance = 4f, DashBow = 1.5f, DashRadius = 0.75f, DashDuration = 0.3f;
+    // Active-skill dump ranges describe aiming, not AGE-script dash travel.
+    public const float DashIndicatorRange = 5f, PursuitIndicatorRange = 5f;
     public const float FeintWindup = 0.04f, FeintRecovery = 0.06f;
     public const float NightFirstWindup = 0.04f, NightFirstRecovery = 0.06f;
     public const float NightSecondWindup = 0.09f, NightSecondRecovery = 0.08f;
@@ -21,15 +23,17 @@ public static class AbsolMoveRules
     public const float SlashRange = 3f, SlashAngle = 120f, SlashWindup = 0.12f, SlashRecovery = 0.22f;
     public const float PursuitDistance = 4f, PursuitDuration = 0.2f, PursuitEmpowerDuration = 3f;
     public const float PursuitWindup = 0.035f, PursuitRecovery = 0.065f;
-    public const float PursuitRange = BasicRange * 2, PursuitLeapDuration = 0.16f, PursuitSplashRadius = 1.2f, BackstabAngle = 120f;
+    public const float PursuitRange = 5.5f, PursuitLeapDuration = 0.16f, PursuitSplashRadius = 1.2f, BackstabAngle = 120f;
     public const float PursuitSpeedDuration = 2f, PursuitCooldownReduction = 0.7f;
     public const float PsychoRange = 7f, PsychoWidth = 1.5f, PsychoSpeed = 14f, MarkDuration = 5f;
     public const float PsychoAnimationDuration = 0.35f;
     public const float PsychoWindup = 0.10f, PsychoRecovery = 0.08f;
-    public const float SuckerRange = 6f, SuckerBreakRange = 10f, SuckerStance = 1f, SuckerDashDuration = 0.2f;
+    public const float PsychoCameraReturnDelay = 0.7f, UniteCameraReturnDelay = 2.2f;
+    public const float SuckerRange = 5f, SuckerBreakRange = 10f, SuckerStance = 1f, SuckerDashDuration = 0.2f;
     public const float SuckerRadius = 1.5f, SuckerBehindDistance = 1f, SuckerShoveDistance = 1.5f, SuckerShoveDuration = 0.2f;
     public const float SuckerRecovery = 0.08f;
     public const float UniteWidth = 4f, UniteLength = 6f, UniteWindup = 1f / 3f;
+    public const float UniteIndicatorRange = 8f;
     public const float UniteFlurryDuration = 1.15f, UniteFinalRange = 8f, UniteFinalAngle = 60f;
     public const int UniteTicks = 5, UniteEnergy = 80000;
     public const float UniteFinalSpacing = 0.055f, UniteFinalDelay = 0.2f, UniteSecondAnimationDuration = 1.2f;
@@ -63,9 +67,14 @@ public static class AbsolMoveRules
     public static DamageInfo BoostedBonusDamage(ulong source)
     {
         var damage = Damage(source, 0.375f, 1, 20);
+        damage.suppressOnHitEffects = true;
         damage.proprieties |= DamageProprieties.IsBasicAttack; return damage;
     }
     public static float BasicTimingScale(float attackCooldown) => Mathf.Clamp(attackCooldown / BasicReferenceCooldown, 0.2f, 1f);
+    // A3/A4 have AtkSpdNotAnim=1, but AtkSpdNotAtkInter=0. The shared attack
+    // interval remains speed-dependent; only these animation phases stay fixed.
+    public static float AttackTimingScale(float attackCooldown, bool boosted, bool pursuit)
+        => boosted || pursuit ? 1 : BasicTimingScale(attackCooldown);
     public static DamageInfo DashDamage(ulong source, bool feint, bool second, float missingHp)
     {
         var damage = feint ? Damage(source, 0.66f, 7, 130) : second ? Damage(source, 1.035f, 9, 210, NightCrit(missingHp)) : Damage(source, 0.69f, 6, 140, NightCrit(missingHp));
@@ -98,8 +107,9 @@ public static class AbsolMoveRules
         return delta.sqrMagnitude > 0.0001f && forward.sqrMagnitude > 0.0001f
             && Vector3.Dot(delta.normalized, -forward.normalized) >= Mathf.Cos(BackstabAngle * 0.5f * Mathf.Deg2Rad);
     }
-    public static bool CanConsumeMark(DamageInfo damage) => damage.source == DamageSource.Direct
+    public static bool IsDirectDamage(DamageInfo damage) => damage.source == DamageSource.Direct
         && (damage.proprieties & (DamageProprieties.IsMuscleBand | DamageProprieties.IsHeal)) == 0;
+    public static bool CanConsumeMark(DamageInfo damage) => IsDirectDamage(damage) && !damage.suppressOnHitEffects;
     public static bool CanHit(PlayerManager actor, Pokemon target) => actor != null && target != null && target.IsSpawned && target.CurrentHp > 0
         && !target.TeamMember.IsOnSameTeam(actor.CurrentTeam) && !target.HasStatusEffect(StatusType.Invincible) && !target.HasStatusEffect(StatusType.Untargetable);
     public static void Refresh(Pokemon target, StatChange change) { target.RemoveAllStatChangeWithIDRPC(change.ID); target.AddStatChange(change); }

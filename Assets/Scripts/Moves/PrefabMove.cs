@@ -9,6 +9,9 @@ public abstract class PrefabMove : MoveBase
     public abstract string PrefabPath { get; }
     public virtual MoveAimStyle AimStyle => MoveAimStyle.None;
     public virtual float Range => 0;
+    public virtual float IndicatorRange => Range;
+    public virtual float TargetRangeTolerance => 0.5f;
+    public virtual float CameraReturnDelay => 0; // Opt-in directional aim camera.
     public virtual float AreaRadius => 1;
     public virtual float EffectiveCooldown(bool upgraded) => Cooldown;
     public virtual bool CooldownOnEffectEnd => false;
@@ -20,19 +23,21 @@ public abstract class PrefabMove : MoveBase
     public virtual bool MirrorsIndicator => false;
     private System.IDisposable pending;
     private CombatActionLock loadLock;
+    private CameraController aimCamera;
     protected Vector3 direction;
     protected Pokemon target;
 
     public override void Start(PlayerManager controller)
     {
         base.Start(controller);
+        if (controller.IsLocalHuman && CameraReturnDelay <= 0) CameraController.Instance?.ClearSkillAim();
         target = null;
         direction = controller.transform.forward;
         switch (AimStyle)
         {
-            case MoveAimStyle.Target: playerManager.Aim.InitializeAutoAim(Range, 90, AimTarget.NonAlly); break;
-            case MoveAimStyle.Direction: playerManager.Aim.InitializeSkillshotAim(Range); break;
-            case MoveAimStyle.Dash: playerManager.Aim.InitializeDashAim(Range); break;
+            case MoveAimStyle.Target: playerManager.Aim.InitializeAutoAim(IndicatorRange, 90, AimTarget.NonAlly); break;
+            case MoveAimStyle.Direction: playerManager.Aim.InitializeSkillshotAim(IndicatorRange); break;
+            case MoveAimStyle.Dash: playerManager.Aim.InitializeDashAim(IndicatorRange); break;
             case MoveAimStyle.Circle: playerManager.Aim.InitializeSimpleCircle(Range); break;
             case MoveAimStyle.Ground: playerManager.Aim.InitializeSizedCircleAreaIndicator(Range, AreaRadius); break;
         }
@@ -47,6 +52,11 @@ public abstract class PrefabMove : MoveBase
         else if (AimStyle == MoveAimStyle.Dash) direction = playerManager.Aim.DashAim();
         else if (AimStyle == MoveAimStyle.Ground) direction = playerManager.Aim.CircleAreaAim() - playerManager.transform.position;
         if (IndicatorPath != null) playerManager.Aim.UpdateCustomIndicator(direction);
+        if (CameraReturnDelay > 0 && playerManager.IsLocalHuman)
+        {
+            aimCamera = CameraController.Instance;
+            if (aimCamera != null) aimCamera.UpdateSkillAim(this, direction, IndicatorRange, CameraReturnDelay);
+        }
     }
 
     public override void Update() { if (IsActive) UpdateAim(); }
@@ -55,8 +65,9 @@ public abstract class PrefabMove : MoveBase
     {
         if (!IsActive) return;
         UpdateAim();
-        bool valid = AimStyle == MoveAimStyle.Target ? target != null : AimStyle == MoveAimStyle.Ground || direction.sqrMagnitude > 0.001f;
-        HideAim();
+        bool valid = AimStyle == MoveAimStyle.Target ? target != null && IsTargetInCastRange(playerManager.transform.position, target.transform.position)
+            : AimStyle == MoveAimStyle.Ground || direction.sqrMagnitude > 0.001f;
+        HideAim(!valid);
         if (valid)
         {
             if (LockDuringLoad) { loadLock?.Dispose(); loadLock = new CombatActionLock(playerManager, true, false); }
@@ -74,8 +85,12 @@ public abstract class PrefabMove : MoveBase
 
     protected virtual void OnCommitted() { }
 
-    private void HideAim()
+    public bool IsTargetInCastRange(Vector3 origin, Vector3 position) => CombatTargeting.Finite(origin) && CombatTargeting.Finite(position)
+        && Vector3.Distance(origin, position) <= Range + TargetRangeTolerance;
+
+    private void HideAim(bool immediateCameraReturn = false)
     {
+        if (aimCamera != null) aimCamera.EndSkillAim(this, immediateCameraReturn);
         if (playerManager == null || playerManager.Aim == null) return;
         if (IndicatorPath != null) playerManager.Aim.HideCustomIndicator();
         switch (AimStyle)
@@ -88,7 +103,11 @@ public abstract class PrefabMove : MoveBase
         }
     }
 
-    public override void Cancel() { if (IsActive) HideAim(); base.Cancel(); }
+    public override void Cancel()
+    {
+        if (IsActive) HideAim(true); else if (aimCamera != null) aimCamera.EndSkillAim(this, true);
+        base.Cancel();
+    }
     internal void ReceiveExecutionState(bool finished)
     {
         pending?.Dispose(); pending = null;

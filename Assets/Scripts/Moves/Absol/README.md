@@ -2,6 +2,10 @@
 
 Reference: https://unite-db.com/pokemon/absol, detailed RSB data retrieved
 October 27, 2026. Detailed formulas take precedence over the shorter summaries.
+Active-skill configuration is also checked against
+`Assets/Moves/Dumps/absol_skills.json` (see its sibling `Description.md`). That
+dump defines aiming/cast configuration, not AGE movement/hit timelines or damage
+formulas; it does not replace the effect-data reference above.
 
 ## Tuning
 
@@ -14,11 +18,18 @@ to damage formulas use the project's zero-based `CurrentLevel`.
 
 Unspecified Unite-DB dimensions use the agreed project-scale approximations:
 2.5-unit melee; 4-unit curved/straight dashes with 1.5-unit bow and 0.75-unit
-hit radius; 4-unit Pursuit hop and 5-unit empowered reach; 7-unit Psycho Cut;
-6-unit counter acquisition / 10-unit break range; 4-by-6 Unite rectangle and
+hit radius; 4-unit Pursuit hop and 5.5-unit empowered indicator/reach; 7-unit Psycho Cut;
+5-unit counter acquisition / 10-unit break range; 4-by-6 Unite rectangle and
 8-unit, 60-degree final cone. Final hit-count bands are 2/4/6/8 units. These
 bands approximate the documented close-to-far 4/3/2/1 behavior, not measured
 original-game boundaries.
+
+Indicator ranges are separate from travel/hitbox lengths: Feint, both Night
+Slash phases and Pursuit aim to 5 units; Psycho Cut to 7; Unite to 8. Sucker
+Punch has an exact 5-unit cast boundary with no shared target-range tolerance.
+Normal and empowered basics retain the shared 0.5-unit contact allowance
+(3.0 and 6.0 server reach). The configured 4-unit dashes and 6-unit Unite flurry
+remain unchanged because the active-skill table does not define their AGE paths.
 
 ### Combat feel
 
@@ -27,7 +38,9 @@ All pauses are seconds and live in `AbsolMoveRules`:
 - `BasicWindup` / `BasicRecovery`: 0.20 / 0.26. Recovery now means time **after**
   damage, not total animation length. Boosted basics use `BoostedWindup` (0.22),
   `BoostedHitDelay` (0.08), and `BoostedRecovery` (0.26). The animation spans the
-  whole sequence; these attack timings scale down with attack-speed cooldown.
+  whole sequence. Only ordinary A1/A2 animation timings scale down with attack
+  speed. Boosted A3 and Pursuit A4 keep fixed windup, tick gap, leap and recovery
+  (`AtkSpdNotAnim=1`); their underlying attack interval still uses attack speed.
 - `BasicInputBuffer`: 0.18. Move A/B and Unite presses/releases near the end of
   a basic are buffered without greying the move slots. The latest press wins;
   held basic attacks cannot steal a buffered cast. Cancel, death, expiry and
@@ -44,11 +57,17 @@ All pauses are seconds and live in `AbsolMoveRules`:
 - `SlashWindup` / `SlashRecovery` remain independently tunable; `SuckerRecovery`
   adds 0.08 after impact without extending its unstoppable state.
 - `BasicAnimationBlend` / `MoveAnimationBlend`: 0.06-second visual crossfades.
-  Basic blends scale down with attack speed along with their animation timing.
+  Ordinary basic blends scale down with attack speed along with their timing;
+  boosted/Pursuit blends stay fixed.
   `RecoveryAnimationBlend` / `UniteAnimationBlend`: 0.10 seconds for returning
   to idle and transitioning into/between Unite phases. Zero restores instant
   playback. Blends overlap the existing animations and never add cast time,
   delay damage or extend movement/action locks. Other characters opt out by default.
+- `PsychoCameraReturnDelay` / `UniteCameraReturnDelay`: 0.70 / 2.20 seconds.
+  The local aim camera follows the indicated direction/range and holds that
+  relative offset after release. Cancellation, death, disabling the camera or
+  manual touch/keyboard panning releases it immediately. A newer aim owns its
+  own release; old cleanup cannot clear or extend that newer aim.
 
 Zero disables an individual windup/recovery. Your configured animation names
 and spatial tuning are not reset by these timing controls.
@@ -74,9 +93,12 @@ footprints and preserves subsequent layout/material edits.
   Its main hit and isolation bonus are separate damage ticks. The delayed bonus
   rechecks the original victim's life, range and angle; it cannot hit a departed
   target or retarget a different one.
-- Feint alternates curved paths, crosses walls, and bypasses Defense/shields.
+  The bonus opts out of a second on-hit dispatch (`MakeDamageAsOnce=1`): it
+  cannot trigger Muscle Band/Scarf or consume another Psycho Cut mark. Damage,
+  damage-based lifesteal and damage observations still include both ticks.
+- Feint starts left and alternates curved paths, crosses walls, and bypasses Defense/shields.
   Feint and both Night Slash hits grant the 60-point attack-speed buff on hit.
-- Night Slash offers its second, straight dash only after a confirmed first hit.
+- Night Slash starts with a right arc and offers its second, straight dash only after a confirmed first hit.
   Recast is delayed 0.15s and remains available for six seconds. Its full 5.5s
   cooldown starts after the second dash completes, a miss, or window expiry.
   Upgraded second-hit healing includes shields and wild targets, but not overkill.
@@ -87,7 +109,8 @@ footprints and preserves subsequent layout/material edits.
   the empowerment. Upgraded speed ends on attack or after two seconds.
 - Psycho Cut pierces, applies the 90/65/40/15% decaying slow, and marks each
   victim three times for five seconds. Direct Absol damage, including Unite
-  ticks, consumes marks; item damage and secondary mark damage do not. Marks
+  ticks, consumes marks; item damage, secondary mark damage and the grouped
+  boosted bonus tick do not. Marks
   are source-specific, cleansable, expire independently, and grant upgraded
   movement speed irrespective of distance. Multiple marked enemies/casts do
   not stack that movement-speed buff.
@@ -112,7 +135,9 @@ footprints and preserves subsequent layout/material edits.
 There is no Absol-specific player controller or alternative cooldown/status
 system. Small opt-in additions to the existing systems provide:
 
-- `DamageInfo.bonusCritRate` and `DamageSource` (legacy defaults are unchanged).
+- `DamageInfo.bonusCritRate`, `DamageSource`, and opt-in `suppressOnHitEffects`
+  (legacy defaults are unchanged). Suppressing on-hit effects does not suppress
+  HP/shield damage, lifesteal or server damage-observation events.
 - Synchronous server `Pokemon.ResolveDamage`, a post-resolution damage event,
   offensive-action notifications and permanent-stat ownership.
 - Optional server-resolved basic attacks, server/owner attack presentation and
@@ -121,7 +146,8 @@ system. Small opt-in additions to the existing systems provide:
   pending-load cleanup and optional immediate commitment locks.
 - Disposable `CombatActionLock`, existing `WallCrossingTraversal`, reusable
   displacement, sector/swept targeting, stepped debuff decay, custom aim prefab
-  presentation, opt-in animation duration matching and conditional recovery.
+  presentation, separate indicator/cast ranges, owner-scoped aim camera offsets,
+  opt-in animation duration matching and conditional recovery.
 
 The damage network payload changed: rebuild/redeploy clients and servers
 together. Existing enum values are preserved; new moves/passive are appended.
@@ -135,9 +161,9 @@ aim footprints live in `Assets/Resources/AimIndicators`. No runtime primitives,
 meshes or line renderers are constructed. `AbsolAssetAuthoring.Build()` is an
 editor-only, create-missing authoring helper; it preserves existing prefab
 layouts and the imported model/controller. Aim radius/length scales follow
-rules at runtime. After changing the baked sector angle, run **Tools → Absol →
-Create Missing Move Assets** to refresh the generated indicator mesh without
-overwriting prefab layouts or your learnset.
+rules at runtime. Existing imported indicator layouts are preserved by the
+authoring helper; changing the Slash angle requires selecting the corresponding
+authored sector model rather than regenerating a procedural cone.
 
 Moves have icons/previews, registry entries, and network/Addressables entries.
 Learn levels are 1/3, 5/7, Unite 9, upgrades 11/13. Rebuild Addressables before

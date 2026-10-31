@@ -8,6 +8,12 @@ public class MapPlayerIcon : MonoBehaviour
     [SerializeField] private Image pokemonIcon, background, scoreCircle;
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private Sprite blueBG, orangeBG;
+    [SerializeField] private Sprite wildDisguiseSprite;
+    [SerializeField] private Vector2 wildDisguiseSize = new Vector2(7, 7);
+    [SerializeField] private Color wildDisguiseColor = Color.white;
+    private Vector2 normalIconSize;
+    private Color normalIconColor;
+    private bool displayed;
 
     private MinimapIcon minimapIcon;
     private PlayerManager player;
@@ -23,6 +29,8 @@ public class MapPlayerIcon : MonoBehaviour
     {
         minimapIcon = GetComponent<MinimapIcon>();
         this.player = player;
+        normalIconSize = pokemonIcon.rectTransform.sizeDelta;
+        normalIconColor = pokemonIcon.color;
         source = player.Pokemon;
         sourceVision = player.Vision;
         scoreText.text = "";
@@ -70,6 +78,22 @@ public class MapPlayerIcon : MonoBehaviour
     {
         if (player == null || player.Pokemon == null) { Destroy(gameObject); return; }
 
+        var disguise = player.MovesController;
+        bool disguised = disguise != null && disguise.IsZoroarkEnemyView;
+        bool wildDisguise = disguised && !disguise.ZoroarkDisguiseIsPlayer && wildDisguiseSprite != null;
+        background.sprite = disguised || isTeammate ? blueBG : orangeBG;
+        background.gameObject.SetActive(!wildDisguise && displayed);
+        pokemonIcon.sprite = wildDisguise ? wildDisguiseSprite : disguised ? disguise.ZoroarkDisguisePortrait : source.Portrait;
+        pokemonIcon.rectTransform.sizeDelta = wildDisguise ? wildDisguiseSize : normalIconSize;
+        pokemonIcon.color = wildDisguise ? wildDisguiseColor : normalIconColor;
+        if (disguised)
+        {
+            scoreCircle.fillAmount = 0;
+            scoreText.text = disguise.ZoroarkDisguiseEnergy >= 40 ? disguise.ZoroarkDisguiseEnergy.ToString() : "";
+            displayedEnergy = -1;
+            return;
+        }
+
         if (player.CurrentEnergy >= 40)
         {
             scoreCircle.fillAmount = player.ScoreGuageValue;
@@ -106,6 +130,7 @@ public class MapPlayerIcon : MonoBehaviour
     {
         // Vision can still update while a player is KO'd.
         isVisible = isVisible && player != null && player.Pokemon != null && player.Pokemon.CurrentHp > 0;
+        displayed = isVisible;
         pokemonIcon.gameObject.SetActive(isVisible);
         background.gameObject.SetActive(isVisible);
         scoreCircle.gameObject.SetActive(isVisible);

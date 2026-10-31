@@ -3,7 +3,7 @@ using Unity.Cinemachine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class CameraController : MonoBehaviour
+public partial class CameraController : MonoBehaviour
 {
     public static CameraController Instance;
 
@@ -37,6 +37,7 @@ public class CameraController : MonoBehaviour
 
     private void LateUpdate()
     {
+        TickSkillAim(Time.time);
         var camera = VirtualCamera;
         var follow = camera != null ? camera.GetComponent<CinemachineFollow>() : null;
         if (Instance != this || camera == null || !camera.isActiveAndEnabled || follow == null)
@@ -49,11 +50,13 @@ public class CameraController : MonoBehaviour
 
     private void OnDisable()
     {
+        ClearSkillAim();
         renderScalePolicy.Restore();
     }
 
     private void OnDestroy()
     {
+        ClearSkillAim();
         renderScalePolicy.Restore();
         if (Instance == this) Instance = null;
     }
@@ -81,6 +84,7 @@ public class CameraController : MonoBehaviour
 
     public void Initialize(Transform playerTransform)
     {
+        ClearSkillAim();
         this.playerTransform = playerTransform;
         if (virtualCamera != null && !isPanning)
         {
@@ -129,6 +133,7 @@ public class CameraController : MonoBehaviour
 
     private void SetPanning(bool value)
     {
+        if (value) ClearSkillAim(); // Explicit keyboard/touch/death panning wins.
         isPanning = value;
         if (virtualCamera == null) return;
 

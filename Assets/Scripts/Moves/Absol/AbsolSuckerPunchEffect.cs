@@ -12,7 +12,7 @@ public class AbsolSuckerPunchEffect : PrefabMoveEffect
 
     protected override IEnumerator Execute()
     {
-        if (!CanHit(Target, true)) yield break;
+        if (!CanHit(Target, true) || Vector3.Distance(Actor.transform.position, Target.transform.position) > AbsolMoveRules.SuckerRange) yield break;
         LockActions(false); FaceRPC(DirectionToTarget()); PlayAnimation(AbsolMoveRules.SuckerAnimation, AbsolMoveRules.SuckerStance, AbsolMoveRules.MoveAnimationBlend);
         Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, AbsolMoveRules.SuckerStance + AbsolMoveRules.SuckerDashDuration, true, AbsolMoveRules.SuckerStatusId));
         AbsolMoveRules.Refresh(Actor.Pokemon, new StatChange(50, Stat.Speed, AbsolMoveRules.SuckerStance, true, false, true, AbsolMoveRules.SuckerSelfSlowId));
@@ -72,7 +72,7 @@ public class AbsolSuckerPunchEffect : PrefabMoveEffect
     private void TargetAttacks() { if (armed && TargetValid()) countered = true; }
     private bool Dodge(DamageInfo damage)
     {
-        if (blocked || (!armed && Time.time > dodgeUntil) || !AbsolMoveRules.CanConsumeMark(damage)
+        if (blocked || (!armed && Time.time > dodgeUntil) || !AbsolMoveRules.IsDirectDamage(damage)
             || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(damage.attackerId, out var obj)
             || !obj.TryGetComponent<Pokemon>(out var attacker) || attacker.TeamMember.IsOnSameTeam(Actor.CurrentTeam)) return false;
         countered = true; blocked = true; dodgeFrame = Time.frameCount; return true;

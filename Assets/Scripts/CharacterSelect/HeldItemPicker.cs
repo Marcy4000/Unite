@@ -77,7 +77,7 @@ public class HeldItemPicker : MonoBehaviour
         var itemIcon = activeToggle.GetComponent<HeldItemIcon>();
         var selectedItem = itemIcon.ItemInfo;
 
-        if (selectedItem.damageType == selectedCharacter.DamageType || selectedItem.damageType == DamageType.True)
+        if (selectedCharacter == null || selectedCharacter != null && (selectedItem.damageType == selectedCharacter.DamageType || selectedItem.damageType == DamageType.True))
         {
             OnItemPicked?.Invoke(selectedItem);
         }

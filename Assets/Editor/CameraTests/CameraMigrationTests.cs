@@ -159,6 +159,48 @@ public class CameraMigrationTests
         });
     }
 
+    [TestCase(7f, 0.7f)]
+    [TestCase(8f, 2.2f)]
+    public void SkillAimFollowsThePlayerOffsetAndReturnsAfterItsConfiguredDelay(float range, float delay)
+    {
+        WithController((controller, camera, target) =>
+        {
+            ((Behaviour)controller).enabled = true;
+            ControllerType.GetMethod("Initialize").Invoke(controller, new object[] { target });
+            object owner = new object(), newer = new object();
+            var update = ControllerType.GetMethod("UpdateSkillAim");
+            var end = ControllerType.GetMethod("EndSkillAim");
+            var tick = ControllerType.GetMethod("TickSkillAim", BindingFlags.Instance | BindingFlags.NonPublic);
+            update.Invoke(controller, new object[] { owner, Vector3.forward, range, delay });
+            Transform proxy = camera.Follow;
+            Assert.That(proxy, Is.Not.Null); Assert.That(proxy, Is.Not.SameAs(target));
+            Assert.That(proxy.position, Is.EqualTo(target.position + Vector3.forward * range));
+            target.position += Vector3.right * 3;
+            tick.Invoke(controller, new object[] { Time.time });
+            Assert.That(proxy.position, Is.EqualTo(target.position + Vector3.forward * range));
+            end.Invoke(controller, new object[] { owner, false });
+            float deadline = (float)ControllerType.GetField("skillAimReturnAt", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(controller);
+            Assert.That(deadline - Time.time, Is.EqualTo(delay).Within(0.001f));
+            end.Invoke(controller, new object[] { owner, false });
+            tick.Invoke(controller, new object[] { deadline - 0.01f }); Assert.That(camera.Follow, Is.SameAs(proxy));
+            tick.Invoke(controller, new object[] { deadline }); Assert.That(camera.Follow, Is.SameAs(target));
+
+            update.Invoke(controller, new object[] { newer, Vector3.left, range, delay });
+            end.Invoke(controller, new object[] { owner, true }); Assert.That(camera.Follow, Is.SameAs(proxy));
+            Assert.That(proxy.position, Is.EqualTo(target.position + Vector3.left * range));
+            ControllerType.GetMethod("ForcePan").Invoke(controller, new object[] { true });
+            Assert.That(camera.Follow, Is.Null);
+            update.Invoke(controller, new object[] { newer, Vector3.forward, range, delay }); Assert.That(camera.Follow, Is.Null);
+            ControllerType.GetMethod("ForcePan").Invoke(controller, new object[] { false });
+            Assert.That(camera.Follow, Is.SameAs(target));
+            update.Invoke(controller, new object[] { newer, Vector3.forward, range, delay });
+            // Lifecycle callbacks do not run on a plain EditMode component, so
+            // the explicit clear path is verified here; PlayMode covers OnDisable.
+            ControllerType.GetMethod("ClearSkillAim").Invoke(controller, null);
+            Assert.That(camera.Follow, Is.SameAs(target));
+        });
+    }
+
     private static void WithController(Action<Component, CinemachineCamera, Transform> test)
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);

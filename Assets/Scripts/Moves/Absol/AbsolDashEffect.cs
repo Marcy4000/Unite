@@ -35,7 +35,7 @@ public class AbsolDashEffect : PrefabMoveEffect
 
         bool feint = move == AvailableMoves.AbsolFeint;
         bool hit = false;
-        float bow = feint ? (CastSequence % 2 == 1 ? AbsolMoveRules.DashBow : -AbsolMoveRules.DashBow) : -AbsolMoveRules.DashBow;
+        float bow = feint ? (CastSequence % 2 == 1 ? -AbsolMoveRules.DashBow : AbsolMoveRules.DashBow) : AbsolMoveRules.DashBow;
         yield return DashHit(Direction, bow, feint, false, success => hit = success);
         if (feint || !hit || Actor.Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)) yield break;
         yield return new WaitForSeconds(AbsolMoveRules.NightRecastDelay);

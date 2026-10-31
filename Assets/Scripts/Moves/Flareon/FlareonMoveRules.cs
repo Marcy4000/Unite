@@ -7,6 +7,7 @@ public static class FlareonMoveRules
 {
     public const string Folder = "Assets/Prefabs/Objects/Moves/Flareon/";
     public const float BasicRange = 2.5f, HeatRadius = 3.7f, SwiftRadius = 2f, InputBuffer = 0.2f;
+    public const short HeatSpeedBonus = 10;
     public const ushort AttackBuff = 22100, EeveeBuff = 22101, SpeedBuff = 22102, CastProtection = 22103;
     public const ushort FlameShield = 22104, SlamShield = 22105, UniteShield = 22106, BurnId = 22107, LaunchId = 22108;
     public static readonly StatusType[] Interrupts = { StatusType.Incapacitated, StatusType.Asleep, StatusType.Frozen, StatusType.Bound };
@@ -60,9 +61,9 @@ public static class FlareonMoveRules
     {
         switch (kind)
         {
-            case FlareonCast.Swift: return new DamageInfo(source, 1f, 4, 150, DamageType.Physical, DamageProprieties.CanCrit);
+            case FlareonCast.Swift: return new DamageInfo(source, 0.7f, 4, 100, DamageType.Physical, DamageProprieties.CanCrit);
             case FlareonCast.Tackle: return new DamageInfo(source, 0.8f, 3, 300, DamageType.Physical);
-            case FlareonCast.HeatWave: return new DamageInfo(source, burned ? 1.3f : 1.25f, (short)(burned ? 9 : 8), (short)(burned ? 250 : 200), DamageType.Physical, DamageProprieties.CanCrit);
+            case FlareonCast.HeatWave: return new DamageInfo(source, burned ? 1.05f : 1f, (short)(burned ? 7 : 6), (short)(burned ? 200 : 160), DamageType.Physical);
             case FlareonCast.Takedown: return new DamageInfo(source, burned ? 2.1f : 1.7f, (short)(burned ? 7 : 6), (short)(burned ? 450 : 400), DamageType.Physical, DamageProprieties.CanCrit);
             case FlareonCast.Slam: return new DamageInfo(source, 1.7f, 6, 400, DamageType.Physical, DamageProprieties.CanCrit);
             case FlareonCast.Flamethrower: return new DamageInfo(source, upgraded ? 2f : 1.86f, 9, (short)(upgraded ? 500 : 480), DamageType.Physical, DamageProprieties.CanCrit);

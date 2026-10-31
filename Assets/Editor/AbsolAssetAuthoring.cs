@@ -213,7 +213,7 @@ public static class AbsolAssetAuthoring
     private static void ConfigureMoves()
     {
         string[] names = { "Feint", "Slash", "Night Slash", "Pursuit", "Psycho Cut", "Sucker Punch", "Midnight Slash" };
-        string[] icons = { "S1", "S2", "S11", "S12", "S21", "S22", "G1" }, previews = { "S1", "S2", "S11", "S12", "S21", "S22", "U1" };
+        string[] icons = { "S2", "S1", "S21", "S12", "S11", "S22", "G1" }, previews = { "S1", "S2", "S11", "S12", "S21", "S22", "U1" };
         string[] descriptions = {
             "Dash in an alternating arc through enemies, ignoring Defense and shields. Hits increase attack speed by 60% for 0.5s.",
             "Slash enemies in front. This move has 15% additional critical-hit chance.",

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -12,27 +11,29 @@ public class SpawnArea : NetworkBehaviour
 
     private float healTimer = 0f;
 
-    private List<PlayerManager> playersInSpawn = new List<PlayerManager>();
+    private Collider healingCollider;
 
     public void AllowControlledPlayerTraversal(PlayerManager player)
     {
-        if (IsServer && player.IsOwner && player.CurrentTeam.Team == team && wallCollider != null)
+        if (IsServer && player != null && player.IsOwner && player.CurrentTeam.Team == team
+            && wallCollider != null && player.PlayerMovement != null && player.PlayerMovement.CharacterController != null)
             Physics.IgnoreCollision(player.PlayerMovement.CharacterController, wallCollider);
     }
 
     public override void OnNetworkSpawn()
     {
-        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
-
-        // A host now simulates both teams. Keep both barriers in its physics
-        // world, ignoring each controlled participant only against its own base.
-        wallCollider.enabled = IsServer || team != localPlayerTeam;
+        healingCollider = GetComponent<Collider>();
+        if (wallCollider != null)
+            wallCollider.enabled = IsServer || LobbyController.Instance == null
+                || team != LobbyController.Instance.GetLocalPlayerTeam();
+        if (IsServer && GameManager.Instance != null)
+            foreach (var player in GameManager.Instance.Players) AllowControlledPlayerTraversal(player);
         healTimer = HEAL_INTERVAL;
     }
 
     private void Update()
     {
-        if (!IsServer || GameManager.Instance.GameState != GameState.Playing)
+        if (!IsServer || GameManager.Instance == null || GameManager.Instance.GameState != GameState.Playing)
         {
             return;
         }
@@ -40,14 +41,9 @@ public class SpawnArea : NetworkBehaviour
         healTimer -= Time.deltaTime;
         if (healTimer <= 0f)
         {
-            foreach (var player in playersInSpawn)
+            foreach (var player in GameManager.Instance.Players)
             {
-                if (player == null)
-                {
-                    continue;
-                }
-
-                if (player.Pokemon.CurrentHp < player.Pokemon.GetMaxHp())
+                if (CanHealPlayer(player))
                 {
                     player.Pokemon.HealEnvironmentRPC(Mathf.FloorToInt(player.Pokemon.GetMaxHp() * HEAL_PERCENTAGE));
                 }
@@ -57,35 +53,13 @@ public class SpawnArea : NetworkBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private bool CanHealPlayer(PlayerManager player)
     {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        if (other.TryGetComponent(out PlayerManager player))
-        {
-            if (!playersInSpawn.Contains(player) && player.CurrentTeam.IsOnSameTeam(team))
-            {
-                playersInSpawn.Add(player);
-            }
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        if (other.TryGetComponent(out PlayerManager player))
-        {
-            if (playersInSpawn.Contains(player))
-            {
-                playersInSpawn.Remove(player);
-            }
-        }
+        return healingCollider != null && healingCollider.enabled && healingCollider.isTrigger
+            && healingCollider.gameObject.activeInHierarchy && player != null && player.IsSpawned
+            && player.Pokemon != null && player.Pokemon.IsSpawned && player.Pokemon.BaseStats != null
+            && player.CurrentTeam.IsOnSameTeam(team) && player.PlayerState != PlayerState.Dead
+            && player.Pokemon.CurrentHp > 0 && player.Pokemon.CurrentHp < player.Pokemon.GetMaxHp()
+            && healingCollider.ClosestPoint(player.transform.position) == player.transform.position;
     }
 }

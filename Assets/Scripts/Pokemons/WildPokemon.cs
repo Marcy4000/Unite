@@ -33,6 +33,7 @@ public class WildPokemon : NetworkBehaviour
     private int contentGeneration;
 
     public Pokemon Pokemon => pokemon;
+    public HPBar HPBar => hpBar;
     public WildPokemonInfo WildPokemonInfo { get => wildPokemonInfo; set { wildPokemonInfo = value; } }
     public AnimationManager AnimationManager => animationManager;
     public int ExpYield { get => wildPokemonInfo.ExpYield[pokemon.CurrentLevel]; }

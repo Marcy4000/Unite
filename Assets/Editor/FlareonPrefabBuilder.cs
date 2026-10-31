@@ -398,7 +398,7 @@ public static class FlareonPrefabBuilder
         {
             { "Swift", "Summon four orbiting stars for 4s, damaging nearby enemies every 0.4s." },
             { "Tackle", "Dash a short distance in the chosen direction, damaging each enemy passed through once. Stops at walls." },
-            { "HeatWave", "Ignite a mobile heat aura with eight pulses over about 6s. Burned enemies take increased pulse damage. Gain 20% movement speed for 6s. Upgrade: ten pulses with a shorter interval." },
+            { "HeatWave", "Ignite a mobile heat aura with eight pulses over about 6s. Burned enemies take increased pulse damage. Pulses cannot critically hit. Gain 10% movement speed for 6s. Upgrade: ten pulses with a shorter interval." },
             { "Takedown", "Rush to an enemy and launch them for 1.2s. The opening hit deals increased damage to burned enemies. Recast during the launch to slam the same enemy, briefly stun them and gain a 5% max-HP shield for 3s. Upgrade: launch duration increases to 1.4s." },
             { "Flamethrower", "Sweep a stream of fire across the chosen direction, damaging each enemy once and burning them for 3s. Become unstoppable during the cast. Upgrade: increased direct damage and a 10% max-HP shield for 4s." },
             { "FlareBlitz", "Ignite and charge in the chosen direction, briefly launching and burning enemies hit for 2s. Hitting an enemy reduces this move's remaining cooldown by 3s, once per cast. Stops at walls. Upgrade: burn lasts 3s." },

@@ -87,7 +87,7 @@ public class FlareonMoveObject : NetworkBehaviour
                 break;
             case FlareonCast.HeatWave:
                 actor.Pokemon.RemoveAllStatChangeWithIDRPC(FlareonMoveRules.SpeedBuff);
-                actor.Pokemon.AddStatChange(new StatChange(20, Stat.Speed, 6, true, true, true, FlareonMoveRules.SpeedBuff));
+                actor.Pokemon.AddStatChange(new StatChange(FlareonMoveRules.HeatSpeedBonus, Stat.Speed, 6, true, true, true, FlareonMoveRules.SpeedBuff));
                 for (int i = 0; i < FlareonMoveRules.HeatPulses(upgraded) && Live; i++)
                 {
                     yield return Wait(i == 0 ? 0.35f : FlareonMoveRules.HeatInterval(upgraded)); if (!Live) break;

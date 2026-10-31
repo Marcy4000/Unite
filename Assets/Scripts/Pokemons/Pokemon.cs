@@ -1482,7 +1482,7 @@ public partial class Pokemon : NetworkBehaviour
                 HealDamageRPC(Mathf.FloorToInt(attackedPokemon.CalculateDamage(damage, this) * (float)(GetSpellVamp() / 100f)));
             }
         }
-        OnDamageDealt?.Invoke(targetID, damage);
+        if (!damage.suppressOnHitEffects) OnDamageDealt?.Invoke(targetID, damage);
     }
 
     [Rpc(SendTo.Everyone)]

@@ -81,6 +81,7 @@ public partial class PlayerManager : NetworkBehaviour
     public HeldItemManager HeldItemManager { get => heldItemManager; }
     public PlayerControls PlayerControls { get => playerControls; }
     public bool IsScoring { get => isScoring; }
+    public bool IsRecalling => isRecalling;
 
     public PlayerState PlayerState { get => playerState.Value; }
 
@@ -620,6 +621,7 @@ public partial class PlayerManager : NetworkBehaviour
 
     private void StartRecalling()
     {
+        if (movesController.HasZoroarkDisguise) movesController.BreakZoroarkIllusionRPC();
         if (!recallStatus.HasStatus(ActionStatusType.None) || isRecalling)
         {
             return;
@@ -634,6 +636,7 @@ public partial class PlayerManager : NetworkBehaviour
 
     private void StartScoring()
     {
+        if (movesController.HasZoroarkDisguise) movesController.BreakZoroarkIllusionRPC();
         if (!scoreStatus.HasStatus(ActionStatusType.None) || currentEnergy.Value == 0 || goalZone == null ||
             !goalZone.IsActive || goalZone.GoalStatus == GoalStatus.Destroyed || goalZone.Team == CurrentTeam.Team)
         {

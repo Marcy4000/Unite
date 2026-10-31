@@ -33,6 +33,9 @@ public struct DamageInfo : INetworkSerializable
     public float multiplier;
     public float bonusCritRate;
     public DamageSource source;
+    // Additional ticks of one attack still deal damage/lifesteal, but must not
+    // dispatch a second set of legacy on-hit item/passive procs. Opt-in only.
+    public bool suppressOnHitEffects;
 
     public DamageInfo(ulong attackerId, float ratio, short slider, short baseDmg, DamageType type, DamageProprieties proprieties = DamageProprieties.None)
     {
@@ -45,6 +48,7 @@ public struct DamageInfo : INetworkSerializable
         multiplier = 1f;
         bonusCritRate = 0;
         source = DamageSource.Direct;
+        suppressOnHitEffects = false;
     }
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -58,5 +62,6 @@ public struct DamageInfo : INetworkSerializable
         serializer.SerializeValue(ref multiplier);
         serializer.SerializeValue(ref bonusCritRate);
         serializer.SerializeValue(ref source);
+        serializer.SerializeValue(ref suppressOnHitEffects);
     }
 }

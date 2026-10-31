@@ -6,6 +6,15 @@
             "id": "14a5f4ec-fdde-4c62-bf71-47abf4d9c0b6",
             "actions": [
                 {
+                    "name": "AuxiliaryAction",
+                    "type": "Button",
+                    "id": "58f8b71f-067e-4674-b8c7-7da72198af87",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "Move",
                     "type": "Value",
                     "id": "295ae0ea-df9c-4d9e-946f-ca104e3e2cc6",
@@ -106,6 +115,28 @@
                 }
             ],
             "bindings": [
+                {
+                    "name": "",
+                    "id": "43d377f5-f7e9-4b65-8598-d19f4d9ef058",
+                    "path": "<Gamepad>/leftStickPress",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "AuxiliaryAction",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "63c916f5-0d33-4d36-8ba9-049458bb3554",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "MouseAndKeyboard",
+                    "action": "AuxiliaryAction",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
                 {
                     "name": "",
                     "id": "82cd5df1-8738-47c6-a113-8a55ec52ee45",

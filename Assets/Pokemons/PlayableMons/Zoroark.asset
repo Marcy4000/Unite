@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ca7b5041289b28418bd1831c17e0128, type: 3}
+  m_Name: Zoroark
+  m_EditorClassIdentifier: Assembly-CSharp::PokemonBase
+  pokemonName: Zoroark
+  maxHp: d60b0000210c0000770c0000da0c00009d0e0000200f0000b60f0000631000002a110000101200001713000046140000a31500003317000000190000
+  attack: 8700000093000000a0000000af000000f500000009010000200100003b0100005a0100007e010000a7010000d60100000d0200004c02000094020000
+  defense: 370000003c000000430000004a0000006b000000740000007f0000008c0000009a000000ab000000be000000d4000000ed0000000a0100002c010000
+  spAttack: 1400000016000000190000001c000000290000002d00000031000000360000003c000000430000004b000000540000005e0000006a00000078000000
+  spDefense: 2d00000031000000350000003a00000050000000560000005e00000066000000700000007b0000008800000097000000a8000000bb000000d2000000
+  critRate: 00000000000000000000000000000000050000000500000005000000050000000a0000000a0000000a0000000a0000000a0000000a0000000a000000
+  cdr: 000000000000000000000000000000000a0000000a0000000a0000000a00000014000000140000001400000014000000140000001400000014000000
+  lifeSteal: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  atkSpeed:
+  - 10
+  - 10.44
+  - 10.95
+  - 11.54
+  - 14.22
+  - 15
+  - 15.89
+  - 16.92
+  - 18.1
+  - 19.46
+  - 21.02
+  - 22.82
+  - 24.89
+  - 27.27
+  - 30
+  speed: 420e0000420e0000420e0000420e0000d80e0000d80e00006e0f00006e0f000004100000041000009a1000009a1000009a1000009a1000009a100000
+  spellVamp:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  passive: 16
+  learnableMoves:
+  - moves:
+    - {fileID: 11400000, guid: 7ce4276e86b18b9f2afce184a172c01b, type: 2}
+    - {fileID: 11400000, guid: a9186b4f92f333796849cceea20f2a46, type: 2}
+    level: 0
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 7ce4276e86b18b9f2afce184a172c01b, type: 2}
+    - {fileID: 11400000, guid: a9186b4f92f333796849cceea20f2a46, type: 2}
+    level: 2
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: ba4dd319c9881df2ead49fed1a73e96f, type: 2}
+    - {fileID: 11400000, guid: 848341219ac68cbc5899baadaa151678, type: 2}
+    level: 4
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: d0899dc73367603df93b93526d3a4d0e, type: 2}
+    - {fileID: 11400000, guid: 820d2c314ab3e1c0cb25c44450b6d5f9, type: 2}
+    level: 6
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 8a696123fccb35b4f9f2c4b64fd51d97, type: 2}
+    level: 8
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: ba4dd319c9881df2ead49fed1a73e96f, type: 2}
+    - {fileID: 11400000, guid: 848341219ac68cbc5899baadaa151678, type: 2}
+    level: 10
+    isUpgraded: 1
+  - moves:
+    - {fileID: 11400000, guid: d0899dc73367603df93b93526d3a4d0e, type: 2}
+    - {fileID: 11400000, guid: 820d2c314ab3e1c0cb25c44450b6d5f9, type: 2}
+    level: 12
+    isUpgraded: 1
+  evolutions:
+  - EvolutionName: Zorua
+    level: 0
+    newModel: {fileID: 6226692650654796764, guid: 3fd1c536601a0aadeaa77fdd23944ed1,
+      type: 3}
+    newSprite: {fileID: 21300000, guid: 6aba55b47c37fce49b63a9eb154b4758, type: 3}
+  - EvolutionName: Zoroark
+    level: 4
+    newModel: {fileID: 3546710149430803888, guid: f56c1bcc137989a68a3caad7776b7773,
+      type: 3}
+    newSprite: {fileID: 21300000, guid: 0f5024df35607ce418e5f398bfd41483, type: 3}
