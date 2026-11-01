@@ -1,112 +1,41 @@
-using Unity.Netcode;
 using UnityEngine;
 
 public class GlaceBasicAtk : ChargedBasicAttackBase
 {
+    private byte charge, basicAtkType;
+    private GlaceonCharacterRuntime Character => playerManager?.MovesController.Combat?.Character as GlaceonCharacterRuntime;
     protected override int AttackCharge => charge;
     protected override bool ShowAttackCounter => basicAtkType == 0;
-    private string attackPrefab;
-    private byte charge = 0;
-    private byte basicAtkType = 0; // 0 = normal, 1 = Ice Shard, 2 = Icy Wind
-
-    private float cooldown;
-
-    private DamageInfo normalDmg;
-    private DamageInfo boostedDmg;
-
-    private GlaceonPassive glaceonPassive;
-
-    public byte Charge { get => charge; set => charge = value; }
-
-    public override void Initialize(PlayerManager manager)
+    public override bool ServerResolved => true;
+    public byte Charge
     {
-        base.Initialize(manager);
-        range = 7f;
-        attackPrefab = "Assets/Prefabs/Objects/BasicAtk/GlaceonBasicAtk.prefab";
-        DamageProprieties proprieties = DamageProprieties.IsBasicAttack;
-        proprieties |= DamageProprieties.CanCrit;
-        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.39f, 4, 70, DamageType.Special, proprieties);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.47f, 5, 90, DamageType.Special, proprieties);
-        glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
+        get => playerManager != null && playerManager.IsServer ? Character?.Charge ?? charge : charge;
+        set { if (value == 2 && playerManager != null && playerManager.IsServer) Character?.FillCharge(); }
     }
 
+    public override void Initialize(PlayerManager manager) { range = 7; base.Initialize(manager); }
+    public override void InitializeServer(PlayerManager manager) { base.InitializeServer(manager); range = 7; }
     public override void Perform(bool wildPriority)
     {
-        PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
-        switch (basicAtkType)
-        {
-            case 0:
-                GameObject closestEnemy = ActorAim.AimInCircle(range, priority);
-
-                // If an enemy is found, launch a homing projectile towards it
-                if (closestEnemy != null)
-                {
-                    DamageInfo damage = charge == 2 ? boostedDmg : normalDmg;
-
-                    playerManager.MovesController.LaunchProjectileFromPath(closestEnemy.GetComponent<NetworkObject>().NetworkObjectId, damage, attackPrefab);
-                    string animation = playerManager.Pokemon.CurrentLevel >= 3 ? $"ani_atk{charge + 1}_bat_0471" : $"ani_atk{charge + 4}_bat_0133";
-                    playerManager.AnimationManager.PlayAnimation(animation);
-                    playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
-                    playerManager.transform.LookAt(closestEnemy.transform);
-                    playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
-                    cooldown = 4.5f;
-
-                    if (charge == 2)
-                    {
-                        glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount + 2, 0, 8));
-                    }
-
-                    charge++;
-                }
-
-                if (charge > 2)
-                {
-                    charge = 0;
-                }
-                break;
-            case 1:
-                closestEnemy = ActorAim.AimInCircle(range, priority);
-
-                if (closestEnemy != null)
-                {
-                    playerManager.AnimationManager.PlayAnimation("ani_spell1b_bat_0471");
-                    playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown());
-                    playerManager.transform.LookAt(closestEnemy.transform);
-                    playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
-                }
-                break;
-            default:
-                break;
-        }
+        range = basicAtkType == 2 ? 8 : 7;
+        var target = ActorAim.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
+        if (target != null && target.TryGetComponent(out Pokemon pokemon))
+            playerManager.MovesController.RequestServerBasicAttack(pokemon.NetworkObjectId);
     }
-
-    public void ChangeBasicAtkType(byte type)
+    public override void PerformOnServer(Pokemon target) => Character?.PerformBasicAttack(target);
+    public override void ApplyServerState(int value, float empoweredUntil) => charge = (byte)Mathf.Clamp(value, 0, 2);
+    public void ApplySnapshot(byte value, byte type)
     {
-        if (type > 2)
-        {
-            return;
-        }
-
-        basicAtkType = type;
+        charge = (byte)Mathf.Clamp(value, 0, 2);
+        basicAtkType = (byte)Mathf.Clamp(type, 0, 2);
+        range = basicAtkType == 2 ? 8 : 7;
     }
-
-    public void FillChargeAmount()
+    public void ChangeBasicAtkType(byte type) { if (playerManager != null && playerManager.IsServer) Character?.SetMode(type); }
+    public void FillChargeAmount() { if (playerManager != null && playerManager.IsServer) Character?.FillCharge(); }
+    public override void ResetAttack()
     {
-        cooldown = 4.5f;
-        charge = 2;
-    }
-
-    public override void Update()
-    {
-        if (cooldown > 0)
-        {
-            cooldown -= Time.deltaTime;
-        }
-
-        if (cooldown <= 0 && charge > 0)
-        {
-            charge = 0;
-        }
-        base.Update();
+        if (playerManager != null && playerManager.IsServer) Character?.ResetBasicCharge();
+        charge = 0;
+        base.ResetAttack();
     }
 }

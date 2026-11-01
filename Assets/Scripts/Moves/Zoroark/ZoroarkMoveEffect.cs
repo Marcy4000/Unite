@@ -29,9 +29,11 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
     public bool IsFeint => move == AvailableMoves.ZoroarkFeintAttack;
     public bool Finishing => finishing;
     public bool UniqueReady => uniqueReady;
+    public bool CanSpendAerialReposition => IsServer && IsNight && aerialWindow && !aerialRepositionSpent && RemainingAirTime > 0;
+    private ZoroarkCharacterRuntime Character => Actor?.MovesController.Combat?.Character as ZoroarkCharacterRuntime;
     public bool TrySpendAerialReposition()
     {
-        if (!IsServer || !IsNight || !aerialWindow || aerialRepositionSpent) return false;
+        if (!CanSpendAerialReposition) return false;
         aerialRepositionSpent = true;
         return true;
     }
@@ -137,7 +139,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
 
     private IEnumerator NightChain()
     {
-        Actor.MovesController.ZoroarkNight = this;
+        Character.ZoroarkNight = this;
         expires = Time.time + ZoroarkMoveRules.NightWindow;
         ShowWindow();
         dashReady = true;
@@ -169,14 +171,14 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
 
     private IEnumerator FeintChain()
     {
-        Actor.MovesController.ZoroarkFeint = this;
+        Character.ZoroarkFeint = this;
         mark = Actor.transform.position;
         expires = Time.time + ZoroarkMoveRules.FeintWindow;
         bool hit = false;
         yield return Dash(Direction, ZoroarkMoveRules.FeintRange, false, value => hit = value);
         if (!hit || CastInterrupted) yield break;
         ValidHit(false);
-        Actor.MovesController.ResetZoroarkOtherMove();
+        Character.ResetZoroarkOtherMove();
         MarkRPC(true, mark);
         while (!CastInterrupted && Time.time < expires)
         {
@@ -195,7 +197,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
             if (!hit || CastInterrupted) yield break;
             mark = origin;
             ValidHit(false);
-            Actor.MovesController.ResetZoroarkOtherMove();
+            Character.ResetZoroarkOtherMove();
             MarkRPC(true, mark);
         }
     }
@@ -204,10 +206,10 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
     {
         busy = true; hitThisCast = false;
         Actor.Pokemon.NotifyOffensiveAction();
-        bool aerialReposition = AerialCast || (!IsNight && !IsFeint && Actor.MovesController.ZoroarkNight != null && Actor.MovesController.ZoroarkNight.Finishing);
+        bool aerialReposition = AerialCast || (!IsNight && !IsFeint && Character.ZoroarkNight != null && Character.ZoroarkNight.Finishing);
         if (aerialReposition) distance = ZoroarkMoveRules.NightDashRange;
         Vector3 origin = Actor.transform.position;
-        if (!IsNight && !IsFeint) Actor.MovesController.ZoroarkNormalMoveStarted(origin);
+        if (!IsNight && !IsFeint) Character.ZoroarkNormalMoveStarted(origin);
         PhaseLockRPC(1);
         FaceRPC(direction);
         string clip = move == AvailableMoves.ZoroarkSlash ? "spell1" : move == AvailableMoves.ZoroarkFurySwipes ? "spell21"
@@ -220,11 +222,11 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         if (aerialReposition)
         {
             // Slot A becomes a damage-free reposition during the invincible leap.
-            float duration = Actor.MovesController.ZoroarkNight != null
-                ? Mathf.Min(ZoroarkMoveRules.DashDuration, Actor.MovesController.ZoroarkNight.RemainingAirTime) : 0;
+            float duration = Character.ZoroarkNight != null
+                ? Mathf.Min(ZoroarkMoveRules.DashDuration, Character.ZoroarkNight.RemainingAirTime) : 0;
             if (duration > 0)
             {
-                Actor.MovesController.ZoroarkNight.PauseAirSteering(duration + ZoroarkMoveRules.Recovery);
+                Character.ZoroarkNight.PauseAirSteering(duration + ZoroarkMoveRules.Recovery);
                 Drive(destination, duration);
                 yield return new WaitForSeconds(duration);
             }
@@ -271,7 +273,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         yield return CastPause(ZoroarkMoveRules.Recovery);
         PhaseLockRPC(0);
         busy = false;
-        if (!aerialReposition && !IsNight && !IsFeint && hitThisCast) Actor.MovesController.ZoroarkNormalMoveHit();
+        if (!aerialReposition && !IsNight && !IsFeint && hitThisCast) Character.ZoroarkNormalMoveHit();
         if (!aerialReposition && !CastInterrupted) PlayAnimation(ZoroarkMoveRules.Animation(Actor, "idle"), blendDuration: 0.06f);
         report(hitThisCast && !CastInterrupted);
     }
@@ -338,7 +340,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, 0.5f, true, ZoroarkMoveRules.FeintStatus));
         Vector3 direction = finisherTarget.transform.position - Actor.transform.position;
         direction.y = 0; direction = direction.sqrMagnitude > 0.001f ? direction.normalized : Direction;
-        Vector3 bounce = Actor.MovesController.ZoroarkBounceDirection(direction);
+        Vector3 bounce = Character.ZoroarkBounceDirection(direction);
         FaceRPC(direction);
         PlayAnimation(ZoroarkMoveRules.Animation(Actor, "spell2b3"), 0.5f, 0.04f);
         Drive(Actor.PlayerMovement.GetWallCrossingDestination(finisherTarget.transform.position - direction * 0.5f), 0.2f);
@@ -422,7 +424,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         if (!airSteering || Actor == null || !Actor.IsSpawned || (!IsServer && !Actor.IsOwner) || Actor.Pokemon.CurrentHp <= 0) return;
         double now = NetworkManager.ServerTime.Time;
         if (now >= airSteeringUntil || now < airSteeringPausedUntil || airSteeringDistance >= ZoroarkMoveRules.NightAirSteerDistance) return;
-        var input = Vector2.ClampMagnitude(Actor.IsOwner ? Actor.MovementInput : Actor.MovesController.ZoroarkMovementInput, 1);
+        var input = Vector2.ClampMagnitude(Actor.IsOwner ? Actor.MovementInput : Character.ZoroarkMovementInput, 1);
         float step = Mathf.Min(ZoroarkMoveRules.NightAirSteerSpeed * Time.deltaTime,
             ZoroarkMoveRules.NightAirSteerDistance - airSteeringDistance);
         Vector3 delta = new Vector3(input.x, 0, input.y) * step;
@@ -434,8 +436,8 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         phaseLock?.Dispose(); phaseLock = null;
         airSteering = false;
         if (Actor == null || !IsServer) return;
-        if (IsNight && Actor.MovesController.ZoroarkNight == this) Actor.MovesController.ZoroarkNight = null;
-        if (IsFeint && Actor.MovesController.ZoroarkFeint == this) Actor.MovesController.ZoroarkFeint = null;
+        if (IsNight && Character?.ZoroarkNight == this) Character.ZoroarkNight = null;
+        if (IsFeint && Character?.ZoroarkFeint == this) Character.ZoroarkFeint = null;
         if (!Actor.IsSpawned || !Actor.MovesController.IsSpawned) return;
         ClearWindow();
         if (IsNight || IsFeint) Actor.MovesController.ZoroarkComboRPC(IsNight, 0, false, false, false, false);

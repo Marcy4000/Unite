@@ -78,6 +78,7 @@ public partial class MovesController : NetworkBehaviour
     {
         pokemon = GetComponent<Pokemon>();
         playerManager = GetComponent<PlayerManager>();
+        ApplyCombatSnapshots();
 
         if (!IsOwner)
         {
@@ -116,7 +117,7 @@ public partial class MovesController : NetworkBehaviour
         while (true)
         {
             yield return new WaitForSeconds(1f);
-            IncrementUniteCharge(900);
+            if (Combat == null) IncrementUniteCharge(900);
         }
     }
 
@@ -125,12 +126,11 @@ public partial class MovesController : NetworkBehaviour
         TickUniteReadiness();
         UpdateCresseliaServer();
         UpdateVaporeonRuntime();
-        UpdateCinderaceRuntime();
         UpdateEmboarRuntime();
         UpdateFlareonRuntime();
         UpdateMeowsticRuntime();
         UpdateNinetalesRuntime();
-        UpdateZoroarkRuntime();
+        Combat?.Tick();
         if (!IsOwner)
         {
             return;
@@ -207,6 +207,7 @@ public partial class MovesController : NetworkBehaviour
 
             if (human && controls.Movement.CancelMove.WasPressedThisFrame())
             {
+                Combat?.ClearInput();
                 ClearMarshadowBufferedInput();
                 ClearVaporeonBufferedInput();
                 ClearFlygonBufferedInput();
@@ -241,7 +242,7 @@ public partial class MovesController : NetworkBehaviour
 
         for (int i = 0; i < moveStatuses.Length; i++)
         {
-            if (moves[i].IsStoredMove) continue;
+            if (moves[i] is CombatMove || moves[i].IsStoredMove) continue;
             if (moveStatuses[i].Cooldown > 0)
             {
                 moveStatuses[i].Cooldown -= Time.deltaTime;
@@ -386,8 +387,13 @@ public partial class MovesController : NetworkBehaviour
             return;
         }
 
+        if (moves[index] is CombatMove combatMove)
+        {
+            Combat?.HandleInput(combatMove, index, moveStatuses[index], false);
+            return;
+        }
         if (moves[index].IsStoredMove) SynchronizeStoredMove(index);
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastZoroark(index) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
         {
             BufferMarshadowInput(index, false);
             BufferCresseliaInput(index, false);
@@ -406,6 +412,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void TryUsingUniteMove()
     {
+        if (uniteMove is CombatMove combatMove) { Combat?.HandleInput(combatMove, 2, uniteMoveStatus, false); return; }
         if (BufferMoveDuringServerAttack(2, false)) return;
         if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastCresseliaUnite && !CanRecastFlygon(2))
             return;
@@ -423,6 +430,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void TryFinishingUniteMove()
     {
+        if (uniteMove is CombatMove combatMove) { Combat?.HandleInput(combatMove, 2, uniteMoveStatus, true); return; }
         if (BufferMoveDuringServerAttack(2, true)) return;
         if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastCresseliaUnite && !CanRecastFlygon(2))
             return;
@@ -437,7 +445,12 @@ public partial class MovesController : NetworkBehaviour
             return;
         }
 
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastZoroark(index) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
+        if (moves[index] is CombatMove combatMove)
+        {
+            Combat?.HandleInput(combatMove, index, moveStatuses[index], true);
+            return;
+        }
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
         {
             BufferMarshadowInput(index, true);
             BufferCresseliaInput(index, true);
@@ -485,6 +498,12 @@ public partial class MovesController : NetworkBehaviour
             }
             onMovePerformed?.Invoke(move);
             if (!(move is PrefabMove)) ReportLegacyMoveAction(move);
+            return;
+        }
+
+        if (move is CombatMove)
+        {
+            onMovePerformed?.Invoke(move);
             return;
         }
 
@@ -555,13 +574,14 @@ public partial class MovesController : NetworkBehaviour
         bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned) || moveStatuses[index].HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetMoveLock(index, showLock);
 
-        if (index == 0 && ZoroarkAerialOpen)
+        if (Combat?.Character.OverridesCooldown(index) == true)
         {
             BattleUIManager.instance.ShowMoveCooldown(index, 0, GetMoveCooldown(moves[index]));
         }
-        else if (!moves[index].IsStoredMove && moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
+        else if (!moves[index].IsStoredMove)
         {
-            BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown, GetMoveCooldown(moves[index]));
+            float remaining = moveStatuses[index].HasStatus(ActionStatusType.Cooldown) ? moveStatuses[index].Cooldown : 0;
+            BattleUIManager.instance.ShowMoveCooldown(index, remaining, GetMoveCooldown(moves[index]));
         }
     }
 
@@ -647,7 +667,6 @@ public partial class MovesController : NetworkBehaviour
             ClearFlygonBufferedInput();
             previousMove.ResetMove();
         }
-        if (!move.isUpgraded && previousMove is CinderMoveBase) previousMove.ResetMove();
         if (!move.isUpgraded && previousMove is EmboarMoveBase)
         {
             ClearEmboarBufferedInput();
@@ -728,6 +747,7 @@ public partial class MovesController : NetworkBehaviour
 
         if (IsOwner)
         {
+            if (learnedMove is CombatMove) Combat?.Equip(move.move);
             OnMoveLearnedRPC(move.move);
         }
     }
@@ -735,6 +755,7 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void OnMoveLearnedRPC(AvailableMoves moveType)
     {
+        Combat?.Equip(moveType);
         RecordPrefabMove(moveType);
         RecordVaporeonMove(moveType);
         RecordMeowsticMove(moveType);
@@ -754,6 +775,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void CancelAllMoves()
     {
+        Combat?.ClearInput();
         ClearServerAttackBufferedInput();
         moves[0].Cancel();
         moves[1].Cancel();
@@ -762,6 +784,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void ResetAllMoves()
     {
+        Combat?.ClearInput();
         ResetServerAttackInput();
         basicAttack?.ResetAttack();
         ClearMarshadowBufferedInput();
@@ -780,6 +803,11 @@ public partial class MovesController : NetworkBehaviour
     {
         int index = moveType == MoveType.MoveA ? 0 : moveType == MoveType.MoveB ? 1 : -1;
         if (index < 0) return;
+        if (Combat != null && GetMove(moveType) is CombatMove)
+        {
+            Combat.ReduceCooldown(index, amount);
+            return;
+        }
         if (moves[index].IsStoredMove)
         {
             // Recharge reduction must not bypass the independent cast interval.
@@ -961,6 +989,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void IncrementUniteCharge(int amount)
     {
+        if (Combat != null) return;
         uniteMoveCharge = Mathf.Clamp(uniteMoveCharge + amount, 0, uniteMoveMaxCharge);
         if (uniteMoveCharge == uniteMoveMaxCharge && uniteMoveStatus.HasStatus(ActionStatusType.Cooldown))
         {
@@ -989,12 +1018,11 @@ public partial class MovesController : NetworkBehaviour
         basicAttack?.Dispose();
         DisposeServerAttack();
         DisposeNinetalesRuntime();
-        DisposeZoroarkRuntime();
+        DisposeCombat();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();
         DisposeFlygonRuntime();
-        DisposeCinderaceRuntime();
         DisposeCresseliaRuntime();
         DisposeVaporeonRuntime();
         MoveLearnPanel.onSelectedMove -= OnMoveSelectedFromPanel;

@@ -12,10 +12,18 @@ public partial class MovesController
     private readonly int[] prefabGenerations = new int[3];
     private readonly int[] prefabCastSequences = new int[3];
     private readonly System.Collections.Generic.HashSet<PrefabMoveEffect> prefabEffects = new System.Collections.Generic.HashSet<PrefabMoveEffect>();
-    public System.Collections.Generic.IEnumerable<PrefabMoveEffect> ActivePrefabEffects => prefabEffects;
+    public System.Collections.Generic.IEnumerable<PrefabMoveEffect> ActivePrefabEffects
+    {
+        get
+        {
+            foreach (var effect in prefabEffects) yield return effect;
+            if (Combat != null) foreach (var effect in Combat.PrefabEffects) yield return effect;
+        }
+    }
 
     private void RecordPrefabMove(AvailableMoves move)
     {
+        if (MoveDatabase.GetMove(move) is CombatMove) return;
         if (!IsServer || pokemon == null || pokemon.BaseStats == null) return;
         foreach (LearnableMove learn in pokemon.BaseStats.LearnableMoves)
             foreach (MoveAsset asset in learn.moves)
@@ -32,7 +40,7 @@ public partial class MovesController
         if (pokemon.HasStatusEffect(StatusType.Incapacitated) || pokemon.HasStatusEffect(StatusType.Frozen)
             || pokemon.HasStatusEffect(StatusType.Asleep) || pokemon.HasStatusEffect(StatusType.Bound)) { RejectPrefabExecutionRPC(move); return; }
         var definition = MoveDatabase.GetMove(move) as PrefabMove;
-        if (definition == null) return;
+        if (definition == null || definition is CombatMove) { RejectPrefabExecutionRPC(move); return; }
         MoveAsset learned = null;
         bool upgraded = false;
         foreach (LearnableMove learn in pokemon.BaseStats.LearnableMoves)
@@ -44,7 +52,6 @@ public partial class MovesController
                 }
         if (learned == null || learned.moveType == MoveType.All) return;
         int slot = (int)learned.moveType;
-        if (ZoroarkNight != null && ZoroarkNight.Finishing && slot != 0) { RejectPrefabExecutionRPC(move); return; }
         double now = NetworkManager.ServerTime.Time;
         if (prefabLearnedMoves[slot] != move) { RejectPrefabExecutionRPC(move); return; }
         direction.y = 0;
@@ -60,9 +67,7 @@ public partial class MovesController
             else RejectPrefabExecutionRPC(move);
             return;
         }
-        bool aerial = slot == 0 && ZoroarkNight != null && ZoroarkNight.AerialWindow;
-        if (ServerActionLocks > 0 || (!aerial && now + 0.15 < prefabNextCast[slot])) { RejectPrefabExecutionRPC(move); return; }
-        if (aerial && !ZoroarkNight.TrySpendAerialReposition()) { RejectPrefabExecutionRPC(move); return; }
+        if (ServerActionLocks > 0 || now + 0.15 < prefabNextCast[slot]) { RejectPrefabExecutionRPC(move); return; }
         Pokemon target = null;
         if (definition.AimStyle == MoveAimStyle.Target)
         {
@@ -76,7 +81,7 @@ public partial class MovesController
         direction.y = 0;
         direction = definition.AimStyle == MoveAimStyle.Ground ? Vector3.ClampMagnitude(direction, definition.Range)
             : direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
-        if (!aerial) prefabNextCast[slot] = now + Mathf.Max(0.25f, definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
+        prefabNextCast[slot] = now + Mathf.Max(0.25f, definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
         if (definition.CooldownOnEffectEnd) prefabNextCast[slot] = double.PositiveInfinity;
         int generation = ++prefabGenerations[slot];
         int sequence = ++prefabCastSequences[slot];
@@ -93,7 +98,7 @@ public partial class MovesController
             if (pokemon != null) pokemon.OnDeath -= onDeath;
             if (target != null) target.OnDeath -= onDeath;
             if (asset.Status != AsyncOperationStatus.Succeeded || cancelled || this == null || !IsSpawned || generation != prefabGenerations[slot]
-                || pokemon == null || pokemon.CurrentHp <= 0 || (aerial && (ZoroarkNight == null || !ZoroarkNight.AerialWindow)))
+                || pokemon == null || pokemon.CurrentHp <= 0)
             {
                 if (asset.Status != AsyncOperationStatus.Succeeded) Debug.LogError($"Failed to load move {move}: {asset.OperationException}");
                 Addressables.Release(asset);
@@ -107,7 +112,6 @@ public partial class MovesController
             effect.HoldAsset(asset);
             effect.MoveId = move;
             effect.CastSequence = sequence;
-            if (effect is ZoroarkMoveEffect zoroarkEffect) zoroarkEffect.AerialCast = aerial;
             instance.GetComponent<NetworkObject>().Spawn(true);
             prefabEffects.Add(effect);
             effect.Completed += completed => prefabEffects.Remove(completed);
@@ -176,6 +180,7 @@ public partial class MovesController
     public void ReduceMoveCooldownByFraction(MoveType slot, float fraction)
     {
         if (!IsServer || slot == MoveType.All || slot == MoveType.UniteMove) return;
+        if (Combat?.Loadout.Get((int)slot) != null) { Combat.ReduceCooldown((int)slot, 0, fraction); return; }
         fraction = Mathf.Clamp01(fraction);
         int index = (int)slot;
         double now = NetworkManager.ServerTime.Time;

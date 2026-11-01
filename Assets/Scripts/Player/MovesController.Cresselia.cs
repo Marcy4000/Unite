@@ -306,16 +306,14 @@ public partial class MovesController
         DisposeCresseliaPresentation();
     }
 
-    public override void OnNetworkDespawn()
+    private void DisposeLegacyRuntimesOnDespawn()
     {
-        DisposeZoroarkRuntime();
         DisposeNinetalesRuntime();
         basicAttack?.Dispose();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();
         DisposeFlygonRuntime();
-        DisposeCinderaceRuntime();
         OnVaporeonNetworkDespawn();
         if (pokemon != null && pokemon.BaseStats != null && pokemon.BaseStats.Passive == AvailablePassives.CresseliaPassive)
         {
@@ -327,7 +325,6 @@ public partial class MovesController
             }
             DisposeCresseliaRuntime();
         }
-        base.OnNetworkDespawn();
     }
 }
 

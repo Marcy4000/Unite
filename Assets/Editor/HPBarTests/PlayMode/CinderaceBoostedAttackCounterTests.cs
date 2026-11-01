@@ -47,6 +47,8 @@ public class CinderaceBoostedAttackCounterTests
         ((Behaviour)manager).enabled = false;
         Set(combat, "pokemon", pokemon);
         Set(combat, "playerManager", manager);
+        Set(manager, "pokemon", pokemon);
+        Set(manager, "movesController", combat);
         counterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/HPBarModules/BoostedAttackCounter.prefab")
             .GetComponent(GameType("BoostedAttackCounterModule"));
         hpBar = CreateHpBar();
@@ -80,11 +82,18 @@ public class CinderaceBoostedAttackCounterTests
         return hp;
     }
 
+    private long revision;
     private Component Counter => hpBar.GetComponentsInChildren(GameType("BoostedAttackCounterModule"), true).Single();
     private int ModuleCount(Component hp) => ((ICollection)hp.GetType().GetProperty("ActiveModules").GetValue(hp)).Count;
     private void Initialize() => Call(attack, "Initialize", manager);
     private void Tick() => Call(attack, "Update");
-    private void Charge(byte value) => Snapshot(combat, "cinderAttackCharge", value);
+    private void Charge(byte value)
+    {
+        object combatActor = Property<object>(combat, "Combat");
+        object runtime = Property<object>(combatActor, "Character");
+        Call(runtime, "ReceiveSnapshot", value, false, ++revision);
+        Call(attack, "ApplySnapshot", value);
+    }
 
     private void AssertState(int normal, bool ready)
     {
@@ -222,9 +231,11 @@ public class CinderaceBoostedAttackCounterTests
     [UnityTest]
     public IEnumerator ChargeIsOwnerReadableAndServerWritableOnly()
     {
-        object variable = combat.GetType().GetField("cinderAttackCharge", Private).GetValue(combat);
-        Assert.That(variable.GetType().GetField("ReadPerm").GetValue(variable).ToString(), Is.EqualTo("Owner"));
+        object variable = combat.GetType().GetField("combatCharacterState", Private).GetValue(combat);
+        Assert.That(variable.GetType().GetField("ReadPerm").GetValue(variable).ToString(), Is.EqualTo("Everyone"));
         Assert.That(variable.GetType().GetProperty("WritePerm").GetValue(variable).ToString(), Is.EqualTo("Server"));
+        Call(combat, "FillCinderaceCharge");
+        Assert.That(Property<int>(combat, "CinderaceAttackCharge"), Is.Zero);
         // Initializing the combat component alone never creates a personal UI.
         Assert.That(ModuleCount(hpBar), Is.Zero);
         yield return null;

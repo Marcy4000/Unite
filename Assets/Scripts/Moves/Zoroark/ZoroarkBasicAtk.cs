@@ -9,9 +9,10 @@ public class ZoroarkBasicAtk : ChargedBasicAttackBase
     protected override int AttackCharge => charge;
     public override bool ServerResolved => true;
     public override float MoveInputBufferDuration => ZoroarkMoveRules.InputBuffer;
+    private ZoroarkCharacterRuntime Character => playerManager?.MovesController.Combat?.Character as ZoroarkCharacterRuntime;
     private bool Unique => playerManager != null && (playerManager.IsServer
-        ? playerManager.MovesController.ZoroarkNight != null && playerManager.MovesController.ZoroarkNight.UniqueReady
-        : playerManager.MovesController.ZoroarkUniqueReady);
+        ? Character?.ZoroarkNight != null && Character.ZoroarkNight.UniqueReady
+        : Character?.ZoroarkUniqueReady == true);
 
     public override void Initialize(PlayerManager manager) { range = ZoroarkMoveRules.BasicRange; base.Initialize(manager); }
     public override void InitializeServer(PlayerManager manager) { base.InitializeServer(manager); range = ZoroarkMoveRules.BasicRange; }
@@ -36,7 +37,7 @@ public class ZoroarkBasicAtk : ChargedBasicAttackBase
     private IEnumerator Execute(Pokemon primary)
     {
         bool unique = Unique, boosted = unique || charge == 2;
-        var night = unique ? playerManager.MovesController.ZoroarkNight : null;
+        var night = unique ? Character?.ZoroarkNight : null;
         float scale = Mathf.Clamp(playerManager.MovesController.GetAtkSpeedCooldown() / 0.93333f, 0.2f, 1);
         float windup = ZoroarkMoveRules.BasicWindup * scale, recovery = ZoroarkMoveRules.BasicRecovery * scale;
         Vector3 direction = primary != null ? primary.transform.position - playerManager.transform.position : playerManager.transform.forward;

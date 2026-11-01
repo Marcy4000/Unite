@@ -1,4 +1,4 @@
-public abstract class ZoroarkMove : PrefabMove
+public abstract class ZoroarkMove : CombatMove
 {
     private bool aerialCast;
     public override string PrefabPath => ZoroarkMoveRules.Folder + MoveId + ".prefab";
@@ -8,13 +8,9 @@ public abstract class ZoroarkMove : PrefabMove
     public override bool CooldownOnFinish => !aerialCast && base.CooldownOnFinish;
     public override void Start(PlayerManager controller)
     {
-        aerialCast = controller.MovesController.ZoroarkAerialOpen && (MoveId == AvailableMoves.ZoroarkSlash
+        aerialCast = (controller.MovesController.Combat?.Character as ZoroarkCharacterRuntime)?.ZoroarkAerialOpen == true && (MoveId == AvailableMoves.ZoroarkSlash
             || MoveId == AvailableMoves.ZoroarkShadowClaw || MoveId == AvailableMoves.ZoroarkCut);
         base.Start(controller);
-    }
-    protected override void OnCommitted()
-    {
-        if (aerialCast) playerManager.MovesController.SpendZoroarkAerialReposition();
     }
 }
 public class ZoroarkSlash : ZoroarkMove
@@ -51,7 +47,7 @@ public class ZoroarkFeintAttack : ZoroarkMove
 {
     public ZoroarkFeintAttack() { Name = "Feint Attack"; Cooldown = 6; }
     public override AvailableMoves MoveId => AvailableMoves.ZoroarkFeintAttack;
-    public override MoveAimStyle AimStyle => playerManager != null && playerManager.MovesController.ZoroarkFeintReady ? MoveAimStyle.Target : MoveAimStyle.Dash;
+    public override MoveAimStyle AimStyle => playerManager != null && (playerManager.MovesController.Combat?.Character as ZoroarkCharacterRuntime)?.ZoroarkFeintReady == true ? MoveAimStyle.Target : MoveAimStyle.Dash;
     public override bool CooldownOnEffectEnd => true;
     public override float EffectiveCooldown(bool upgraded) => upgraded ? 5 : 6;
 }

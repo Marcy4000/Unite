@@ -168,6 +168,7 @@ public class CinderMoveObject : NetworkBehaviour
             yield return null;
         }
     }
+    private bool flameSlowArmed;
     private IEnumerator Dash()
     {
         Vector3 previous = actor.transform.position;
@@ -188,7 +189,11 @@ public class CinderMoveObject : NetworkBehaviour
             if (Time.time >= finishAt) break;
             yield return null;
         }
-        if (Live && movementFinished && upgraded && kind == CinderCast.FlameCharge) combat.ArmCinderaceFlameSlow();
+        if (Live && movementFinished && upgraded && kind == CinderCast.FlameCharge && !flameSlowArmed)
+        {
+            flameSlowArmed = true;
+            combat.ArmCinderaceFlameSlow();
+        }
     }
     private IEnumerator Kick()
     {
@@ -203,7 +208,22 @@ public class CinderMoveObject : NetworkBehaviour
     public void MovementPhase(bool finished, Vector3 position)
     {
         if (!IsServer || !Live) return;
-        if (CinderMoveRules.Dash(kind)) { movementFinished = finished; movementEndpoint = position; return; }
+        if (CinderMoveRules.Dash(kind))
+        {
+            Vector3 previous = transform.position;
+            movementFinished = finished;
+            movementEndpoint = position;
+            transform.SetPositionAndRotation(position, Quaternion.LookRotation(direction));
+            if ((position - previous).sqrMagnitude <= 36)
+                foreach (Pokemon victim in Sweep(previous + Vector3.up * 0.7f, position + Vector3.up * 0.7f))
+                    if (hit.Add(victim)) combat.CinderaceHit(victim, CinderMoveRules.Damage(actorId.Value, kind));
+            if (finished && upgraded && kind == CinderCast.FlameCharge && !flameSlowArmed)
+            {
+                flameSlowArmed = true;
+                combat.ArmCinderaceFlameSlow();
+            }
+            return;
+        }
         if (kind != CinderCast.BlazeKick) return;
         if (!kickHit && !finished && CinderMoveRules.CanHit(actor, target)
             && Vector3.Distance(position, target.transform.position) <= 2.5f)

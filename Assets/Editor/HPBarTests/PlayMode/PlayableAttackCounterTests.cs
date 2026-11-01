@@ -79,7 +79,7 @@ public class PlayableAttackCounterTests
     {
         string network = attack.GetType().Name switch
         {
-            "CinderBasicAtk" => "cinderAttackCharge", "VaporBasicAtk" => "vaporAttackCharge",
+            "VaporBasicAtk" => "vaporAttackCharge",
             "MeowsticMBasicAtk" => "meowsticAttackCharge", "EmboarBasicAtk" => "emboarAttackCharge",
             "FlareonBasicAtk" => "flareonAttackCharge", _ => null
         };
@@ -133,23 +133,36 @@ public class PlayableAttackCounterTests
     [UnityTest]
     public IEnumerator LocalExpiryAndGrantedBoostsRemainDrivenByOriginalAttackLogic()
     {
-        foreach (string name in new[] { "GlaceBasicAtk", "SylvBasicAtk" })
+        foreach (string name in new[] { "SylvBasicAtk" })
         {
             attack = Bind(name); Charge(2); Call(attack, "Update");
             yield return null; AssertProgress(2);
             Set(attack, "cooldown", 0f); Call(attack, "Update"); AssertProgress(0);
-            if (name == "GlaceBasicAtk")
-            {
-                Call(attack, "FillChargeAmount"); Call(attack, "Update"); AssertProgress(2);
-                Call(attack, "ChangeBasicAtkType", (byte)1); Call(attack, "Update");
-                Assert.That(Counter.gameObject.activeSelf, Is.False);
-                Assert.That(gauge.activeSelf, Is.True);
-                Call(attack, "ChangeBasicAtkType", (byte)0); Call(attack, "Update"); AssertProgress(2);
-            }
             Call(attack, "Dispose"); attack = null; yield return null;
         }
         attack = Bind("DuraBasicAtk"); Call(attack, "GainBoostedAttack"); Call(attack, "Update");
         yield return null; AssertProgress(2);
+    }
+
+    [UnityTest]
+    public IEnumerator GlaceonCounterFollowsAuthoritativeChargeAndModeSnapshots()
+    {
+        attack = Bind("GlaceBasicAtk");
+        Call(attack, "ApplySnapshot", (byte)2, (byte)0);
+        Call(attack, "Update");
+        yield return null;
+        AssertProgress(2);
+        Call(attack, "ApplySnapshot", (byte)2, (byte)1);
+        Call(attack, "Update");
+        Assert.That(Counter.gameObject.activeSelf, Is.False);
+        Assert.That(gauge.activeSelf, Is.True);
+        Call(attack, "ApplySnapshot", (byte)2, (byte)0);
+        Call(attack, "Update");
+        AssertProgress(2);
+        Call(attack, "ApplySnapshot", (byte)0, (byte)0);
+        Call(attack, "FillChargeAmount");
+        Call(attack, "Update");
+        AssertProgress(0);
     }
 
     [UnityTest]

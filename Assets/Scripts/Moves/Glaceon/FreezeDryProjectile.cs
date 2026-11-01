@@ -5,100 +5,80 @@ using UnityEngine;
 public class FreezeDryProjectile : NetworkBehaviour
 {
     public float speed = 30f;
-    private float maxDistance; // Set the maximum distance the projectile should travel
-
+    private float maxDistance, distanceTraveled;
     private DamageInfo damageInfo;
     private Vector3 direction;
-    private float distanceTraveled = 0f;
     private Team orangeTeam;
-
-    private bool canMove = false;
-    private bool gaveDamage = false;
-
+    private bool canMove, gaveDamage;
+    private PlayerManager attacker;
     public event Action<int> OnMoveHit;
 
-    public void SetDirection(Vector3 startingPosition, Vector2 direction, DamageInfo info, float maxDistance)
+    public void SetDirection(Vector3 startingPosition, Vector2 value, DamageInfo info, float distance)
     {
+        if (!IsServer || canMove || gaveDamage || !CombatTargeting.Finite(startingPosition)
+            || !float.IsFinite(value.x) || !float.IsFinite(value.y) || !float.IsFinite(distance) || distance <= 0
+            || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(info.attackerId, out var source)
+            || !source.TryGetComponent(out attacker)) return;
+        direction = new Vector3(value.x, 0, value.y).normalized;
+        if (direction.sqrMagnitude <= 0.001f) return;
         transform.position = startingPosition;
-        this.direction = new Vector3(direction.x, 0, direction.y);
         damageInfo = info;
-        this.maxDistance = maxDistance;
-        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().CurrentTeam.Team;
+        maxDistance = distance;
+        orangeTeam = attacker.CurrentTeam.Team;
         canMove = true;
     }
 
-    void Update()
+    private void Update()
     {
-        if (!IsOwner || !canMove)
+        if (!IsServer || !IsSpawned || !canMove || gaveDamage) return;
+        float step = Mathf.Min(Mathf.Max(0, speed) * Time.deltaTime, maxDistance - distanceTraveled);
+        Vector3 start = transform.position;
+        Vector3 end = start + direction * step;
+        var sphere = GetComponent<SphereCollider>();
+        float radius = sphere != null ? sphere.radius * Mathf.Max(Mathf.Abs(transform.lossyScale.x), Mathf.Abs(transform.lossyScale.y), Mathf.Abs(transform.lossyScale.z)) : 0.6f;
+        radius = Mathf.Max(0.01f, radius);
+        int steps = Mathf.Clamp(Mathf.CeilToInt(step / (radius * 0.5f)), 1, 128);
+        for (int index = 0; index <= steps; index++)
         {
-            return;
+            Vector3 position = Vector3.Lerp(start, end, index / (float)steps);
+            foreach (var target in CombatTargeting.SphereTargets(position, radius))
+            {
+                if (!GlaceonCharacterRuntime.CanHit(attacker, target)) continue;
+                transform.position = position;
+                GiveDamage();
+                return;
+            }
         }
-
-        // Move the projectile forward
-        Vector3 moveVector = new Vector3(direction.x * speed * Time.deltaTime, direction.y * speed * Time.deltaTime, direction.z * speed * Time.deltaTime);
-        transform.Translate(moveVector);
-
-        // Update the distance traveled
-        distanceTraveled += speed * Time.deltaTime;
-
-        // Check if the projectile has traveled the maximum distance
-        if (distanceTraveled >= maxDistance && !gaveDamage)
-        {
-            GiveDamage();
-            gaveDamage = true;
-        }
-    }
-
-    [Rpc(SendTo.Server)]
-    private void DespawnObjectRPC()
-    {
-        NetworkObject.Despawn(true);
+        transform.position = end;
+        distanceTraveled += step;
+        if (distanceTraveled >= maxDistance) GiveDamage();
     }
 
     private void GiveDamage()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, 1f);
-        int pokemonCount = 0;
-
-        foreach (var hit in hits)
-        {
-            if (hit.TryGetComponent(out PlayerManager playerManager))
-            {
-                if (playerManager.CurrentTeam.IsOnSameTeam(orangeTeam))
-                {
-                    return;
-                }
-            }
-
-            Pokemon pokemon;
-            if (hit.TryGetComponent(out pokemon))
-            {
-                pokemonCount++;
-                pokemon.TakeDamageRPC(damageInfo);
-            }
-        }
-
-        OnMoveHit?.Invoke(pokemonCount);
+        if (!IsServer || !IsSpawned || !canMove || gaveDamage) return;
+        gaveDamage = true;
         canMove = false;
-
-        DespawnObjectRPC();
+        int count = 0;
+        foreach (var pokemon in CombatTargeting.SphereTargets(transform.position, 1))
+        {
+            if (!GlaceonCharacterRuntime.CanHit(attacker, pokemon)) continue;
+            pokemon.ResolveDamage(damageInfo);
+            count++;
+        }
+        OnMoveHit?.Invoke(count);
+        if (IsSpawned) NetworkObject.Despawn(true);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsOwner)
-        {
-            return;
-        }
-
-        if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
-        {
-            return;
-        }
-
-        if (other.TryGetComponent(out Pokemon pokemon))
-        {
-            GiveDamage();
-        }
+        if (!IsServer || !canMove || gaveDamage) return;
+        if (CombatTargeting.TryGetPokemon(other, out var pokemon) && GlaceonCharacterRuntime.CanHit(attacker, pokemon)) GiveDamage();
+    }
+    public override void OnNetworkDespawn()
+    {
+        canMove = false;
+        OnMoveHit = null;
+        base.OnNetworkDespawn();
     }
 }

@@ -531,6 +531,7 @@ public class GameManager : NetworkBehaviour
         if (NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.scorerId].TryGetComponent(out Pokemon pokemon))
         {
             PlayerManager scorer = pokemon.GetComponent<PlayerManager>();
+            if (info.scoredPoints > 0 && scorer != null) scorer.MovesController.Combat?.GrantUniteEnergy(12000);
             RecordResultScore(pokemon.TeamMember.Team, info.scoredPoints, scorer != null ? scorer.LobbyPlayer.Id : string.Empty);
 
             if (pokemon.Type == PokemonType.Player)

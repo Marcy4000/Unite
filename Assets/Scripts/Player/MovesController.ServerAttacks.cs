@@ -51,7 +51,7 @@ public partial class MovesController
     public void PerformServerBasicAttackRPC(ulong targetId)
     {
         if (pokemon == null || pokemon.CurrentHp <= 0 || ServerActionLocks > 0
-            || (ZoroarkNight != null && ZoroarkNight.Finishing)
+            || Combat?.Character.CanStartBasicAttack == false
             || pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)
             || NetworkManager.ServerTime.Time + 0.02 < serverNextAttack) { RejectServerBasicAttackRPC(); return; }
         var attack = ServerBasicAttack;

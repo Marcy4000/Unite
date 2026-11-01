@@ -328,7 +328,7 @@ public partial class PlayerMovement : NetworkBehaviour
 
     void Update()
     {
-        if (IsOwner && player != null && player.MovesController.HandleZoroarkMovement(player.MovementInput))
+        if (IsOwner && player != null && player.MovesController.TryHandleCombatMovement(player.MovementInput))
         {
             currentMovement = inputMovement = Vector3.zero;
             if (isMoving)

@@ -45,7 +45,7 @@ public abstract class PrefabMove : MoveBase
         if (IndicatorPath != null) playerManager.Aim.ShowCustomIndicator(IndicatorPath, IndicatorScale, MirrorsIndicator);
     }
 
-    private void UpdateAim()
+    protected void UpdateAim()
     {
         if (AimStyle == MoveAimStyle.Target) target = playerManager.Aim.SureHitAim()?.GetComponent<Pokemon>();
         else if (AimStyle == MoveAimStyle.Direction) direction = playerManager.Aim.SkillshotAim();
@@ -88,7 +88,7 @@ public abstract class PrefabMove : MoveBase
     public bool IsTargetInCastRange(Vector3 origin, Vector3 position) => CombatTargeting.Finite(origin) && CombatTargeting.Finite(position)
         && Vector3.Distance(origin, position) <= Range + TargetRangeTolerance;
 
-    private void HideAim(bool immediateCameraReturn = false)
+    protected void HideAim(bool immediateCameraReturn = false)
     {
         if (aimCamera != null) aimCamera.EndSkillAim(this, immediateCameraReturn);
         if (playerManager == null || playerManager.Aim == null) return;
@@ -116,6 +116,7 @@ public abstract class PrefabMove : MoveBase
         if (finished && playerManager != null) playerManager.MovesController.BeginMoveCooldown(this);
     }
     protected virtual void OnExecutionState(bool finished) { }
+    protected void CompleteAcceptedInput() { base.Finish(); }
     internal void ReleaseLoadLock() { loadLock?.Dispose(); loadLock = null; }
     internal void RejectExecution() { pending?.Dispose(); pending = null; ReleaseLoadLock(); }
 
