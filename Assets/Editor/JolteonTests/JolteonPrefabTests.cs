@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 public class JolteonPrefabTests
@@ -86,10 +87,16 @@ public class JolteonPrefabTests
     [Test]
     public void ChargeDoesNotRootOrSpendTheOffensiveMeter()
     {
-        string source = File.ReadAllText("Assets/Scripts/Moves/Jolteon/JoltCharge.cs");
+        string execution = File.ReadAllText("Assets/Scripts/Combat/Characters/JolteonExecution.cs");
+        int start = execution.IndexOf("private IEnumerator ExecuteCharge()", StringComparison.Ordinal);
+        int end = execution.IndexOf("private IEnumerator ExecuteThunderFang()", start, StringComparison.Ordinal);
+        Assert.That(start, Is.GreaterThanOrEqualTo(0));
+        Assert.That(end, Is.GreaterThan(start));
+        string source = execution.Substring(start, end - start);
         Assert.That(source, Does.Not.Contain("StopMovementForTime"));
         Assert.That(source, Does.Not.Contain("CanMove = false"));
         Assert.That(source, Does.Not.Contain("TryConsumeCharge"));
+        Assert.That(source, Does.Not.Contain("ConsumePassiveCharge"));
         Assert.That(source, Does.Not.Contain("ReducePassiveCharge"));
         Assert.That(source, Does.Contain("JoltMoveRules.ChargeSlowDuration"));
     }
@@ -99,5 +106,20 @@ public class JolteonPrefabTests
     {
         foreach (string name in new[] { "JoltCharge.cs", "JoltDashMove.cs", "JoltElectroweb.cs", "JolteonUnite.cs" })
             Assert.That(File.ReadAllText("Assets/Scripts/Moves/Jolteon/" + name), Does.Not.Contain("onObjectSpawned"));
+    }
+
+    [Test]
+    public void EvolvedBasicAnimationsRecoverToTheAuthoredLocomotionState()
+    {
+        var controller = AssetDatabase.LoadAssetAtPath<AnimatorController>("Assets/Model/Pokemons/Jolteon/Jolteon.controller");
+        Assert.That(controller, Is.Not.Null);
+        var machine = controller.layers[0].stateMachine;
+        Assert.That(machine.defaultState.name, Is.EqualTo("IdleTree"));
+        var names = machine.states.Select(state => state.state.name).ToArray();
+        Assert.That(names, Does.Contain("pm0135_00_ba20_buturi01"));
+        Assert.That(names, Does.Contain("pm0135_00_ba21_tokusyu01"));
+        Assert.That(names, Does.Contain("pm0135_00_ba21_tokusyu02"));
+        Assert.That(File.ReadAllText("Assets/Scripts/Combat/Characters/JolteonCharacterRuntime.cs"),
+            Does.Contain("RecoverAnimationRPC(animation, \"IdleTree\""));
     }
 }

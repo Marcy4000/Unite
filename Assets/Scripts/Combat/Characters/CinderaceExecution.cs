@@ -11,6 +11,7 @@ public sealed class CinderaceExecution : CombatExecution
     private GameObject prefab;
     private CinderMoveObject effect;
     private CombatRoutine routine;
+    private IDisposable movementLease;
     private string animation;
     private bool stopped;
 
@@ -25,8 +26,7 @@ public sealed class CinderaceExecution : CombatExecution
     {
         Prepared = false;
         if (!Actor.IsServer) yield break;
-        string path = CinderMoveRules.Path(kind);
-        yield return Controller.Combat.Spawner.Load(path, Context.Scope, loaded => prefab = loaded);
+        yield return Controller.Combat.Spawner.Load(CinderMoveRules.Path(kind), Context.Scope, loaded => prefab = loaded);
         if (prefab == null || Context.Scope.IsDisposed) yield break;
         Prepared = prefab.GetComponent<CinderMoveObject>() != null;
     }
@@ -38,6 +38,7 @@ public sealed class CinderaceExecution : CombatExecution
     }
 
     private bool Alive => !stopped && Actor != null && Actor.IsSpawned && Actor.Pokemon != null && Actor.Pokemon.CurrentHp > 0;
+
     private bool Interrupted
     {
         get
@@ -45,50 +46,98 @@ public sealed class CinderaceExecution : CombatExecution
             if (!Alive) return true;
             if (kind == CinderCast.BlazeKick || kind == CinderCast.Unite) return false;
             if (Actor.Pokemon.HasAnyStatusEffect(CinderMoveRules.Interrupts)) return true;
-            if (CinderMoveRules.Dash(kind) && Actor.Pokemon.HasStatusEffect(StatusType.Immobilized)) return true;
-            return false;
+            return CinderMoveRules.Dash(kind) && Actor.Pokemon.HasStatusEffect(StatusType.Immobilized);
         }
     }
 
     private IEnumerator Execute()
     {
-        bool lockMovement = kind != CinderCast.Feint;
+        switch (Context.MoveId)
+        {
+            case AvailableMoves.CinderEmber: yield return ExecuteEmber(); break;
+            case AvailableMoves.CinderLowSweep: yield return ExecuteLowSweep(); break;
+            case AvailableMoves.CinderPyroball: yield return ExecutePyroBall(); break;
+            case AvailableMoves.CinderBlazeKick: yield return ExecuteBlazeKick(); break;
+            case AvailableMoves.CinderFlameCharge: yield return ExecuteFlameCharge(); break;
+            case AvailableMoves.CinderFeint: yield return ExecuteFeint(); break;
+            case AvailableMoves.BlazingBycicleKick: yield return ExecuteUnite(); break;
+        }
+    }
+
+    private IEnumerator ExecuteEmber()
+    {
+        if (!BeginCast(CinderCast.Ember, "ani_spell1_bat_0815", true)) yield break;
+        yield return WaitForRecovery(CinderMoveRules.Recovery(CinderCast.Ember));
+        FinishCast();
+    }
+
+    private IEnumerator ExecuteLowSweep()
+    {
+        if (!BeginCast(CinderCast.LowSweep, "ani_spell2_bat_0815", true)) yield break;
+        yield return ExecuteDash();
+        FinishCast();
+    }
+
+    private IEnumerator ExecutePyroBall()
+    {
+        if (!BeginCast(CinderCast.PyroBall, "ani_spell1a_bat_0815", true)) yield break;
+        yield return WaitForRecovery(CinderMoveRules.Recovery(CinderCast.PyroBall));
+        FinishCast();
+    }
+
+    private IEnumerator ExecuteBlazeKick()
+    {
+        if (!BeginCast(CinderCast.BlazeKick, "ani_spell1b1_bat_0815", true)) yield break;
+        yield return ExecuteKickApproachAndRebound();
+        FinishCast();
+    }
+
+    private IEnumerator ExecuteFlameCharge()
+    {
+        if (!BeginCast(CinderCast.FlameCharge, "ani_spell2a_bat_0815", true)) yield break;
+        yield return ExecuteDash();
+        FinishCast();
+    }
+
+    private IEnumerator ExecuteFeint()
+    {
+        if (!BeginCast(CinderCast.Feint, "ani_spell2b_bat_0815", false)) yield break;
+        yield return WaitForRecovery(CinderMoveRules.Recovery(CinderCast.Feint));
+        FinishCast();
+    }
+
+    private IEnumerator ExecuteUnite()
+    {
+        if (!BeginCast(CinderCast.Unite, "ani_spellu_bat_0815", true)) yield break;
+        yield return WaitForRecovery(CinderMoveRules.Recovery(CinderCast.Unite));
+        FinishCast();
+    }
+
+    private bool BeginCast(CinderCast move, string moveAnimation, bool lockMovement)
+    {
         Context.Scope.Own(new CombatActionLock(Actor, lockMovement));
-        IDisposable movementLease = lockMovement ? Context.Scope.Own(character.AcquireMovementLock()) : null;
+        if (lockMovement) movementLease = Context.Scope.Own(character.AcquireMovementLock());
         int castId = unchecked((int)Context.CastId);
         if (castId == 0) castId = 1;
-        bool despawnWithScope = CinderMoveRules.Dash(kind) || kind == CinderCast.BlazeKick || kind == CinderCast.Feint;
-        effect = character.SpawnPreparedObject(prefab, kind, castId, direction, Context.Target, Context.Upgraded, false, false, false, Context.Scope, despawnWithScope);
+        bool castOwnsEffect = CinderMoveRules.Dash(move) || move == CinderCast.BlazeKick || move == CinderCast.Feint;
+        effect = character.SpawnPreparedObject(prefab, move, castId, direction, Context.Target, Context.Upgraded, false, false, false, Context.Scope, castOwnsEffect);
         if (effect == null)
         {
+            movementLease?.Dispose();
+            movementLease = null;
             Context.Finish(CastOutcome.ExecutionFailed);
-            yield break;
+            return false;
         }
         Face(direction);
-        animation = AnimationForKind(kind);
+        animation = moveAnimation;
         Animate(animation);
+        return true;
+    }
 
-        if (CinderMoveRules.Dash(kind))
-        {
-            yield return ExecuteDash();
-        }
-        else if (kind == CinderCast.BlazeKick)
-        {
-            yield return ExecuteBlazeKick();
-        }
-        else
-        {
-            float recovery = CinderMoveRules.Recovery(kind);
-            float started = Time.time;
-            while (!Interrupted && Time.time - started < recovery)
-                yield return null;
-        }
-
-        movementLease?.Dispose();
-        if (!Interrupted)
-            character.RecoverAnimation(animation);
-        if (!stopped)
-            Context.Finish(Interrupted ? CastOutcome.Interrupted : CastOutcome.Completed);
+    private IEnumerator WaitForRecovery(float recovery)
+    {
+        float started = Time.time;
+        while (!Interrupted && Time.time - started < recovery) yield return null;
     }
 
     private IEnumerator ExecuteDash()
@@ -97,16 +146,13 @@ public sealed class CinderaceExecution : CombatExecution
         Vector3 destination = origin + direction * CinderMoveRules.DashDistance;
         character.BeginDash(origin, destination, CinderMoveRules.DashDuration);
         Context.Scope.Own(new CombatCallbackLease(() => character.EndDash(false)));
-        float started = Time.time;
-        while (!Interrupted && Time.time - started < CinderMoveRules.DashDuration)
-            yield return null;
+        yield return WaitForRecovery(CinderMoveRules.DashDuration);
         bool completed = !Interrupted;
         character.EndDash(completed);
-        if (completed && effect != null)
-            effect.MovementPhase(true, Actor.transform.position);
+        if (completed && effect != null) effect.MovementPhase(true, Actor.transform.position);
     }
 
-    private IEnumerator ExecuteBlazeKick()
+    private IEnumerator ExecuteKickApproachAndRebound()
     {
         Vector3 approach = Context.Target != null
             ? CinderMoveRules.Direction(Context.Target.transform.position - Actor.transform.position, direction)
@@ -117,50 +163,35 @@ public sealed class CinderaceExecution : CombatExecution
         Vector3 origin = Actor.transform.position;
         character.BeginDash(origin, origin + approach * distance, CinderMoveRules.KickApproach);
         Context.Scope.Own(new CombatCallbackLease(() => character.EndDash(false)));
-        float started = Time.time;
-        while (!Interrupted && Time.time - started < CinderMoveRules.KickApproach)
-            yield return null;
+        yield return WaitForRecovery(CinderMoveRules.KickApproach);
         if (Interrupted)
         {
             character.EndDash(false);
             yield break;
         }
         character.EndDash(true);
-        if (effect != null)
-            effect.MovementPhase(false, Actor.transform.position);
+        if (effect != null) effect.MovementPhase(false, Actor.transform.position);
 
         animation = "ani_spell1b2_bat_0815";
         Animate(animation);
         Vector3 rebound = character.ReboundDirection(-approach);
         Vector3 reboundOrigin = Actor.transform.position;
         character.BeginDash(reboundOrigin, reboundOrigin + rebound * CinderMoveRules.ReboundDistance, CinderMoveRules.KickRebound);
-        started = Time.time;
-        while (!Interrupted && Time.time - started < CinderMoveRules.KickRebound)
-            yield return null;
+        yield return WaitForRecovery(CinderMoveRules.KickRebound);
         bool completed = !Interrupted;
         character.EndDash(completed);
-        if (completed && effect != null)
-            effect.MovementPhase(true, Actor.transform.position);
+        if (completed && effect != null) effect.MovementPhase(true, Actor.transform.position);
     }
 
-    private static string AnimationForKind(CinderCast kind)
+    private void FinishCast()
     {
-        switch (kind)
-        {
-            case CinderCast.Ember: return "ani_spell1_bat_0815";
-            case CinderCast.PyroBall: return "ani_spell1a_bat_0815";
-            case CinderCast.BlazeKick: return "ani_spell1b1_bat_0815";
-            case CinderCast.LowSweep: return "ani_spell2_bat_0815";
-            case CinderCast.FlameCharge: return "ani_spell2a_bat_0815";
-            case CinderCast.Feint: return "ani_spell2b_bat_0815";
-            default: return "ani_spellu_bat_0815";
-        }
+        movementLease?.Dispose();
+        movementLease = null;
+        if (!Interrupted) character.RecoverAnimation(animation);
+        if (!stopped) Context.Finish(Interrupted ? CastOutcome.Interrupted : CastOutcome.Completed);
     }
 
-    private void Animate(string animation)
-    {
-        Actor.AnimationManager?.PlayAnimation(animation);
-    }
+    private void Animate(string moveAnimation) => Actor.AnimationManager?.PlayAnimation(moveAnimation);
 
     private void Face(Vector3 value)
     {
@@ -174,7 +205,8 @@ public sealed class CinderaceExecution : CombatExecution
         stopped = true;
         routine?.Dispose();
         routine = null;
-        if (reason != CastOutcome.Completed && effect != null && effect.IsSpawned)
-            effect.Despawn();
+        movementLease?.Dispose();
+        movementLease = null;
+        if (reason != CastOutcome.Completed && effect != null && effect.IsSpawned) effect.Despawn();
     }
 }

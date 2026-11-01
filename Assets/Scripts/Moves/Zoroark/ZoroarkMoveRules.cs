@@ -57,4 +57,9 @@ public static class ZoroarkMoveRules
     public static float Range(AvailableMoves move) => move == AvailableMoves.ZoroarkSlash ? SlashRange : move == AvailableMoves.ZoroarkFurySwipes ? FuryRange
         : move == AvailableMoves.ZoroarkCut ? CutRange : move == AvailableMoves.ZoroarkShadowClaw ? ClawRange
         : move == AvailableMoves.ZoroarkFeintAttack ? FeintRange : NightDashRange;
+
+    public static bool IsMove(AvailableMoves move) => move == AvailableMoves.ZoroarkSlash
+        || move == AvailableMoves.ZoroarkFurySwipes || move == AvailableMoves.ZoroarkShadowClaw
+        || move == AvailableMoves.ZoroarkCut || move == AvailableMoves.ZoroarkNightSlash
+        || move == AvailableMoves.ZoroarkFeintAttack || move == AvailableMoves.ZoroarkNightfallDaze;
 }

@@ -199,11 +199,12 @@ public class VaporeonTests
     [Test]
     public void CancelledCastImmediatelyDisposesAnyLateWork()
     {
-        var scopeType = GameType("MovesController").GetNestedType("VaporScope", BindingFlags.NonPublic);
+        var scopeType = GameType("VaporeonCharacterRuntime").GetNestedType("EffectScope", BindingFlags.NonPublic);
         var scope = (IDisposable)Activator.CreateInstance(scopeType, new object[] { null });
         var first = new CountingLease(); var late = new CountingLease();
-        scopeType.GetMethod("Own").Invoke(scope, new object[] { first }); scope.Dispose();
-        scopeType.GetMethod("Own").Invoke(scope, new object[] { late }); scope.Dispose();
+        var own = scopeType.GetMethod("Own").MakeGenericMethod(typeof(IDisposable));
+        own.Invoke(scope, new object[] { first }); scope.Dispose();
+        own.Invoke(scope, new object[] { late }); scope.Dispose();
         Assert.That(first.Disposals, Is.EqualTo(1)); Assert.That(late.Disposals, Is.EqualTo(1));
     }
     [TestCase("Orange", 100, "Invincible", false, false)]

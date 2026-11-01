@@ -1,14 +1,20 @@
-public class SylvMysticalFire : PrefabMove
+public class SylvMysticalFire : CombatMove
 {
     // Preserve the existing serialized enum value/name.
     public override AvailableMoves MoveId => AvailableMoves.SylvMysticalCringe;
-    public override string PrefabPath => SylvMoveRules.Folder + "SylvMysticalFire.prefab";
     public override MoveAimStyle AimStyle => MoveAimStyle.Dash;
-    public override float Range => 3;
-    public SylvMysticalFire() { Name = "Mystical Fire"; Cooldown = 7; }
-    protected override void OnCommitted()
+    public override float Range => SylvMoveRules.FireDashRange;
+    public override bool LockDuringLoad => true;
+
+    public SylvMysticalFire()
     {
-        playerManager.PlayerMovement.StartDash(direction, Range, 0.25f);
-        playerManager.AnimationManager.PlayAnimation("ani_spell1a_bat_0700");
+        Name = "Mystical Fire";
+        Cooldown = SylvMoveRules.FireCooldown;
+    }
+
+    public override void Start(PlayerManager controller)
+    {
+        controller?.MovesController?.EnsureSylveonCombatRuntime();
+        base.Start(controller);
     }
 }

@@ -1,49 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MarshadowUnite : MarshadowMoveBase
+public class MarshadowUnite : CombatMove
 {
-    private MoveAsset borrowed;
     public MarshadowUnite() { Name = "Mirror Shadow"; Cooldown = 0; }
-    public override void Start(PlayerManager controller)
-    {
-        if (executing) return;
-        // Mirror Shadow has no directional cast and does not touch shared aim.
-        playerManager = controller; IsActive = true; wasMoveSuccessful = false;
-        direction = controller.transform.forward;
-    }
-    public override void Finish()
-    {
-        if (!IsActive || executing) return;
-        var candidates = new List<MoveAsset>();
-        if (GameManager.Instance != null)
-            foreach (PlayerManager enemy in GameManager.Instance.Players)
-            {
-                if (enemy == null || enemy == playerManager || enemy.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam)) continue;
-                MoveAsset source = enemy.Pokemon.BaseStats.GetUniteMove();
-                if (source != null && MarshadowCopyRules.Supports(source.move)) candidates.Add(source);
-            }
-        if (candidates.Count == 0) { Cancel(); return; }
-        borrowed = candidates[Random.Range(0, candidates.Count)];
-        Begin();
-        MarshadowMoveRuntime.PlayAction(playerManager, "pm0883_ba21_tokusyu02");
-        effect = MarshadowMoveRuntime.Effect(playerManager, MarshadowEffect.MirrorShadow, 2f);
-        // Pay once at commitment; replacing the slot after the channel is not
-        // another activation and must not spend or refill Mirror's resource.
-        playerManager.MovesController.SpendMarshadowUnite();
-    }
-    protected override void Advance()
-    {
-        if (elapsed < 2f) return;
-        MoveAsset source = borrowed;
-        borrowed = null; committed = false;
-        base.Complete();
-        playerManager.MovesController.InstallMarshadowCopy(source);
-    }
-    public override void ResetMove()
-    {
-        borrowed = null; committed = false; base.ResetMove();
-    }
+    public override AvailableMoves MoveId => AvailableMoves.MarshadowUnite;
+    public override string PrefabPath => null;
+    public override MoveAimStyle AimStyle => MoveAimStyle.None;
+    public override float Range => 0f;
+    public override bool IsOffensive => false;
+    public override bool LockDuringLoad => false;
 }
 
 // Explicit adapters, not foreign MoveBase instances with missing passives,

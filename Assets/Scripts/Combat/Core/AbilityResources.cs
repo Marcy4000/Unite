@@ -24,9 +24,24 @@ namespace Unite.Combat
         {
             Recover(now);
             double remaining = definition.StoredUses
-                ? Math.Max(intervalUntil - now, charges == 0 ? rechargeAt - now : 0)
+                ? Math.Max(readyAt - now, Math.Max(intervalUntil - now, charges == 0 ? rechargeAt - now : 0))
                 : readyAt - now;
             return new AbilityAvailability(definition.StoredUses ? charges : 1, remaining, reservations > 0, deferredCasts > 0);
+        }
+
+        internal void InheritCooldown(AbilityResources previous)
+        {
+            readyAt = previous.readyAt;
+            if (!previous.definition.StoredUses) return;
+            if (!definition.StoredUses)
+            {
+                readyAt = Math.Max(readyAt, Math.Max(previous.intervalUntil, previous.charges == 0 ? previous.rechargeAt : 0));
+                return;
+            }
+            charges = Math.Max(0, definition.Capacity - (previous.definition.Capacity - previous.charges));
+            rechargeAt = previous.rechargeAt;
+            rechargeDuration = previous.rechargeDuration;
+            intervalUntil = previous.intervalUntil;
         }
 
         internal bool TryReserve(double now, bool freeUse, out ResourceReservation reservation)
@@ -65,12 +80,12 @@ namespace Unite.Combat
         public void ReduceCooldown(double amount, double now)
         {
             if (amount <= 0 || double.IsNaN(amount) || double.IsInfinity(amount)) return;
+            readyAt = Math.Max(now, readyAt - amount);
             if (definition.StoredUses)
             {
                 if (charges < definition.Capacity) rechargeAt -= amount;
                 Recover(now);
             }
-            else readyAt = Math.Max(now, readyAt - amount);
         }
 
         public void ReduceCooldownByFraction(double fraction, double now)

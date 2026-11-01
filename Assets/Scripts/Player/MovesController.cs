@@ -124,10 +124,7 @@ public partial class MovesController : NetworkBehaviour
     private void Update()
     {
         TickUniteReadiness();
-        UpdateCresseliaServer();
-        UpdateVaporeonRuntime();
         UpdateEmboarRuntime();
-        UpdateFlareonRuntime();
         UpdateMeowsticRuntime();
         UpdateNinetalesRuntime();
         Combat?.Tick();
@@ -195,12 +192,8 @@ public partial class MovesController : NetworkBehaviour
             moves[1].Update();
             uniteMove.Update();
 
-            ProcessMarshadowBufferedInput();
-            ProcessCresseliaBufferedInput();
-            ProcessVaporeonBufferedInput();
             ProcessFlygonBufferedInput();
             ProcessEmboarBufferedInput();
-            ProcessFlareonBufferedInput();
             ProcessMeowsticBufferedInput();
 
             battleItem.Update();
@@ -208,11 +201,8 @@ public partial class MovesController : NetworkBehaviour
             if (human && controls.Movement.CancelMove.WasPressedThisFrame())
             {
                 Combat?.ClearInput();
-                ClearMarshadowBufferedInput();
-                ClearVaporeonBufferedInput();
                 ClearFlygonBufferedInput();
                 ClearEmboarBufferedInput();
-                ClearFlareonBufferedInput();
                 ClearMeowsticBufferedInput();
                 ClearServerAttackBufferedInput();
                 moves[0].Cancel();
@@ -393,14 +383,10 @@ public partial class MovesController : NetworkBehaviour
             return;
         }
         if (moves[index].IsStoredMove) SynchronizeStoredMove(index);
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastMeowstic(index))
         {
-            BufferMarshadowInput(index, false);
-            BufferCresseliaInput(index, false);
-            BufferVaporeonInput(index, false);
             BufferFlygonInput(index, false);
             BufferEmboarInput(index, false);
-            BufferFlareonInput(index, false);
             BufferMeowsticInput(index, false);
             return;
         }
@@ -414,7 +400,7 @@ public partial class MovesController : NetworkBehaviour
     {
         if (uniteMove is CombatMove combatMove) { Combat?.HandleInput(combatMove, 2, uniteMoveStatus, false); return; }
         if (BufferMoveDuringServerAttack(2, false)) return;
-        if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastCresseliaUnite && !CanRecastFlygon(2))
+        if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastFlygon(2))
             return;
 
         uniteMove.Start(playerManager);
@@ -432,7 +418,7 @@ public partial class MovesController : NetworkBehaviour
     {
         if (uniteMove is CombatMove combatMove) { Combat?.HandleInput(combatMove, 2, uniteMoveStatus, true); return; }
         if (BufferMoveDuringServerAttack(2, true)) return;
-        if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastCresseliaUnite && !CanRecastFlygon(2))
+        if (!uniteMoveStatus.HasStatus(ActionStatusType.None) && !CanRecastFlygon(2))
             return;
 
         uniteMove.Finish();
@@ -450,14 +436,10 @@ public partial class MovesController : NetworkBehaviour
             Combat?.HandleInput(combatMove, index, moveStatuses[index], true);
             return;
         }
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastMeowstic(index))
         {
-            BufferMarshadowInput(index, true);
-            BufferCresseliaInput(index, true);
-            BufferVaporeonInput(index, true);
             BufferFlygonInput(index, true);
             BufferEmboarInput(index, true);
-            BufferFlareonInput(index, true);
             BufferMeowsticInput(index, true);
             return;
         }
@@ -520,6 +502,7 @@ public partial class MovesController : NetworkBehaviour
     private float GetMoveCooldown(MoveBase move)
     {
         float duration = move is PrefabMove prefab ? prefab.EffectiveCooldown(move.IsUpgraded) : move.Cooldown;
+        if (duration <= 0) return 0;
         return duration * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
     }
 
@@ -638,7 +621,7 @@ public partial class MovesController : NetworkBehaviour
         bool showLock = uniteMoveStatus.HasStatus(ActionStatusType.Disabled) || uniteMoveStatus.HasStatus(ActionStatusType.Stunned) || uniteMoveStatus.HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetUniteMoveDisabledLock(showLock);
 
-        BattleUIManager.instance.UpdateUniteMoveCooldown(uniteMoveCharge, uniteMoveMaxCharge, CanRecastCresseliaUnite || CanRecastFlygon(2));
+        BattleUIManager.instance.UpdateUniteMoveCooldown(uniteMoveCharge, uniteMoveMaxCharge, combatUniteSlot.Value.FollowUpReady || CanRecastFlygon(2));
     }
 
     public void LearnBasicAttack(BasicAttackBase basicAttack)
@@ -658,10 +641,6 @@ public partial class MovesController : NetworkBehaviour
         {
             ClearMeowsticBufferedInput(); previousMove.ResetMove();
         }
-        if (!move.isUpgraded && previousMove is FlareonMoveBase)
-        {
-            ClearFlareonBufferedInput(); previousMove.ResetMove();
-        }
         if (!move.isUpgraded && previousMove is FlygonMoveBase)
         {
             ClearFlygonBufferedInput();
@@ -670,20 +649,6 @@ public partial class MovesController : NetworkBehaviour
         if (!move.isUpgraded && previousMove is EmboarMoveBase)
         {
             ClearEmboarBufferedInput();
-            previousMove.ResetMove();
-        }
-        if (!move.isUpgraded && (previousMove is CresseliaMoveBase || previousMove is CresseliaUnite))
-        {
-            ClearCresseliaBufferedInput();
-            previousMove.ResetMove();
-        }
-        // A level-up replacement must not orphan an active Marshadow phase.
-        // Copied Unites restore their own slot after cleanup; resetting those
-        // here would recursively restore the same slot again.
-        if (!move.isUpgraded && (previousMove is MarshadowShadowSneak
-            || (previousMove is MarshadowMoveBase && !(previousMove is MarshadowCopiedUnite))))
-        {
-            ClearMarshadowBufferedInput();
             previousMove.ResetMove();
         }
         switch (move.moveType)
@@ -732,16 +697,12 @@ public partial class MovesController : NetworkBehaviour
 
         MoveBase learnedMove = GetMove(move.moveType);
         learnedMove?.UpdateStoredUses(Time.time, pokemon.GetCDR());
-        if (playerManager.IsLocalHuman) BattleUIManager.instance.InitializeMoveUI(move, learnedMove);
         int slot = move.moveType == MoveType.MoveA ? 0 : move.moveType == MoveType.MoveB ? 1 : -1;
+        if (slot >= 0 && !move.isUpgraded) learnedMove.PreserveSlotCooldown(moveStatuses[slot].Cooldown, Time.time);
+        if (playerManager.IsLocalHuman) BattleUIManager.instance.InitializeMoveUI(move, learnedMove);
         if (slot >= 0)
         {
             if (learnedMove.IsStoredMove) SynchronizeStoredMove(slot);
-            else if (previousMove != null && previousMove.IsStoredMove)
-            {
-                moveStatuses[slot].Cooldown = 0;
-                moveStatuses[slot].RemoveStatus(ActionStatusType.Cooldown);
-            }
             UpdateMoveUI(slot);
         }
 
@@ -757,7 +718,6 @@ public partial class MovesController : NetworkBehaviour
     {
         Combat?.Equip(moveType);
         RecordPrefabMove(moveType);
-        RecordVaporeonMove(moveType);
         RecordMeowsticMove(moveType);
         OnMoveLearned?.Invoke(CharactersList.Instance.GetMoveAsset(moveType));
     }
@@ -787,12 +747,8 @@ public partial class MovesController : NetworkBehaviour
         Combat?.ClearInput();
         ResetServerAttackInput();
         basicAttack?.ResetAttack();
-        ClearMarshadowBufferedInput();
-        ClearCresseliaBufferedInput();
-        ClearVaporeonBufferedInput();
         ClearFlygonBufferedInput();
         ClearEmboarBufferedInput();
-        ClearFlareonBufferedInput();
         ClearMeowsticBufferedInput();
         moves[0].ResetMove();
         moves[1].ResetMove();
@@ -855,6 +811,7 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info)
     {
+        if (CombatKitFactory.Supports(pokemon)) return;
         // Instantiate homing projectile
         GameObject homingProjectile = Instantiate(homingProjectilePrefab, projectileSpawnPoint.position, Quaternion.identity);
         homingProjectile.GetComponent<NetworkObject>().Spawn();
@@ -875,6 +832,7 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void LaunchHomingProjectileRpc(ulong targetId, DamageInfo info, string addressableKey)
     {
+        if (CombatKitFactory.Supports(pokemon)) return;
         Pokemon source = pokemon;
         if (source == null || source.CurrentHp <= 0) return;
         bool cancelled = false;
@@ -895,7 +853,13 @@ public partial class MovesController : NetworkBehaviour
                 HomingProjectile homingScript = homingProjectile.GetComponent<HomingProjectile>();
                 if (homingScript == null) { Destroy(homingProjectile); Addressables.Release(handle); return; }
                 homingScript.HoldAsset(handle);
-                homingProjectile.GetComponent<NetworkObject>().Spawn();
+                NetworkObject networkObject = homingProjectile.GetComponent<NetworkObject>();
+                networkObject.Spawn();
+                if (!networkObject.IsSpawned)
+                {
+                    Destroy(homingProjectile);
+                    return;
+                }
                 homingScript.SetTargetRPC(targetId, info);
             }
             else
@@ -909,6 +873,7 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void LaunchMoveForwardProjRpc(Vector2 dir, DamageInfo info, float maxDistance, string addressableKey)
     {
+        if (CombatKitFactory.Supports(pokemon)) return;
         Addressables.LoadAssetAsync<GameObject>(addressableKey).Completed += handle =>
         {
             if (handle.Status == AsyncOperationStatus.Succeeded)
@@ -933,6 +898,7 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void DespawnNetworkObjectRPC(ulong objectID)
     {
+        if (CombatKitFactory.Supports(pokemon)) return;
         NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(objectID, out NetworkObject networkObject);
         if (networkObject != null)
         {
@@ -943,6 +909,7 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void SpawnNetworkObjectFromStringRPC(string addressableKey)
     {
+        if (CombatKitFactory.Supports(pokemon)) return;
         Addressables.LoadAssetAsync<GameObject>(addressableKey).Completed += (handle) =>
         {
             if (handle.Status == AsyncOperationStatus.Succeeded)
@@ -963,6 +930,7 @@ public partial class MovesController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void SpawnNetworkObjectFromStringRPC(string addressableKey, ulong cliendID)
     {
+        if (CombatKitFactory.Supports(pokemon)) return;
         Addressables.LoadAssetAsync<GameObject>(addressableKey).Completed += (handle) =>
         {
             if (handle.Status == AsyncOperationStatus.Succeeded)
@@ -1020,11 +988,9 @@ public partial class MovesController : NetworkBehaviour
         DisposeNinetalesRuntime();
         DisposeCombat();
         DisposeMeowsticRuntime();
-        DisposeFlareonRuntime();
         DisposeEmboarRuntime();
         DisposeFlygonRuntime();
         DisposeCresseliaRuntime();
-        DisposeVaporeonRuntime();
         MoveLearnPanel.onSelectedMove -= OnMoveSelectedFromPanel;
         base.OnDestroy();
     }

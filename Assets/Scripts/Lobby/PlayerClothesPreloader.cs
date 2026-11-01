@@ -78,7 +78,6 @@ public class PlayerClothesPreloader : MonoBehaviour
         var playerClothes = PlayerClothesInfo.Deserialize(clothing.Value);
 
         playerModel.InitializeClothes(playerClothes);
-        DontDestroyOnLoad(playerModel.gameObject);
     }
 
     private void TryUpdatingPlayerModel(Player player)

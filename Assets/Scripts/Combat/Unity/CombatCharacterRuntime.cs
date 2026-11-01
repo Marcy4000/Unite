@@ -17,6 +17,8 @@ public class CombatCharacterRuntime : IDisposable
 
     public CombatCharacterRuntime(PlayerManager actor) { Actor = actor; }
     public virtual bool CanStartBasicAttack => true;
+    public virtual float MoveInputBufferDuration => 0f;
+    public virtual bool CanBufferMoveInput => false;
     public virtual void Tick() { }
     public virtual void LateTick() { }
     public virtual bool HandleMovement(Vector2 input) => false;
@@ -46,6 +48,12 @@ public sealed class CombatExecutionContext
     public long CastId;
     public CombatScope Scope;
     public Action<CastOutcome> Finish;
+    internal UniteCastRefund UniteRefund;
+
+    public void MarkCastSucceeded()
+    {
+        if (Actor != null && Actor.IsServer && !Scope.IsDisposed) UniteRefund?.MarkSucceeded();
+    }
 }
 
 public abstract class CombatExecution
@@ -55,6 +63,8 @@ public abstract class CombatExecution
     protected MovesController Controller => Actor.MovesController;
     public bool Prepared { get; protected set; } = true;
     public virtual bool FollowUpReady => false;
+    public virtual Pokemon FollowUpTarget => null;
+    public virtual PrefabMoveEffect Effect => null;
     public CombatExecution(CombatExecutionContext context) { Context = context; }
     public virtual IEnumerator Prepare() { yield break; }
     public abstract void Start();

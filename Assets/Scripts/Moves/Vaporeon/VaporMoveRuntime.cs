@@ -59,106 +59,61 @@ public sealed class VaporActionLock : IDisposable
     }
 }
 
-public abstract class VaporMoveBase : MoveBase
+public abstract class VaporMoveBase : CombatMove
 {
     public abstract VaporCast Kind { get; }
-    private readonly VaporActionLock actionLock = new VaporActionLock();
-    private readonly WallCrossingTraversal traversal = new WallCrossingTraversal();
-    private Vector3 destination, hopStart;
-    private ulong targetId;
-    private bool hasTarget, executing, committed;
-    private float elapsed;
-    private int aimVisual;
-    public bool IsExecuting => executing;
-    public float RecoveryRemaining => executing ? Mathf.Max(0, VaporMoveRules.Windup(Kind) + VaporMoveRules.Recovery(Kind) - elapsed) : 0;
+    public override AvailableMoves MoveId => VaporMoveRules.Move(Kind);
+    public override MoveAimStyle AimStyle => VaporMoveRules.IsSupport(Kind) ? MoveAimStyle.None
+        : Kind == VaporCast.Tempest ? MoveAimStyle.Circle : MoveAimStyle.Ground;
+    public override float Range => VaporMoveRules.Range(Kind);
+    public override float AreaRadius => Kind == VaporCast.Whirlpool ? VaporMoveRules.WhirlpoolRadius
+        : Kind == VaporCast.RainDance ? VaporMoveRules.RainRadius : 1f;
+    public override bool IsOffensive => !VaporMoveRules.IsSupport(Kind);
+    public override bool LockDuringLoad => !VaporMoveRules.IsSupport(Kind);
+    public override CombatTargetRelation TargetRelation => VaporMoveRules.IsSupport(Kind) ? CombatTargetRelation.Ally : CombatTargetRelation.None;
+    public override bool TargetOptional => Kind == VaporCast.AquaRing;
+    public override bool UsesExplicitUniteCastCheckpoint => Kind == VaporCast.Tempest;
+
     protected VaporMoveBase() { Cooldown = VaporMoveRules.Cooldown(Kind); }
+
     public override void Start(PlayerManager controller)
     {
-        if (executing) return;
         base.Start(controller);
-        if (VaporMoveRules.IsSupport(Kind)) ActorAim.InitializeAutoAim(8, 60, AimTarget.Ally);
-        else if (Kind == VaporCast.Tempest) ActorAim.InitializeSimpleCircle(VaporMoveRules.TempestRadius);
-        else ActorAim.InitializeCircleAreaIndicator(VaporMoveRules.Range(Kind));
-        ReadAim();
-        aimVisual = controller.MovesController.ShowVaporeonAim(Kind, destination, targetId);
-    }
-    private void ReadAim()
-    {
-        destination = playerManager.transform.position;
         if (VaporMoveRules.IsSupport(Kind))
         {
-            // Aiming into empty ground naturally selects self for Aqua Ring.
-            var target = ActorAim.SureHitAim();
-            hasTarget = target != null && target != playerManager.gameObject && target.TryGetComponent(out PlayerManager ally)
-                && VaporMoveRuntime.CanHeal(playerManager, ally.Pokemon);
-            targetId = hasTarget ? target.GetComponent<Unity.Netcode.NetworkObject>().NetworkObjectId
-                : Kind == VaporCast.AquaRing ? playerManager.NetworkObjectId : ulong.MaxValue;
+            ActorAim?.InitializeAutoAim(Range, 60, AimTarget.Ally);
+            ReadSupportAim();
         }
-        else if (Kind != VaporCast.Tempest)
-            destination = VaporMoveRules.ClampDestination(playerManager.transform.position, ActorAim.CircleAreaAim(), VaporMoveRules.Range(Kind));
     }
-    public override void Finish()
+
+    private void ReadSupportAim()
     {
-        if (!IsActive || executing) return;
-        ReadAim(); HideAim(); IsActive = false;
-        // Helping Hand deliberately retains its original no-target/no-cost behavior.
-        if (Kind == VaporCast.HelpingHand && !hasTarget) { wasMoveSuccessful = false; base.Finish(); return; }
-        if (Kind == VaporCast.RainDance) destination = playerManager.PlayerMovement.VaporeonHopDestination(destination);
-        hopStart = playerManager.transform.position;
-        executing = true; committed = false; elapsed = 0;
-        actionLock.Acquire(playerManager, !VaporMoveRules.IsSupport(Kind));
-        if (Kind == VaporCast.RainDance) traversal.Begin(playerManager.PlayerMovement);
-        playerManager.transform.rotation = Quaternion.LookRotation(VaporMoveRules.Direction(destination - hopStart, playerManager.transform.forward));
-        VaporMoveRuntime.Animate(playerManager, Kind == VaporCast.Tempest ? "Armature_pm0134_00_ba02_roar01_gfbanm"
-            : Kind == VaporCast.RainDance ? "Armature_pm0134_00_kw35_playA01_gfbanm" : "Armature_pm0134_00_ba21_tokusyu01_gfbanm");
-        // Movement is a benefit too: spend Rain's cooldown before moving, not
-        // after landing (otherwise cancelling the hop grants free mobility).
-        if (VaporMoveRules.CommitOnStart(Kind)) Commit();
+        GameObject aimed = ActorAim != null ? ActorAim.SureHitAim() : null;
+        target = aimed != null && aimed.TryGetComponent(out PlayerManager ally) && ally.Pokemon != playerManager.Pokemon
+            && VaporMoveRuntime.CanHeal(playerManager, ally.Pokemon) ? ally.Pokemon : null;
     }
+
     public override void Update()
     {
-        if (IsActive && !executing)
+        base.Update();
+        if (IsActive && VaporMoveRules.IsSupport(Kind)) ReadSupportAim();
+    }
+
+    public override void Finish()
+    {
+        if (!IsActive || playerManager == null) return;
+        if (VaporMoveRules.IsSupport(Kind))
         {
-            ReadAim(); playerManager.MovesController.UpdateVaporeonAim(aimVisual, destination, targetId); return;
+            ReadSupportAim();
+            ActorAim?.HideAutoAim();
+            if (Kind == VaporCast.HelpingHand && target == null) { base.Cancel(); return; }
         }
-        if (!executing) return;
-        if (!VaporMoveRuntime.Living(playerManager.Pokemon) || playerManager.Pokemon.HasAnyStatusEffect(VaporMoveRules.Interrupts)) { ResetMove(); return; }
-        elapsed += Time.deltaTime;
-        if (Kind == VaporCast.RainDance && elapsed - Time.deltaTime < VaporMoveRules.Windup(Kind))
-        {
-            Vector3 next = Vector3.Lerp(hopStart, destination, Mathf.Clamp01(elapsed / VaporMoveRules.Windup(Kind)));
-            traversal.Move(next - playerManager.transform.position);
-            if (elapsed >= VaporMoveRules.Windup(Kind)) traversal.End();
-        }
-        if (!committed && elapsed >= VaporMoveRules.Windup(Kind)) Commit();
-        if (elapsed >= VaporMoveRules.Windup(Kind) + VaporMoveRules.Recovery(Kind)) Complete();
+        base.Finish();
     }
-    private void Commit()
-    {
-        committed = true;
-        playerManager.MovesController.CastVaporeonRPC(Kind, destination, targetId, hasTarget);
-        wasMoveSuccessful = true; base.Finish();
-    }
-    private void Complete()
-    {
-        traversal.End();
-        executing = false; committed = false; elapsed = 0; actionLock.Dispose();
-        VaporMoveRuntime.ReturnToLocomotion(playerManager);
-    }
-    private void HideAim()
-    {
-        if (playerManager != null) playerManager.MovesController.StopVaporeonLocalEffect(aimVisual);
-        aimVisual = 0;
-        if (ActorAim == null) return;
-        if (VaporMoveRules.IsSupport(Kind)) ActorAim.HideAutoAim();
-        else if (Kind == VaporCast.Tempest) ActorAim.HideSimpleCircle();
-        else ActorAim.HideCircleAreaIndicator();
-    }
+
     public override void Cancel()
     {
-        if (IsActive) HideAim();
+        if (IsActive && VaporMoveRules.IsSupport(Kind)) ActorAim?.HideAutoAim();
         base.Cancel();
-        if (executing && !committed) Complete();
     }
-    public override void ResetMove() { HideAim(); base.Cancel(); Complete(); }
 }

@@ -49,7 +49,9 @@ namespace Unite.Combat
             revisions[slot]++;
             if (previous != null) Removing?.Invoke(previous);
             if (definition == null) return null;
-            return slots[slot] = new AbilityInstance(definition, slot, revisions[slot], upgraded);
+            var replacement = new AbilityInstance(definition, slot, revisions[slot], upgraded);
+            if (previous != null) replacement.Resources.InheritCooldown(previous.Resources);
+            return slots[slot] = replacement;
         }
     }
 }

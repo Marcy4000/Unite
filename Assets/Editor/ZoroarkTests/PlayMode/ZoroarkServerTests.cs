@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
+using Unite.Combat;
 using UnityEngine;
 using UnityEngine.TestTools;
 #if UNITY_EDITOR
@@ -104,6 +105,20 @@ public class ZoroarkServerTests
         var root = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Objects/Moves/Zoroark/" + name + ".prefab")); objects.Add(root);
         Call(root.GetComponent(T("Unity.Netcode.NetworkObject")), "Spawn", true);
         var effect = root.GetComponent(T("ZoroarkMoveEffect"));
+        var scope = new CombatScope();
+        object context = Activator.CreateInstance(T("CombatExecutionContext"));
+        context.GetType().GetField("Actor").SetValue(context, player);
+        context.GetType().GetField("Direction").SetValue(context, Vector3.forward);
+        context.GetType().GetField("MoveId").SetValue(context, E("AvailableMoves", name));
+        context.GetType().GetField("Slot").SetValue(context, name == "ZoroarkNightfallDaze" ? 2 : name == "ZoroarkNightSlash" || name == "ZoroarkFeintAttack" ? 1 : 0);
+        context.GetType().GetField("Scope").SetValue(context, scope);
+        object execution = Activator.CreateInstance(T("ZoroarkExecution"), context, Get(Get(moves, "Combat"), "Character"));
+        context.GetType().GetField("Finish").SetValue(context, (Action<CastOutcome>)(outcome =>
+        {
+            Call(execution, "Stop", outcome);
+            scope.Dispose();
+        }));
+        Invoke(execution, "AttachEffect", effect);
         effect.GetType().GetMethod("Initialize").Invoke(effect, new object[] { player, Vector3.forward, null, false });
         return effect;
 #else
@@ -173,12 +188,12 @@ public class ZoroarkServerTests
     }
 
     [UnityTest]
-    public IEnumerator UniteEnergyAccumulatesBeforeUnlockAndSurvivesLearningForBothKits()
+    public IEnumerator UniteEnergyAccumulatesBeforeUnlockAndSurvivesLearningForMigratedKits()
     {
-        foreach (string name in new[] { "Glaceon", "Zoroark", "Cinderace" })
+        foreach (string name in new[] { "Glaceon", "Zoroark", "Cinderace", "Sylveon", "Cresselia", "Vaporeon", "Jolteon", "Flareon" })
         {
             object combat = PrepareMigratedActor(0, name);
-            string uniteName = name == "Glaceon" ? "GlaceonUnite" : (name == "Zoroark" ? "ZoroarkNightfallDaze" : "BlazingBycicleKick");
+            string uniteName = name == "Zoroark" ? "ZoroarkNightfallDaze" : name == "Cinderace" ? "BlazingBycicleKick" : name + "Unite";
             object moveId = E("AvailableMoves", uniteName);
             Assert.That(Call(combat, "Equip", moveId), Is.False);
             Assert.That(Call(Get(combat, "Loadout"), "Get", 2), Is.Null);
@@ -187,7 +202,7 @@ public class ZoroarkServerTests
             Set(combat, "nextEnergyTick", (double)Get(combat, "Now") - 1);
             Call(combat, "Tick");
             Assert.That(Get(combat, "UniteEnergy"), Is.EqualTo(1900), name);
-            Variable(actor, "currentLevel", name == "Glaceon" ? 7 : 8);
+            Variable(actor, "currentLevel", 8);
             Assert.That(Call(combat, "Equip", moveId), Is.True);
             Assert.That(Get(combat, "UniteEnergy"), Is.EqualTo(1900), name);
             yield return null;
@@ -440,7 +455,7 @@ public class ZoroarkServerTests
         var effect = Effect("ZoroarkNightSlash"); Call(effect, "Movement", Vector2.up);
         yield return new WaitForSeconds(0.5f);
         Assert.That(Hp(first), Is.LessThan(5000)); Assert.That(Hp(second), Is.LessThan(5000));
-        Assert.That(effect.GetType().GetField("steps", Private).GetValue(effect), Is.EqualTo(1));
+        Assert.That(Get(effect, "Execution").GetType().GetField("steps", Private).GetValue(Get(effect, "Execution")), Is.EqualTo(1));
         Assert.That(Get(effect, "UniqueReady"), Is.True);
         Call(effect, "Movement", Vector2.up); yield return null;
         Assert.That(Get(effect, "IsSpawned"), Is.True, "Holding a direction must preserve the earned special basic.");
@@ -503,9 +518,9 @@ public class ZoroarkServerTests
     {
         Pokemon(Vector3.forward * 2); Pokemon(new Vector3(0.4f, 0, 2)); Physics.SyncTransforms();
         var effect = Effect("ZoroarkFeintAttack"); yield return new WaitForSeconds(0.5f);
-        Assert.That(effect.GetType().GetField("steps", Private).GetValue(effect), Is.EqualTo(1));
+        Assert.That(Get(effect, "Execution").GetType().GetField("steps", Private).GetValue(Get(effect, "Execution")), Is.EqualTo(1));
         Vector3 mark = new Vector3(2, 0, 6); Call(effect, "MoveMark", mark);
-        Assert.That(effect.GetType().GetField("mark", Private).GetValue(effect), Is.EqualTo(mark));
+        Assert.That(Get(effect, "Execution").GetType().GetField("mark", Private).GetValue(Get(effect, "Execution")), Is.EqualTo(mark));
         Call(effect, "ValidHit", false); Call(effect, "ValidHit", false); Call(effect, "ValidHit", false);
         Assert.That(Get(moves, "ZoroarkFeintReady"), Is.True);
         Assert.That(Call(effect, "TryRecast", Vector3.forward, ulong.MaxValue), Is.False);
@@ -595,7 +610,7 @@ public class ZoroarkServerTests
         var background = (GameObject)ui.GetType().GetField("cdBg", Private).GetValue(ui);
         var line = (GameObject)ui.GetType().GetField("cdLine", Private).GetValue(ui);
         var text = (Component)ui.GetType().GetField("cdText", Private).GetValue(ui);
-        var coroutine = ui.GetType().GetField("cooldownCoroutine", Private);
+        var endsAt = ui.GetType().GetField("cooldownEndsAt", Private);
         var holderRoot = Node("Inactive cooldown HUD routing");
         holderRoot.SetActive(false);
         var holder = holderRoot.AddComponent(T("MovesHolderUI"));
@@ -629,13 +644,13 @@ public class ZoroarkServerTests
                     moves.GetType().GetProperty("IsOwner").SetValue(moves, true);
                     Call(combat, "ApplySnapshot", 0, snapshot);
                     Assert.That(background.activeSelf, Is.True, name);
-                    Assert.That(coroutine.GetValue(ui), Is.Not.Null, name);
+                    Assert.That((float)endsAt.GetValue(ui), Is.GreaterThan(Time.time), name);
                     snapshot.GetType().GetField("CooldownUntil").SetValue(snapshot, 0d);
                     Call(combat, "ApplySnapshot", 0, snapshot);
                     Assert.That(background.activeSelf, Is.False, name);
                     Assert.That(line.activeSelf, Is.False, name);
                     Assert.That(text.gameObject.activeSelf, Is.False, name);
-                    Assert.That(coroutine.GetValue(ui), Is.Null, name);
+                    Assert.That((float)endsAt.GetValue(ui), Is.LessThanOrEqualTo(Time.time), name);
                 }
                 finally
                 {
@@ -681,9 +696,9 @@ public class ZoroarkServerTests
         for (int i = 0; i < 3; i++) { Call(attack, "PerformOnServer", target); yield return new WaitForSeconds(0.4f); }
         Assert.That(Hp(target), Is.EqualTo(4670));
         var effect = Effect("ZoroarkNightSlash");
-        Set(effect, "uniqueReady", true);
+        Set(Get(effect, "Execution"), "uniqueReady", true);
         Call(attack, "PerformOnServer", target); yield return new WaitForSeconds(0.4f);
-        Assert.That(effect.GetType().GetField("steps", Private).GetValue(effect), Is.EqualTo(1));
+        Assert.That(Get(effect, "Execution").GetType().GetField("steps", Private).GetValue(Get(effect, "Execution")), Is.EqualTo(1));
         Assert.That(Get(effect, "UniqueReady"), Is.False);
     }
 
@@ -696,6 +711,73 @@ public class ZoroarkServerTests
         Assert.That(Hp(near), Is.EqualTo(3236)); Assert.That(Hp(far), Is.EqualTo(4412));
         Assert.That(Get(actor, "ShieldHp"), Is.EqualTo(1000)); Assert.That(Get(effect, "IsSpawned"), Is.False);
         Assert.That(Get(moves, "ServerActionLocks"), Is.EqualTo(0));
+    }
+
+    [UnityTest]
+    public IEnumerator UniteDeathRefundsNinetyPercentOnlyBeforeTheFirstPulseIncludingOwnerSnapshot()
+    {
+        foreach (bool reachCheckpoint in new[] { false, true })
+        {
+            object combat = PrepareMigratedActor(14, "Zoroark");
+            Set(combat, "nextEnergyTick", (double)Get(combat, "Now") + 60);
+            object moveId = E("AvailableMoves", "ZoroarkNightfallDaze");
+            if (Host)
+            {
+                Call(actor.GetComponent(T("Unity.Netcode.NetworkObject")), "ChangeOwnership", 0UL);
+                var statuses = Array.CreateInstance(T("BattleActionStatus"), 2);
+                for (int slot = 0; slot < 2; slot++) statuses.SetValue(Activator.CreateInstance(T("BattleActionStatus"), 0f), slot);
+                Set(moves, "moveStatuses", statuses);
+                object bridge = T("MoveDatabase").GetMethod("GetMove").Invoke(null, new[] { moveId });
+                Set(moves, "uniteMove", bridge);
+                Set(moves, "uniteMoveMaxCharge", 80000);
+            }
+            Assert.That(Call(combat, "Equip", moveId), Is.True);
+            Call(combat, "GrantUniteEnergy", 80000);
+            int revision = (int)Get(Call(Get(combat, "Loadout"), "Get", 2), "Revision");
+            Call(combat, "Receive", 1L, 2, revision, moveId, Vector3.forward, ulong.MaxValue, 0L);
+            object session = Call(Get(combat, "Coordinator"), "FindRequest", 1L);
+            float deadline = Time.time + 8;
+            while (!(bool)Get(session, "Accepted") && Get(session, "Phase").ToString() != "Ended" && Time.time < deadline)
+                yield return null;
+            Assert.That(Get(session, "Accepted"), Is.True);
+            Assert.That(Get(combat, "UniteEnergy"), Is.Zero);
+            Component effect = ((IEnumerable)Get(combat, "PrefabEffects")).Cast<Component>().Single();
+            if (reachCheckpoint)
+                while (!(bool)Get(effect, "HasSucceeded") && Time.time < deadline) yield return null;
+            Assert.That(Get(effect, "HasSucceeded"), Is.EqualTo(reachCheckpoint));
+
+            Variable(actor, "currentHp", 0);
+            Call(combat, "Tick");
+            int expectedEnergy = reachCheckpoint ? 0 : 72000;
+            Assert.That(Get(session, "Phase").ToString(), Is.EqualTo("Ended"));
+            Assert.That(Get(session, "Outcome").ToString(), Is.EqualTo("Interrupted"));
+            Assert.That(Get(combat, "UniteEnergy"), Is.EqualTo(expectedEnergy));
+            Assert.That(Get(moves.GetType().GetField("combatUniteEnergy", Private).GetValue(moves), "Value"), Is.EqualTo(expectedEnergy));
+            if (Host)
+            {
+                Assert.That(Get(moves, "UniteMoveCharge"), Is.EqualTo(expectedEnergy));
+                object status = moves.GetType().GetField("uniteMoveStatus", Private).GetValue(moves);
+                Assert.That(Call(status, "HasStatus", E("ActionStatusType", "Cooldown")), Is.True);
+            }
+            Call(combat, "Tick");
+            Call(combat, "Receive", 1L, 2, revision, moveId, Vector3.forward, ulong.MaxValue, 0L);
+            Assert.That(Get(combat, "UniteEnergy"), Is.EqualTo(expectedEnergy), "Duplicate requests and cleanup must not refund twice.");
+            Assert.That(Get(moves, "ServerActionLocks"), Is.Zero);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator RejectedUniteBeforeSpendingRetainsAllEnergy()
+    {
+        object combat = PrepareMigratedActor(14, "Zoroark");
+        object moveId = E("AvailableMoves", "ZoroarkNightfallDaze");
+        Assert.That(Call(combat, "Equip", moveId), Is.True);
+        Call(combat, "GrantUniteEnergy", 80000);
+        int revision = (int)Get(Call(Get(combat, "Loadout"), "Get", 2), "Revision");
+        Call(combat, "Receive", 1L, 2, revision + 1, moveId, Vector3.forward, ulong.MaxValue, 0L);
+        Assert.That(Get(combat, "UniteEnergy"), Is.EqualTo(80000));
+        Assert.That(Call(Get(combat, "Coordinator"), "FindRequest", 1L), Is.Null);
+        yield return null;
     }
 
     [UnityTest]
@@ -739,12 +821,12 @@ public class ZoroarkServerTests
         for (int i = 0; i < 5; i++) Call(effect, "ValidHit", false);
         Call(effect, "Movement", Vector2.up);
         float deadline = Time.time + 2;
-        while ((int)effect.GetType().GetField("steps", Private).GetValue(effect) < 6 && Time.time < deadline)
+        while ((int)Get(effect, "Execution").GetType().GetField("steps", Private).GetValue(Get(effect, "Execution")) < 6 && Time.time < deadline)
         {
             Call(effect, "Movement", Vector2.up);
             yield return null;
         }
-        Assert.That(effect.GetType().GetField("steps", Private).GetValue(effect), Is.EqualTo(6));
+        Assert.That(Get(effect, "Execution").GetType().GetField("steps", Private).GetValue(Get(effect, "Execution")), Is.EqualTo(6));
         Call(effect, "Movement", Vector2.up);
         yield return null;
         Assert.That(Get(effect, "IsSpawned"), Is.True);
@@ -776,7 +858,7 @@ public class ZoroarkServerTests
                 }
                 Assert.That(Get(effect, "IsSpawned"), Is.True, "The held dash direction must not cancel its follow-up.");
                 Assert.That(Get(effect, "UniqueReady"), Is.True);
-                Assert.That(effect.GetType().GetField("steps", Private).GetValue(effect), Is.EqualTo(step * 2 + 1));
+                Assert.That(Get(effect, "Execution").GetType().GetField("steps", Private).GetValue(Get(effect, "Execution")), Is.EqualTo(step * 2 + 1));
                 Call(effect, "Movement", directions[step]);
                 Call(attack, "PerformOnServer", targets[step]);
                 deadline = Time.time + 1;
@@ -785,7 +867,7 @@ public class ZoroarkServerTests
                     Call(effect, "Movement", directions[step]);
                     yield return null;
                 }
-                Assert.That(effect.GetType().GetField("steps", Private).GetValue(effect), Is.EqualTo(step * 2 + 2));
+                Assert.That(Get(effect, "Execution").GetType().GetField("steps", Private).GetValue(Get(effect, "Execution")), Is.EqualTo(step * 2 + 2));
                 // Change direction during recovery, without releasing to neutral.
                 deadline = Time.time + 1;
                 while ((int)Get(moves, "ServerActionLocks") > 0 && Time.time < deadline)

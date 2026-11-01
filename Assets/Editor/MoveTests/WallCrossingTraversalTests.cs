@@ -64,21 +64,30 @@ public class WallCrossingTraversalTests
     [TestCase("EmboarSmog")]
     [TestCase("EmboarHeatCrash")]
     [TestCase("EmboarUnite")]
-    [TestCase("VaporRainDance")]
+    [TestCase("VaporRainDance", "VaporeonExecution")]
     [TestCase("FlygonEarthquake")]
-    [TestCase("JoltThunderFang")]
+    [TestCase("JoltThunderFang", "JolteonExecution")]
     [TestCase("MarshadowAuraSphere")]
-    [TestCase("FlareonTackle")]
-    [TestCase("FlareonTakedown")]
-    [TestCase("FlareonUnite")]
-    public void RequestedMovesOwnTraversalThatCrossesPhysicalAndWalkmeshWalls(string moveType)
+    [TestCase("FlareonTackle", "FlareonExecution")]
+    [TestCase("FlareonTakedown", "FlareonExecution")]
+    [TestCase("FlareonUnite", "FlareonExecution")]
+    public void RequestedMovesOwnTraversalThatCrossesPhysicalAndWalkmeshWalls(string moveType, string executionType = null)
     {
         object move = Activator.CreateInstance(GameType(moveType));
         traversal = null;
-        for (Type type = move.GetType(); type != null; type = type.BaseType)
+        Type ownerType = executionType == null ? move.GetType() : GameType(executionType);
+        if (executionType != null)
+        {
+            Assert.That(GameType("CombatMove").IsInstanceOfType(move), Is.True);
+            Assert.That(ownerType.BaseType, Is.EqualTo(GameType("CombatExecution")));
+        }
+        for (Type type = ownerType; type != null; type = type.BaseType)
         {
             FieldInfo field = type.GetField("traversal", Private | BindingFlags.DeclaredOnly);
-            if (field != null) { traversal = field.GetValue(move); break; }
+            if (field == null) continue;
+            Assert.That(field.FieldType, Is.EqualTo(GameType("WallCrossingTraversal")));
+            traversal = executionType == null ? field.GetValue(move) : Activator.CreateInstance(field.FieldType);
+            break;
         }
         Assert.That(traversal, Is.Not.Null);
         Begin();
@@ -97,10 +106,9 @@ public class WallCrossingTraversalTests
     [TestCase("FlareBlitz", false)]
     public void FlareonOnlyChangesRequestedMovesAndTakedownSecondHit(string kind, bool crosses)
     {
-        object move = Activator.CreateInstance(GameType("FlareonTakedown"));
-        Type type = GameType("FlareonMoveBase");
-        type.GetField("executingKind", Private).SetValue(move, Enum.Parse(GameType("FlareonCast"), kind));
-        Assert.That(type.GetProperty("CrossesWalls", Private).GetValue(move), Is.EqualTo(crosses));
+        MethodInfo policy = GameType("FlareonExecution").GetMethod("CrossesWalls", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.That(policy, Is.Not.Null);
+        Assert.That(policy.Invoke(null, new[] { Enum.Parse(GameType("FlareonCast"), kind) }), Is.EqualTo(crosses));
     }
 
     [Test]

@@ -236,7 +236,7 @@ public partial class BotBrain : MonoBehaviour
         foreach (var entry in map.camps)
         {
             var wild = entry.spawner != null ? entry.spawner.WildPokemon : null;
-            if (wild == null || wild.Pokemon.CurrentHp <= 0 || !player.Aim.CanPokemonBeTargeted(wild.gameObject, AimTarget.NonAlly, player.CurrentTeam, false)) continue;
+            if (wild == null || wild.Pokemon == null || wild.Pokemon.CurrentHp <= 0 || !player.Aim.CanPokemonBeTargeted(wild.gameObject, AimTarget.NonAlly, player.CurrentTeam, false)) continue;
             float distance = FlatDistance(transform.position, wild.transform.position);
             if (distance < best) { best = distance; result = wild.Pokemon; }
         }

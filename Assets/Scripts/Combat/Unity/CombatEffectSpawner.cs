@@ -34,7 +34,7 @@ public sealed class CombatEffectSpawner
 
     public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, CombatScope scope, bool despawnWithScope = true)
     {
-        if (prefab == null || scope.IsDisposed) return null;
+        if (prefab == null || scope.IsDisposed || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return null;
         GameObject instance = UnityEngine.Object.Instantiate(prefab, position, rotation);
         if (!instance.TryGetComponent(out NetworkObject networkObject))
         {
@@ -42,6 +42,11 @@ public sealed class CombatEffectSpawner
             throw new InvalidOperationException($"Combat prefab {prefab.name} has no NetworkObject.");
         }
         networkObject.Spawn(true);
+        if (!networkObject.IsSpawned)
+        {
+            UnityEngine.Object.Destroy(instance);
+            return null;
+        }
         if (despawnWithScope) scope.Own(new CombatCallbackLease(() =>
         {
             if (networkObject != null && networkObject.IsSpawned) networkObject.Despawn(true);

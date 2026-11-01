@@ -4,8 +4,8 @@ using UnityEngine;
 public partial class MovesController
 {
     private ZoroarkCharacterRuntime ZoroarkRuntime => Combat?.Character as ZoroarkCharacterRuntime;
-    public ZoroarkMoveEffect ZoroarkNight { get => ZoroarkRuntime?.ZoroarkNight; internal set { if (ZoroarkRuntime != null) ZoroarkRuntime.ZoroarkNight = value; } }
-    public ZoroarkMoveEffect ZoroarkFeint { get => ZoroarkRuntime?.ZoroarkFeint; internal set { if (ZoroarkRuntime != null) ZoroarkRuntime.ZoroarkFeint = value; } }
+    public ZoroarkExecution ZoroarkNight { get => ZoroarkRuntime?.ZoroarkNight; internal set { if (ZoroarkRuntime != null) ZoroarkRuntime.ZoroarkNight = value; } }
+    public ZoroarkExecution ZoroarkFeint { get => ZoroarkRuntime?.ZoroarkFeint; internal set { if (ZoroarkRuntime != null) ZoroarkRuntime.ZoroarkFeint = value; } }
     public bool ZoroarkFeintReady => ZoroarkRuntime?.ZoroarkFeintReady ?? false;
     public bool ZoroarkUniqueReady => ZoroarkRuntime?.ZoroarkUniqueReady ?? false;
     public bool ZoroarkAerialOpen => ZoroarkRuntime?.ZoroarkAerialOpen ?? false;

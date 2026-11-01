@@ -105,5 +105,6 @@ public sealed class FlareonComboState
         AttackCharge = boosted ? 0 : AttackCharge + 1; AttackExpires = now + 5; return boosted;
     }
     public void AddStack(double now) { Tick(now); Stacks = Mathf.Min(3, Stacks + 1); StacksExpire = now + 5; }
+    public void ResetBasic() { AttackCharge = 0; AttackExpires = 0; }
     public void Clear() { AttackCharge = Stacks = 0; AttackExpires = StacksExpire = 0; }
 }

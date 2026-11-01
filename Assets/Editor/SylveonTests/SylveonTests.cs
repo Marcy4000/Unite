@@ -122,6 +122,8 @@ public class SylveonTests
     [TestCase(1000, 1000)]
     public void CalmMindShieldMatchesReference(int spAttack, int amount) { Assert.That(Rule("CalmShieldAmount", spAttack), Is.EqualTo(amount)); }
 
+    [TestCase("SylvSwift")]
+    [TestCase("SylvHyperVoice")]
     [TestCase("SylvMysticalFire")]
     [TestCase("SylvDrainingKiss")]
     [TestCase("SylvBabyDollEyes")]
@@ -238,5 +240,155 @@ public class SylveonTests
         Assert.That(GameType("SylvHyperVoice").GetField("wavesAmountUpgraded", BindingFlags.NonPublic | BindingFlags.Static).GetRawConstantValue(), Is.EqualTo(7));
         Assert.That(Field<float>(GameType("SylvHyperVoice").GetField("closeDamage", Private).GetValue(move), "ratio"), Is.EqualTo(0.32f));
         Assert.That(Field<float>(GameType("SylvHyperVoice").GetField("farDamage", Private).GetValue(move), "ratio"), Is.EqualTo(0.54f));
+    }
+
+    [TestCase("SylvSwift", "SylvSwift", "Direction", 7f, 5f, true, true)]
+    [TestCase("SylvBabyDollEyes", "SylvBabyDollEyes", "Target", 5f, 6f, true, true)]
+    [TestCase("SylvHyperVoice", "SylvHyperVoice", "Direction", 7f, 5f, true, true)]
+    [TestCase("SylvMysticalCringe", "SylvMysticalCringe", "Dash", 7f, 3f, true, true)]
+    [TestCase("SylvDrainingKiss", "SylvDrainingKiss", "Target", 9f, 6f, true, true)]
+    [TestCase("SylvCalmMind", "SylvCalmMind", "None", 8f, 0f, false, false)]
+    [TestCase("SylveonUnite", "SylveonUnite", "Circle", 0f, 5f, true, true)]
+    public void SylveonMovesUseThinCombatMoveInputBridgesWithExactContracts(
+        string moveName,
+        string expectedId,
+        string expectedAimStyle,
+        float expectedCooldown,
+        float expectedRange,
+        bool expectedOffensive,
+        bool expectedLockDuringLoad)
+    {
+        object id = EnumValue("AvailableMoves", moveName);
+        object move = GameType("MoveDatabase").GetMethod("GetMove").Invoke(null, new[] { id });
+        Type type = move.GetType();
+        Assert.That(GameType("CombatMove").IsInstanceOfType(move), Is.True);
+        Assert.That(type.GetProperty("MoveId").GetValue(move).ToString(), Is.EqualTo(expectedId));
+        Assert.That(type.GetProperty("PrefabPath").GetValue(move), Is.Null);
+        Assert.That(type.GetProperty("CooldownOnFinish").GetValue(move), Is.False);
+        Assert.That(type.GetProperty("AimStyle").GetValue(move).ToString(), Is.EqualTo(expectedAimStyle));
+        Assert.That((float)type.GetField("Cooldown").GetValue(move), Is.EqualTo(expectedCooldown).Within(0.001f));
+        Assert.That((float)type.GetProperty("Range").GetValue(move), Is.EqualTo(expectedRange).Within(0.001f));
+        Assert.That(type.GetProperty("IsOffensive").GetValue(move), Is.EqualTo(expectedOffensive));
+        Assert.That(type.GetProperty("LockDuringLoad").GetValue(move), Is.EqualTo(expectedLockDuringLoad));
+    }
+
+    [TestCase("SylvSwift", false)]
+    [TestCase("SylvHyperVoice", false)]
+    [TestCase("SylveonUnite", false)]
+    [TestCase("SylvBabyDollEyes", true)]
+    [TestCase("SylvMysticalCringe", true)]
+    [TestCase("SylvDrainingKiss", true)]
+    public void SylveonPendingMovementPolicyIsIndependentOfActionLocks(string moveName, bool expectedMovementLock)
+    {
+        object id = EnumValue("AvailableMoves", moveName);
+        object move = GameType("MoveDatabase").GetMethod("GetMove").Invoke(null, new[] { id });
+        Assert.That(move.GetType().GetProperty("LockDuringLoad").GetValue(move), Is.True);
+        Assert.That(move.GetType().GetProperty("LockMovementDuringLoad").GetValue(move), Is.EqualTo(expectedMovementLock));
+    }
+
+    [Test]
+    public void SylveonPassiveAdapterKeepsNoParallelGameplayState()
+    {
+        Type passiveType = GameType("SylvPassive");
+        Assert.That(passiveType.GetFields(Private | BindingFlags.DeclaredOnly), Is.Empty);
+        object passive = Activator.CreateInstance(passiveType);
+        Assert.That(passiveType.GetProperty("Stacks").GetValue(passive), Is.Zero);
+        passiveType.GetMethod("Update").Invoke(passive, null);
+        passiveType.GetMethod("Dispose").Invoke(passive, null);
+        passiveType.GetMethod("Dispose").Invoke(passive, null);
+    }
+
+    [Test]
+    public void SylveonBasicAttackIsServerResolvedAndSupportsSnapshotSync()
+    {
+        object attack = Activator.CreateInstance(GameType("SylvBasicAtk"));
+        Type type = attack.GetType();
+        Assert.That(type.GetProperty("ServerResolved").GetValue(attack), Is.True);
+        Assert.That(type.BaseType.GetProperty("ReadyCharge", Private).GetValue(attack), Is.EqualTo(2));
+        type.GetMethod("ApplySnapshot").Invoke(attack, new object[] { (byte)2 });
+        Assert.That(type.GetProperty("AttackCharge", Private).GetValue(attack), Is.EqualTo(2));
+        type.GetMethod("ResetAttack").Invoke(attack, null);
+        Assert.That(type.GetProperty("AttackCharge", Private).GetValue(attack), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void SylveonCharacterRuntimePresentationStateRoundTripsAndRejectsStaleSnapshots()
+    {
+        var root = new GameObject("Sylveon contract fixture");
+        try
+        {
+            var pokemon = root.AddComponent(GameType("Pokemon"));
+            var controller = root.AddComponent(GameType("MovesController"));
+            var manager = root.AddComponent(GameType("PlayerManager"));
+            ((Behaviour)pokemon).enabled = false;
+            ((Behaviour)controller).enabled = false;
+            ((Behaviour)manager).enabled = false;
+            var sylveon = AssetDatabase.LoadMainAssetAtPath("Assets/Pokemons/PlayableMons/Sylveon.asset");
+            pokemon.GetType().GetField("baseStats", Private).SetValue(pokemon, sylveon);
+            controller.GetType().GetField("pokemon", Private).SetValue(controller, pokemon);
+            controller.GetType().GetField("playerManager", Private).SetValue(controller, manager);
+            manager.GetType().GetField("pokemon", Private).SetValue(manager, pokemon);
+            manager.GetType().GetField("movesController", Private).SetValue(manager, controller);
+
+            object runtime = Activator.CreateInstance(GameType("SylveonCharacterRuntime"), new object[] { manager });
+            Type runtimeType = runtime.GetType();
+            MethodInfo receive = runtimeType.GetMethod("ReceiveSnapshot");
+            MethodInfo capture = runtimeType.GetMethod("CapturePresentationState");
+            MethodInfo apply = runtimeType.GetMethod("ApplyPresentationState");
+
+            receive.Invoke(runtime, new object[] { (byte)2, (byte)3, 12.5d, true, true, 15.0d, new Vector3(0f, 0f, 1f), 5L });
+            Assert.That(runtimeType.GetProperty("Charge").GetValue(runtime), Is.EqualTo((byte)2));
+            Assert.That(runtimeType.GetProperty("PassiveStacks").GetValue(runtime), Is.EqualTo((byte)3));
+            Assert.That(runtimeType.GetProperty("MovementLocked").GetValue(runtime), Is.True);
+            Assert.That(runtimeType.GetProperty("HyperVoiceActive").GetValue(runtime), Is.True);
+
+            receive.Invoke(runtime, new object[] { (byte)0, (byte)0, 0d, false, false, 0d, Vector3.right, 4L });
+            Assert.That(runtimeType.GetProperty("Charge").GetValue(runtime), Is.EqualTo((byte)2));
+            Assert.That(runtimeType.GetProperty("PassiveStacks").GetValue(runtime), Is.EqualTo((byte)3));
+
+            string json = (string)capture.Invoke(runtime, null);
+            object replica = Activator.CreateInstance(runtimeType, new object[] { manager });
+            apply.Invoke(replica, new object[] { json });
+            Assert.That(runtimeType.GetProperty("Charge").GetValue(replica), Is.EqualTo((byte)2));
+            Assert.That(runtimeType.GetProperty("PassiveStacks").GetValue(replica), Is.EqualTo((byte)3));
+            Assert.That(runtimeType.GetProperty("MovementLocked").GetValue(replica), Is.True);
+            Assert.That(runtimeType.GetProperty("HyperVoiceActive").GetValue(replica), Is.True);
+            runtimeType.GetMethod("Dispose").Invoke(runtime, null);
+            runtimeType.GetMethod("Dispose").Invoke(replica, null);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    [TestCase("SylvSwift.cs")]
+    [TestCase("SylvBabyDollEyes.cs")]
+    [TestCase("SylvHyperVoice.cs")]
+    [TestCase("SylvMysticalFire.cs")]
+    [TestCase("SylvDrainingKiss.cs")]
+    [TestCase("SylvCalmMind.cs")]
+    [TestCase("SylvUnite.cs")]
+    [TestCase("SylvBasicAtk.cs")]
+    public void SylveonInputBridgesContainNoLegacyClientExecutionCalls(string fileName)
+    {
+        string source = File.ReadAllText("Assets/Scripts/Moves/Sylveon/" + fileName);
+        foreach (string forbidden in new[]
+        {
+            "SpawnMoveEffectRPC",
+            "SpawnNetworkObjectFromStringRPC",
+            "LaunchProjectileFromPath",
+            "StopMovementForTime",
+            "LockEveryAction",
+            "UnlockEveryAction",
+            "TakeDamageRPC(",
+            "HealDamageRPC(",
+            "AddShieldRPC(",
+            "AddStatChange(",
+            "AddStatusEffect("
+        })
+        {
+            Assert.That(source, Does.Not.Contain(forbidden), $"{fileName} should not contain {forbidden}");
+        }
     }
 }

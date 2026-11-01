@@ -9,6 +9,13 @@ formulas; it does not replace the effect-data reference above.
 
 ## Tuning
 
+Midnight Slash declares an explicit Unite success checkpoint at the end of
+`UniteWindup`, immediately before the damaging flurry. Death/interruption before
+that checkpoint restores charge to 90% (72,000 / 80,000) through the shared
+`UniteCastRefund` policy and legacy prefab owner transport. Once the flurry starts,
+there is no refund, even if it hits no targets. Refund delivery is correlated to
+the accepted cast sequence and cannot apply twice.
+
 **Edit `AbsolMoveRules.cs`.** No tuning ScriptableObject or Inspector configuration
 is required. The top of the file groups melee reach/angle, dash distance/bow/
 radius/duration, recast timing, projectile dimensions/speed, counter ranges,

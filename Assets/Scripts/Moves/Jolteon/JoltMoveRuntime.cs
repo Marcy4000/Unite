@@ -28,19 +28,6 @@ public static class JoltMoveRuntime
         pokemon.AddStatChange(change);
     }
 
-    public static int Effect(PlayerManager actor, JoltEffect effect, bool empowered = false, bool upgraded = false, bool second = false)
-    {
-        int cast = JoltMoveRules.NextCast();
-        actor.MovesController.SpawnJolteonEffectRPC(effect, cast, actor.transform.position, actor.transform.forward, empowered, upgraded, second);
-        return cast;
-    }
-
-    public static void EndEffect(PlayerManager actor, ref int cast)
-    {
-        if (cast == 0) return;
-        if (actor != null && actor.IsSpawned) actor.MovesController.EndJolteonEffectRPC(cast);
-        cast = 0;
-    }
 }
 
 // Own exactly one movement restriction and one action lock. Cleanup is idempotent.

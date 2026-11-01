@@ -66,91 +66,96 @@ public static class CresseliaMoveRuntime
     }
 }
 
-public abstract class CresseliaMoveBase : MoveBase
+public abstract class CresseliaMoveBase : CombatMove
 {
     protected abstract CresseliaCast Kind { get; }
-    private readonly CresseliaActionLock actionLock = new CresseliaActionLock();
-    private Vector3 direction, destination;
-    private ulong targetId;
-    private bool hasTarget, committed, executing;
-    private float elapsed;
-    public bool IsExecuting => executing;
-    public float RecoveryRemaining => executing ? Mathf.Max(0, CresseliaMoveRules.Windup(Kind) + CresseliaMoveRules.Recovery(Kind) - elapsed) : 0;
-    protected CresseliaMoveBase() { Cooldown = CresseliaMoveRules.Cooldown(Kind); }
+    public CresseliaCast CastKind => Kind;
+    public override AvailableMoves MoveId => CresseliaMoveRules.Move(Kind);
+    public override string PrefabPath => null;
+    public override MoveAimStyle AimStyle => CresseliaMoveRules.IsSupport(Kind)
+        ? MoveAimStyle.None
+        : Kind == CresseliaCast.Moonlight
+            ? MoveAimStyle.Ground
+            : MoveAimStyle.Direction;
+    public override float Range => CresseliaMoveRules.Range(Kind);
+    public override float AreaRadius => Kind == CresseliaCast.Moonlight ? CresseliaMoveRules.MoonlightRadius(IsUpgraded) : 1f;
+    public override bool IsOffensive => !CresseliaMoveRules.IsSupport(Kind) && Kind != CresseliaCast.Moonlight;
+    public override bool LockDuringLoad => !CresseliaMoveRules.IsSupport(Kind);
+    public override CombatTargetRelation TargetRelation => CresseliaMoveRules.IsSupport(Kind) ? CombatTargetRelation.Ally : base.TargetRelation;
+    public override bool TargetOptional => CresseliaMoveRules.IsSupport(Kind);
+
+    protected CresseliaMoveBase()
+    {
+        Cooldown = CresseliaMoveRules.Cooldown(Kind);
+    }
 
     public override void Start(PlayerManager controller)
     {
-        if (executing) return;
+        _ = controller?.MovesController?.CresseliaRuntime;
         base.Start(controller);
-        if (CresseliaMoveRules.IsSupport(Kind)) ActorAim.InitializeAutoAim(CresseliaMoveRules.Range(Kind), 60, AimTarget.Ally);
-        else if (Kind == CresseliaCast.Moonlight) ActorAim.InitializeCircleAreaIndicator(CresseliaMoveRules.Range(Kind));
-        else ActorAim.InitializeSkillshotAim(CresseliaMoveRules.Range(Kind));
-        ReadAim();
+        if (CresseliaMoveRules.IsSupport(Kind))
+        {
+            ActorAim?.InitializeAutoAim(Range, 60, AimTarget.Ally);
+            ReadAim();
+        }
     }
+
     public void ReadAim()
     {
         if (CresseliaMoveRules.IsSupport(Kind))
         {
-            var target = ActorAim.SureHitAim();
-            hasTarget = target != null && target != playerManager.gameObject && target.TryGetComponent(out PlayerManager ally)
-                && CresseliaMoveRuntime.Living(ally.Pokemon) && ally.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam);
-            targetId = hasTarget ? target.GetComponent<Unity.Netcode.NetworkObject>().NetworkObjectId : 0;
-            direction = hasTarget ? target.transform.position - playerManager.transform.position : playerManager.transform.forward;
+            GameObject aimed = ActorAim != null ? ActorAim.SureHitAim() : null;
+            if (aimed != null && playerManager != null && aimed != playerManager.gameObject
+                && aimed.TryGetComponent(out PlayerManager ally)
+                && CresseliaMoveRuntime.Living(ally.Pokemon)
+                && ally.CurrentTeam.IsOnSameTeam(playerManager.CurrentTeam))
+            {
+                target = ally.Pokemon;
+                direction = CresseliaMoveRules.Direction(aimed.transform.position - playerManager.transform.position, playerManager.transform.forward);
+            }
+            else
+            {
+                target = null;
+                direction = playerManager != null
+                    ? CresseliaMoveRules.Direction(playerManager.transform.forward, Vector3.forward)
+                    : Vector3.forward;
+            }
         }
-        else if (Kind == CresseliaCast.Moonlight)
+        else
         {
-            destination = ActorAim.CircleAreaAim();
-            direction = destination - playerManager.transform.position;
+            UpdateAim();
         }
-        else direction = ActorAim.SkillshotAim();
-        direction = CresseliaMoveRules.Direction(direction, playerManager.transform.forward);
     }
+
     public override void Update()
     {
-        if (IsActive && !executing) ReadAim();
-        if (!executing) return;
-        if (playerManager.Pokemon.CurrentHp <= 0 || playerManager.Pokemon.HasAnyStatusEffect(CresseliaMoveRules.Interrupts)) { ResetMove(); return; }
-        elapsed += Time.deltaTime;
-        if (!committed && elapsed >= CresseliaMoveRules.Windup(Kind)) Commit();
-        if (elapsed >= CresseliaMoveRules.Windup(Kind) + CresseliaMoveRules.Recovery(Kind)) Complete();
+        base.Update();
+        if (IsActive && CresseliaMoveRules.IsSupport(Kind))
+            ReadAim();
     }
+
     public override void Finish()
     {
-        if (!IsActive || executing) return;
-        ReadAim(); HideAim(); IsActive = false;
-        executing = true; committed = false; elapsed = 0;
-        playerManager.transform.rotation = Quaternion.LookRotation(direction);
-        // Protective spells do not root their caster. Offensive windups remain readable.
-        actionLock.Acquire(playerManager, !CresseliaMoveRules.IsSupport(Kind));
-        playerManager.AnimationManager.SetFloat("CresseliaActionSpeed", CresseliaMoveRules.IsSupport(Kind) ? 3.5f : 2.5f);
-        playerManager.AnimationManager.PlayAnimation(CresseliaMoveRules.IsSupport(Kind) ? "pm0488_ba21_tokusyu02" : "pm0488_ba21_tokusyu01");
-        if (CresseliaMoveRules.Windup(Kind) == 0) Commit();
-    }
-    private void Commit()
-    {
-        committed = true;
-        playerManager.MovesController.CastCresseliaRPC(Kind, direction, destination, targetId, hasTarget);
-        wasMoveSuccessful = true;
+        if (!IsActive || playerManager == null) return;
+        if (CresseliaMoveRules.IsSupport(Kind))
+        {
+            ReadAim();
+            ActorAim?.HideAutoAim();
+        }
         base.Finish();
     }
-    private void Complete()
-    {
-        executing = false; committed = false; elapsed = 0;
-        actionLock.Release();
-        CresseliaMoveRuntime.ReturnToLocomotion(playerManager);
-    }
-    private void HideAim()
-    {
-        if (ActorAim == null) return;
-        if (CresseliaMoveRules.IsSupport(Kind)) ActorAim.HideAutoAim();
-        else if (Kind == CresseliaCast.Moonlight) ActorAim.HideCircleAreaIndicator();
-        else ActorAim.HideSkillshotAim();
-    }
+
     public override void Cancel()
     {
-        if (IsActive) HideAim();
+        if (IsActive && CresseliaMoveRules.IsSupport(Kind))
+            ActorAim?.HideAutoAim();
         base.Cancel();
-        if (executing && !committed) Complete();
     }
-    public override void ResetMove() { Cancel(); Complete(); }
+
+    public override void ResetMove()
+    {
+        if (IsActive && CresseliaMoveRules.IsSupport(Kind))
+            ActorAim?.HideAutoAim();
+        base.ResetMove();
+    }
 }

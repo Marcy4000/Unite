@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -9,6 +10,16 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 // their server-side damage. Driven dashes retain the game's owner-movement flow.
 public class JoltEffectObject : NetworkBehaviour
 {
+    [Serializable]
+    private sealed class EffectState
+    {
+        public ulong Actor, Target;
+        public Vector3 Origin, Direction;
+        public bool Empowered, Upgraded, Second;
+        public double Started;
+    }
+
+    private readonly NetworkVariable<FixedString512Bytes> presentation = new NetworkVariable<FixedString512Bytes>();
     [SerializeField] private JoltEffect effect;
     [SerializeField] private GameObject graphics;
     [SerializeField] private Transform accent;
@@ -41,12 +52,13 @@ public class JoltEffectObject : NetworkBehaviour
         graphics.SetActive(false);
         // Also bounds the lifetime of a spawned object whose initialization fails.
         remaining = 3f;
+        presentation.OnValueChanged += OnPresentationChanged;
+        if (!IsServer) ApplyPresentation();
     }
 
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Server)]
-    public void InitializeRPC(ulong actorId, Vector3 origin, Vector3 castDirection, bool boosted, bool isUpgraded, bool second, ulong targetId)
+    public void InitializeServer(ulong actorId, Vector3 origin, Vector3 castDirection, bool boosted, bool isUpgraded, bool second, ulong targetId)
     {
-        if (initialized) return;
+        if (!IsServer || initialized) return;
         if (!Bind(actorId, origin, castDirection, boosted, isUpgraded, second, targetId) || actor.Pokemon.CurrentHp <= 0)
         {
             Despawn();
@@ -65,7 +77,10 @@ public class JoltEffectObject : NetworkBehaviour
             actor.Pokemon.OnDamageDealt += OnDamageDealt;
             tickRemaining = JoltMoveRules.WebTick;
         }
-        BeginPresentationRPC(actorId, origin, castDirection, boosted, isUpgraded, second, targetId);
+        var state = new EffectState { Actor = actorId, Target = targetId, Origin = origin, Direction = castDirection,
+            Empowered = boosted, Upgraded = isUpgraded, Second = second, Started = NetworkManager.ServerTime.Time };
+        presentation.Value = new FixedString512Bytes(JsonUtility.ToJson(state));
+        StartPresentation();
     }
 
     private bool Bind(ulong actorId, Vector3 origin, Vector3 castDirection, bool boosted, bool isUpgraded, bool second, ulong targetId)
@@ -94,12 +109,23 @@ public class JoltEffectObject : NetworkBehaviour
         return true;
     }
 
-    [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
-    private void BeginPresentationRPC(ulong actorId, Vector3 origin, Vector3 castDirection, bool boosted, bool isUpgraded, bool second, ulong targetId)
+    private void OnPresentationChanged(FixedString512Bytes previous, FixedString512Bytes current) => ApplyPresentation();
+
+    private void ApplyPresentation()
     {
-        if (!IsServer && !Bind(actorId, origin, castDirection, boosted, isUpgraded, second, targetId)) return;
-        // Persistent auras and target marks must not reveal hidden actors.
-        // A detached travelling projectile remains visible like other projectiles.
+        if (IsServer || initialized || presentation.Value.Length == 0) return;
+        EffectState state;
+        try { state = JsonUtility.FromJson<EffectState>(presentation.Value.ToString()); }
+        catch (ArgumentException) { return; }
+        if (state == null) return;
+        Vector3 origin = effect == JoltEffect.Electroweb ? transform.position : state.Origin;
+        if (!Bind(state.Actor, origin, state.Direction, state.Empowered, state.Upgraded, state.Second, state.Target)) return;
+        age = Mathf.Max(0f, (float)(NetworkManager.ServerTime.Time - state.Started));
+        StartPresentation();
+    }
+
+    private void StartPresentation()
+    {
         if (effect != JoltEffect.Electroweb)
         {
             visibility = effect == JoltEffect.WebMark ? target.GetComponent<Vision>() : actor.Vision;
@@ -115,6 +141,7 @@ public class JoltEffectObject : NetworkBehaviour
         if (!initialized)
         {
             if (IsServer && (remaining -= Time.deltaTime) <= 0) Despawn();
+            else if (!IsServer) ApplyPresentation();
             return;
         }
         if (actor == null || !actor.IsSpawned || actor.Pokemon.CurrentHp <= 0)
@@ -199,6 +226,7 @@ public class JoltEffectObject : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        presentation.OnValueChanged -= OnPresentationChanged;
         graphics.SetActive(false);
         if (visibility != null) visibility.OnVisibilityChanged -= SetVisible;
         visibility = null;

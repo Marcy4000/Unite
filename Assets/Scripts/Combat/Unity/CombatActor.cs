@@ -11,6 +11,7 @@ public sealed class CombatActor : IDisposable
         public CastSession Session;
         public CombatExecutionContext Context;
         public CombatExecution Execution;
+        public bool RequiresTarget;
         public double PreparationDeadline;
         public double NextContinuousInput;
     }
@@ -73,7 +74,7 @@ public sealed class CombatActor : IDisposable
         get
         {
             foreach (ExecutionRecord record in executions.Values)
-                if (record.Execution is PrefabCombatExecution prefab && prefab.Effect != null) yield return prefab.Effect;
+                if (record.Execution.Effect != null) yield return record.Execution.Effect;
         }
     }
 
@@ -137,10 +138,18 @@ public sealed class CombatActor : IDisposable
     public void HandleInput(CombatMove move, int slot, BattleActionStatus status, bool released)
     {
         if (released && move.StartsOnPress && move.IsActive) { move.Finish(); return; }
-        if (!CanBeginInput(slot, status)) { inputBuffer.Clear(slot); return; }
+        AbilityInstance ability = Loadout.Get(slot);
+        if (released && ability != null && inputBuffer.TryUpdate(slot, ability.Revision, Now,
+            input => new BufferedInput(input.Move, true))) return;
+        if (!CanBeginInput(slot, status))
+        {
+            if (!released && ability != null && CanBufferRecoveryInput(slot, status))
+                inputBuffer.Put(slot, ability.Revision, new BufferedInput(move, false), Now, Character.MoveInputBufferDuration);
+            else inputBuffer.Clear(slot);
+            return;
+        }
         if (controller.IsServerBasicAttackAnimating && controller.BasicAttack.MoveInputBufferDuration > 0)
         {
-            AbilityInstance ability = Loadout.Get(slot);
             if (ability != null) inputBuffer.Put(slot, ability.Revision, new BufferedInput(move, released), Now, controller.BasicAttack.MoveInputBufferDuration);
             return;
         }
@@ -148,7 +157,25 @@ public sealed class CombatActor : IDisposable
         else move.Start(actor);
     }
 
+    private bool CanBufferRecoveryInput(int slot, BattleActionStatus status)
+    {
+        if (disposed || status == null || !controller.IsOwner || !ActorCanAct()
+            || Character.MoveInputBufferDuration <= 0 || !Character.CanBufferMoveInput) return false;
+        ActionStatusType blockers = status.GetStatus() & ~ActionStatusType.Cooldown;
+        return blockers == ActionStatusType.Busy
+            && (!status.HasStatus(ActionStatusType.Cooldown) || replicas[slot].FollowUpReady || Character.OverridesCooldown(slot));
+    }
+
     public void ClearInput() => inputBuffer.Clear();
+
+    public bool IsFollowUpReady(int slot) => slot >= 0 && slot < replicas.Length && replicas[slot].FollowUpReady;
+
+    public Pokemon GetFollowUpTarget(int slot)
+    {
+        if (!IsFollowUpReady(slot) || replicas[slot].FollowUpTargetId == ulong.MaxValue || controller.NetworkManager == null) return null;
+        return controller.NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(replicas[slot].FollowUpTargetId, out var target)
+            ? target.GetComponent<Pokemon>() : null;
+    }
 
     public void SetInputActive(CombatMove move, bool active)
     {
@@ -203,7 +230,7 @@ public sealed class CombatActor : IDisposable
         long requestId = ++nextRequestId;
         var pendingInput = new PendingInput { Move = move, Slot = slot, Revision = revision, RequestId = requestId, QueryAt = Now + 3 };
         pendingInput.Scope.Own(controller.AcquireMoveStatus(slot, ActionStatusType.Busy));
-        if (move.LockDuringLoad) pendingInput.Scope.Own(new CombatActionLock(actor, true, false));
+        if (move.LockDuringLoad) pendingInput.Scope.Own(new CombatActionLock(actor, move.LockMovementDuringLoad, false));
         pending.Add(requestId, pendingInput);
         long followUp = replicas[slot].FollowUpReady ? replicas[slot].CastId : 0;
         controller.SubmitCombatActionRPC(requestId, slot, revision, move.MoveId, direction,
@@ -272,7 +299,9 @@ public sealed class CombatActor : IDisposable
         direction = definition.AimStyle == MoveAimStyle.Ground ? Vector3.ClampMagnitude(direction, definition.Range)
             : direction.sqrMagnitude > 0.001f ? direction.normalized : actor.transform.forward;
         Pokemon target = null;
-        if (definition.AimStyle == MoveAimStyle.Target)
+        bool requiresTarget = definition.TargetRelation != CombatTargetRelation.None
+            && (!definition.TargetOptional || command.TargetId != ulong.MaxValue);
+        if (requiresTarget)
         {
             if (!controller.NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(command.TargetId, out var targetObject)
                 || !targetObject.TryGetComponent(out target) || !ValidTarget(definition, target)) { Reject(request.RequestId); return; }
@@ -289,7 +318,8 @@ public sealed class CombatActor : IDisposable
         context.Scope = session.Scope.Own(new CombatScope());
         context.Finish = outcome => Coordinator.End(session, outcome);
         CombatExecution execution = Character.CreateExecution(context) ?? new PrefabCombatExecution(context, this);
-        var record = new ExecutionRecord { Session = session, Context = context, Execution = execution, PreparationDeadline = Now + 8 };
+        var record = new ExecutionRecord { Session = session, Context = context, Execution = execution,
+            RequiresTarget = requiresTarget, PreparationDeadline = Now + 8 };
         executions.Add(session.CastId, record);
         session.Scope.Own(new CombatCallbackLease(() => execution.Stop(session.Outcome)));
         controller.StartCoroutine(Prepare(record));
@@ -303,16 +333,22 @@ public sealed class CombatActor : IDisposable
         CastSession session = record.Session;
         if (session.Phase != CastPhase.Preparing) yield break;
         if (!record.Execution.Prepared || !ActorCanAct() || controller.ServerActionLocks > 0 || !Character.RevalidateCast(record.Context)
-            || (record.Context.Definition.AimStyle == MoveAimStyle.Target && !ValidTarget(record.Context.Definition, record.Context.Target))
+            || (record.RequiresTarget && !ValidTarget(record.Context.Definition, record.Context.Target))
             || (session.Request.Slot == 2 && uniteEnergy < uniteMaximum))
         { Coordinator.End(session, CastOutcome.PreparationFailed); yield break; }
         if (!Coordinator.TryCommit(session)) yield break;
-        if (record.Context.Slot == 2) { uniteEnergy = 0; controller.SetCombatUniteEnergy(0); }
+        if (record.Context.Slot == 2)
+        {
+            record.Context.UniteRefund = new UniteCastRefund(uniteMaximum);
+            uniteEnergy = 0;
+            controller.SetCombatUniteEnergy(0);
+        }
         try
         {
             Character.CommitCast(record.Context);
             if (record.Context.Definition.IsOffensive) actor.Pokemon.NotifyOffensiveAction();
             record.Execution.Start();
+            if (!record.Context.Definition.UsesExplicitUniteCastCheckpoint) record.Context.MarkCastSucceeded();
         }
         catch (Exception exception)
         {
@@ -346,6 +382,10 @@ public sealed class CombatActor : IDisposable
 
     private bool ValidTarget(PrefabMove definition, Pokemon target)
     {
+        if (definition is CombatMove move && move.TargetRelation == CombatTargetRelation.Ally)
+            return target != null && target != actor.Pokemon && target.IsSpawned && target.CurrentHp > 0
+                && target.Type == PokemonType.Player && target.TeamMember.IsOnSameTeam(actor.CurrentTeam)
+                && definition.IsTargetInCastRange(actor.transform.position, target.transform.position);
         return target != null && target.IsSpawned && target.CurrentHp > 0
             && !target.TeamMember.IsOnSameTeam(actor.CurrentTeam) && !target.HasStatusEffect(StatusType.Invincible)
             && !target.HasStatusEffect(StatusType.Untargetable) && !target.HasStatusEffect(StatusType.Invisible)
@@ -362,6 +402,13 @@ public sealed class CombatActor : IDisposable
         }
         if (session.Phase == CastPhase.Ended)
         {
+            if (executions.TryGetValue(session.CastId, out ExecutionRecord record)
+                && record.Context.UniteRefund != null
+                && record.Context.UniteRefund.TryRefund(session.Outcome, out int minimumEnergy))
+            {
+                uniteEnergy = Math.Min(uniteMaximum, Math.Max(uniteEnergy, minimumEnergy));
+                controller.SetCombatUniteEnergy(uniteEnergy);
+            }
             executions.Remove(session.CastId);
             if (!session.Accepted) Reject(session.Request.RequestId);
             foreach (Exception exception in session.Scope.CleanupErrors) Debug.LogException(exception);
@@ -426,7 +473,7 @@ public sealed class CombatActor : IDisposable
         AbilityAvailability available = ability.Resources.Read(Now);
         var snapshot = new CombatSlotSnapshot { Revision = ability.Revision, MoveId = (AvailableMoves)ability.Definition.Id,
             Charges = available.Charges, CooldownUntil = available.Remaining > 0 ? Math.Round(Now + available.Remaining, 4) : 0,
-            Reserved = available.Reserved, AwaitingEnd = available.AwaitingExecutionEnd };
+            Reserved = available.Reserved, AwaitingEnd = available.AwaitingExecutionEnd, FollowUpTargetId = ulong.MaxValue };
         foreach (ExecutionRecord record in executions.Values)
         {
             if (!ReferenceEquals(record.Session.Ability, ability) || !record.Session.Accepted) continue;
@@ -435,6 +482,7 @@ public sealed class CombatActor : IDisposable
             {
                 snapshot.FollowUpReady = record.Execution.FollowUpReady;
                 snapshot.CastId = record.Session.CastId;
+                snapshot.FollowUpTargetId = record.Execution.FollowUpTarget != null ? record.Execution.FollowUpTarget.NetworkObjectId : ulong.MaxValue;
                 break;
             }
         }
@@ -475,14 +523,16 @@ public sealed class CombatActor : IDisposable
         {
             for (int slot = 0; slot < replicas.Length; slot++) ApplySnapshot(slot, replicas[slot]);
             inputBuffer.Expire(Now, null);
+            if (!ActorCanAct()) inputBuffer.Clear();
             if (!controller.IsServerBasicAttackAnimating)
             {
                 for (int slot = 0; slot < Loadout.SlotCount; slot++)
                 {
                     AbilityInstance ability = Loadout.Get(slot);
-                    if (ability == null || !inputBuffer.TryTake(slot, ability.Revision, Now, out BufferedInput input)) continue;
                     BattleActionStatus status = controller.CombatMoveStatus(slot);
-                    if (!CanBeginInput(slot, status) || !ReferenceEquals(controller.GetMove((MoveType)slot), input.Move)) continue;
+                    if (ability == null || !CanBeginInput(slot, status)
+                        || !inputBuffer.TryTake(slot, ability.Revision, Now, out BufferedInput input)) continue;
+                    if (!ReferenceEquals(controller.GetMove((MoveType)slot), input.Move)) continue;
                     input.Move.Start(actor);
                     if (input.Released) input.Move.Finish();
                 }
@@ -567,9 +617,11 @@ public sealed class CombatActor : IDisposable
 
     private void OnStatusChange(StatusEffect effect, bool added)
     {
-        if (!controller.IsServer || !added) return;
+        if (!added) return;
         if (effect.Type != StatusType.Incapacitated && effect.Type != StatusType.Frozen
             && effect.Type != StatusType.Asleep && effect.Type != StatusType.Bound) return;
+        inputBuffer.Clear();
+        if (!controller.IsServer) return;
         buffer.Clear(command => Reject(command.Request.RequestId));
         foreach (ExecutionRecord record in new List<ExecutionRecord>(executions.Values))
             if (record.Session.Phase == CastPhase.Preparing) Coordinator.End(record.Session, CastOutcome.Interrupted);

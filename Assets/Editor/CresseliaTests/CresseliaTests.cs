@@ -285,4 +285,112 @@ public class CresseliaTests
         }
         finally { UnityEngine.Object.DestroyImmediate(actor); UnityEngine.Object.DestroyImmediate(floor); }
     }
+
+    [TestCase("CresseliaAuroraBeam", "CresseliaAuroraBeam", "Direction", 5.5f, 5.5f, true, true, false)]
+    [TestCase("CresseliaPsybeam", "CresseliaPsybeam", "Direction", 7f, 6f, true, true, false)]
+    [TestCase("CresseliaMoonblast", "CresseliaMoonblast", "Direction", 7.5f, 6.5f, true, true, false)]
+    [TestCase("CresseliaSafeguard", "CresseliaSafeguard", "None", 8.5f, 8f, false, false, false)]
+    [TestCase("CresseliaLunarBlessing", "CresseliaLunarBlessing", "None", 9.5f, 8f, false, false, false)]
+    [TestCase("CresseliaMoonlight", "CresseliaMoonlight", "Ground", 9f, 5f, false, true, false)]
+    [TestCase("CresseliaUnite", "CresseliaUnite", "Circle", 0f, 5.5f, true, true, true)]
+    public void CresseliaMovesUseThinCombatMoveInputBridgesWithExactContracts(
+        string moveName,
+        string expectedId,
+        string expectedAimStyle,
+        float expectedCooldown,
+        float expectedRange,
+        bool expectedOffensive,
+        bool expectedLockDuringLoad,
+        bool expectedCooldownOnEffectEnd)
+    {
+        object id = EnumValue("AvailableMoves", moveName);
+        object move = GameType("MoveDatabase").GetMethod("GetMove").Invoke(null, new[] { id });
+        Type type = move.GetType();
+        Assert.That(GameType("CombatMove").IsInstanceOfType(move), Is.True);
+        if (moveName != "CresseliaUnite")
+            Assert.That(GameType("CresseliaMoveBase").IsInstanceOfType(move), Is.True);
+        Assert.That(type.GetProperty("MoveId").GetValue(move).ToString(), Is.EqualTo(expectedId));
+        Assert.That(type.GetProperty("PrefabPath").GetValue(move), Is.Null);
+        Assert.That(type.GetProperty("CooldownOnFinish").GetValue(move), Is.False);
+        Assert.That(type.GetProperty("CooldownOnEffectEnd").GetValue(move), Is.EqualTo(expectedCooldownOnEffectEnd));
+        Assert.That(type.GetProperty("AimStyle").GetValue(move).ToString(), Is.EqualTo(expectedAimStyle));
+        Assert.That((float)type.GetField("Cooldown").GetValue(move), Is.EqualTo(expectedCooldown).Within(0.001f));
+        Assert.That((float)type.GetProperty("Range").GetValue(move), Is.EqualTo(expectedRange).Within(0.001f));
+        Assert.That(type.GetProperty("IsOffensive").GetValue(move), Is.EqualTo(expectedOffensive));
+        Assert.That(type.GetProperty("LockDuringLoad").GetValue(move), Is.EqualTo(expectedLockDuringLoad));
+        if (moveName == "CresseliaMoonlight")
+        {
+            type.GetField("IsUpgraded").SetValue(move, false);
+            Assert.That((float)type.GetProperty("AreaRadius").GetValue(move), Is.EqualTo(3f).Within(0.001f));
+            type.GetField("IsUpgraded").SetValue(move, true);
+            Assert.That((float)type.GetProperty("AreaRadius").GetValue(move), Is.EqualTo(3.5f).Within(0.001f));
+        }
+    }
+
+    [Test]
+    public void CresseliaBasicAttackIsServerResolvedAndUsesTimedGaugeContract()
+    {
+        object attack = Activator.CreateInstance(GameType("CresseliaBasicAtk"));
+        Type type = attack.GetType();
+        Assert.That(GameType("BasicAttackBase").IsInstanceOfType(attack), Is.True);
+        Assert.That(GameType("ChargedBasicAttackBase").IsInstanceOfType(attack), Is.False);
+        Assert.That(type.GetProperty("ServerResolved").GetValue(attack), Is.True);
+        Assert.That((float)type.GetProperty("MoveInputBufferDuration").GetValue(attack), Is.EqualTo(0.2f).Within(0.001f));
+    }
+
+    [Test]
+    public void CresseliaCharacterRuntimePresentationStateRoundTripsAndRejectsStaleSnapshots()
+    {
+        var root = new GameObject("Cresselia contract fixture");
+        try
+        {
+            var pokemon = root.AddComponent(GameType("Pokemon"));
+            var controller = root.AddComponent(GameType("MovesController"));
+            var manager = root.AddComponent(GameType("PlayerManager"));
+            ((Behaviour)pokemon).enabled = false;
+            ((Behaviour)controller).enabled = false;
+            ((Behaviour)manager).enabled = false;
+            var cresselia = AssetDatabase.LoadMainAssetAtPath("Assets/Pokemons/PlayableMons/Cresselia.asset");
+            const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
+            pokemon.GetType().GetField("baseStats", Private).SetValue(pokemon, cresselia);
+            controller.GetType().GetField("pokemon", Private).SetValue(controller, pokemon);
+            controller.GetType().GetField("playerManager", Private).SetValue(controller, manager);
+            manager.GetType().GetField("pokemon", Private).SetValue(manager, pokemon);
+            manager.GetType().GetField("movesController", Private).SetValue(manager, controller);
+
+            object character = controller.GetType().GetProperty("CresseliaRuntime").GetValue(controller);
+            Assert.That(character, Is.Not.Null);
+            Assert.That(character.GetType().Name, Is.EqualTo("CresseliaCharacterRuntime"));
+
+            var receive = character.GetType().GetMethod("ReceiveSnapshot");
+            receive.Invoke(character, new object[] { 12.5d, true, true, true, 1, 10d, new Vector3(1, 2, 3), new Vector3(4, 5, 6), 10L });
+            Assert.That(character.GetType().GetProperty("BoostReadyAt").GetValue(character), Is.EqualTo(12.5d));
+            Assert.That(character.GetType().GetProperty("Escorting").GetValue(character), Is.EqualTo(true));
+            Assert.That(character.GetType().GetProperty("MovementLocked").GetValue(character), Is.EqualTo(true));
+            Assert.That(character.GetType().GetProperty("UniteLocked").GetValue(character), Is.EqualTo(true));
+            Assert.That(character.GetType().GetProperty("UnitePhase").GetValue(character), Is.EqualTo(1));
+            Assert.That(controller.GetType().GetProperty("CresseliaEscorting").GetValue(controller), Is.EqualTo(true));
+
+            receive.Invoke(character, new object[] { 0d, false, false, false, 0, 0d, Vector3.zero, Vector3.zero, 9L });
+            Assert.That(character.GetType().GetProperty("Escorting").GetValue(character), Is.EqualTo(true));
+            Assert.That(character.GetType().GetProperty("UnitePhase").GetValue(character), Is.EqualTo(1));
+
+            string json = (string)character.GetType().GetMethod("CapturePresentationState").Invoke(character, null);
+            receive.Invoke(character, new object[] { 4d, false, false, false, 0, 2d, Vector3.zero, Vector3.zero, 11L });
+            Assert.That(character.GetType().GetProperty("Escorting").GetValue(character), Is.EqualTo(false));
+            Assert.That(character.GetType().GetProperty("UnitePhase").GetValue(character), Is.EqualTo(0));
+
+            character.GetType().GetMethod("ApplyPresentationState").Invoke(character, new object[] { json });
+            Assert.That(character.GetType().GetProperty("Escorting").GetValue(character), Is.EqualTo(false));
+            Assert.That(character.GetType().GetProperty("UnitePhase").GetValue(character), Is.EqualTo(0));
+
+            character.GetType().GetMethod("ApplyPresentationState").Invoke(character, new object[] { "{not-valid-json" });
+            receive.Invoke(character, new object[] { double.NaN, true, true, true, 1, 0d, Vector3.zero, Vector3.zero, 12L });
+            Assert.That(character.GetType().GetProperty("Escorting").GetValue(character), Is.EqualTo(false));
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
 }

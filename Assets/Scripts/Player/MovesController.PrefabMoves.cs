@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using Unite.Combat;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -12,6 +14,9 @@ public partial class MovesController
     private readonly int[] prefabGenerations = new int[3];
     private readonly int[] prefabCastSequences = new int[3];
     private readonly System.Collections.Generic.HashSet<PrefabMoveEffect> prefabEffects = new System.Collections.Generic.HashSet<PrefabMoveEffect>();
+    private AvailableMoves legacyUniteCastMove;
+    private int legacyUniteCastSequence;
+    private bool legacyUniteRefundApplied;
     public System.Collections.Generic.IEnumerable<PrefabMoveEffect> ActivePrefabEffects
     {
         get
@@ -85,6 +90,8 @@ public partial class MovesController
         if (definition.CooldownOnEffectEnd) prefabNextCast[slot] = double.PositiveInfinity;
         int generation = ++prefabGenerations[slot];
         int sequence = ++prefabCastSequences[slot];
+        UniteCastRefund uniteRefund = slot == 2 && learned.uniteEnergyCost > 0 ? new UniteCastRefund(learned.uniteEnergyCost) : null;
+        if (uniteRefund != null) BeginLegacyUniteCastRPC(move, sequence);
         if (definition.IsOffensive) pokemon.NotifyOffensiveAction();
         // Capture each cast independently. Death invalidates a pending load even
         // if the actor respawns before Addressables completes.
@@ -102,19 +109,33 @@ public partial class MovesController
             {
                 if (asset.Status != AsyncOperationStatus.Succeeded) Debug.LogError($"Failed to load move {move}: {asset.OperationException}");
                 Addressables.Release(asset);
+                SettlePrefabUniteRefund(move, sequence, uniteRefund, cancelled ? CastOutcome.Interrupted
+                    : generation != prefabGenerations[slot] ? CastOutcome.Replaced : CastOutcome.ExecutionFailed);
                 if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition);
                 return;
             }
             GameObject instance = Instantiate(asset.Result, transform.position + Vector3.up * 0.8f,
                 Quaternion.LookRotation(castDirection.sqrMagnitude > 0.001f ? castDirection : transform.forward));
             var effect = instance.GetComponent<PrefabMoveEffect>();
-            if (effect == null) { Destroy(instance); Addressables.Release(asset); FinishPrefabExecution(slot, move, definition); return; }
+            if (effect == null)
+            {
+                Destroy(instance);
+                Addressables.Release(asset);
+                SettlePrefabUniteRefund(move, sequence, uniteRefund, CastOutcome.ExecutionFailed);
+                FinishPrefabExecution(slot, move, definition);
+                return;
+            }
             effect.HoldAsset(asset);
             effect.MoveId = move;
             effect.CastSequence = sequence;
             instance.GetComponent<NetworkObject>().Spawn(true);
             prefabEffects.Add(effect);
             effect.Completed += completed => prefabEffects.Remove(completed);
+            if (uniteRefund != null)
+            {
+                effect.Succeeded += uniteRefund.MarkSucceeded;
+                effect.Completed += completed => SettlePrefabUniteRefund(move, sequence, uniteRefund, completed.CompletionOutcome);
+            }
             if (definition.CooldownOnEffectEnd)
             {
                 activePrefabMoves[slot] = effect;
@@ -122,8 +143,43 @@ public partial class MovesController
                 effect.Completed += _ => { if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition); };
             }
             effect.Initialize(playerManager, castDirection, target, upgraded);
+            if (!definition.UsesExplicitUniteCastCheckpoint) uniteRefund?.MarkSucceeded();
             PrefabLoadFinishedRPC(move);
         };
+    }
+
+    private void SettlePrefabUniteRefund(AvailableMoves move, int sequence, UniteCastRefund refund, CastOutcome outcome)
+    {
+        if (this != null && IsServer && IsSpawned && refund != null && refund.TryRefund(outcome, out int minimumEnergy))
+            RefundLegacyUniteCastRPC(move, sequence, minimumEnergy);
+    }
+
+    [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
+    private void BeginLegacyUniteCastRPC(AvailableMoves move, int sequence)
+    {
+        if (!(uniteMove is PrefabMove definition) || definition is CombatMove || definition.MoveId != move) return;
+        legacyUniteCastMove = move;
+        legacyUniteCastSequence = sequence;
+        legacyUniteRefundApplied = false;
+    }
+
+    [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
+    private void RefundLegacyUniteCastRPC(AvailableMoves move, int sequence, int minimumEnergy)
+    {
+        if (legacyUniteCastMove != move || legacyUniteCastSequence != sequence || legacyUniteRefundApplied) return;
+        legacyUniteRefundApplied = true;
+        StartCoroutine(ApplyLegacyUniteRefund(move, sequence, minimumEnergy));
+    }
+
+    private IEnumerator ApplyLegacyUniteRefund(AvailableMoves move, int sequence, int minimumEnergy)
+    {
+        yield return null;
+        if (!IsOwner || !IsSpawned || legacyUniteCastMove != move || legacyUniteCastSequence != sequence
+            || !(uniteMove is PrefabMove definition) || definition is CombatMove || definition.MoveId != move) yield break;
+        uniteMoveCharge = Mathf.Clamp(Math.Max(uniteMoveCharge, minimumEnergy), 0, uniteMoveMaxCharge);
+        if (uniteMoveCharge < uniteMoveMaxCharge) uniteMoveStatus.AddStatus(ActionStatusType.Cooldown);
+        else uniteMoveStatus.RemoveStatus(ActionStatusType.Cooldown);
+        UpdateUniteMoveUI();
     }
 
     private void FinishPrefabExecution(int slot, AvailableMoves move, PrefabMove definition)

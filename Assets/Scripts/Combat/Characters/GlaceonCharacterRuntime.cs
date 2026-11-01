@@ -33,6 +33,7 @@ public sealed class GlaceonCharacterRuntime : CombatCharacterRuntime
     private CombatRoutine basicRecovery;
     private CombatRoutine dashRoutine;
     private WallCrossingTraversal dashTraversal;
+    private Vector3 dashDestination;
     private byte shownLocks;
     private int shownCharge = -1;
     private byte shownMode = byte.MaxValue;
@@ -52,141 +53,11 @@ public sealed class GlaceonCharacterRuntime : CombatCharacterRuntime
     public bool Evolved => Pokemon != null && Pokemon.CurrentLevel >= 3;
     public override bool CanStartBasicAttack => !spearLocked;
 
-    public static bool CanHit(PlayerManager actor, Pokemon target)
-    {
-        if (actor == null || target == null || !target.IsSpawned || target.CurrentHp <= 0
-            || target == actor.Pokemon || target.HasStatusEffect(StatusType.Invincible)
-            || target.HasStatusEffect(StatusType.Untargetable)) return false;
-        return !target.TeamMember.IsOnSameTeam(actor.CurrentTeam);
-    }
-
-    public static byte ClampCrystals(int count) => (byte)Mathf.Clamp(count, 0, 8);
-
-    public void SetCrystals(int count)
-    {
-        if (!IsServer || disposed || !Evolved || Pokemon.CurrentHp <= 0) return;
-        byte previous = crystals;
-        crystals = ClampCrystals(count);
-        if (crystals >= previous) crystalUntil = Now + 5;
-        Publish();
-    }
-
-    public void ResetCrystalTimer()
-    {
-        if (!IsServer || disposed || !Evolved) return;
-        crystalUntil = Now + 5;
-        Publish();
-    }
-
-    public void FillCharge()
-    {
-        if (!IsServer || disposed) return;
-        charge = 2;
-        chargeUntil = Now + 4.5;
-        Publish();
-    }
-
-    internal void SetMode(byte value)
-    {
-        if (!IsServer || disposed) return;
-        mode = (byte)Mathf.Clamp(value, 0, 2);
-        Publish();
-    }
-
-    internal IDisposable LockSpear()
-    {
-        spearLocked = true;
-        Publish();
-        return new GlaceonCleanup(() => { spearLocked = false; Publish(); });
-    }
-
-    internal IDisposable LockShard()
-    {
-        shardLocked = true;
-        Publish();
-        return new GlaceonCleanup(() => { shardLocked = false; Publish(); });
-    }
-
-    internal IDisposable AcquireMovementLock()
-    {
-        movementLocks++;
-        movementLocked = true;
-        Publish();
-        return new GlaceonCleanup(() => { movementLocked = --movementLocks > 0; Publish(); });
-    }
-
-    internal IDisposable AcquireFlight()
-    {
-        flightLocks++;
-        flying = true;
-        Publish();
-        return new GlaceonCleanup(() => { flying = --flightLocks > 0; Publish(); });
-    }
-
-    internal void BeginDash(Vector3 direction)
-    {
-        if (IsServer && IsSpawned)
-            Controller.GlaceonDashRPC(transform.position, transform.position + direction * 5, Now, true, false);
-    }
-
-    internal void EndDash(bool completed)
-    {
-        if (IsServer && IsSpawned) Controller.GlaceonDashRPC(Vector3.zero, Vector3.zero, 0, false, completed);
-    }
-
-    private Vector3 dashDestination;
-    public void ReceiveDash(Vector3 origin, Vector3 destination, double started, bool active, bool completed)
-    {
-        if (disposed || (!IsOwner && !IsServer)) return;
-        StopDashPresentation(completed, dashDestination);
-        if (!active) return;
-        dashDestination = destination;
-        dashRoutine = new CombatRoutine(Actor, DriveDash(origin, destination, started));
-    }
-
-    private IEnumerator DriveDash(Vector3 origin, Vector3 destination, double started)
-    {
-        var traversal = new WallCrossingTraversal();
-        dashTraversal = traversal;
-        traversal.Begin(Actor.PlayerMovement);
-        while (IsSpawned && Pokemon.CurrentHp > 0 && !Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions))
-        {
-            float progress = Mathf.Clamp01((float)((Now - started) / 0.2));
-            traversal.Move(Vector3.Lerp(origin, destination, progress) - transform.position);
-            if (progress >= 1) break;
-            yield return null;
-        }
-        if (IsSpawned && Pokemon.CurrentHp > 0) traversal.End(); else traversal.Cancel();
-        dashTraversal = null;
-    }
-
-    private void StopDashPresentation(bool completed, Vector3 destination)
-    {
-        dashRoutine?.Dispose();
-        dashRoutine = null;
-        if (dashTraversal == null) return;
-        if (IsSpawned && Pokemon.CurrentHp > 0)
-        {
-            if (completed && !Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)) dashTraversal.Move(destination - transform.position);
-            dashTraversal.End();
-        }
-        else dashTraversal.Cancel();
-        dashTraversal = null;
-    }
-
-    public void ResetBasicCharge()
-    {
-        if (!IsServer || disposed) return;
-        basicRecovery?.Dispose();
-        basicRecovery = null;
-        charge = 0;
-        chargeUntil = 0;
-        Publish();
-    }
-
     public override bool PrepareCast(CombatExecutionContext context) => !disposed && !spearLocked
         && !(shardLocked && context.MoveId == AvailableMoves.GlaceIceShard);
+
     public override bool RevalidateCast(CombatExecutionContext context) => PrepareCast(context);
+
     public override CombatExecution CreateExecution(CombatExecutionContext context) => new GlaceonExecution(context, this);
 
     public override void Tick()
@@ -217,51 +88,22 @@ public sealed class GlaceonCharacterRuntime : CombatCharacterRuntime
         Present();
     }
 
-    private void EnsureProjectile(string path)
+    public void FillCharge()
     {
-        if (projectiles.ContainsKey(path) || loading.Contains(path)) return;
-        lifetime.Own(new CombatRoutine(Actor, LoadProjectile(path)));
+        if (!IsServer || disposed) return;
+        charge = 2;
+        chargeUntil = Now + 4.5;
+        Publish();
     }
 
-    private IEnumerator LoadProjectile(string path)
+    public void ResetBasicCharge()
     {
-        loading.Add(path);
-        yield return Controller.Combat.Spawner.Load(path, lifetime, prefab =>
-        {
-            if (prefab != null && prefab.GetComponent<HomingProjectile>() != null && !disposed) projectiles[path] = prefab;
-        });
-        loading.Remove(path);
-    }
-
-    private IEnumerator LoadHolder()
-    {
-        loading.Add(HolderPath);
-        GameObject prefab = null;
-        yield return Controller.Combat.Spawner.Load(HolderPath, lifetime, loaded => prefab = loaded);
-        if (!disposed && prefab != null && IsSpawned)
-        {
-            var spawned = Controller.Combat.Spawner.Spawn(prefab, transform.position, Quaternion.identity, lifetime);
-            holder = spawned != null ? spawned.GetComponent<IciclesHolder>() : null;
-            if (holder != null) holder.Follow(Actor.NetworkObjectId);
-        }
-        loading.Remove(HolderPath);
-    }
-
-    internal bool Launch(Pokemon target, DamageInfo damage, string path)
-    {
-        if (!IsServer || disposed || !CanHit(Actor, target) || !projectiles.TryGetValue(path, out var prefab)) return false;
-        return LaunchPrepared(target, damage, prefab, lifetime);
-    }
-
-    internal bool LaunchPrepared(Pokemon target, DamageInfo damage, GameObject prefab, CombatScope scope)
-    {
-        if (!IsServer || disposed || !CanHit(Actor, target) || prefab == null) return false;
-        var spawned = Controller.Combat.Spawner.Spawn(prefab, transform.position, Quaternion.identity, scope);
-        if (spawned == null) return false;
-        var projectile = spawned.GetComponent<HomingProjectile>();
-        if (projectile == null) return false;
-        projectile.SetTargetRPC(target.NetworkObjectId, damage);
-        return true;
+        if (!IsServer || disposed) return;
+        basicRecovery?.Dispose();
+        basicRecovery = null;
+        charge = 0;
+        chargeUntil = 0;
+        Publish();
     }
 
     public void PerformBasicAttack(Pokemon target)
@@ -319,6 +161,166 @@ public sealed class GlaceonCharacterRuntime : CombatCharacterRuntime
     {
         if (!IsServer || !IsSpawned || Pokemon.CurrentHp <= 0 || Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)) return;
         Actor.AnimationManager?.RecoverAnimationRPC(animation, Evolved ? "ani_idle_bat_0471" : "ani_idle_bat_0133", 0.06f);
+    }
+
+    public static bool CanHit(PlayerManager actor, Pokemon target)
+    {
+        if (actor == null || target == null || !target.IsSpawned || target.CurrentHp <= 0
+            || target == actor.Pokemon || target.HasStatusEffect(StatusType.Invincible)
+            || target.HasStatusEffect(StatusType.Untargetable)) return false;
+        return !target.TeamMember.IsOnSameTeam(actor.CurrentTeam);
+    }
+
+    public static byte ClampCrystals(int count) => (byte)Mathf.Clamp(count, 0, 8);
+
+    public void SetCrystals(int count)
+    {
+        if (!IsServer || disposed || !Evolved || Pokemon.CurrentHp <= 0) return;
+        byte previous = crystals;
+        crystals = ClampCrystals(count);
+        if (crystals >= previous) crystalUntil = Now + 5;
+        Publish();
+    }
+
+    public void ResetCrystalTimer()
+    {
+        if (!IsServer || disposed || !Evolved) return;
+        crystalUntil = Now + 5;
+        Publish();
+    }
+
+    internal void SetMode(byte value)
+    {
+        if (!IsServer || disposed) return;
+        mode = (byte)Mathf.Clamp(value, 0, 2);
+        Publish();
+    }
+
+    internal IDisposable LockSpear()
+    {
+        spearLocked = true;
+        Publish();
+        return new GlaceonCleanup(() => { spearLocked = false; Publish(); });
+    }
+
+    internal IDisposable LockShard()
+    {
+        shardLocked = true;
+        Publish();
+        return new GlaceonCleanup(() => { shardLocked = false; Publish(); });
+    }
+
+    internal IDisposable AcquireMovementLock()
+    {
+        movementLocks++;
+        movementLocked = true;
+        Publish();
+        return new GlaceonCleanup(() => { movementLocked = --movementLocks > 0; Publish(); });
+    }
+
+    internal IDisposable AcquireFlight()
+    {
+        flightLocks++;
+        flying = true;
+        Publish();
+        return new GlaceonCleanup(() => { flying = --flightLocks > 0; Publish(); });
+    }
+
+    internal void BeginDash(Vector3 direction)
+    {
+        if (IsServer && IsSpawned)
+            Controller.GlaceonDashRPC(transform.position, transform.position + direction * 5, Now, true, false);
+    }
+
+    internal void EndDash(bool completed)
+    {
+        if (IsServer && IsSpawned) Controller.GlaceonDashRPC(Vector3.zero, Vector3.zero, 0, false, completed);
+    }
+
+    public void ReceiveDash(Vector3 origin, Vector3 destination, double started, bool active, bool completed)
+    {
+        if (disposed || (!IsOwner && !IsServer)) return;
+        StopDashPresentation(completed, dashDestination);
+        if (!active) return;
+        dashDestination = destination;
+        dashRoutine = new CombatRoutine(Actor, DriveDash(origin, destination, started));
+    }
+
+    private IEnumerator DriveDash(Vector3 origin, Vector3 destination, double started)
+    {
+        var traversal = new WallCrossingTraversal();
+        dashTraversal = traversal;
+        traversal.Begin(Actor.PlayerMovement);
+        while (IsSpawned && Pokemon.CurrentHp > 0 && !Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions))
+        {
+            float progress = Mathf.Clamp01((float)((Now - started) / 0.2));
+            traversal.Move(Vector3.Lerp(origin, destination, progress) - transform.position);
+            if (progress >= 1) break;
+            yield return null;
+        }
+        if (IsSpawned && Pokemon.CurrentHp > 0) traversal.End(); else traversal.Cancel();
+        dashTraversal = null;
+    }
+
+    private void StopDashPresentation(bool completed, Vector3 destination)
+    {
+        dashRoutine?.Dispose();
+        dashRoutine = null;
+        if (dashTraversal == null) return;
+        if (IsSpawned && Pokemon.CurrentHp > 0)
+        {
+            if (completed && !Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)) dashTraversal.Move(destination - transform.position);
+            dashTraversal.End();
+        }
+        else dashTraversal.Cancel();
+        dashTraversal = null;
+    }
+
+    private void EnsureProjectile(string path)
+    {
+        if (projectiles.ContainsKey(path) || loading.Contains(path)) return;
+        lifetime.Own(new CombatRoutine(Actor, LoadProjectile(path)));
+    }
+
+    private IEnumerator LoadProjectile(string path)
+    {
+        loading.Add(path);
+        yield return Controller.Combat.Spawner.Load(path, lifetime, prefab =>
+        {
+            if (prefab != null && prefab.GetComponent<HomingProjectile>() != null && !disposed) projectiles[path] = prefab;
+        });
+        loading.Remove(path);
+    }
+
+    private IEnumerator LoadHolder()
+    {
+        loading.Add(HolderPath);
+        GameObject prefab = null;
+        yield return Controller.Combat.Spawner.Load(HolderPath, lifetime, loaded => prefab = loaded);
+        if (!disposed && prefab != null && IsSpawned)
+        {
+            var spawned = Controller.Combat.Spawner.Spawn(prefab, transform.position, Quaternion.identity, lifetime);
+            holder = spawned != null ? spawned.GetComponent<IciclesHolder>() : null;
+            if (holder != null) holder.Follow(Actor.NetworkObjectId);
+        }
+        loading.Remove(HolderPath);
+    }
+
+    internal bool Launch(Pokemon target, DamageInfo damage, string path)
+    {
+        if (!IsServer || disposed || !CanHit(Actor, target) || !projectiles.TryGetValue(path, out var prefab)) return false;
+        return LaunchPrepared(target, damage, prefab, lifetime);
+    }
+
+    internal bool LaunchPrepared(Pokemon target, DamageInfo damage, GameObject prefab, CombatScope scope)
+    {
+        if (!IsServer || disposed || !CanHit(Actor, target) || prefab == null) return false;
+        var spawned = Controller.Combat.Spawner.Spawn(prefab, transform.position, Quaternion.identity, scope);
+        if (spawned == null) return false;
+        var projectile = spawned.GetComponent<HomingProjectile>();
+        if (projectile == null) return false;
+        projectile.SetTargetRPC(target.NetworkObjectId, damage);
+        return true;
     }
 
     private void Publish()

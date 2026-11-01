@@ -14,9 +14,22 @@ public partial class MovesController
         ulong target = 0, float size = 1, int detail = 0)
     {
         int id = ++cresseliaVisualSequence;
-        PresentCresseliaEffectRPC(effect, id, origin, direction, duration, target, size, detail, CresseliaNow);
+        if (IsSpawned)
+            PresentCresseliaEffectRPC(effect, id, origin, direction, duration, target, size, detail, CresseliaNow);
         return id;
     }
+
+    internal int ShowCresseliaEffectInternal(CresseliaEffect effect, Vector3 origin, Vector3 direction, float duration,
+        ulong target = 0, float size = 1f, int detail = 0)
+        => ShowCresseliaEffect(effect, origin, direction, duration, target, size, detail);
+
+    internal void StopCresseliaEffectInternal(int id)
+    {
+        if (id != 0 && IsSpawned)
+            StopCresseliaEffectRPC(id);
+    }
+
+    internal void DisposeCresseliaPresentationInternal() => DisposeCresseliaPresentation();
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
     private void PresentCresseliaEffectRPC(CresseliaEffect effect, int id, Vector3 origin, Vector3 direction,

@@ -18,6 +18,7 @@ public abstract class PrefabMove : MoveBase
     public override bool CooldownOnFinish => !CooldownOnEffectEnd;
     public virtual bool IsOffensive => true;
     public virtual bool LockDuringLoad => false;
+    public virtual bool UsesExplicitUniteCastCheckpoint => false;
     public virtual string IndicatorPath => null;
     public virtual Vector3 IndicatorScale => Vector3.one;
     public virtual bool MirrorsIndicator => false;

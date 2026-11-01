@@ -38,9 +38,7 @@ public sealed class CombatArchitectureValidator : IPreprocessBuildWithReport
         foreach (string guid in AssetDatabase.FindAssets("t:PokemonBase", new[] { "Assets/Pokemons/PlayableMons" }))
         {
             PokemonBase pokemon = AssetDatabase.LoadAssetAtPath<PokemonBase>(AssetDatabase.GUIDToAssetPath(guid));
-            if (pokemon == null || (pokemon.Passive != AvailablePassives.GlaceonPassive
-                && pokemon.Passive != AvailablePassives.ZoroarkPassive
-                && pokemon.Passive != AvailablePassives.CinderPassive)) continue;
+            if (!CombatKitFactory.SupportsDefinition(pokemon)) continue;
             if (pokemon.LearnableMoves == null) { errors.Add($"{pokemon.name}: missing learnset."); continue; }
             foreach (LearnableMove row in pokemon.LearnableMoves)
             {
@@ -56,19 +54,19 @@ public sealed class CombatArchitectureValidator : IPreprocessBuildWithReport
             }
         }
 
-        foreach (var contract in CombatKitFactory.RequiredAssets) CheckPrefab(contract.Path, contract.Component);
+        foreach (var contract in CombatKitFactory.RequiredAssets) CheckPrefab(contract.Path, contract.Component, contract.Networked);
         GameObject gauge = Resources.Load<GameObject>("HPBarModules/SegmentedGauge");
         if (gauge == null || gauge.GetComponent<SegmentedGaugeModule>() == null) errors.Add("Zoroark segmented gauge Resources contract is missing.");
         return errors;
 
-        void CheckPrefab(string path, Type required)
+        void CheckPrefab(string path, Type required, bool networked = true)
         {
             if (!checkedAssets.Add(path)) return;
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (prefab == null) { errors.Add($"Missing combat prefab: {path}"); return; }
             if (prefab.GetComponent(required) == null) errors.Add($"{path}: missing {required.Name}.");
-            if (prefab.GetComponent<Unity.Netcode.NetworkObject>() == null) errors.Add($"{path}: missing NetworkObject.");
-            if (!registered.Contains(prefab)) errors.Add($"{path}: absent from DefaultNetworkPrefabs.");
+            if (networked && prefab.GetComponent<Unity.Netcode.NetworkObject>() == null) errors.Add($"{path}: missing NetworkObject.");
+            if (networked && !registered.Contains(prefab)) errors.Add($"{path}: absent from DefaultNetworkPrefabs.");
             string assetGuid = AssetDatabase.AssetPathToGUID(path);
             bool addressable = UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject.Settings?.FindAssetEntry(assetGuid) != null;
             if (!addressable) errors.Add($"{path}: missing Addressables entry.");

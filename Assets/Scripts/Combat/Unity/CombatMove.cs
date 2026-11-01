@@ -1,5 +1,7 @@
 using UnityEngine;
 
+public enum CombatTargetRelation { None, Enemy, Ally }
+
 public abstract class CombatMove : PrefabMove
 {
     private float nextInputUpdate;
@@ -7,6 +9,9 @@ public abstract class CombatMove : PrefabMove
     public override bool CooldownOnFinish => false;
     public virtual bool StartsOnPress => false;
     public virtual bool EndsOnRelease => true;
+    public virtual bool LockMovementDuringLoad => true;
+    public virtual CombatTargetRelation TargetRelation => AimStyle == MoveAimStyle.Target ? CombatTargetRelation.Enemy : CombatTargetRelation.None;
+    public virtual bool TargetOptional => false;
 
     public override void Start(PlayerManager controller)
     {

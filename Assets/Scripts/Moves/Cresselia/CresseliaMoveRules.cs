@@ -17,11 +17,38 @@ public static class CresseliaMoveRules
     public const float BlessingDuration = 3.5f, MoonlightDuration = 5f;
     public const int MoonlightPulses = 5;
     public const float FlightDuration = 3f, TakeoffDuration = 0.2f, LandingDuration = 0.3f, UniteRadius = 5.5f;
+    public const float EscortRadius = 6f, EscortScanInterval = 0.2f, SupportTargetValidationRange = 8.5f, BasicValidationRange = 4.75f;
+    public const short EscortSpeedPercent = 20;
     public const ushort EscortId = 4880, UniteInvincibleId = 4881;
     public static readonly StatusType[] Interrupts = { StatusType.Incapacitated, StatusType.Asleep, StatusType.Frozen, StatusType.Bound };
     private static int nextCast;
     public static int NextCast() => ++nextCast;
     public static string EffectPath(CresseliaEffect effect) => EffectFolder + "Cresselia" + effect + ".prefab";
+    public static AvailableMoves Move(CresseliaCast move)
+    {
+        switch (move)
+        {
+            case CresseliaCast.AuroraBeam: return AvailableMoves.CresseliaAuroraBeam;
+            case CresseliaCast.Safeguard: return AvailableMoves.CresseliaSafeguard;
+            case CresseliaCast.Psybeam: return AvailableMoves.CresseliaPsybeam;
+            case CresseliaCast.Moonblast: return AvailableMoves.CresseliaMoonblast;
+            case CresseliaCast.LunarBlessing: return AvailableMoves.CresseliaLunarBlessing;
+            default: return AvailableMoves.CresseliaMoonlight;
+        }
+    }
+    public static bool TryFromMove(AvailableMoves moveId, out CresseliaCast kind)
+    {
+        switch (moveId)
+        {
+            case AvailableMoves.CresseliaAuroraBeam: kind = CresseliaCast.AuroraBeam; return true;
+            case AvailableMoves.CresseliaSafeguard: kind = CresseliaCast.Safeguard; return true;
+            case AvailableMoves.CresseliaPsybeam: kind = CresseliaCast.Psybeam; return true;
+            case AvailableMoves.CresseliaMoonblast: kind = CresseliaCast.Moonblast; return true;
+            case AvailableMoves.CresseliaLunarBlessing: kind = CresseliaCast.LunarBlessing; return true;
+            case AvailableMoves.CresseliaMoonlight: kind = CresseliaCast.Moonlight; return true;
+            default: kind = CresseliaCast.AuroraBeam; return false;
+        }
+    }
     public static bool IsSupport(CresseliaCast move) => move == CresseliaCast.Safeguard || move == CresseliaCast.LunarBlessing;
     public static int Slot(CresseliaCast move) => IsSupport(move) || move == CresseliaCast.Moonlight ? 1 : 0;
     public static float Cooldown(CresseliaCast move)

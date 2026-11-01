@@ -31,27 +31,17 @@ disagree, the detailed RSB takes precedence, as in Duraludon's implementation.
 - Swift's existing implementation is retained, with its projectile hitbox radius
   enlarged from 0.2 to 0.5 world units without changing the graphics or damage.
 
-**Hyper Voice is deliberately unchanged:** its scripts, prefab, damage, range,
-cooldown, six-to-seven-wave upgrade and existing displayed level-10 upgrade
-remain as before. Its older asset description/cooldown discrepancy is also
-preserved rather than silently changing the requested variant.
+**Hyper Voice retains its intentional mechanics:** its prefab, damage (`0.32f, 6, 110` close / `0.54f, 8, 184` far), range (`5f`),
+cooldown (`7f`), six-to-seven-wave upgrade and existing displayed level-10 upgrade
+remain as before, now routed through a thin `CombatMove` bridge and server-authoritative `SylveonExecution` / `HypervoiceHitbox`.
 
 ## Shared integration
 
-There is no Sylveon-specific controller or alternative cooldown/status system.
-The new moves use `MoveBase` through the reusable `PrefabMove` input adapter.
-`MovesController.PrefabMoves` validates learned moves/levels/targets, captures
-each asynchronous cast separately, and spawns server-owned `PrefabMoveEffect`
-objects. These hold their Addressables handles until destruction and cancel on
-caster death/despawn; pending targeted loads also cancel on target death.
-Baby-Doll Eyes uses configurable `HomingMoveEffect`; basic attacks reuse
-`HomingProjectile` with optional attacker-on-hit stat changes.
-
-Small generic damage extensions are in `Pokemon`/`DamageInfo`: a pre-damage
-block event, a server-only actual-HP-damage event, and a final damage multiplier
-that avoids rounding each Mystical Fire coefficient independently. Existing
-damage records retain their previous behavior. Kiss's two-stage slow uses the
-shared `Pokemon.AddDecayingStatRPC` and does not reappear after cleansing.
+Sylveon runs on the shared `CombatActor` architecture:
+- All seven moves (`SylvSwift`, `SylvBabyDollEyes`, `SylvHyperVoice`, `SylvMysticalFire`, `SylvDrainingKiss`, `SylvCalmMind`, `SylvUnite`) are thin `CombatMove` input/aim bridges (`CooldownOnFinish => false`, `PrefabPath => null`).
+- Swift, Hyper Voice, and Fairy Frolic retain action restrictions but allow movement both while awaiting server acceptance (`LockMovementDuringLoad => false`) and during execution. Other moves retain their existing movement-lock policies.
+- `SylveonCharacterRuntime` owns the server-authoritative 3-hit basic attack cycle (including Eevee vs. Sylveon animations and boosted attack speed buff), `Adaptability` / `Pixilate` passive stacks, Mystical Fire dash traversal, Hyper Voice channel state/gauge, and presentation snapshots (`SylveonSnapshotRPC`).
+- `SylveonExecution` executes all seven moves on the server via `CombatEffectSpawner` and retains independent `Addressables` handles (`HoldAsset`) on long-lived projectiles and effects so cast recovery completion never despawns projectiles in flight or releases their assets prematurely.
 
 The enum name `SylvMysticalCringe` is retained for serialized compatibility;
 its runtime/UI name is Mystical Fire. Learnset rows keep their existing levels
@@ -69,13 +59,11 @@ The source does not specify Unity-scale ranges, projectile speeds, flame
 lifetime or all animation timings. These approximations are centralized in
 `SylvMoveRules`: a 3-unit leap, 5-unit flame acquisition, 5-second flame window,
 6-unit Kiss cast range, 9-unit break range, and 12-unit/second projectile travel.
-The visuals are authored placeholders, not a reconstruction of the original
-game's complete VFX. Presentation follows the project's fixed-roster RPC model,
-not late-join reconstruction. Rebuild Addressables before testing built players.
 
 ## Validation
 
-EditMode suite: `Unite.Sylveon.Tests` in `Assets/Editor/SylveonTests`.
+- EditMode suite: `Unite.Sylveon.Tests` in `Assets/Editor/SylveonTests`.
+- PlayMode suite: `Unite.Sylveon.PlayMode.Tests` in `Assets/Editor/SylveonTests/PlayMode`.
 
 Manual host + remote-client checks still required:
 

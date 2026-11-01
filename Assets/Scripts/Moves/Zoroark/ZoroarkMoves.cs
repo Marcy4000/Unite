@@ -53,6 +53,7 @@ public class ZoroarkFeintAttack : ZoroarkMove
 }
 public class ZoroarkNightfallDaze : ZoroarkMove
 {
+    public override bool UsesExplicitUniteCastCheckpoint => true;
     public ZoroarkNightfallDaze() { Name = "Nightfall Daze"; Cooldown = 0; }
     public override AvailableMoves MoveId => AvailableMoves.ZoroarkNightfallDaze;
     public override MoveAimStyle AimStyle => MoveAimStyle.Circle;

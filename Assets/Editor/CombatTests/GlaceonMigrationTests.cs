@@ -18,6 +18,21 @@ public sealed class GlaceonMigrationTests
     }
     private static void Field(object instance, string name, object value) => instance.GetType().GetField(name, Private).SetValue(instance, value);
 
+    [TestCase("ExecuteSwift")]
+    [TestCase("ExecuteTailWhip")]
+    [TestCase("ExecuteIceShard")]
+    [TestCase("ExecuteIcyWind")]
+    [TestCase("ExecuteFreezeDry")]
+    [TestCase("ExecuteIcicleSpear")]
+    [TestCase("ExecuteUnite")]
+    public void ExecutionHasNamedNoArgumentTimeline(string methodName)
+    {
+        MethodInfo method = GameType("GlaceonExecution").GetMethod(methodName, Private);
+        Assert.That(method, Is.Not.Null);
+        Assert.That(method.ReturnType, Is.EqualTo(typeof(IEnumerator)));
+        Assert.That(method.GetParameters(), Is.Empty);
+    }
+
     [TestCase("GlaceSwift", "GlaceSwift", "None", 5f, 0f)]
     [TestCase("GlaceTailWhip", "GlaceTailWhip", "Target", 8f, 8f)]
     [TestCase("GlaceIceShard", "GlaceIceShard", "None", 8.5f, 0f)]

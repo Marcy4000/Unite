@@ -58,6 +58,30 @@ namespace Unite.Combat.Tests
             Assert.That(buffer.Count, Is.Zero);
         }
 
+        [Test]
+        public void ReleaseUpdatesBufferedPressWithoutExtendingItsDeadline()
+        {
+            var buffer = new ActionBuffer<string>();
+            buffer.Put(0, 2, "press", 10, 0.22);
+            Assert.That(buffer.TryUpdate(0, 2, 10.1, action => action + "+release"), Is.True);
+            Assert.That(buffer.TryTake(0, 2, 10.21, out string action), Is.True);
+            Assert.That(action, Is.EqualTo("press+release"));
+            buffer.Put(0, 2, "press", 10, 0.22);
+            Assert.That(buffer.TryUpdate(0, 2, 10.1, value => value + "+release"), Is.True);
+            Assert.That(buffer.TryTake(0, 2, 10.22, out _), Is.False);
+        }
+
+        [TestCase(3, 10.1)]
+        [TestCase(2, 10.22)]
+        public void StaleOrExpiredReleaseCannotResurrectBufferedPress(int revision, double now)
+        {
+            var buffer = new ActionBuffer<string>();
+            buffer.Put(0, 2, "press", 10, 0.22);
+            Assert.That(buffer.TryUpdate(0, revision, now, action => "release"), Is.False);
+            Assert.That(buffer.Count, Is.Zero);
+            Assert.That(buffer.TryUpdate(0, 2, now, action => "release"), Is.False);
+        }
+
         [TestCase(0)]
         [TestCase(-1)]
         [TestCase(double.NaN)]

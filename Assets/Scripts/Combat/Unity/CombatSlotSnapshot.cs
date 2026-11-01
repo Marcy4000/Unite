@@ -11,6 +11,7 @@ public struct CombatSlotSnapshot : INetworkSerializable, IEquatable<CombatSlotSn
     public bool AwaitingEnd;
     public bool FollowUpReady;
     public long CastId;
+    public ulong FollowUpTargetId;
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
@@ -22,11 +23,12 @@ public struct CombatSlotSnapshot : INetworkSerializable, IEquatable<CombatSlotSn
         serializer.SerializeValue(ref AwaitingEnd);
         serializer.SerializeValue(ref FollowUpReady);
         serializer.SerializeValue(ref CastId);
+        serializer.SerializeValue(ref FollowUpTargetId);
     }
 
     public bool Equals(CombatSlotSnapshot other) => Revision == other.Revision && MoveId == other.MoveId && Charges == other.Charges
         && CooldownUntil.Equals(other.CooldownUntil) && Reserved == other.Reserved && AwaitingEnd == other.AwaitingEnd
-        && FollowUpReady == other.FollowUpReady && CastId == other.CastId;
+        && FollowUpReady == other.FollowUpReady && CastId == other.CastId && FollowUpTargetId == other.FollowUpTargetId;
     public override bool Equals(object other) => other is CombatSlotSnapshot snapshot && Equals(snapshot);
-    public override int GetHashCode() => HashCode.Combine(Revision, MoveId, Charges, CooldownUntil, Reserved, AwaitingEnd, FollowUpReady, CastId);
+    public override int GetHashCode() => HashCode.Combine(HashCode.Combine(Revision, MoveId, Charges, CooldownUntil, Reserved, AwaitingEnd, FollowUpReady, CastId), FollowUpTargetId);
 }

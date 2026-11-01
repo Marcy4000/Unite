@@ -1,119 +1,54 @@
 using UnityEngine;
 
-public class SylvHyperVoice : MoveBase
+public class SylvHyperVoice : CombatMove
 {
-    private const int wavesAmountNormal = 6;
-    private const int wavesAmountUpgraded = 7;
+    private const int wavesAmountNormal = SylvMoveRules.HyperVoiceWavesNormal;
+    private const int wavesAmountUpgraded = SylvMoveRules.HyperVoiceWavesUpgraded;
 
     private DamageInfo closeDamage;
     private DamageInfo farDamage;
-    private Vector3 direction;
 
-    private string assetPath = "Assets/Prefabs/Objects/Moves/Sylveon/HypervoiceHitbox.prefab";
-
-    private bool isScreaming = false;
-    private float screamTimer = 2.5f;
-
-    private HypervoiceHitbox hypervoiceHitbox;
+    public override AvailableMoves MoveId => AvailableMoves.SylvHyperVoice;
+    public override MoveAimStyle AimStyle => MoveAimStyle.Direction;
+    public override float Range => SylvMoveRules.HyperVoiceRange;
+    public override bool LockDuringLoad => true;
+    public override bool LockMovementDuringLoad => false;
 
     public SylvHyperVoice()
     {
         Name = "Hyper Voice";
-        Cooldown = 7.0f;
+        Cooldown = SylvMoveRules.HyperVoiceCooldown;
         closeDamage = new DamageInfo(0, 0.32f, 6, 110, DamageType.Special);
         farDamage = new DamageInfo(0, 0.54f, 8, 184, DamageType.Special);
     }
 
     public override void Start(PlayerManager controller)
     {
+        controller?.MovesController?.EnsureSylveonCombatRuntime();
         base.Start(controller);
-        closeDamage.attackerId = controller.Pokemon.NetworkObjectId;
-        farDamage.attackerId = controller.Pokemon.NetworkObjectId;
-        ActorAim.InitializeHyperVoiceAim();
-    }
-
-    public override void Update()
-    {
-        if (isScreaming)
+        if (controller?.Pokemon != null)
         {
-            screamTimer -= Time.deltaTime;
-
-            playerManager.HPBar.UpdateGenericGuageValue(screamTimer, 2.5f);
-
-            if (hypervoiceHitbox != null)
-            {
-                hypervoiceHitbox.transform.position = playerManager.transform.position;
-            }
-            playerManager.transform.rotation = Quaternion.LookRotation(direction);
-
-            if (screamTimer <= 0f)
-            {
-                isScreaming = false;
-
-                playerManager.MovesController.UnlockEveryAction();
-                playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-
-                playerManager.HPBar.ShowGenericGuage(false);
-                hypervoiceHitbox.DespawnRPC();
-                hypervoiceHitbox = null;
-            }
+            closeDamage.attackerId = controller.Pokemon.NetworkObjectId;
+            farDamage.attackerId = controller.Pokemon.NetworkObjectId;
         }
-
-        if (!IsActive)
+        if (playerManager?.Aim != null)
         {
-            return;
+            playerManager.Aim.HideSkillshotAim();
+            playerManager.Aim.InitializeHyperVoiceAim();
         }
-        direction = ActorAim.SkillshotAim();
     }
 
     public override void Finish()
     {
-        if (direction.magnitude != 0 && IsActive)
-        {
-            Vector2 direction = new Vector2(this.direction.x, this.direction.z);
-            playerManager.MovesController.onObjectSpawned += (hyperVoiceHitbox) =>
-            {
-                hypervoiceHitbox = hyperVoiceHitbox.GetComponent<HypervoiceHitbox>();
-                int wavesAmount = IsUpgraded ? wavesAmountUpgraded : wavesAmountNormal;
-                hypervoiceHitbox.InitializeRPC(closeDamage, farDamage, playerManager.CurrentTeam.Team, wavesAmount);
-                hypervoiceHitbox.transform.rotation = Quaternion.LookRotation(this.direction);
-            };
-
-            playerManager.MovesController.SpawnNetworkObjectFromStringRPC(assetPath, playerManager.OwnerClientId);
-
-            playerManager.MovesController.LockEveryAction();
-            playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-
-            playerManager.HPBar.ShowGenericGuage(true);
-
-            screamTimer = 2.5f;
-
-            isScreaming = true;
-            wasMoveSuccessful = true;
-        }
-        ActorAim.HideHyperVoiceAim();
-        Debug.Log($"Finished {Name}!");
+        if (playerManager?.Aim != null)
+            playerManager.Aim.HideHyperVoiceAim();
         base.Finish();
     }
 
     public override void Cancel()
     {
+        if (playerManager?.Aim != null)
+            playerManager.Aim.HideHyperVoiceAim();
         base.Cancel();
-        ActorAim.HideHyperVoiceAim();
-    }
-
-    public override void ResetMove()
-    {
-        if (hypervoiceHitbox != null)
-        {
-            hypervoiceHitbox.DespawnRPC();
-            hypervoiceHitbox = null;
-        }
-        isScreaming = false;
-
-        playerManager.MovesController.UnlockEveryAction();
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-
-        playerManager.HPBar.ShowGenericGuage(false);
     }
 }

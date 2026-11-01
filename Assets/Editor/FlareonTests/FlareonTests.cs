@@ -29,14 +29,17 @@ public class FlareonTests
             root.AddComponent(Type("Unity.Netcode.NetworkObject"));
             pokemon = root.AddComponent(Type("Pokemon"));
             controller = root.AddComponent(Type("MovesController"));
-            controller.GetType().GetField("pokemon", privateInstance).SetValue(controller, pokemon);
-            object combo = controller.GetType().GetField("flareonCombo", privateInstance).GetValue(controller);
+            Component manager = root.AddComponent(Type("PlayerManager"));
+            manager.GetType().GetField("pokemon", privateInstance).SetValue(manager, pokemon);
+            manager.GetType().GetField("movesController", privateInstance).SetValue(manager, controller);
+            object runtime = Activator.CreateInstance(Type("FlareonCharacterRuntime"), new object[] { manager });
+            object combo = runtime.GetType().GetField("combo", privateInstance).GetValue(runtime);
             Call(combo, "AddStack", 0d);
             networkBehaviour.GetProperty("IsServer").SetValue(controller, true);
             networkBehaviour.GetProperty("IsSpawned").SetValue(controller, controllerSpawned);
             networkBehaviour.GetProperty("IsSpawned").SetValue(pokemon, pokemonSpawned);
-            Assert.DoesNotThrow(() => controller.GetType().GetMethod("SyncFlareonCombo", privateInstance).Invoke(controller, null));
-            Assert.That(controller.GetType().GetProperty("FlareonAttackStacks").GetValue(controller), Is.Zero);
+            Assert.DoesNotThrow(() => runtime.GetType().GetMethod("ApplyPassiveStacks", privateInstance).Invoke(runtime, null));
+            Assert.That(combo.GetType().GetProperty("Stacks").GetValue(combo), Is.EqualTo(1));
         }
         finally
         {
@@ -60,17 +63,22 @@ public class FlareonTests
         try
         {
             root.AddComponent(Type("Unity.Netcode.NetworkObject"));
+            Component pokemon = root.AddComponent(Type("Pokemon"));
             controller = root.AddComponent(Type("MovesController"));
-            object combo = controller.GetType().GetField("flareonCombo", privateInstance).GetValue(controller);
+            Component manager = root.AddComponent(Type("PlayerManager"));
+            manager.GetType().GetField("pokemon", privateInstance).SetValue(manager, pokemon);
+            manager.GetType().GetField("movesController", privateInstance).SetValue(manager, controller);
+            object runtime = Activator.CreateInstance(Type("FlareonCharacterRuntime"), new object[] { manager });
+            object combo = runtime.GetType().GetField("combo", privateInstance).GetValue(runtime);
             Call(combo, "AddStack", 0d);
             Call(combo, "ConfirmBasic", 0d);
-            controller.GetType().GetField("flareonBound", privateInstance).SetValue(controller, true);
+            runtime.GetType().GetField("boundPokemon", privateInstance).SetValue(runtime, pokemon);
             Type("Unity.Netcode.NetworkBehaviour").GetProperty("IsServer").SetValue(controller, wasServer);
             for (int attempt = 0; attempt < 2; attempt++)
-                Assert.DoesNotThrow(() => controller.GetType().GetMethod("DisposeFlareonRuntime", privateInstance).Invoke(controller, null));
+                Assert.DoesNotThrow(() => ((IDisposable)runtime).Dispose());
             Assert.That(combo.GetType().GetProperty("Stacks").GetValue(combo), Is.Zero);
             Assert.That(combo.GetType().GetProperty("AttackCharge").GetValue(combo), Is.Zero);
-            Assert.That(controller.GetType().GetField("flareonBound", privateInstance).GetValue(controller), Is.False);
+            Assert.That(runtime.GetType().GetField("boundPokemon", privateInstance).GetValue(runtime), Is.Null);
         }
         finally
         {
@@ -92,10 +100,46 @@ public class FlareonTests
         object move = Type("MoveDatabase").GetMethod("GetMove").Invoke(null, new[] { enumValue });
         Assert.That(move.GetType().Name, Is.EqualTo(className));
         Assert.That(Type("FlareonMoveBase").IsInstanceOfType(move), Is.True);
+        Assert.That(Type("CombatMove").IsInstanceOfType(move), Is.True);
+        Assert.That(move.GetType().GetProperty("MoveId").GetValue(move), Is.EqualTo(enumValue));
+        Assert.That(move.GetType().GetProperty("LockDuringLoad").GetValue(move), Is.True);
+        Assert.That(move.GetType().GetProperty("UsesExplicitUniteCastCheckpoint").GetValue(move), Is.EqualTo(kind == "Unite"));
         Assert.That(Get(move, "Cooldown"), Is.EqualTo(cooldown));
         Assert.That(Rule("Slot", Kind(kind)), Is.EqualTo(slot));
         Assert.DoesNotThrow(() => Call(move, "ResetMove"));
         Assert.DoesNotThrow(() => Call(move, "ResetMove"));
+    }
+    [Test]
+    public void ObserverSnapshotsKeepNewestChargeStacksAndRecoveryDeadline()
+    {
+        const BindingFlags privateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+        var root = new GameObject("Flareon snapshot ordering");
+        try
+        {
+            root.AddComponent(Type("Unity.Netcode.NetworkObject"));
+            Component controller = root.AddComponent(Type("MovesController"));
+            Component manager = root.AddComponent(Type("PlayerManager"));
+            manager.GetType().GetField("movesController", privateInstance).SetValue(manager, controller);
+            object runtime = Activator.CreateInstance(Type("FlareonCharacterRuntime"), new object[] { manager });
+            Type snapshotType = Type("FlareonCharacterRuntime+PresentationState");
+            object snapshot = Activator.CreateInstance(snapshotType);
+            snapshotType.GetField("Revision").SetValue(snapshot, 2L);
+            snapshotType.GetField("AttackCharge").SetValue(snapshot, 2);
+            snapshotType.GetField("Stacks").SetValue(snapshot, 3);
+            snapshotType.GetField("RecoveryUntil").SetValue(snapshot, 42d);
+            snapshotType.GetField("BasicDirection").SetValue(snapshot, Vector3.forward);
+            Call(runtime, "ApplyPresentationState", JsonUtility.ToJson(snapshot));
+            snapshotType.GetField("Revision").SetValue(snapshot, 1L);
+            snapshotType.GetField("AttackCharge").SetValue(snapshot, 0);
+            snapshotType.GetField("Stacks").SetValue(snapshot, 0);
+            snapshotType.GetField("RecoveryUntil").SetValue(snapshot, 0d);
+            Call(runtime, "ApplyPresentationState", JsonUtility.ToJson(snapshot));
+            Assert.That(runtime.GetType().GetProperty("AttackCharge").GetValue(runtime), Is.EqualTo(2));
+            Assert.That(runtime.GetType().GetProperty("Stacks").GetValue(runtime), Is.EqualTo(3));
+            object applied = runtime.GetType().GetField("presentation", privateInstance).GetValue(runtime);
+            Assert.That(snapshotType.GetField("RecoveryUntil").GetValue(applied), Is.EqualTo(42d));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(root); }
     }
     [Test]
     public void ConnectedBasicsCycleAndOnlyTheThirdConfirmsABoost()
@@ -126,6 +170,42 @@ public class FlareonTests
         Assert.That(state.GetType().GetProperty("Stacks").GetValue(state), Is.EqualTo(3));
         Call(state, "Tick", 9.99d); Assert.That(state.GetType().GetProperty("Stacks").GetValue(state), Is.EqualTo(3));
         Call(state, "Tick", 10d); Assert.That(state.GetType().GetProperty("Stacks").GetValue(state), Is.Zero);
+    }
+    [Test]
+    public void AttackChargeAndHeatExpireIndependently()
+    {
+        object state = Activator.CreateInstance(Type("FlareonComboState"));
+        Call(state, "ConfirmBasic", 1d);
+        Call(state, "AddStack", 3d);
+        Call(state, "Tick", 6d);
+        Assert.That(state.GetType().GetProperty("AttackCharge").GetValue(state), Is.Zero);
+        Assert.That(state.GetType().GetProperty("Stacks").GetValue(state), Is.EqualTo(1));
+        Call(state, "Tick", 8d);
+        Assert.That(state.GetType().GetProperty("Stacks").GetValue(state), Is.Zero);
+    }
+    [Test]
+    public void BasicAtExpiryStartsNewCycleInsteadOfBoosting()
+    {
+        object state = Activator.CreateInstance(Type("FlareonComboState"));
+        Call(state, "ConfirmBasic", 0d);
+        Call(state, "ConfirmBasic", 1d);
+        Assert.That(Call(state, "ConfirmBasic", 6d), Is.False);
+        Assert.That(state.GetType().GetProperty("AttackCharge").GetValue(state), Is.EqualTo(1));
+        Assert.That(state.GetType().GetProperty("AttackExpires").GetValue(state), Is.EqualTo(11d));
+    }
+    [Test]
+    public void HeatAtExpiryStartsNewStackAndClearResetsDeadlines()
+    {
+        object state = Activator.CreateInstance(Type("FlareonComboState"));
+        Call(state, "AddStack", 0d);
+        Call(state, "AddStack", 1d);
+        Call(state, "AddStack", 6d);
+        Assert.That(state.GetType().GetProperty("Stacks").GetValue(state), Is.EqualTo(1));
+        Assert.That(state.GetType().GetProperty("StacksExpire").GetValue(state), Is.EqualTo(11d));
+        Call(state, "ConfirmBasic", 6d);
+        Call(state, "Clear");
+        Assert.That(state.GetType().GetProperty("AttackExpires").GetValue(state), Is.EqualTo(0d));
+        Assert.That(state.GetType().GetProperty("StacksExpire").GetValue(state), Is.EqualTo(0d));
     }
     [TestCase(false, 8, 0.75f, 1.2f)]
     [TestCase(true, 10, 0.6f, 1.4f)]
@@ -227,7 +307,10 @@ public class FlareonTests
     {
         string basic = File.ReadAllText("Assets/Scripts/Moves/Flareon/FlareonBasicAtk.cs");
         Assert.That(basic, Does.Not.Contain("PlayAnimation"));
-        Assert.That(basic, Does.Contain("FlareonBasicRPC"));
+        Assert.That(basic, Does.Contain("ServerResolved => true"));
+        Assert.That(basic, Does.Contain("RequestServerBasicAttack"));
+        Assert.That(basic, Does.Contain("PerformBasicAttack(target)"));
+        Assert.That(basic, Does.Not.Contain("FlareonBasicRPC"));
         foreach (string path in Directory.GetFiles("Assets/Scripts/Moves/Flareon", "*.cs").Where(p => p.EndsWith("Object.cs") || p.EndsWith("Rules.cs")))
             foreach (string banned in new[] { "CreatePrimitive(", "new Mesh", "new GameObject(", "AddComponent<LineRenderer>" }) Assert.That(File.ReadAllText(path), Does.Not.Contain(banned));
     }

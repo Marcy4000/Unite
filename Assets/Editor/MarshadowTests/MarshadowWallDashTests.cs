@@ -65,8 +65,6 @@ public class MarshadowWallDashTests
     [TestCase("MarshadowCloseCombat", 3.5f)]
     public void BothMovesCrossPhysicalAndWalkmeshWallsWithoutChangingTheirRange(string moveType, float range)
     {
-        object move = Activator.CreateInstance(GameType(moveType));
-        dash = move.GetType().GetField("dash", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(move);
         Call(dash, "Begin", movement, Vector3.right, range);
         Assert.That(dash.GetType().GetProperty("Destination").GetValue(dash), Is.EqualTo(Vector3.left + Vector3.right * range));
         Call(dash, "Advance", range / 2);

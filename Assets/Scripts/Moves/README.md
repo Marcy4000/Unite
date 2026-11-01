@@ -49,6 +49,13 @@ CDR changes, reductions, upgrades, death, and hiding/re-enabling the HUD.
 
 The older `SecondaryCooldown` ring and `ShowMoveSecondaryCooldown` API remain
 available for temporary modes such as Flash Cannon; they are not reserve timers.
+While a secondary recast/mode timer is active, it takes priority over the main
+availability overlay (line, background and cooldown text). The main cooldown
+continues in the background and is displayed at its current remaining time when
+the window expires or is consumed. Timer rendering uses absolute end times so
+hiding/re-enabling the HUD does not reset either timer. Presentation snapshots
+should start the secondary timer only when the recast window's end time changes,
+not on every frame or repeated snapshot.
 
 Tests: `Assets/Editor/MoveTests` (`Unite.Moves.Tests`), plus the existing
 `Unite.Duraludon.Tests` regression tests.

@@ -138,6 +138,40 @@ public class MoveUseTests
     }
 
     [Test]
+    public void LearnedStoredMoveWaitsForInheritedSlotCooldown()
+    {
+        object state = State();
+        Call(state, "DelayUseUntil", 7f);
+        Call(state, "Tick", 3f, 2, 10f);
+        Assert.That(Property<int>(state, "Count"), Is.EqualTo(2));
+        Assert.That(Call(state, "GetUseCooldown", 3f), Is.EqualTo(4f));
+        Assert.That(Call(state, "TrySpend", 3f, 1f), Is.False);
+        Assert.That(Call(state, "TrySpend", 7f, 1f), Is.True);
+        Assert.That(Property<float>(state, "NextRecovery"), Is.EqualTo(17f));
+    }
+
+    [Test]
+    public void InheritedSlotCooldownCannotShortenExistingStoredCastInterval()
+    {
+        object state = State();
+        Call(state, "TrySpend", 0f, 8f);
+        Call(state, "DelayUseUntil", 3f);
+        Assert.That(Call(state, "GetUseCooldown", 1f), Is.EqualTo(7f));
+    }
+
+    [TestCase("DuraDragonTail")]
+    [TestCase("DuraStealthRock")]
+    public void StoredMoveRetainsSlotCooldownAfterInitialization(string name)
+    {
+        object move = Activator.CreateInstance(GameType(name));
+        float now = Time.time;
+        Call(move, "UpdateStoredUses", now, 0f);
+        Call(move, "PreserveSlotCooldown", 7f, now);
+        Call(move, "UpdateStoredUses", now, 0f);
+        Assert.That(Property<float>(move, "StoredUseCooldownRemaining"), Is.EqualTo(7f).Within(0.1f));
+    }
+
+    [Test]
     public void ExistingNormalMovesOptOutByDefault()
     {
         var move = Activator.CreateInstance(GameType("CinderEmber"));

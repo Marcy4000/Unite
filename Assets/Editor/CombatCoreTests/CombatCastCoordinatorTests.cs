@@ -223,7 +223,9 @@ namespace Unite.Combat.Tests
             now += 2;
             ability = loadout.Install(0, new AbilityDefinition(9, "Replacement", 4), false);
             Assert.That(oldSession.Outcome, Is.EqualTo(CastOutcome.Replaced));
-            Assert.That(ability.Resources.Read(now).Ready, Is.True);
+            Assert.That(ability.Resources.Read(now).Remaining, Is.EqualTo(deferred ? 30 : 28));
+            Assert.That(ability.Resources.Read(now).AwaitingExecutionEnd, Is.False);
+            now += deferred ? 30 : 28;
             CastSession newSession = Commit(4);
             now += 1;
             coordinator.End(oldSession, CastOutcome.Completed);
@@ -231,6 +233,91 @@ namespace Unite.Combat.Tests
             Assert.That(coordinator.FindCast(newSession.CastId), Is.SameAs(newSession));
             now += 3;
             Assert.That(ability.Resources.Read(now).Ready, Is.True);
+        }
+
+        [TestCase(0, 0)]
+        [TestCase(0, 4)]
+        [TestCase(1, 30)]
+        public void LearningReplacementPreservesRemainingSlotCooldown(int slot, double replacementCooldown)
+        {
+            ability = loadout.Install(slot, new AbilityDefinition(7, "Move", 10), false);
+            Commit();
+            now += 3;
+            ability = loadout.Install(slot, new AbilityDefinition(9, "Learned move", replacementCooldown), false);
+            Assert.That(ability.Resources.Read(now).Remaining, Is.EqualTo(7));
+            Assert.That(coordinator.TryPrepare(Request(), replacementCooldown, false, out _, out CastRejection rejection), Is.False);
+            Assert.That(rejection, Is.EqualTo(CastRejection.Unavailable));
+            now += 7;
+            Commit(replacementCooldown);
+            Assert.That(ability.Resources.Read(now).Remaining, Is.EqualTo(replacementCooldown));
+        }
+
+        [Test]
+        public void LearningReplacementAfterCooldownExpiresIsImmediatelyReady()
+        {
+            Commit();
+            now += 12;
+            ability = loadout.Install(0, new AbilityDefinition(9, "Learned move", 4), false);
+            Assert.That(ability.Resources.Read(now).Ready, Is.True);
+        }
+
+        [Test]
+        public void LearningReplacementDoesNotChangeOtherSlotCooldown()
+        {
+            AbilityInstance other = loadout.Install(1, new AbilityDefinition(10, "Other slot", 20), false);
+            Assert.That(coordinator.TryPrepare(Request(other), 20, false, out CastSession session, out _), Is.True);
+            Assert.That(coordinator.TryCommit(session), Is.True);
+            Commit();
+            now += 3;
+            loadout.Install(0, new AbilityDefinition(9, "Learned move", 4), false);
+            Assert.That(loadout.Get(1), Is.SameAs(other));
+            Assert.That(other.Resources.Read(now).Remaining, Is.EqualTo(17));
+        }
+
+        [Test]
+        public void LearningStoredReplacementPreservesSpentChargesAndRechargeDeadline()
+        {
+            Configure(storedUses: true, capacity: 2, interval: 2);
+            Commit();
+            now += 2;
+            Commit();
+            now += 1;
+            ability = loadout.Install(0, new AbilityDefinition(9, "Learned move", 4, capacity: 2, storedUses: true, useInterval: 1), false);
+            Assert.That(ability.Resources.Read(now).Charges, Is.Zero);
+            Assert.That(ability.Resources.Read(now).Remaining, Is.EqualTo(7));
+            now += 7;
+            Assert.That(ability.Resources.Read(now).Charges, Is.EqualTo(1));
+            Assert.That(ability.Resources.Read(now).Ready, Is.True);
+            now += 10;
+            Assert.That(ability.Resources.Read(now).Charges, Is.EqualTo(2));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void LearningAcrossResourceTypesPreservesCooldown(bool previousStored)
+        {
+            Configure(storedUses: previousStored);
+            Commit();
+            now += 3;
+            ability = loadout.Install(0, new AbilityDefinition(9, "Learned move", 4, storedUses: !previousStored), false);
+            Assert.That(ability.Resources.Read(now).Remaining, Is.EqualTo(7));
+            ability.Resources.ReduceCooldown(2, now);
+            Assert.That(ability.Resources.Read(now).Remaining, Is.EqualTo(5));
+            now += 5;
+            Assert.That(ability.Resources.Read(now).Ready, Is.True);
+            Commit(4);
+            Assert.That(ability.Resources.Read(now).Remaining, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void LearningStoredReplacementPreservesCastIntervalWithAvailableCharges()
+        {
+            Configure(storedUses: true, capacity: 2, interval: 5);
+            Commit();
+            now += 2;
+            ability = loadout.Install(0, new AbilityDefinition(9, "Learned move", 4, capacity: 2, storedUses: true), false);
+            Assert.That(ability.Resources.Read(now).Charges, Is.EqualTo(1));
+            Assert.That(ability.Resources.Read(now).Remaining, Is.EqualTo(3));
         }
 
         [Test]

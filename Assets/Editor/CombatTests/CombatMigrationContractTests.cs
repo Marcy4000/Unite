@@ -30,6 +30,41 @@ public class CombatMigrationContractTests
     [TestCase("CinderFlameCharge")]
     [TestCase("CinderFeint")]
     [TestCase("BlazingBycicleKick")]
+    [TestCase("SylvSwift")]
+    [TestCase("SylvBabyDollEyes")]
+    [TestCase("SylvHyperVoice")]
+    [TestCase("SylvMysticalCringe")]
+    [TestCase("SylvDrainingKiss")]
+    [TestCase("SylvCalmMind")]
+    [TestCase("SylveonUnite")]
+    [TestCase("CresseliaAuroraBeam")]
+    [TestCase("CresseliaMoonlight")]
+    [TestCase("CresseliaPsybeam")]
+    [TestCase("CresseliaMoonblast")]
+    [TestCase("CresseliaSafeguard")]
+    [TestCase("CresseliaLunarBlessing")]
+    [TestCase("CresseliaUnite")]
+    [TestCase("VaporSwift")]
+    [TestCase("VaporHelpingHand")]
+    [TestCase("VaporAquaRing")]
+    [TestCase("VaporRainDance")]
+    [TestCase("VaporWhirlpool")]
+    [TestCase("VaporDive")]
+    [TestCase("VaporeonUnite")]
+    [TestCase("JoltSwift")]
+    [TestCase("JoltAgility")]
+    [TestCase("JoltCharge")]
+    [TestCase("JoltThunderFang")]
+    [TestCase("JoltDischarge")]
+    [TestCase("JoltElectroWeb")]
+    [TestCase("JolteonUnite")]
+    [TestCase("FlareonSwift")]
+    [TestCase("FlareonTackle")]
+    [TestCase("FlareonHeatWave")]
+    [TestCase("FlareonTakedown")]
+    [TestCase("FlareonFlameThrower")]
+    [TestCase("FlareonFlareBlitz")]
+    [TestCase("FlareonUnite")]
     public void PhaseOneAbilitiesUseCombatInputBridge(string name)
     {
         object id = Enum.Parse(GameType("AvailableMoves"), name);
@@ -46,6 +81,19 @@ public class CombatMigrationContractTests
         Assert.That(GameType("CombatMove").IsInstanceOfType(move), Is.False);
     }
 
+    [TestCase("ZoroarkNightfallDaze", true)]
+    [TestCase("AbsolMidnightSlash", true)]
+    [TestCase("GlaceonUnite", false)]
+    [TestCase("BlazingBycicleKick", false)]
+    [TestCase("SylveonUnite", false)]
+    [TestCase("CresseliaUnite", false)]
+    public void UniteSuccessCheckpointPolicyIsDeclaredByTheMove(string name, bool explicitCheckpoint)
+    {
+        object id = Enum.Parse(GameType("AvailableMoves"), name);
+        object move = GameType("MoveDatabase").GetMethod("GetMove").Invoke(null, new[] { id });
+        Assert.That(move.GetType().GetProperty("UsesExplicitUniteCastCheckpoint").GetValue(move), Is.EqualTo(explicitCheckpoint));
+    }
+
     [Test]
     public void MigrationAssetContractsAreValid()
     {
@@ -53,9 +101,44 @@ public class CombatMigrationContractTests
         Assert.That(errors, Is.Empty, string.Join("\n", errors.Cast<object>()));
     }
 
+    [TestCase("Glaceon")]
+    [TestCase("Zoroark")]
+    [TestCase("Cinderace")]
+    [TestCase("Sylveon")]
+    [TestCase("Cresselia")]
+    [TestCase("Vaporeon")]
+    [TestCase("Jolteon")]
+    [TestCase("Flareon")]
+    public void MigratedCharacterDefinitionIsEnabledAtTheCompositionRoot(string character)
+    {
+        UnityEngine.Object definition = AssetDatabase.LoadMainAssetAtPath("Assets/Pokemons/PlayableMons/" + character + ".asset");
+        Assert.That(definition, Is.Not.Null);
+        Assert.That(GameType("CombatKitFactory").GetMethod("SupportsDefinition").Invoke(null, new object[] { definition }), Is.True);
+    }
+
+    [Test]
+    public void FollowUpTargetChangesInvalidateSlotSnapshotEquality()
+    {
+        Type snapshotType = GameType("CombatSlotSnapshot");
+        object first = Activator.CreateInstance(snapshotType);
+        object second = Activator.CreateInstance(snapshotType);
+        snapshotType.GetField("FollowUpReady").SetValue(first, true);
+        snapshotType.GetField("FollowUpReady").SetValue(second, true);
+        snapshotType.GetField("FollowUpTargetId").SetValue(first, 12UL);
+        snapshotType.GetField("FollowUpTargetId").SetValue(second, 13UL);
+        Assert.That(first.Equals(second), Is.False);
+        snapshotType.GetField("FollowUpTargetId").SetValue(second, 12UL);
+        Assert.That(first.Equals(second), Is.True);
+    }
+
     [TestCase("GlaceBasicAtk")]
     [TestCase("ZoroarkBasicAtk")]
     [TestCase("CinderBasicAtk")]
+    [TestCase("SylvBasicAtk")]
+    [TestCase("CresseliaBasicAtk")]
+    [TestCase("VaporBasicAtk")]
+    [TestCase("JoltBasicAtk")]
+    [TestCase("FlareonBasicAtk")]
     public void MigratedBasicAttacksAreServerResolved(string type)
     {
         object attack = Activator.CreateInstance(GameType(type));

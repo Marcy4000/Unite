@@ -24,6 +24,8 @@ public class AbsolMidnightSlashEffect : PrefabMoveEffect
         LockActions(); FaceRPC(Direction); PlayAnimation(AbsolMoveRules.UniteFirstAnimation, blendDuration: AbsolMoveRules.UniteAnimationBlend);
         Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, AbsolMoveRules.UniteWindup, true, AbsolMoveRules.UniteStatusId));
         yield return new WaitForSeconds(AbsolMoveRules.UniteWindup);
+        if (Actor == null || !Actor.IsSpawned || Actor.Pokemon.CurrentHp <= 0) yield break;
+        MarkCastSucceeded();
         Actor.Pokemon.RemoveStatusEffectWithID(AbsolMoveRules.UniteStatusId);
         Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, AbsolMoveRules.UniteFlurryDuration, true, AbsolMoveRules.UniteStatusId));
         Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Untargetable, AbsolMoveRules.UniteFlurryDuration, true, AbsolMoveRules.UniteUntargetableId));

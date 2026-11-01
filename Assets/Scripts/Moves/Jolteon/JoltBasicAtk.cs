@@ -2,64 +2,26 @@ using UnityEngine;
 
 public class JoltBasicAtk : ChargedBasicAttackBase
 {
-    protected override int AttackCharge => charge;
-    private DamageInfo normalDamage = new DamageInfo(0, 0.4f, 5, 120, DamageType.Physical, DamageProprieties.IsBasicAttack);
-    private DamageInfo boostedDamage = new DamageInfo(0, 0.6f, 7, 160, DamageType.Physical, DamageProprieties.IsBasicAttack);
-
-    private int charge;
-
-    public override void Initialize(PlayerManager manager)
-    {
-        base.Initialize(manager);
-        range = 2.5f;
-        normalDamage.attackerId = playerManager.NetworkObjectId;
-        boostedDamage.attackerId = playerManager.NetworkObjectId;
-        charge = 0;
-    }
-
+    private byte charge;
+    private JolteonCharacterRuntime Character => playerManager?.MovesController?.Combat?.Character as JolteonCharacterRuntime;
+    protected override int AttackCharge => Character?.AttackCharge ?? charge;
+    public override bool ServerResolved => true;
+    public override void Initialize(PlayerManager manager) { range = 2.5f; base.Initialize(manager); }
+    public override void InitializeServer(PlayerManager manager) { base.InitializeServer(manager); range = 2.5f; }
     public override void Perform(bool wildPriority)
     {
-        PokemonType priority = wildPriority ? PokemonType.Wild : PokemonType.Player;
-        GameObject closestEnemy = ActorAim.AimInCircle(range, priority);
-        GameObject[] hitColliders;
-        if (closestEnemy != null)
-        {
-            playerManager.transform.LookAt(closestEnemy.transform);
-            playerManager.transform.eulerAngles = new Vector3(0, playerManager.transform.eulerAngles.y, 0);
-        }
-        else
-        {
-            if (playerManager.PlayerMovement.IsMoving)
-            {
-                return;
-            }
-        }
-
-        hitColliders = ActorAim.AimInCircleAtPosition(playerManager.transform.position + (playerManager.transform.forward * 1.377f), 1f, AimTarget.NonAlly);
-
-        foreach (var hitCollider in hitColliders)
-        {
-            Pokemon targetPokemon = hitCollider.GetComponent<Pokemon>();
-
-            if (targetPokemon == null || !CombatTargeting.WithinMeleeRange(playerManager.transform.position, targetPokemon.transform.position, range))
-            {
-                continue;
-            }
-
-            DamageInfo damageInfo = charge == 2 ? boostedDamage : normalDamage;
-
-            targetPokemon.TakeDamageRPC(damageInfo);
-        }
-
-        string animation = playerManager.Pokemon.CurrentLevel >= 3 ? $"ani_atk{charge + 1}_bat_0471" : $"ani_atk{charge + 4}_bat_0133";
-        playerManager.AnimationManager.PlayAnimation(animation);
-        playerManager.StopMovementForTime(0.5f * playerManager.MovesController.GetAtkSpeedCooldown(), playerManager.Pokemon.CurrentLevel < 3);
-
-        charge++;
-        if (charge > 2)
-        {
-            charge = 0;
-        }
+        GameObject selected = ActorAim.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
+        if (selected != null && selected.TryGetComponent(out Pokemon target))
+            playerManager.MovesController.RequestServerBasicAttack(target.NetworkObjectId);
+        else if (!playerManager.PlayerMovement.IsMoving)
+            playerManager.MovesController.RequestServerBasicAttack(ulong.MaxValue);
     }
-
+    public override void PerformOnServer(Pokemon target) => Character?.PerformBasicAttack(target);
+    public override void ApplyServerState(int value, float empoweredUntil) => charge = (byte)Mathf.Clamp(value, 0, 2);
+    public override void ResetAttack()
+    {
+        if (playerManager != null && playerManager.IsServer) Character?.ResetBasicCharge();
+        charge = 0;
+        base.ResetAttack();
+    }
 }

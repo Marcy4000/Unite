@@ -62,91 +62,131 @@ public sealed class GlaceonExecution : CombatExecution
     public override void Start()
     {
         if (!Prepared || stopped || !Actor.IsServer || Context.Scope.IsDisposed) return;
-        routine = Context.Scope.Own(new CombatRoutine(Actor, Execute()));
+        routine = Context.Scope.Own(new CombatRoutine(Actor, RunLifecycle()));
     }
 
     private bool Alive => !stopped && Actor != null && Actor.IsSpawned && Actor.Pokemon.CurrentHp > 0;
     private bool Interrupted => !Alive || Actor.Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions);
 
-    private IEnumerator Execute()
+    private IEnumerator RunLifecycle()
     {
         yield return null;
         if (Interrupted) { Context.Finish(CastOutcome.Interrupted); yield break; }
+        yield return Execute();
+        if (!stopped) Context.Finish(Alive ? CastOutcome.Completed : CastOutcome.Interrupted);
+    }
+
+    private IEnumerator Execute()
+    {
         switch (Context.MoveId)
         {
             case AvailableMoves.GlaceSwift:
-                character.Swift?.End(CastOutcome.Replaced);
-                character.Swift = this;
-                yield return Duration(5);
+                yield return ExecuteSwift();
                 break;
             case AvailableMoves.GlaceTailWhip:
-                if (!GlaceonCharacterRuntime.CanHit(Actor, Context.Target))
-                { Context.Finish(CastOutcome.ExecutionFailed); yield break; }
-                spawned = Spawn();
-                var tail = spawned != null ? spawned.GetComponent<HomingProjectile>() : null;
-                if (tail == null) { Context.Finish(CastOutcome.ExecutionFailed); yield break; }
-                tail.SetTargetRPC(Context.Target.NetworkObjectId, Damage(0.61f, 6, 190));
-                character.FillCharge();
-                Face(Context.Target.transform.position - Actor.transform.position);
-                Animate(Actor.Pokemon.CurrentLevel >= 3 ? "ani_spell2_bat_0471" : "ani_spell2G_bat_0133");
-                yield return MovementLock(0.4f);
-                yield return WaitForProjectile(5);
+                yield return ExecuteTailWhip();
                 break;
             case AvailableMoves.GlaceIceShard:
-                character.Shard?.End(CastOutcome.Replaced);
-                character.Shard = this;
-                character.SetMode(1);
-                Actor.Pokemon.AddStatChange(new StatChange(40, Stat.Speed, 0.5f, true, true, true, 0));
-                Actor.Pokemon.AddStatChange(new StatChange((short)(Context.Upgraded ? 100 : 60), Stat.AtkSpeed, 2.5f, true, true, true, 0));
-                Animate("ani_spell2a_bat_0471");
-                yield return Duration(2.5f);
+                yield return ExecuteIceShard();
                 break;
             case AvailableMoves.GlaceIcyWind:
-                character.Wind?.End(CastOutcome.Replaced);
-                character.Wind = this;
-                character.SetMode(2);
-                if (Controller.Combat.Loadout.Get((int)MoveType.MoveB)?.Definition.Id == (int)AvailableMoves.GlaceIceShard)
-                    windShardLock = Context.Scope.Own(character.LockShard());
-                if (character.Crystals < 1) character.SetCrystals(2);
-                character.ResetCrystalTimer();
-                Face(direction);
-                Animate("ani_spell2b_bat_0471");
-                yield return Dash();
-                yield return Duration(4.8f);
-                if (windConsumed) yield return Duration(0.6f);
+                yield return ExecuteIcyWind();
                 break;
             case AvailableMoves.GlaceFreezeDry:
-                spawned = Spawn();
-                freeze = spawned != null ? spawned.GetComponent<FreezeDryProjectile>() : null;
-                if (freeze == null) { Context.Finish(CastOutcome.ExecutionFailed); yield break; }
-                freeze.OnMoveHit += FreezeHit;
-                Context.Scope.Own(new GlaceonCleanup(() => { if (freeze != null) freeze.OnMoveHit -= FreezeHit; }));
-                freeze.SetDirection(Actor.transform.position, new Vector2(direction.x, direction.z), Damage(0.65f, 5, 210), 6);
-                Face(direction);
-                Animate("ani_spell1b_bat_0471");
-                yield return MovementLock(0.35f);
-                yield return WaitForProjectile(1);
+                yield return ExecuteFreezeDry();
                 break;
             case AvailableMoves.GlaceIcycleSpear:
-                yield return Spear();
+                yield return ExecuteIcicleSpear();
                 break;
             case AvailableMoves.GlaceonUnite:
-                spawned = Spawn();
-                area = spawned != null ? spawned.GetComponent<GlaceUniteArea>() : null;
-                if (area == null) { Context.Finish(CastOutcome.ExecutionFailed); yield break; }
-                area.onGiveGlaceonSpears += GiveCrystal;
-                Context.Scope.Own(new GlaceonCleanup(() => { if (area != null) area.onGiveGlaceonSpears -= GiveCrystal; }));
-                area.InitializeServer(Actor.transform.position, Quaternion.LookRotation(direction), Damage(1, 7, 320), Actor.CurrentTeam.Team, Actor.Pokemon.NetworkObjectId);
-                Animate("ani_spellu_bat_0471");
-                Actor.Pokemon.AddStatChange(new StatChange(30, Stat.Speed, 6, true, true, true, 0));
-                Actor.Pokemon.AddStatChange(new StatChange(35, Stat.AtkSpeed, 6, true, true, true, 0));
-                var flight = Context.Scope.Own(character.AcquireFlight());
-                yield return Duration(0.3f);
-                flight.Dispose();
-                yield return WaitForProjectile(8.5f);
+                yield return ExecuteUnite();
                 break;
         }
-        if (!stopped) Context.Finish(Alive ? CastOutcome.Completed : CastOutcome.Interrupted);
+    }
+
+    private IEnumerator ExecuteSwift()
+    {
+        character.Swift?.End(CastOutcome.Replaced);
+        character.Swift = this;
+        yield return Duration(5);
+    }
+
+    private IEnumerator ExecuteTailWhip()
+    {
+        if (!GlaceonCharacterRuntime.CanHit(Actor, Context.Target))
+        { Context.Finish(CastOutcome.ExecutionFailed); yield break; }
+        spawned = Spawn();
+        var tail = spawned != null ? spawned.GetComponent<HomingProjectile>() : null;
+        if (tail == null) { Context.Finish(CastOutcome.ExecutionFailed); yield break; }
+        tail.SetTargetRPC(Context.Target.NetworkObjectId, Damage(0.61f, 6, 190));
+        character.FillCharge();
+        Face(Context.Target.transform.position - Actor.transform.position);
+        Animate(Actor.Pokemon.CurrentLevel >= 3 ? "ani_spell2_bat_0471" : "ani_spell2G_bat_0133");
+        yield return MovementLock(0.4f);
+        yield return WaitForProjectile(5);
+    }
+
+    private IEnumerator ExecuteIceShard()
+    {
+        character.Shard?.End(CastOutcome.Replaced);
+        character.Shard = this;
+        character.SetMode(1);
+        Actor.Pokemon.AddStatChange(new StatChange(40, Stat.Speed, 0.5f, true, true, true, 0));
+        Actor.Pokemon.AddStatChange(new StatChange((short)(Context.Upgraded ? 100 : 60), Stat.AtkSpeed, 2.5f, true, true, true, 0));
+        Animate("ani_spell2a_bat_0471");
+        yield return Duration(2.5f);
+    }
+
+    private IEnumerator ExecuteIcyWind()
+    {
+        character.Wind?.End(CastOutcome.Replaced);
+        character.Wind = this;
+        character.SetMode(2);
+        if (Controller.Combat.Loadout.Get((int)MoveType.MoveB)?.Definition.Id == (int)AvailableMoves.GlaceIceShard)
+            windShardLock = Context.Scope.Own(character.LockShard());
+        if (character.Crystals < 1) character.SetCrystals(2);
+        character.ResetCrystalTimer();
+        Face(direction);
+        Animate("ani_spell2b_bat_0471");
+        yield return Dash();
+        yield return Duration(4.8f);
+        if (windConsumed) yield return Duration(0.6f);
+    }
+
+    private IEnumerator ExecuteFreezeDry()
+    {
+        spawned = Spawn();
+        freeze = spawned != null ? spawned.GetComponent<FreezeDryProjectile>() : null;
+        if (freeze == null) { Context.Finish(CastOutcome.ExecutionFailed); yield break; }
+        freeze.OnMoveHit += FreezeHit;
+        Context.Scope.Own(new GlaceonCleanup(() => { if (freeze != null) freeze.OnMoveHit -= FreezeHit; }));
+        freeze.SetDirection(Actor.transform.position, new Vector2(direction.x, direction.z), Damage(0.65f, 5, 210), 6);
+        Face(direction);
+        Animate("ani_spell1b_bat_0471");
+        yield return MovementLock(0.35f);
+        yield return WaitForProjectile(1);
+    }
+
+    private IEnumerator ExecuteIcicleSpear()
+    {
+        yield return ConsumeIcicleSpearCrystals();
+    }
+
+    private IEnumerator ExecuteUnite()
+    {
+        spawned = Spawn();
+        area = spawned != null ? spawned.GetComponent<GlaceUniteArea>() : null;
+        if (area == null) { Context.Finish(CastOutcome.ExecutionFailed); yield break; }
+        area.onGiveGlaceonSpears += GiveCrystal;
+        Context.Scope.Own(new GlaceonCleanup(() => { if (area != null) area.onGiveGlaceonSpears -= GiveCrystal; }));
+        area.InitializeServer(Actor.transform.position, Quaternion.LookRotation(direction), Damage(1, 7, 320), Actor.CurrentTeam.Team, Actor.Pokemon.NetworkObjectId);
+        Animate("ani_spellu_bat_0471");
+        Actor.Pokemon.AddStatChange(new StatChange(30, Stat.Speed, 6, true, true, true, 0));
+        Actor.Pokemon.AddStatChange(new StatChange(35, Stat.AtkSpeed, 6, true, true, true, 0));
+        var flight = Context.Scope.Own(character.AcquireFlight());
+        yield return Duration(0.3f);
+        flight.Dispose();
+        yield return WaitForProjectile(8.5f);
     }
 
     private IEnumerator Duration(float duration)
@@ -182,7 +222,7 @@ public sealed class GlaceonExecution : CombatExecution
         while (Alive && spawned != null && Time.time < until) yield return null;
     }
 
-    private IEnumerator Spear()
+    private IEnumerator ConsumeIcicleSpearCrystals()
     {
         Context.Scope.Own(new GlaceonCleanup(() => spearScope?.Dispose()));
         float next = Time.time;

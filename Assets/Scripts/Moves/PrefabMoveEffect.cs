@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Unite.Combat;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -21,6 +22,9 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
     public int CastSequence { get; set; }
     public AvailableMoves MoveId { get; set; }
     public event Action<PrefabMoveEffect> Completed;
+    public event Action Succeeded;
+    public bool HasSucceeded { get; private set; }
+    public CastOutcome CompletionOutcome { get; private set; } = CastOutcome.Cancelled;
     public event Action RecastReady;
     public virtual bool TryRecast(Vector3 direction) => false;
     public virtual bool TryRecast(Vector3 direction, ulong targetId) => TryRecast(direction);
@@ -61,6 +65,19 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
 
     protected virtual void BeginPresentation() { }
     protected virtual void Cleanup() { }
+    protected void CompleteExecution(CastOutcome outcome)
+    {
+        if (!IsServer || !IsSpawned) return;
+        CompletionOutcome = outcome;
+        Despawn();
+    }
+    protected void MarkCastSucceeded()
+    {
+        if (!IsServer || !initialized || HasSucceeded || !IsSpawned || Actor == null
+            || !Actor.IsSpawned || Actor.Pokemon.CurrentHp <= 0) return;
+        HasSucceeded = true;
+        Succeeded?.Invoke();
+    }
     protected bool CastInterrupted => phaseInterrupted || Actor == null || !Actor.IsSpawned || Actor.Pokemon.CurrentHp <= 0
         || Actor.Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions);
 
@@ -141,17 +158,33 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
         driveRoutine = null; traversal?.Cancel(); traversal = null;
     }
     protected abstract IEnumerator Execute();
-    private IEnumerator Run() { yield return Execute(); Despawn(); }
-    private IEnumerator Watchdog() { yield return new WaitForSeconds(maximumLifetime); Despawn(); }
+    private IEnumerator Run()
+    {
+        yield return Execute();
+        CompletionOutcome = Actor != null && Actor.IsSpawned && Actor.Pokemon.CurrentHp > 0 && !phaseInterrupted
+            ? CastOutcome.Completed : CastOutcome.Interrupted;
+        Despawn();
+    }
+    private IEnumerator Watchdog()
+    {
+        yield return new WaitForSeconds(maximumLifetime);
+        CompletionOutcome = CastOutcome.ExecutionFailed;
+        Despawn();
+    }
     private void OnDeath(DamageInfo damage)
     {
         if (!IsSpawned) return;
+        CompletionOutcome = CastOutcome.Interrupted;
         CancelDrivenMovementRPC();
         Despawn();
     }
     protected virtual void Update()
     {
-        if (IsServer && initialized && (Actor == null || !Actor.IsSpawned || Actor.Pokemon.CurrentHp <= 0)) Despawn();
+        if (IsServer && initialized && (Actor == null || !Actor.IsSpawned || Actor.Pokemon.CurrentHp <= 0))
+        {
+            CompletionOutcome = CastOutcome.Interrupted;
+            Despawn();
+        }
     }
 
     protected bool CanHit(Pokemon pokemon, bool acquire = false)
@@ -192,7 +225,7 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
         if (!cleaned) { cleaned = true; Cleanup(); }
         if (Actor != null) Actor.Pokemon.OnDeath -= OnDeath;
         if (IsServer) Completed?.Invoke(this);
-        Completed = null; RecastReady = null;
+        Completed = null; RecastReady = null; Succeeded = null;
         base.OnNetworkDespawn();
     }
     public override void OnDestroy()

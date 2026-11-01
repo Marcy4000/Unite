@@ -294,6 +294,12 @@ public class WildPokemonSpawner : NetworkBehaviour
             return;
         }
         instanceNetworkObject.Spawn();
+        if (!instanceNetworkObject.IsSpawned)
+        {
+            Destroy(pokemonInstance);
+            wildPokemon = null;
+            return;
+        }
 
         wildPokemon.SetWildPokemonInfoRPC(idToUse, isObjective);
         wildPokemon.SoldierLaneID = soldierLaneID;

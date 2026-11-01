@@ -108,6 +108,36 @@ public class JolteonRulesTests
         Assert.That(Value<bool>(combo, "HasWindow"), Is.False);
     }
 
+    [Test]
+    public void BeginningANewSequenceClearsThePreviousRecastState()
+    {
+        object combo = State("JoltRecastState");
+        Call(combo, "Begin", true);
+        Call(combo, "Open", 1f, 4f);
+        Assert.That(Call(combo, "TryRecast", 2f), Is.True);
+        Call(combo, "Begin", false);
+        Assert.That(Value<bool>(combo, "Empowered"), Is.False);
+        Assert.That(Value<bool>(combo, "IsSecondPass"), Is.False);
+        Assert.That(Value<bool>(combo, "HasWindow"), Is.False);
+        Assert.That(Value<float>(combo, "Until"), Is.Zero);
+    }
+
+    [TestCase("Charge", false, false, 5f)]
+    [TestCase("Charge", true, false, 6f)]
+    [TestCase("Electroweb", false, false, 0.75f)]
+    [TestCase("WebMark", false, false, 4f)]
+    [TestCase("WebMark", true, true, 5f)]
+    [TestCase("LightningBlitz", false, false, 3.5f)]
+    [TestCase("Overcharge", false, false, 5f)]
+    [TestCase("Ready", false, false, 65f)]
+    public void EffectLifetimeFollowsTheExistingTuning(string effect, bool empowered, bool upgraded, float expected)
+    {
+        object effectValue = Enum.Parse(GameType("JoltEffect"), effect);
+        object result = GameType("JoltMoveRules").GetMethod("EffectDuration")
+            .Invoke(null, new[] { effectValue, (object)empowered, upgraded });
+        Assert.That((float)result, Is.EqualTo(expected).Within(0.0001f));
+    }
+
     [TestCase("JoltThunderFang", 7f)]
     [TestCase("JoltDischarge", 11f)]
     [TestCase("JoltCharge", 9f)]
@@ -143,43 +173,4 @@ public class JolteonRulesTests
             new[] { effect, (object)false, upgraded }), Is.EqualTo(duration));
     }
 
-    private int committedFinishes;
-    private void OnFinish<T>(T move)
-    {
-        if ((bool)move.GetType().GetField("wasMoveSuccessful").GetValue(move)) committedFinishes++;
-    }
-
-    [TestCase("JoltThunderFang")]
-    [TestCase("JoltDischarge")]
-    public void InterruptingACommittedPassFinishesOnceAndClearsItsFollowUp(string name)
-    {
-        object move = State(name);
-        Type dash = GameType("JoltDashMove");
-        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-        object combo = dash.GetField("Combo", flags).GetValue(move);
-        Call(combo, "Begin", true); Call(combo, "Open", 0f, 4f);
-        dash.GetField("committed", flags).SetValue(move, true);
-        dash.GetField("executing", flags).SetValue(move, true);
-        var finishEvent = GameType("MoveBase").GetEvent("onMoveOver");
-        var handler = GetType().GetMethod("OnFinish", flags).MakeGenericMethod(GameType("MoveBase"))
-            .CreateDelegate(finishEvent.EventHandlerType, this);
-        finishEvent.AddEventHandler(move, handler);
-        committedFinishes = 0;
-        Call(move, "ResetMove"); Call(move, "ResetMove");
-        Assert.That(committedFinishes, Is.EqualTo(1));
-        Assert.That(Value<bool>(combo, "HasWindow"), Is.False);
-        Assert.That(Value<bool>(move, "IsExecuting"), Is.False);
-    }
-
-    [TestCase("JoltThunderFang")]
-    [TestCase("JoltDischarge")]
-    public void CancellingAimDoesNotEraseAnEarnedWindow(string name)
-    {
-        object move = State(name);
-        object combo = GameType("JoltDashMove").GetField("Combo", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(move);
-        Call(combo, "Begin", true); Call(combo, "Open", 0f, 4f);
-        Call(move, "Cancel");
-        Assert.That(Value<bool>(combo, "HasWindow"), Is.True);
-        Assert.That(Value<bool>(combo, "Empowered"), Is.True);
-    }
 }

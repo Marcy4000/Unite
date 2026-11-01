@@ -15,6 +15,21 @@ public class ZoroarkTests
     private static object Get(object target, string name) => target.GetType().GetProperty(name).GetValue(target);
     private static object Call(object target, string name, params object[] args) => target.GetType().GetMethod(name, args.Select(a => a.GetType()).ToArray()).Invoke(target, args);
 
+    [Test]
+    public void ZoroarkExecutionDeclaresEveryMoveEntryPoint()
+    {
+        var execution = T("ZoroarkExecution");
+        foreach (string name in new[] { "ExecuteSlash", "ExecuteFurySwipes", "ExecuteShadowClaw", "ExecuteCut",
+                     "ExecuteNightSlash", "ExecuteFeintAttack", "ExecuteUnite" })
+        {
+            var method = execution.GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, name);
+            Assert.That(method.GetParameters(), Is.Empty, name);
+            Assert.That(method.ReturnType, Is.EqualTo(typeof(System.Collections.IEnumerator)), name);
+        }
+        Assert.That(execution.BaseType, Is.EqualTo(T("CombatExecution")));
+    }
+
     [TestCase("ZoroarkSlash", 5.5f, false)]
     [TestCase("ZoroarkFurySwipes", 7.5f, true)]
     [TestCase("ZoroarkShadowClaw", 4.5f, false)]

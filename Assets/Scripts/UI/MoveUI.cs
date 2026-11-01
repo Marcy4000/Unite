@@ -1,4 +1,3 @@
-using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,8 +14,6 @@ public class MoveUI : MonoBehaviour
     [SerializeField] private GameObject storedCdLine, storedCdBg;
     [SerializeField] private TMP_Text storedCdText, storedUsesText;
 
-    private Coroutine cooldownCoroutine;
-    private Coroutine secondaryCooldownCoroutine;
     private MoveBase boundMove;
     private float cooldownEndsAt, cooldownDuration;
     private float secondaryCooldownEndsAt, secondaryCooldownDuration;
@@ -55,38 +52,32 @@ public class MoveUI : MonoBehaviour
     {
         if (boundMove != move)
         {
-            if (cooldownCoroutine != null) StopCoroutine(cooldownCoroutine);
-            if (secondaryCooldownCoroutine != null) StopCoroutine(secondaryCooldownCoroutine);
-            cooldownCoroutine = secondaryCooldownCoroutine = null;
             cooldownEndsAt = 0;
             secondaryCooldownEndsAt = 0;
-            SetCooldownVisual(cdLine, cdBg, cdText, 0, 1);
-            secondaryCd.gameObject.SetActive(false);
         }
         boundMove = move;
-        RenderStoredUses();
+        RenderCooldowns();
     }
 
     private void LateUpdate()
     {
-        RenderStoredUses();
+        RenderCooldowns();
     }
 
     private void OnEnable()
     {
-        if (boundMove != null && boundMove.IsStoredMove) RenderStoredUses();
-        else if (cooldownEndsAt > Time.time) StartCooldown(cooldownEndsAt - Time.time, cooldownDuration);
-        else SetCooldownVisual(cdLine, cdBg, cdText, 0, 1);
-        if (secondaryCooldownEndsAt > Time.time)
-            secondaryCooldownCoroutine = StartCoroutine(SecondaryCooldownRoutine());
-        else secondaryCd.gameObject.SetActive(false);
+        RenderCooldowns();
     }
 
-    private void OnDisable()
+    private void RenderCooldowns()
     {
-        if (cooldownCoroutine != null) StopCoroutine(cooldownCoroutine);
-        if (secondaryCooldownCoroutine != null) StopCoroutine(secondaryCooldownCoroutine);
-        cooldownCoroutine = secondaryCooldownCoroutine = null;
+        float secondaryRemaining = Mathf.Max(0, secondaryCooldownEndsAt - Time.time);
+        secondaryCd.gameObject.SetActive(secondaryRemaining > 0);
+        secondaryCd.fillAmount = Mathf.Clamp01(secondaryRemaining / Mathf.Max(0.01f, secondaryCooldownDuration));
+        RenderStoredUses();
+        if (boundMove != null && boundMove.IsStoredMove) return;
+        SetCooldownVisual(cdLine, cdBg, cdText,
+            secondaryRemaining > 0 ? 0 : cooldownEndsAt - Time.time, cooldownDuration);
     }
 
     private void RenderStoredUses()
@@ -101,7 +92,8 @@ public class MoveUI : MonoBehaviour
         float useDuration = boundMove.StoredUses == 0
             ? Mathf.Max(boundMove.StoredRechargeDuration, boundMove.StoredUseInterval)
             : boundMove.StoredUseInterval;
-        SetCooldownVisual(cdLine, cdBg, cdText, boundMove.StoredUseCooldownRemaining, useDuration);
+        SetCooldownVisual(cdLine, cdBg, cdText,
+            secondaryCooldownEndsAt > Time.time ? 0 : boundMove.StoredUseCooldownRemaining, useDuration);
     }
 
     private static void SetCooldownVisual(GameObject line, GameObject background, TMP_Text text, float remaining, float duration)
@@ -125,59 +117,16 @@ public class MoveUI : MonoBehaviour
 
     public void ShowSecondaryCooldown(float cdDuration)
     {
-        if (secondaryCooldownCoroutine != null)
-            StopCoroutine(secondaryCooldownCoroutine);
-
         secondaryCooldownEndsAt = Time.time + Mathf.Max(0, cdDuration);
         secondaryCooldownDuration = Mathf.Max(0.01f, cdDuration);
-        if (cdDuration <= 0)
-        {
-            secondaryCd.gameObject.SetActive(false);
-            secondaryCooldownCoroutine = null;
-            return;
-        }
-        secondaryCooldownCoroutine = StartCoroutine(SecondaryCooldownRoutine());
-    }
-
-    private IEnumerator SecondaryCooldownRoutine()
-    {
-        secondaryCd.gameObject.SetActive(true);
-        while (Time.time < secondaryCooldownEndsAt)
-        {
-            secondaryCd.fillAmount = (secondaryCooldownEndsAt - Time.time) / secondaryCooldownDuration;
-            yield return null;
-        }
-
-        secondaryCd.gameObject.SetActive(false);
-        secondaryCooldownCoroutine = null;
+        RenderCooldowns();
     }
 
     public void StartCooldown(float currentCooldown, float maxCooldownDuration)
     {
         if (boundMove != null && boundMove.IsStoredMove) return;
-        if (cooldownCoroutine != null)
-            StopCoroutine(cooldownCoroutine);
-
         cooldownEndsAt = Time.time + Mathf.Max(0, currentCooldown);
         cooldownDuration = Mathf.Max(0.01f, maxCooldownDuration);
-        if (currentCooldown <= 0)
-        {
-            cooldownCoroutine = null;
-            SetCooldownVisual(cdLine, cdBg, cdText, 0, cooldownDuration);
-            return;
-        }
-        cooldownCoroutine = StartCoroutine(CooldownRoutine(cooldownDuration));
-    }
-
-    private IEnumerator CooldownRoutine(float maxCooldownDuration)
-    {
-        while (Time.time < cooldownEndsAt)
-        {
-            SetCooldownVisual(cdLine, cdBg, cdText, cooldownEndsAt - Time.time, maxCooldownDuration);
-            yield return null;
-        }
-
-        SetCooldownVisual(cdLine, cdBg, cdText, 0, maxCooldownDuration);
-        cooldownCoroutine = null;
+        RenderCooldowns();
     }
 }

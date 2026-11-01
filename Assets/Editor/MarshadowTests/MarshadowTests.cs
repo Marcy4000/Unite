@@ -106,25 +106,6 @@ public class MarshadowTests
         Vector3 direction = (Vector3)Rule("Direction", new Vector3(3, 50, 4), Vector3.forward);
         Assert.That(direction.y, Is.Zero); Assert.That(direction.magnitude, Is.EqualTo(1f).Within(0.001f));
     }
-    [TestCase("MarshadowDrainPunch")]
-    [TestCase("MarshadowAuraSphere")]
-    [TestCase("MarshadowCloseCombat")]
-    [TestCase("MarshadowSpectralThief")]
-    [TestCase("MarshadowPhantomForce")]
-    public void ResetIsIdempotentAndCannotSpendACommittedSequenceTwice(string type)
-    {
-        successfulCompletions = 0;
-        object move = Activator.CreateInstance(GameType(type));
-        EventInfo finished = GameType("MoveBase").GetEvent("onMoveOver");
-        Delegate observer = Delegate.CreateDelegate(finished.EventHandlerType, this,
-            GetType().GetMethod(nameof(ObserveCompletion), BindingFlags.Instance | BindingFlags.NonPublic));
-        finished.AddEventHandler(move, observer);
-        GameType("MarshadowMoveBase").GetField("committed", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(move, true);
-        Call(move, "ResetMove"); Call(move, "ResetMove");
-        Assert.That(successfulCompletions, Is.EqualTo(1));
-        Assert.That(Value(move, "IsExecuting"), Is.False);
-        Assert.That(move.GetType().GetField("IsActive").GetValue(move), Is.False);
-    }
     [Test]
     public void ExistingMoveClipsHaveScopedSpeedControlButLocomotionDoesNot()
     {
@@ -139,27 +120,18 @@ public class MarshadowTests
         foreach (string name in new[] { "pm0883_fi21_run01", "pm0883_ba10_waitA01" })
             Assert.That(controller.layers[0].stateMachine.states.First(s => s.state.name == name).state.speedParameterActive, Is.False);
     }
-    [TestCase("MarshadowDrainPunch", 0)]
-    [TestCase("MarshadowShadowSneak", 1)]
-    [TestCase("MarshadowAuraSphere", 0)]
-    [TestCase("MarshadowCloseCombat", 0)]
-    [TestCase("MarshadowSpectralThief", 1)]
-    [TestCase("MarshadowPhantomForce", 1)]
-    [TestCase("MarshadowUnite", 2)]
-    public void MoveAssetsFactoriesRegistryAndCooldownsAgree(string name, int slot)
+    [TestCase("MarshadowDrainPunch")]
+    [TestCase("MarshadowShadowSneak")]
+    [TestCase("MarshadowAuraSphere")]
+    [TestCase("MarshadowCloseCombat")]
+    [TestCase("MarshadowSpectralThief")]
+    [TestCase("MarshadowPhantomForce")]
+    [TestCase("MarshadowUnite")]
+    public void ReworkedMovesUseCombatMoveDefinitions(string type)
     {
-        var asset = AssetDatabase.LoadMainAssetAtPath("Assets/Moves/Marshadow/" + name + ".asset");
-        var serialized = new SerializedObject(asset);
-        object move = EnumValue("AvailableMoves", name);
-        object runtime = GameType("MoveDatabase").GetMethod("GetMove").Invoke(null, new[] { move });
-        Assert.That(runtime.GetType().Name, Is.EqualTo(name));
-        Assert.That(serialized.FindProperty("moveType").intValue, Is.EqualTo(slot));
-        Assert.That(serialized.FindProperty("description").stringValue, Is.Not.Empty);
-        Assert.That(serialized.FindProperty("icon").objectReferenceValue, Is.Not.Null);
-        if (slot != 2) Assert.That(runtime.GetType().GetField("Cooldown").GetValue(runtime), Is.EqualTo(serialized.FindProperty("cooldown").floatValue));
-        else Assert.That(serialized.FindProperty("uniteEnergyCost").intValue, Is.EqualTo(107100));
-        var registry = AssetDatabase.LoadMainAssetAtPath("Assets/Moves/MoveAssetRegistry.asset");
-        Assert.That(Call(registry, "GetMoveAsset", move), Is.SameAs(asset));
+        object move = Activator.CreateInstance(GameType(type));
+        Assert.That(GameType("CombatMove").IsInstanceOfType(move), Is.True);
+        Assert.That(move.GetType().GetProperty("CooldownOnFinish").GetValue(move), Is.False);
     }
     [Test]
     public void CopyAdaptersNeverBorrowAnArbitraryForeignRuntimeOrMirrorItself()

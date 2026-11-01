@@ -73,6 +73,11 @@ public abstract class MoveBase
             useState.Tick(now, MaxStoredUses, Cooldown * Mathf.Max(0.01f, 1f - cooldownReduction / 100f));
     }
 
+    public void PreserveSlotCooldown(float remaining, float now)
+    {
+        if (IsStoredMove) useState.DelayUseUntil(now + Mathf.Max(0, remaining));
+    }
+
     public void ReduceStoredRecharge(float amount, float now, float cooldownReduction = 0f)
     {
         UpdateStoredUses(now, cooldownReduction);

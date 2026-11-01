@@ -193,8 +193,12 @@ public class MainMenuUI : MonoBehaviour
 
     private void PlayTrainerModelAnimation()
     {
+        if (trainerModel == null || !trainerModel.IsInitialized || trainerModel.IsLoading) return;
+        Animator animator = trainerModel.ActiveAnimator;
+        if (animator == null || !animator.isActiveAndEnabled || animator.runtimeAnimatorController == null) return;
         string animName = trainerModel.PlayerClothesInfo.IsMale ? "ani_pos51_lob_male" : "ani_pos51_lob_female";
-        trainerModel.ActiveAnimator.Play(animName);
+        int state = Animator.StringToHash(animName);
+        if (animator.HasState(0, state)) animator.Play(state, 0);
     }
 
     public void LoadPhotoMaker()

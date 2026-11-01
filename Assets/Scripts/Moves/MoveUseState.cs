@@ -68,6 +68,11 @@ public sealed class MoveUseState
         return Mathf.Max(Mathf.Max(0, nextUse - now), Count == 0 ? GetRechargeRemaining(now) : 0);
     }
 
+    public void DelayUseUntil(float readyAt)
+    {
+        nextUse = Mathf.Max(nextUse, readyAt);
+    }
+
     public void ReduceRecharge(float amount, float now)
     {
         if (!IsInitialized || Count == Capacity || amount <= 0) return;

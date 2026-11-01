@@ -75,6 +75,7 @@ public class AbsolSuckerPunch : PrefabMove
 
 public class AbsolMidnightSlash : PrefabMove
 {
+    public override bool UsesExplicitUniteCastCheckpoint => true;
     public AbsolMidnightSlash() { Name = "Midnight Slash"; Cooldown = 0; }
     public override AvailableMoves MoveId => AvailableMoves.AbsolMidnightSlash;
     public override string PrefabPath => AbsolMoveRules.Folder + "AbsolMidnightSlash.prefab";

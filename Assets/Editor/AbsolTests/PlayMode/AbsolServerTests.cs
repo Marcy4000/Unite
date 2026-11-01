@@ -322,6 +322,93 @@ public class AbsolServerTests
     }
 
     [UnityTest]
+    public IEnumerator MidnightSlashSuccessCheckpointIsAfterWindupEvenWithoutTargets()
+    {
+        foreach (bool reachCheckpoint in new[] { false, true })
+        {
+            Variable(actor, "currentHp", 5000);
+            Component effect = Effect("AbsolMidnightSlash");
+            Assert.That(Get(effect, "HasSucceeded"), Is.False);
+            if (reachCheckpoint)
+            {
+                float deadline = Time.time + 2;
+                while (!(bool)Get(effect, "HasSucceeded") && Time.time < deadline) yield return null;
+                Assert.That(Get(effect, "HasSucceeded"), Is.True);
+            }
+            Variable(actor, "currentHp", 0);
+            yield return null;
+            Assert.That(Get(effect, "IsSpawned"), Is.False);
+            Assert.That(Get(effect, "CompletionOutcome").ToString(), Is.EqualTo("Interrupted"));
+            Assert.That(Get(effect, "HasSucceeded"), Is.EqualTo(reachCheckpoint));
+            Assert.That(Get(moves, "ServerActionLocks"), Is.Zero);
+        }
+    }
+
+    protected IEnumerator VerifyLegacyUniteRefundOnOwner()
+    {
+#if UNITY_EDITOR
+        object moveId = E("AvailableMoves", "AbsolMidnightSlash");
+        object bridge = T("MoveDatabase").GetMethod("GetMove").Invoke(null, new[] { moveId });
+        object asset = AssetDatabase.LoadMainAssetAtPath("Assets/Moves/Absol/AbsolMidnightSlash.asset");
+        var assets = Array.CreateInstance(T("MoveAsset"), 1);
+        assets.SetValue(asset, 0);
+        object row = Activator.CreateInstance(T("LearnableMove"));
+        row.GetType().GetField("moves").SetValue(row, assets);
+        var rows = Array.CreateInstance(T("LearnableMove"), 1);
+        rows.SetValue(row, 0);
+        Set(Get(actor, "BaseStats"), "learnableMoves", rows);
+        Call(actor.GetComponent(T("Unity.Netcode.NetworkObject")), "ChangeOwnership", 0UL);
+        var statuses = Array.CreateInstance(T("BattleActionStatus"), 2);
+        for (int slot = 0; slot < 2; slot++) statuses.SetValue(Activator.CreateInstance(T("BattleActionStatus"), 0f), slot);
+        Set(moves, "moveStatuses", statuses);
+        Set(moves, "uniteMove", bridge);
+        Set(moves, "uniteMoveMaxCharge", 80000);
+        PrivateCall(moves, "RecordPrefabMove", moveId);
+        Assert.That(Get(moves, "Combat"), Is.Null);
+
+        foreach (bool reachCheckpoint in new[] { false, true })
+        {
+            Variable(actor, "currentHp", 5000);
+            Set(moves, "uniteMoveCharge", 80000);
+            ((double[])moves.GetType().GetField("prefabNextCast", Private).GetValue(moves))[2] = 0;
+            Call(moves, "SpawnMoveEffectRPC", moveId, Vector3.forward, 0UL);
+            bridge.GetType().GetField("wasMoveSuccessful").SetValue(bridge, true);
+            Call(moves, "OnMoveOver", bridge);
+            Assert.That(Get(moves, "UniteMoveCharge"), Is.Zero);
+            float deadline = Time.time + 8;
+            Component effect = null;
+            while (effect == null && Time.time < deadline)
+            {
+                effect = ((IEnumerable)Get(moves, "ActivePrefabEffects")).Cast<Component>().SingleOrDefault();
+                if (effect == null) yield return null;
+            }
+            Assert.That(effect, Is.Not.Null);
+            if (reachCheckpoint)
+                while (!(bool)Get(effect, "HasSucceeded") && Time.time < deadline) yield return null;
+            Assert.That(Get(effect, "HasSucceeded"), Is.EqualTo(reachCheckpoint));
+            Variable(actor, "currentHp", 0);
+            yield return null;
+            yield return null;
+            yield return null;
+            Assert.That(Get(effect, "IsSpawned"), Is.False);
+            Assert.That(Get(moves, "UniteMoveCharge"), Is.EqualTo(reachCheckpoint ? 0 : 72000));
+            object status = moves.GetType().GetField("uniteMoveStatus", Private).GetValue(moves);
+            Assert.That(Call(status, "HasStatus", E("ActionStatusType", "Cooldown")), Is.True);
+            if (!reachCheckpoint)
+            {
+                Set(moves, "uniteMoveCharge", 1000);
+                PrivateCall(moves, "RefundLegacyUniteCastRPC", moveId, 1, 72000);
+                yield return null;
+                yield return null;
+                Assert.That(Get(moves, "UniteMoveCharge"), Is.EqualTo(1000), "Duplicate refund delivery must not re-credit charge.");
+            }
+        }
+#else
+        yield break;
+#endif
+    }
+
+    [UnityTest]
     public IEnumerator DeathTeleportAndImmediateRespawnCannotBeOverwrittenByOldMovement()
     {
         Vector3 death = new Vector3(0, -50, -50);
@@ -529,4 +616,10 @@ public class AbsolServerTests
     }
 }
 
-public class AbsolHostTests : AbsolServerTests { protected override bool Host => true; }
+public class AbsolHostTests : AbsolServerTests
+{
+    protected override bool Host => true;
+
+    [UnityTest]
+    public IEnumerator LegacyUniteRefundOnOwnerUsesCheckpointAndIsDeliveredOnce() => VerifyLegacyUniteRefundOnOwner();
+}

@@ -64,7 +64,7 @@ public class ZoroarkBasicAtk : ChargedBasicAttackBase
         finally
         {
             attack = null;
-            if (playerManager != null && playerManager.IsSpawned)
+            if (playerManager != null && playerManager.MovesController != null && playerManager.MovesController.IsSpawned)
                 playerManager.MovesController.PresentServerAttackRPC(false, Vector3.zero,
                     !Interrupted ? ZoroarkMoveRules.Animation(playerManager, "idle") : "", 0, playerManager.Pokemon.CurrentHp <= 0, 0.06f);
         }
@@ -80,7 +80,8 @@ public class ZoroarkBasicAtk : ChargedBasicAttackBase
     {
         if (attack != null && playerManager != null) playerManager.StopCoroutine(attack);
         attack = null; charge = 0;
-        if (playerManager != null && playerManager.IsServer && playerManager.IsSpawned)
+        if (playerManager != null && playerManager.IsServer && playerManager.MovesController != null
+            && playerManager.MovesController.IsSpawned)
         {
             playerManager.MovesController.SynchronizeBasicAttackRPC(0, 0);
             playerManager.MovesController.PresentServerAttackRPC(false, Vector3.zero, "", 0, true);

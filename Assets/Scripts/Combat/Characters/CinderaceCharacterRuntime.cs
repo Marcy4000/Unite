@@ -28,23 +28,28 @@ public sealed class CinderaceCharacterRuntime : CombatCharacterRuntime
     private readonly CombatScope lifetime = new CombatScope();
     private readonly Dictionary<CinderCast, GameObject> prefabs = new Dictionary<CinderCast, GameObject>();
     private readonly HashSet<CinderCast> loading = new HashSet<CinderCast>();
-    private readonly Dictionary<ulong, CinderTargetState> targets = new Dictionary<ulong, CinderTargetState>();
     private Pokemon boundPokemon;
+    private bool disposed;
+
     private byte charge;
-    private int healingAttacks;
-    private bool flameSlow;
-    private double blazeReady;
-    private long stateRevision;
-    private int movementLocks;
-    private bool movementLocked, appliedMovement, disposed;
+    private CombatRoutine basicRecovery;
     private int shownCharge = -1;
     private CinderBasicAtk shownAttack;
-    private CombatRoutine basicRecovery;
+
+    private readonly Dictionary<ulong, CinderTargetState> targets = new Dictionary<ulong, CinderTargetState>();
+    private double blazeReady;
+
+    private int healingAttacks;
+    private bool flameSlow;
+
+    private int movementLocks;
+    private bool movementLocked, appliedMovement;
     private CombatRoutine dashRoutine;
     private Vector3 dashDestination;
     private bool dashActive;
     private Vector2 movementInput;
     private float nextMovementInputAt;
+    private long stateRevision;
 
     public CinderaceCharacterRuntime(PlayerManager actor) : base(actor)
     {
@@ -62,6 +67,55 @@ public sealed class CinderaceCharacterRuntime : CombatCharacterRuntime
     public bool MovementLocked => movementLocked;
     public Vector2 MovementInput => movementInput;
 
+    public override bool PrepareCast(CombatExecutionContext context)
+    {
+        if (disposed || !IsCinderace) return false;
+        CinderCast kind = KindForMove(context.MoveId);
+        if (CinderMoveRules.Dash(kind) && Pokemon.HasStatusEffect(StatusType.Immobilized)) return false;
+        return true;
+    }
+
+    public override bool RevalidateCast(CombatExecutionContext context) => PrepareCast(context);
+
+    public override void CommitCast(CombatExecutionContext context)
+    {
+        FillCharge();
+    }
+
+    public override CombatExecution CreateExecution(CombatExecutionContext context) => new CinderaceExecution(context, this);
+
+    public static CinderCast KindForMove(AvailableMoves moveId)
+    {
+        switch (moveId)
+        {
+            case AvailableMoves.CinderEmber: return CinderCast.Ember;
+            case AvailableMoves.CinderLowSweep: return CinderCast.LowSweep;
+            case AvailableMoves.CinderPyroball: return CinderCast.PyroBall;
+            case AvailableMoves.CinderBlazeKick: return CinderCast.BlazeKick;
+            case AvailableMoves.CinderFlameCharge: return CinderCast.FlameCharge;
+            case AvailableMoves.CinderFeint: return CinderCast.Feint;
+            default: return CinderCast.Unite;
+        }
+    }
+
+    public override void Tick()
+    {
+        if (disposed || !IsSpawned || Pokemon == null || !IsCinderace) return;
+        if (IsServer)
+        {
+            BindEvents();
+            EnsurePrefab(CinderCast.Basic);
+            EnsurePersistentPassivePrefabs();
+            if (Pokemon.CurrentHp <= 0)
+            {
+                ResetCombatCharges();
+            }
+            else TickBlazePassive();
+            PruneCinderTargetState();
+        }
+        Present();
+    }
+
     public void FillCharge()
     {
         if (!IsServer || disposed) return;
@@ -78,10 +132,262 @@ public sealed class CinderaceCharacterRuntime : CombatCharacterRuntime
         Publish();
     }
 
+    public void PerformBasicAttack(Pokemon target)
+    {
+        if (!IsServer || disposed || !IsCinderace || Pokemon.CurrentHp <= 0 || !CinderMoveRules.CanHit(Actor, target)
+            || !CombatTargeting.WithinMeleeRange(transform.position, target.transform.position, 7f)) return;
+        byte previous = charge;
+        bool boosted = previous == 2;
+        bool heal = ConsumeFeintHealingAttack();
+        bool slow = boosted && ConsumeFlameChargeSlow();
+        charge = (byte)(boosted ? 0 : previous + 1);
+        Vector3 direction = CinderMoveRules.Direction(target.transform.position - transform.position, transform.forward);
+        if (prefabs.TryGetValue(CinderCast.Basic, out GameObject cached) && cached != null)
+            SpawnPreparedObject(cached, CinderCast.Basic, 0, direction, target, false, boosted, heal, slow, lifetime, false);
+        else
+            lifetime.Own(new CombatRoutine(Actor, LoadAndSpawnBasic(direction, target, boosted, heal, slow)));
+        string animation = $"ani_atk{previous + 1}_bat_0815";
+        basicRecovery?.Dispose();
+        basicRecovery = new CombatRoutine(Actor, BasicRecovery(target, animation));
+        Publish();
+    }
+
+    private IEnumerator LoadAndSpawnBasic(Vector3 direction, Pokemon target, bool boosted, bool heal, bool slow)
+    {
+        GameObject loadedPrefab = null;
+        yield return Controller.Combat.Spawner.Load(CinderMoveRules.Path(CinderCast.Basic), lifetime, loaded => loadedPrefab = loaded);
+        if (disposed || !IsServer || !IsSpawned || Pokemon == null || Pokemon.CurrentHp <= 0 || !CinderMoveRules.CanHit(Actor, target))
+            yield break;
+        if (loadedPrefab != null && loadedPrefab.GetComponent<CinderMoveObject>() != null)
+        {
+            prefabs[CinderCast.Basic] = loadedPrefab;
+            SpawnPreparedObject(loadedPrefab, CinderCast.Basic, 0, direction, target, false, boosted, heal, slow, lifetime, false);
+        }
+    }
+
+    private IEnumerator BasicRecovery(Pokemon target, string animation)
+    {
+        float duration = 0.5f * Controller.GetAtkSpeedCooldown();
+        Vector3 direction = target != null ? target.transform.position - transform.position : transform.forward;
+        Controller.PresentServerAttackRPC(true, direction, animation, duration);
+        try { yield return new WaitForSeconds(duration); }
+        finally
+        {
+            if (Actor != null && Actor.IsSpawned)
+            {
+                Controller.PresentServerAttackRPC(false, Vector3.zero, "");
+                RecoverAnimation(animation);
+            }
+        }
+    }
+
+    internal void RecoverAnimation(string animation)
+    {
+        if (!IsServer || !IsSpawned || Pokemon == null || Pokemon.CurrentHp <= 0 || Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)) return;
+        Actor.AnimationManager?.RecoverAnimationRPC(animation, "ani_idle_bat_0815", 0.06f);
+    }
+
+    private void TickBlazePassive()
+    {
+        if (Now < blazeReady || Pokemon.CurrentHp > Pokemon.GetMaxHp() / 2f) return;
+        blazeReady = Now + 30;
+        ApplyBuff(CinderMoveRules.BlazeCrit, Stat.CritRate, 10, 5f, false);
+        ApplyBuff(CinderMoveRules.BlazeSpeed, Stat.AtkSpeed, 20, 5f, false);
+        SpawnAuxiliaryObject(CinderCast.Blaze, transform.forward, Pokemon, lifetime);
+    }
+
+    private CinderTargetState TargetState(Pokemon target)
+    {
+        if (!targets.TryGetValue(target.NetworkObjectId, out CinderTargetState state))
+        {
+            state = new CinderTargetState { Target = target };
+            targets.Add(target.NetworkObjectId, state);
+        }
+        return state;
+    }
+
+    public int GetMarks(Pokemon target)
+        => target != null && targets.TryGetValue(target.NetworkObjectId, out CinderTargetState state)
+            && target.HasStatusEffect(state.MarkId) ? state.Stacks.Get(Time.time) : 0;
+
+    public bool HasBurn(Pokemon target)
+        => target != null && targets.TryGetValue(target.NetworkObjectId, out CinderTargetState state)
+            && target.HasDamageOverTime(StatusType.Burned, Controller.NetworkObjectId);
+
+    private void OnDamageDealt(ulong targetId, DamageInfo damage)
+    {
+        if (!IsServer || disposed || !IsCinderace || Pokemon == null || Pokemon.CurrentHp <= 0
+            || (damage.proprieties & (DamageProprieties.Unused_2 | DamageProprieties.IsMuscleBand | DamageProprieties.IsHeal)) != 0
+            || (damage.proprieties & (DamageProprieties.IsBasicAttack | DamageProprieties.Unused_1)) == 0
+            || NetworkManager == null || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetId, out var obj)
+            || !obj.TryGetComponent(out Pokemon target) || !CinderMoveRules.CanHit(Actor, target)) return;
+        CinderTargetState state = TargetState(target);
+        if (!target.HasStatusEffect(state.MarkId)) state.Stacks.Clear();
+        bool flare = state.Stacks.Add((damage.proprieties & DamageProprieties.Unused_1) != 0 ? 2 : 1, Time.time);
+        state.ReleaseAfter = Time.time + 5.1f;
+        target.RemoveStatusEffectWithID(state.MarkId);
+        if (flare)
+        {
+            int amount = CinderMoveRules.FlareDamage(Pokemon.GetAttack(), Pokemon.CurrentLevel, target.GetMaxHp(), target.Type != PokemonType.Player);
+            target.TakeDamageRPC(new DamageInfo(Controller.NetworkObjectId, 0f, 0, (short)Mathf.Min(short.MaxValue, amount), DamageType.Physical, DamageProprieties.Unused_2));
+        }
+        else
+        {
+            target.AddStatusEffect(new StatusEffect(StatusType.Scriptable, 5f, true, state.MarkId));
+            if (!state.MarkVisual)
+            {
+                state.MarkVisual = true;
+                state.VisualScope?.Dispose();
+                state.VisualScope = new CombatScope();
+                SpawnAuxiliaryObject(CinderCast.Cinders, transform.forward, target, state.VisualScope);
+            }
+        }
+    }
+
+    public void MarksVisualEnded(Pokemon target)
+    {
+        if (target != null && targets.TryGetValue(target.NetworkObjectId, out CinderTargetState state))
+            state.MarkVisual = false;
+    }
+
+    public void ApplyBurn(Pokemon target)
+    {
+        if (!IsServer || disposed || !CinderMoveRules.CanHit(Actor, target)) return;
+        CinderTargetState state = TargetState(target);
+        state.ReleaseAfter = Time.time + 5.1f;
+        target.AddStatusEffect(MovesController.CreateCinderaceBurnEffect(Controller.NetworkObjectId, state.BurnId));
+        target.RemoveAllStatChangeWithIDRPC(state.BurnId);
+        target.AddStatChange(new StatChange(5, Stat.Attack, 2f, true, false, true, state.BurnId));
+        target.AddStatChange(new StatChange(5, Stat.SpAttack, 2f, true, false, true, state.BurnId));
+    }
+
+    private void PruneCinderTargetState()
+    {
+        var remove = new List<ulong>();
+        foreach (var pair in targets)
+        {
+            CinderTargetState state = pair.Value;
+            Pokemon target = state.Target;
+            if (target == null || !target.IsSpawned || target.CurrentHp <= 0)
+            {
+                remove.Add(pair.Key);
+                continue;
+            }
+            if (!target.HasStatusEffect(state.MarkId) || state.Stacks.Get(Time.time) == 0) state.Stacks.Clear();
+            if (state.Stacks.Get(Time.time) == 0 && !target.HasDamageOverTime(StatusType.Burned, Controller.NetworkObjectId) && Time.time > state.ReleaseAfter)
+                remove.Add(pair.Key);
+        }
+        foreach (ulong id in remove) ReleaseTarget(id);
+    }
+
+    private void ReleaseTarget(ulong id)
+    {
+        if (!targets.TryGetValue(id, out CinderTargetState state)) return;
+        state.VisualScope?.Dispose();
+        state.VisualScope = null;
+        if (state.Target != null && state.Target.IsSpawned)
+        {
+            state.Target.RemoveStatusEffectWithID(state.MarkId);
+            state.Target.RemoveStatusEffectWithID(state.BurnId);
+            state.Target.RemoveAllStatChangeWithIDRPC(state.BurnId);
+        }
+        CinderEffectIds.Release(state.MarkId);
+        CinderEffectIds.Release(state.BurnId);
+        targets.Remove(id);
+    }
+
+    private void EnsurePersistentPassivePrefabs()
+    {
+        EnsurePrefab(CinderCast.Blaze);
+        EnsurePrefab(CinderCast.Cinders);
+    }
+
+    public void ApplyFeint(bool upgraded)
+    {
+        if (!IsServer || disposed || Pokemon == null) return;
+        var slows = new List<StatChange>();
+        foreach (StatChange change in Pokemon.StatChanges)
+            if (change.AffectedStat == Stat.Speed && !change.IsBuff && change.CanBeRemoved) slows.Add(change);
+        foreach (StatChange slow in slows) Pokemon.RemoveStatChangeRPC(slow);
+        Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, 0.73f, true, CinderMoveRules.FeintInvincible));
+        ApplyBuff(CinderMoveRules.FeintSpeed, Stat.Speed, 40, 2f, true);
+        if (upgraded) ArmFeintHealingAttacks();
+    }
+
+    private void ArmFeintHealingAttacks()
+    {
+        healingAttacks = 3;
+    }
+
+    private bool ConsumeFeintHealingAttack()
+    {
+        if (healingAttacks <= 0) return false;
+        healingAttacks--;
+        return true;
+    }
+
     public void ArmFlameSlow()
     {
         if (!IsServer || disposed) return;
-        flameSlow = true;
+        SetFlameChargeSlowArmed(true);
+    }
+
+    private void SetFlameChargeSlowArmed(bool armed) => flameSlow = armed;
+
+    private bool ConsumeFlameChargeSlow()
+    {
+        if (!flameSlow) return false;
+        SetFlameChargeSlowArmed(false);
+        return true;
+    }
+
+    public void ReduceMobilityCooldown()
+    {
+        if (!IsServer || disposed) return;
+        Controller.Combat?.ReduceCooldown(1, 4d);
+    }
+
+    public void ApplyBuff(ushort id, Stat stat, short amount, float duration, bool percentage)
+    {
+        if (!IsServer || Pokemon == null) return;
+        Pokemon.RemoveAllStatChangeWithIDRPC(id);
+        Pokemon.AddStatChange(new StatChange(amount, stat, duration, true, true, percentage, id));
+    }
+
+    public void ApplyUnstoppable(ushort id, float duration)
+    {
+        if (!IsServer || Pokemon == null) return;
+        var negative = new List<StatusEffect>();
+        foreach (StatusEffect effect in Pokemon.StatusEffects) if (effect.IsNegativeStatus()) negative.Add(effect);
+        foreach (StatusEffect effect in negative) Pokemon.RemoveStatusEffectRPC(effect);
+        Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, duration, true, id));
+    }
+
+    public bool ResolveHit(Pokemon target, DamageInfo damage, bool healing = false, bool slow = false)
+    {
+        if (!IsServer || disposed || !CinderMoveRules.CanHit(Actor, target)) return false;
+        BindEvents();
+        int healthDamage = 0;
+        bool applied = false;
+        void Record(Pokemon victim, DamageInfo info, int amount)
+        {
+            if (victim == target && info.ratio == damage.ratio && info.baseDmg == damage.baseDmg && (info.proprieties & DamageProprieties.Unused_2) == 0)
+            {
+                applied = true;
+                healthDamage += amount;
+            }
+        }
+        Pokemon.OnHealthDamageDealt += Record;
+        try { target.TakeDamageRPC(damage); }
+        finally { Pokemon.OnHealthDamageDealt -= Record; }
+        if (healing && Pokemon.CurrentHp > 0 && healthDamage > 0)
+            Pokemon.HealDamageRPC(Mathf.FloorToInt(healthDamage * 0.3f));
+        if (applied && slow && CinderMoveRules.CanHit(Actor, target) && !target.HasStatusEffect(StatusType.Unstoppable))
+        {
+            target.RemoveAllStatChangeWithIDRPC(CinderMoveRules.FlameSlow);
+            target.AddStatChange(new StatChange(30, Stat.Speed, 2f, true, false, true, CinderMoveRules.FlameSlow));
+        }
+        return applied;
     }
 
     internal IDisposable AcquireMovementLock()
@@ -181,98 +487,6 @@ public sealed class CinderaceCharacterRuntime : CombatCharacterRuntime
         Actor.PlayerMovement.FinishCinderaceTraversal();
     }
 
-    public override bool PrepareCast(CombatExecutionContext context)
-    {
-        if (disposed || !IsCinderace) return false;
-        CinderCast kind = KindForMove(context.MoveId);
-        if (CinderMoveRules.Dash(kind) && Pokemon.HasStatusEffect(StatusType.Immobilized)) return false;
-        return true;
-    }
-
-    public override bool RevalidateCast(CombatExecutionContext context) => PrepareCast(context);
-
-    public override void CommitCast(CombatExecutionContext context)
-    {
-        FillCharge();
-    }
-
-    public override CombatExecution CreateExecution(CombatExecutionContext context) => new CinderaceExecution(context, this);
-
-    public static CinderCast KindForMove(AvailableMoves moveId)
-    {
-        switch (moveId)
-        {
-            case AvailableMoves.CinderEmber: return CinderCast.Ember;
-            case AvailableMoves.CinderLowSweep: return CinderCast.LowSweep;
-            case AvailableMoves.CinderPyroball: return CinderCast.PyroBall;
-            case AvailableMoves.CinderBlazeKick: return CinderCast.BlazeKick;
-            case AvailableMoves.CinderFlameCharge: return CinderCast.FlameCharge;
-            case AvailableMoves.CinderFeint: return CinderCast.Feint;
-            default: return CinderCast.Unite;
-        }
-    }
-
-    public override void Tick()
-    {
-        if (disposed || !IsSpawned || Pokemon == null || !IsCinderace) return;
-        if (IsServer)
-        {
-            BindEvents();
-            EnsurePrefab(CinderCast.Basic);
-            EnsurePrefab(CinderCast.Blaze);
-            EnsurePrefab(CinderCast.Cinders);
-            if (Pokemon.CurrentHp <= 0)
-            {
-                if (charge != 0 || healingAttacks != 0 || flameSlow)
-                {
-                    charge = 0;
-                    healingAttacks = 0;
-                    flameSlow = false;
-                    Publish();
-                }
-            }
-            else if (Now >= blazeReady && Pokemon.CurrentHp <= Pokemon.GetMaxHp() / 2f)
-            {
-                blazeReady = Now + 30;
-                ApplyBuff(CinderMoveRules.BlazeCrit, Stat.CritRate, 10, 5f, false);
-                ApplyBuff(CinderMoveRules.BlazeSpeed, Stat.AtkSpeed, 20, 5f, false);
-                SpawnAuxiliaryObject(CinderCast.Blaze, transform.forward, Pokemon, lifetime);
-            }
-            var remove = new List<ulong>();
-            foreach (var pair in targets)
-            {
-                CinderTargetState state = pair.Value;
-                Pokemon target = state.Target;
-                if (target == null || !target.IsSpawned || target.CurrentHp <= 0) { remove.Add(pair.Key); continue; }
-                if (!target.HasStatusEffect(state.MarkId) || state.Stacks.Get(Time.time) == 0) state.Stacks.Clear();
-                if (state.Stacks.Get(Time.time) == 0 && !target.HasDamageOverTime(StatusType.Burned, Controller.NetworkObjectId) && Time.time > state.ReleaseAfter)
-                    remove.Add(pair.Key);
-            }
-            foreach (ulong id in remove) ReleaseTarget(id);
-        }
-        Present();
-    }
-
-    private void BindEvents()
-    {
-        if (boundPokemon == Pokemon) return;
-        UnbindEvents();
-        boundPokemon = Pokemon;
-        if (boundPokemon != null)
-        {
-            boundPokemon.OnDeath += OnDeath;
-            boundPokemon.OnDamageDealt += OnDamageDealt;
-        }
-    }
-
-    private void UnbindEvents()
-    {
-        if (boundPokemon == null) return;
-        boundPokemon.OnDeath -= OnDeath;
-        boundPokemon.OnDamageDealt -= OnDamageDealt;
-        boundPokemon = null;
-    }
-
     private void EnsurePrefab(CinderCast kind)
     {
         if (prefabs.ContainsKey(kind) || loading.Contains(kind)) return;
@@ -334,217 +548,6 @@ public sealed class CinderaceCharacterRuntime : CombatCharacterRuntime
         return effect;
     }
 
-    public void PerformBasicAttack(Pokemon target)
-    {
-        if (!IsServer || disposed || !IsCinderace || Pokemon.CurrentHp <= 0 || !CinderMoveRules.CanHit(Actor, target)
-            || !CombatTargeting.WithinMeleeRange(transform.position, target.transform.position, 7f)) return;
-        byte previous = charge;
-        bool boosted = previous == 2;
-        bool heal = healingAttacks > 0;
-        bool slow = boosted && flameSlow;
-        charge = (byte)(boosted ? 0 : previous + 1);
-        if (heal) healingAttacks--;
-        if (slow) flameSlow = false;
-        Vector3 direction = CinderMoveRules.Direction(target.transform.position - transform.position, transform.forward);
-        if (prefabs.TryGetValue(CinderCast.Basic, out GameObject cached) && cached != null)
-            SpawnPreparedObject(cached, CinderCast.Basic, 0, direction, target, false, boosted, heal, slow, lifetime, false);
-        else
-            lifetime.Own(new CombatRoutine(Actor, LoadAndSpawnBasic(direction, target, boosted, heal, slow)));
-        string animation = $"ani_atk{previous + 1}_bat_0815";
-        basicRecovery?.Dispose();
-        basicRecovery = new CombatRoutine(Actor, BasicRecovery(target, animation));
-        Publish();
-    }
-
-    private IEnumerator LoadAndSpawnBasic(Vector3 direction, Pokemon target, bool boosted, bool heal, bool slow)
-    {
-        GameObject loadedPrefab = null;
-        yield return Controller.Combat.Spawner.Load(CinderMoveRules.Path(CinderCast.Basic), lifetime, loaded => loadedPrefab = loaded);
-        if (disposed || !IsServer || !IsSpawned || Pokemon == null || Pokemon.CurrentHp <= 0 || !CinderMoveRules.CanHit(Actor, target))
-            yield break;
-        if (loadedPrefab != null && loadedPrefab.GetComponent<CinderMoveObject>() != null)
-        {
-            prefabs[CinderCast.Basic] = loadedPrefab;
-            SpawnPreparedObject(loadedPrefab, CinderCast.Basic, 0, direction, target, false, boosted, heal, slow, lifetime, false);
-        }
-    }
-
-    private IEnumerator BasicRecovery(Pokemon target, string animation)
-    {
-        float duration = 0.5f * Controller.GetAtkSpeedCooldown();
-        Vector3 direction = target != null ? target.transform.position - transform.position : transform.forward;
-        Controller.PresentServerAttackRPC(true, direction, animation, duration);
-        try { yield return new WaitForSeconds(duration); }
-        finally
-        {
-            if (Actor != null && Actor.IsSpawned)
-            {
-                Controller.PresentServerAttackRPC(false, Vector3.zero, "");
-                RecoverAnimation(animation);
-            }
-        }
-    }
-
-    internal void RecoverAnimation(string animation)
-    {
-        if (!IsServer || !IsSpawned || Pokemon == null || Pokemon.CurrentHp <= 0 || Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)) return;
-        Actor.AnimationManager?.RecoverAnimationRPC(animation, "ani_idle_bat_0815", 0.06f);
-    }
-
-    private CinderTargetState TargetState(Pokemon target)
-    {
-        if (!targets.TryGetValue(target.NetworkObjectId, out CinderTargetState state))
-        {
-            state = new CinderTargetState { Target = target };
-            targets.Add(target.NetworkObjectId, state);
-        }
-        return state;
-    }
-
-    public int GetMarks(Pokemon target)
-        => target != null && targets.TryGetValue(target.NetworkObjectId, out CinderTargetState state)
-            && target.HasStatusEffect(state.MarkId) ? state.Stacks.Get(Time.time) : 0;
-
-    public bool HasBurn(Pokemon target)
-        => target != null && targets.TryGetValue(target.NetworkObjectId, out CinderTargetState state)
-            && target.HasDamageOverTime(StatusType.Burned, Controller.NetworkObjectId);
-
-    private void OnDamageDealt(ulong targetId, DamageInfo damage)
-    {
-        if (!IsServer || disposed || !IsCinderace || Pokemon == null || Pokemon.CurrentHp <= 0
-            || (damage.proprieties & (DamageProprieties.Unused_2 | DamageProprieties.IsMuscleBand | DamageProprieties.IsHeal)) != 0
-            || (damage.proprieties & (DamageProprieties.IsBasicAttack | DamageProprieties.Unused_1)) == 0
-            || NetworkManager == null || !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetId, out var obj)
-            || !obj.TryGetComponent(out Pokemon target) || !CinderMoveRules.CanHit(Actor, target)) return;
-        CinderTargetState state = TargetState(target);
-        if (!target.HasStatusEffect(state.MarkId)) state.Stacks.Clear();
-        bool flare = state.Stacks.Add((damage.proprieties & DamageProprieties.Unused_1) != 0 ? 2 : 1, Time.time);
-        state.ReleaseAfter = Time.time + 5.1f;
-        target.RemoveStatusEffectWithID(state.MarkId);
-        if (flare)
-        {
-            int amount = CinderMoveRules.FlareDamage(Pokemon.GetAttack(), Pokemon.CurrentLevel, target.GetMaxHp(), target.Type != PokemonType.Player);
-            target.TakeDamageRPC(new DamageInfo(Controller.NetworkObjectId, 0f, 0, (short)Mathf.Min(short.MaxValue, amount), DamageType.Physical, DamageProprieties.Unused_2));
-        }
-        else
-        {
-            target.AddStatusEffect(new StatusEffect(StatusType.Scriptable, 5f, true, state.MarkId));
-            if (!state.MarkVisual)
-            {
-                state.MarkVisual = true;
-                state.VisualScope?.Dispose();
-                state.VisualScope = new CombatScope();
-                SpawnAuxiliaryObject(CinderCast.Cinders, transform.forward, target, state.VisualScope);
-            }
-        }
-    }
-
-    public void MarksVisualEnded(Pokemon target)
-    {
-        if (target != null && targets.TryGetValue(target.NetworkObjectId, out CinderTargetState state))
-            state.MarkVisual = false;
-    }
-
-    public void ApplyBurn(Pokemon target)
-    {
-        if (!IsServer || disposed || !CinderMoveRules.CanHit(Actor, target)) return;
-        CinderTargetState state = TargetState(target);
-        state.ReleaseAfter = Time.time + 5.1f;
-        target.AddStatusEffect(MovesController.CreateCinderaceBurnEffect(Controller.NetworkObjectId, state.BurnId));
-        target.RemoveAllStatChangeWithIDRPC(state.BurnId);
-        target.AddStatChange(new StatChange(5, Stat.Attack, 2f, true, false, true, state.BurnId));
-        target.AddStatChange(new StatChange(5, Stat.SpAttack, 2f, true, false, true, state.BurnId));
-    }
-
-    public void ApplyBuff(ushort id, Stat stat, short amount, float duration, bool percentage)
-    {
-        if (!IsServer || Pokemon == null) return;
-        Pokemon.RemoveAllStatChangeWithIDRPC(id);
-        Pokemon.AddStatChange(new StatChange(amount, stat, duration, true, true, percentage, id));
-    }
-
-    public void ApplyUnstoppable(ushort id, float duration)
-    {
-        if (!IsServer || Pokemon == null) return;
-        var negative = new List<StatusEffect>();
-        foreach (StatusEffect effect in Pokemon.StatusEffects) if (effect.IsNegativeStatus()) negative.Add(effect);
-        foreach (StatusEffect effect in negative) Pokemon.RemoveStatusEffectRPC(effect);
-        Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, duration, true, id));
-    }
-
-    public bool ResolveHit(Pokemon target, DamageInfo damage, bool healing = false, bool slow = false)
-    {
-        if (!IsServer || disposed || !CinderMoveRules.CanHit(Actor, target)) return false;
-        BindEvents();
-        int healthDamage = 0;
-        bool applied = false;
-        void Record(Pokemon victim, DamageInfo info, int amount)
-        {
-            if (victim == target && info.ratio == damage.ratio && info.baseDmg == damage.baseDmg && (info.proprieties & DamageProprieties.Unused_2) == 0)
-            {
-                applied = true;
-                healthDamage += amount;
-            }
-        }
-        Pokemon.OnHealthDamageDealt += Record;
-        try { target.TakeDamageRPC(damage); }
-        finally { Pokemon.OnHealthDamageDealt -= Record; }
-        if (healing && Pokemon.CurrentHp > 0 && healthDamage > 0)
-            Pokemon.HealDamageRPC(Mathf.FloorToInt(healthDamage * 0.3f));
-        if (applied && slow && CinderMoveRules.CanHit(Actor, target) && !target.HasStatusEffect(StatusType.Unstoppable))
-        {
-            target.RemoveAllStatChangeWithIDRPC(CinderMoveRules.FlameSlow);
-            target.AddStatChange(new StatChange(30, Stat.Speed, 2f, true, false, true, CinderMoveRules.FlameSlow));
-        }
-        return applied;
-    }
-
-    public void ApplyFeint(bool upgraded)
-    {
-        if (!IsServer || disposed || Pokemon == null) return;
-        var slows = new List<StatChange>();
-        foreach (StatChange change in Pokemon.StatChanges)
-            if (change.AffectedStat == Stat.Speed && !change.IsBuff && change.CanBeRemoved) slows.Add(change);
-        foreach (StatChange slow in slows) Pokemon.RemoveStatChangeRPC(slow);
-        Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, 0.73f, true, CinderMoveRules.FeintInvincible));
-        ApplyBuff(CinderMoveRules.FeintSpeed, Stat.Speed, 40, 2f, true);
-        if (upgraded) healingAttacks = 3;
-    }
-
-    public void ReduceMobilityCooldown()
-    {
-        if (!IsServer || disposed) return;
-        Controller.Combat?.ReduceCooldown(1, 4d);
-    }
-
-    private void OnDeath(DamageInfo info)
-    {
-        basicRecovery?.Dispose();
-        basicRecovery = null;
-        StopDashPresentation(false, Vector3.zero);
-        foreach (ulong id in new List<ulong>(targets.Keys)) ReleaseTarget(id);
-        charge = 0;
-        healingAttacks = 0;
-        flameSlow = false;
-        Publish();
-    }
-
-    private void ReleaseTarget(ulong id)
-    {
-        if (!targets.TryGetValue(id, out CinderTargetState state)) return;
-        state.VisualScope?.Dispose();
-        state.VisualScope = null;
-        if (state.Target != null && state.Target.IsSpawned)
-        {
-            state.Target.RemoveStatusEffectWithID(state.MarkId);
-            state.Target.RemoveStatusEffectWithID(state.BurnId);
-            state.Target.RemoveAllStatChangeWithIDRPC(state.BurnId);
-        }
-        CinderEffectIds.Release(state.MarkId);
-        CinderEffectIds.Release(state.BurnId);
-        targets.Remove(id);
-    }
-
     private void Publish()
     {
         if (!disposed && IsServer && IsSpawned)
@@ -603,6 +606,47 @@ public sealed class CinderaceCharacterRuntime : CombatCharacterRuntime
             else Actor.PlayerMovement.RemoveMovementRestriction();
             appliedMovement = movementLocked;
         }
+    }
+
+    private void BindEvents()
+    {
+        if (boundPokemon == Pokemon) return;
+        UnbindEvents();
+        boundPokemon = Pokemon;
+        if (boundPokemon != null)
+        {
+            boundPokemon.OnDeath += OnDeath;
+            boundPokemon.OnDamageDealt += OnDamageDealt;
+        }
+    }
+
+    private void UnbindEvents()
+    {
+        if (boundPokemon == null) return;
+        boundPokemon.OnDeath -= OnDeath;
+        boundPokemon.OnDamageDealt -= OnDamageDealt;
+        boundPokemon = null;
+    }
+
+    private void OnDeath(DamageInfo info)
+    {
+        basicRecovery?.Dispose();
+        basicRecovery = null;
+        StopDashPresentation(false, Vector3.zero);
+        foreach (ulong id in new List<ulong>(targets.Keys)) ReleaseTarget(id);
+        charge = 0;
+        healingAttacks = 0;
+        SetFlameChargeSlowArmed(false);
+        Publish();
+    }
+
+    private void ResetCombatCharges()
+    {
+        if (charge == 0 && healingAttacks == 0 && !flameSlow) return;
+        charge = 0;
+        healingAttacks = 0;
+        SetFlameChargeSlowArmed(false);
+        Publish();
     }
 
     public override void Dispose()

@@ -32,6 +32,18 @@ namespace Unite.Combat
             return true;
         }
 
+        public bool TryUpdate(int slot, int revision, double now, Func<T, T> update)
+        {
+            if (!entries.TryGetValue(slot, out Entry entry)) return false;
+            if (entry.Revision != revision || now >= entry.Expires)
+            {
+                entries.Remove(slot);
+                return false;
+            }
+            entries[slot] = new Entry(update(entry.Action), entry.Revision, entry.Expires);
+            return true;
+        }
+
         public void Clear(int slot) => entries.Remove(slot);
         public void Clear() => entries.Clear();
 

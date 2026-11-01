@@ -20,6 +20,8 @@ public class PlayableAttackCounterTests
     private GameObject root, gauge;
     private Component manager, pokemon, combat, hp;
     private object attack;
+    private object vaporRuntime;
+    private long vaporRevision;
     private static Type GameType(string name) => AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(name)).First(t => t != null);
     private static object Call(object target, string method, params object[] args) => target.GetType().GetMethod(method).Invoke(target, args);
     private static void Set(object target, string field, object value) => target.GetType().GetField(field, Private).SetValue(target, value);
@@ -69,6 +71,16 @@ public class PlayableAttackCounterTests
 
     private object Bind(string name)
     {
+        if (name == "VaporBasicAtk")
+        {
+#if UNITY_EDITOR
+            object previous = combat.GetType().GetField("combatRuntime", Private).GetValue(combat);
+            if (previous != null) Call(previous, "Dispose");
+            combat.GetType().GetField("combatRuntime", Private).SetValue(combat, null);
+            Set(pokemon, "baseStats", AssetDatabase.LoadMainAssetAtPath("Assets/Pokemons/PlayableMons/Vaporeon.asset"));
+            vaporRuntime = Get(Get(combat, "Combat"), "Character");
+#endif
+        }
         object value = Activator.CreateInstance(GameType(name));
         value.GetType().GetField("playerManager").SetValue(value, manager);
         FieldInfo cooldown = value.GetType().GetField("cooldown", Private);
@@ -77,11 +89,27 @@ public class PlayableAttackCounterTests
     }
     private void Charge(int amount)
     {
+        if (attack.GetType().Name == "VaporBasicAtk")
+        {
+            Type runtimeType = vaporRuntime.GetType();
+            const BindingFlags privateStatic = BindingFlags.Static | BindingFlags.NonPublic;
+            object state = runtimeType.GetMethod("DecodeSnapshot", privateStatic)
+                .Invoke(null, new[] { Call(vaporRuntime, "CapturePresentationState") });
+            state.GetType().GetField("Charge").SetValue(state, (byte)amount);
+            state.GetType().GetField("Revision").SetValue(state, ++vaporRevision);
+            object encoded = runtimeType.GetMethod("EncodeSnapshot", privateStatic).Invoke(null, new[] { state });
+            Call(vaporRuntime, "ApplyPresentationState", encoded);
+            return;
+        }
+        if (attack.GetType().Name == "FlareonBasicAtk")
+        {
+            Call(attack, "ApplySnapshot", amount);
+            return;
+        }
         string network = attack.GetType().Name switch
         {
-            "VaporBasicAtk" => "vaporAttackCharge",
             "MeowsticMBasicAtk" => "meowsticAttackCharge", "EmboarBasicAtk" => "emboarAttackCharge",
-            "FlareonBasicAtk" => "flareonAttackCharge", _ => null
+            _ => null
         };
         if (network != null) Snapshot(combat, network, (byte)amount);
         else

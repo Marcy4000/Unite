@@ -15,12 +15,16 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
         public string DisplayName;
     }
 
+    private sealed class AerialCastContext
+    {
+        public readonly ZoroarkExecution Night;
+        public AerialCastContext(ZoroarkExecution night) { Night = night; }
+    }
+
     private bool comboNight, comboActive, comboFinisher;
     private int comboCount;
-    public ZoroarkCharacterRuntime(PlayerManager actor) : base(actor) { }
-
-    public ZoroarkMoveEffect ZoroarkNight { get; internal set; }
-    public ZoroarkMoveEffect ZoroarkFeint { get; internal set; }
+    public ZoroarkExecution ZoroarkNight { get; internal set; }
+    public ZoroarkExecution ZoroarkFeint { get; internal set; }
     public bool ZoroarkFeintReady { get; private set; }
     public bool ZoroarkUniqueReady { get; private set; }
     private bool zoroarkNightActive;
@@ -55,6 +59,41 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
     public Pokemon ZoroarkDisguiseSource => illusionActive && NetworkManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(illusionSource, out var obj) ? obj.GetComponent<Pokemon>() : null;
     private bool IsZoroark => Pokemon != null && Pokemon.BaseStats != null && Pokemon.BaseStats.Passive == AvailablePassives.ZoroarkPassive;
     public bool IsZoroarkEnemyView => illusionActive && LobbyController.Instance != null && !Actor.CurrentTeam.IsOnSameTeam(LobbyController.Instance.GetLocalPlayerTeam());
+    public override bool CanStartBasicAttack => ZoroarkNight == null || !ZoroarkNight.Finishing;
+
+    public ZoroarkCharacterRuntime(PlayerManager actor) : base(actor) { }
+
+    public override bool PrepareCast(CombatExecutionContext context)
+    {
+        if (ZoroarkNight != null && ZoroarkNight.Finishing && context.Slot != 0) return false;
+        if (context.Slot == 0 && ZoroarkNight != null && ZoroarkNight.AerialWindow)
+        {
+            if (!ZoroarkNight.CanSpendAerialReposition) return false;
+            context.IgnoreCooldown = true;
+            context.CharacterData = new AerialCastContext(ZoroarkNight);
+        }
+        return true;
+    }
+
+    public override bool RevalidateCast(CombatExecutionContext context)
+    {
+        if (ZoroarkNight != null && ZoroarkNight.Finishing && context.Slot != 0) return false;
+        if (context.CharacterData is AerialCastContext aerial)
+            return context.Slot == 0 && aerial.Night != null && aerial.Night == ZoroarkNight
+                && aerial.Night.CanSpendAerialReposition;
+        return context.Slot != 0 || ZoroarkNight == null || !ZoroarkNight.AerialWindow;
+    }
+
+    public override void CommitCast(CombatExecutionContext context)
+    {
+        if (context.MoveId == AvailableMoves.ZoroarkFeintAttack) ResetZoroarkOtherMove();
+        if (context.CharacterData is AerialCastContext aerial && aerial.Night.TrySpendAerialReposition())
+            Controller.ZoroarkAerialSpentRPC();
+    }
+
+    public override CombatExecution CreateExecution(CombatExecutionContext context) => new ZoroarkExecution(context, this);
+
+    public override bool OverridesCooldown(int slot) => slot == 0 && ZoroarkAerialOpen;
 
     public override void Tick()
     {
@@ -84,6 +123,15 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
             Controller.BreakZoroarkIllusionRPC();
     }
 
+    public override void LateTick()
+    {
+        if (illusionModel == null || Actor == null) return;
+        bool visible = Actor.Vision != null && Actor.Vision.IsRendered && Pokemon.CurrentHp > 0;
+        foreach (var renderer in illusionRenderers) if (renderer != null) renderer.enabled = visible;
+        if (illusionOriginalRenderers != null) foreach (var renderer in illusionOriginalRenderers) if (renderer != null) renderer.forceRenderingOff = true;
+        if (illusionAnimator != null && illusionHasWalking) illusionAnimator.SetBool("Walking", Actor.PlayerMovement.IsMoving);
+    }
+
     public bool CanUseZoroarkIllusion()
     {
         return IsSpawned && IsZoroark && Pokemon.CurrentHp > 0 && Actor.PlayerState == PlayerState.Alive
@@ -92,6 +140,80 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
             && !Controller.BasicAttackStatus.HasStatus(ActionStatusType.Disabled)
             && !Controller.BasicAttackStatus.HasStatus(ActionStatusType.Busy)
             && (GameManager.Instance == null || GameManager.Instance.GameState == GameState.Playing);
+    }
+
+    public void ActivateZoroarkIllusion()
+    {
+        if (!IsServer || !IsZoroark || Pokemon.CurrentHp <= 0 || NetworkManager.ServerTime.Time < illusionNext
+            || Pokemon.HasStatusEffect(StatusType.Bound) || Controller.ServerActionLocks > 0
+            || (ZoroarkNight != null && ZoroarkNight.Finishing)
+            || (GameManager.Instance != null && GameManager.Instance.GameState != GameState.Playing)) return;
+        Pokemon chosen = null;
+        float nearest = float.PositiveInfinity;
+        bool playerChosen = false;
+        foreach (var obj in NetworkManager.SpawnManager.SpawnedObjects.Values)
+        {
+            if (!obj.TryGetComponent(out Pokemon target) || target == Pokemon || target.CurrentHp <= 0
+                || target.TeamMember.IsOnSameTeam(Actor.CurrentTeam) || IllusionModelFor(target) == null) continue;
+            bool isPlayer = target.Type == PokemonType.Player;
+            float distance = (target.transform.position - transform.position).sqrMagnitude;
+            if (playerChosen && !isPlayer) continue;
+            if (chosen == null || (isPlayer && !playerChosen) || distance < nearest)
+            { chosen = target; playerChosen = isPlayer; nearest = distance; }
+        }
+        illusionNext = NetworkManager.ServerTime.Time + ZoroarkMoveRules.IllusionCooldown;
+        illusionUntil = NetworkManager.ServerTime.Time + ZoroarkMoveRules.IllusionDuration;
+        illusionActorModelAtStart = IllusionModelFor(Pokemon);
+        Pokemon.CleanseConditions();
+        Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, ZoroarkMoveRules.IllusionUnstoppable, true, ZoroarkMoveRules.IllusionStatus));
+        Controller.PresentZoroarkIllusionRPC(chosen != null, chosen != null ? chosen.NetworkObjectId : 0,
+            chosen != null ? chosen.CurrentHp : 0, chosen != null ? chosen.GetMaxHp() : 1,
+            chosen != null ? chosen.CurrentLevel : 0, chosen != null ? chosen.ShieldHp : 0,
+            chosen != null && chosen.TryGetComponent(out PlayerManager player) ? player.CurrentEnergy : 0,
+            chosen != null && chosen.TryGetComponent(out PlayerManager named) && named.HPBar != null ? named.HPBar.DisplayName : "");
+    }
+
+    private void BreakIllusionOnDamage(DamageInfo _) => BreakZoroarkIllusion();
+
+    public void BreakZoroarkIllusion()
+    {
+        if (IsServer && illusionActive) Controller.EndZoroarkIllusionRPC();
+    }
+
+    public void EndIllusion() { illusionActive = false; ClearIllusionPresentation(); }
+
+    public bool CanRecast(int slot) => slot == 0 && ZoroarkAerialOpen && Controller.ZoroarkMoveStatus(0) != null
+        && !Controller.ZoroarkMoveStatus(0).HasStatus(ActionStatusType.Disabled) && !Controller.ZoroarkMoveStatus(0).HasStatus(ActionStatusType.Stunned)
+        && !Controller.ZoroarkMoveStatus(0).HasStatus(ActionStatusType.Busy);
+
+    internal bool IsAerialCast(CombatExecutionContext context) => context.CharacterData is AerialCastContext;
+
+    public void SpendZoroarkAerialReposition()
+    {
+        if (!ZoroarkAerialOpen) return;
+        zoroarkAerialSpent = true;
+        zoroarkAerialSpentLock?.Dispose();
+        if (IsOwner)
+        {
+            zoroarkAerialSpentLock = Controller.AcquireMoveStatus(0, ActionStatusType.Busy);
+            Controller.RefreshZoroarkMoveUI();
+        }
+    }
+
+    public void ZoroarkNormalMoveStarted(Vector3 origin)
+    {
+        ZoroarkFeint?.MoveMark(origin);
+    }
+
+    public void ZoroarkNormalMoveHit()
+    {
+        ZoroarkNight?.ValidHit(false);
+        ZoroarkFeint?.ValidHit(false);
+    }
+
+    public void ResetZoroarkOtherMove()
+    {
+        if (IsServer) Controller.ReduceMoveCooldownByFraction(MoveType.MoveA, 1);
     }
 
     public override bool HandleMovement(Vector2 input)
@@ -112,6 +234,7 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
         zoroarkMovement = Vector2.ClampMagnitude(input, 1);
         if (ZoroarkNight != null && Controller.ServerActionLocks == 0) ZoroarkNight.Movement(zoroarkMovement);
     }
+
     public Vector3 ZoroarkBounceDirection(Vector3 fallback)
         => zoroarkMovement.sqrMagnitude > 0.01f ? new Vector3(zoroarkMovement.x, 0, zoroarkMovement.y).normalized : fallback;
 
@@ -152,67 +275,6 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
         zoroarkComboGauge.SetSteps(count, night ? ZoroarkMoveRules.NightSteps : ZoroarkMoveRules.FeintSteps);
         zoroarkComboGauge.SetFillColor(finisherReady ? new Color(1, 0.8f, 0.15f) : new Color(0.9f, 0.12f, 0.25f));
         zoroarkComboGauge.SetVisibility(active && !IsZoroarkEnemyView);
-    }
-
-    public bool CanRecast(int slot) => slot == 0 && ZoroarkAerialOpen && Controller.ZoroarkMoveStatus(0) != null
-        && !Controller.ZoroarkMoveStatus(0).HasStatus(ActionStatusType.Disabled) && !Controller.ZoroarkMoveStatus(0).HasStatus(ActionStatusType.Stunned)
-        && !Controller.ZoroarkMoveStatus(0).HasStatus(ActionStatusType.Busy);
-
-    public void SpendZoroarkAerialReposition()
-    {
-        if (!ZoroarkAerialOpen) return;
-        zoroarkAerialSpent = true;
-        zoroarkAerialSpentLock?.Dispose();
-        if (IsOwner)
-        {
-            zoroarkAerialSpentLock = Controller.AcquireMoveStatus(0, ActionStatusType.Busy);
-            Controller.RefreshZoroarkMoveUI();
-        }
-    }
-
-    public void ZoroarkNormalMoveStarted(Vector3 origin)
-    {
-        ZoroarkFeint?.MoveMark(origin);
-    }
-    public void ZoroarkNormalMoveHit()
-    {
-        ZoroarkNight?.ValidHit(false);
-        ZoroarkFeint?.ValidHit(false);
-    }
-    public void ResetZoroarkOtherMove()
-    {
-        if (IsServer) Controller.ReduceMoveCooldownByFraction(MoveType.MoveA, 1);
-    }
-
-    public void ActivateZoroarkIllusion()
-    {
-        if (!IsServer || !IsZoroark || Pokemon.CurrentHp <= 0 || NetworkManager.ServerTime.Time < illusionNext
-            || Pokemon.HasStatusEffect(StatusType.Bound) || Controller.ServerActionLocks > 0
-            || (ZoroarkNight != null && ZoroarkNight.Finishing)
-            || (GameManager.Instance != null && GameManager.Instance.GameState != GameState.Playing)) return;
-        Pokemon chosen = null;
-        float nearest = float.PositiveInfinity;
-        bool playerChosen = false;
-        foreach (var obj in NetworkManager.SpawnManager.SpawnedObjects.Values)
-        {
-            if (!obj.TryGetComponent(out Pokemon target) || target == Pokemon || target.CurrentHp <= 0
-                || target.TeamMember.IsOnSameTeam(Actor.CurrentTeam) || IllusionModelFor(target) == null) continue;
-            bool isPlayer = target.Type == PokemonType.Player;
-            float distance = (target.transform.position - transform.position).sqrMagnitude;
-            if (playerChosen && !isPlayer) continue;
-            if (chosen == null || (isPlayer && !playerChosen) || distance < nearest)
-            { chosen = target; playerChosen = isPlayer; nearest = distance; }
-        }
-        illusionNext = NetworkManager.ServerTime.Time + ZoroarkMoveRules.IllusionCooldown;
-        illusionUntil = NetworkManager.ServerTime.Time + ZoroarkMoveRules.IllusionDuration;
-        illusionActorModelAtStart = IllusionModelFor(Pokemon);
-        Pokemon.CleanseConditions();
-        Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, ZoroarkMoveRules.IllusionUnstoppable, true, ZoroarkMoveRules.IllusionStatus));
-        Controller.PresentZoroarkIllusionRPC(chosen != null, chosen != null ? chosen.NetworkObjectId : 0,
-            chosen != null ? chosen.CurrentHp : 0, chosen != null ? chosen.GetMaxHp() : 1,
-            chosen != null ? chosen.CurrentLevel : 0, chosen != null ? chosen.ShieldHp : 0,
-            chosen != null && chosen.TryGetComponent(out PlayerManager player) ? player.CurrentEnergy : 0,
-            chosen != null && chosen.TryGetComponent(out PlayerManager named) && named.HPBar != null ? named.HPBar.DisplayName : "");
     }
 
     public void PresentIllusion(bool active, ulong source, int hp, int maxHp, int level, int shield, int energy, string displayName)
@@ -256,15 +318,6 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
         if (Controller.IsClient) TimedCombatVisual.Spawn(ZoroarkMoveRules.Visuals + "IllusionSmoke", transform.position, transform.forward, Vector3.one, 0.33f);
     }
 
-    public override void LateTick()
-    {
-        if (illusionModel == null || Actor == null) return;
-        bool visible = Actor.Vision != null && Actor.Vision.IsRendered && Pokemon.CurrentHp > 0;
-        foreach (var renderer in illusionRenderers) if (renderer != null) renderer.enabled = visible;
-        if (illusionOriginalRenderers != null) foreach (var renderer in illusionOriginalRenderers) if (renderer != null) renderer.forceRenderingOff = true;
-        if (illusionAnimator != null && illusionHasWalking) illusionAnimator.SetBool("Walking", Actor.PlayerMovement.IsMoving);
-    }
-
     private static GameObject IllusionModelFor(Pokemon target, int level = -1)
     {
         GameObject model = null;
@@ -272,89 +325,6 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
             foreach (var evolution in target.BaseStats.Evolutions)
                 if (evolution.level <= (level >= 0 ? level : target.CurrentLevel) && evolution.newModel != null) model = evolution.newModel;
         return model != null ? model : target.ActiveModel;
-    }
-
-    private void BreakIllusionOnDamage(DamageInfo _) => BreakZoroarkIllusion();
-    public void BreakZoroarkIllusion()
-    {
-        if (IsServer && illusionActive) Controller.EndZoroarkIllusionRPC();
-    }
-    public void EndIllusion() { illusionActive = false; ClearIllusionPresentation(); }
-    private void ClearIllusionPresentation()
-    {
-        if (illusionModel != null) UnityEngine.Object.Destroy(illusionModel);
-        illusionModel = null; illusionAnimator = null;
-        illusionRenderers = null; illusionHasWalking = false;
-        if (illusionOriginalRenderers != null) foreach (var renderer in illusionOriginalRenderers) if (renderer != null) renderer.forceRenderingOff = false;
-        illusionOriginalRenderers = null;
-        if (Actor != null && Actor.HPBar != null) Actor.HPBar.ClearPresentationOverride();
-    }
-    public override void Dispose()
-    {
-        if (zoroarkEvents != null)
-        {
-            zoroarkEvents.OnOffensiveAction -= BreakZoroarkIllusion;
-            zoroarkEvents.OnDamageTaken -= BreakIllusionOnDamage;
-            zoroarkEvents.OnDeath -= BreakIllusionOnDamage;
-            zoroarkEvents.OnEvolution -= BreakZoroarkIllusion;
-        }
-        zoroarkEvents = null;
-        if (AuxiliaryActionUI.AuxiliaryAction == illusionAction) AuxiliaryActionUI.AuxiliaryAction = null;
-        illusionAction?.Dispose(); illusionAction = null;
-        zoroarkAirborne = zoroarkNightActive = zoroarkAerialSpent = false;
-        bool ownedWindow = zoroarkWindowUntil > 0;
-        zoroarkWindowUntil = 0;
-        if (ownedWindow && Actor != null && Actor.IsLocalHuman && BattleUIManager.instance != null)
-            BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
-        ZoroarkUniqueReady = ZoroarkFeintReady = false;
-        zoroarkAerialSpentLock?.Dispose(); zoroarkAerialSpentLock = null;
-        illusionActive = false; ClearIllusionPresentation();
-        if (zoroarkComboGauge != null) zoroarkComboGauge.SetVisibility(false);
-        ZoroarkNight = null;
-        ZoroarkFeint = null;
-    }
-
-    private sealed class AerialCastContext
-    {
-        public readonly ZoroarkMoveEffect Night;
-        public AerialCastContext(ZoroarkMoveEffect night) { Night = night; }
-    }
-
-    public override bool CanStartBasicAttack => ZoroarkNight == null || !ZoroarkNight.Finishing;
-    public override bool OverridesCooldown(int slot) => slot == 0 && ZoroarkAerialOpen;
-
-    public override bool PrepareCast(CombatExecutionContext context)
-    {
-        if (ZoroarkNight != null && ZoroarkNight.Finishing && context.Slot != 0) return false;
-        if (context.Slot == 0 && ZoroarkNight != null && ZoroarkNight.AerialWindow)
-        {
-            if (!ZoroarkNight.CanSpendAerialReposition) return false;
-            context.IgnoreCooldown = true;
-            context.CharacterData = new AerialCastContext(ZoroarkNight);
-        }
-        return true;
-    }
-
-    public override bool RevalidateCast(CombatExecutionContext context)
-    {
-        if (ZoroarkNight != null && ZoroarkNight.Finishing && context.Slot != 0) return false;
-        if (context.CharacterData is AerialCastContext aerial)
-            return context.Slot == 0 && aerial.Night != null && aerial.Night == ZoroarkNight
-                && aerial.Night.CanSpendAerialReposition;
-        return context.Slot != 0 || ZoroarkNight == null || !ZoroarkNight.AerialWindow;
-    }
-
-    public override void CommitCast(CombatExecutionContext context)
-    {
-        if (context.MoveId == AvailableMoves.ZoroarkFeintAttack) ResetZoroarkOtherMove();
-        if (context.CharacterData is AerialCastContext aerial && aerial.Night.TrySpendAerialReposition())
-            Controller.ZoroarkAerialSpentRPC();
-    }
-
-    public override void ConfigureEffect(PrefabMoveEffect effect, CombatExecutionContext context)
-    {
-        if (effect is ZoroarkMoveEffect zoroarkEffect)
-            zoroarkEffect.AerialCast = context.CharacterData is AerialCastContext;
     }
 
     public override string CapturePresentationState()
@@ -386,5 +356,40 @@ public sealed class ZoroarkCharacterRuntime : CombatCharacterRuntime
         illusionNext = snapshot.IllusionNext;
         illusionUntil = snapshot.IllusionUntil;
         illusionLocalNext = Time.time + Mathf.Max(0, (float)(illusionNext - NetworkManager.ServerTime.Time));
+    }
+
+    private void ClearIllusionPresentation()
+    {
+        if (illusionModel != null) UnityEngine.Object.Destroy(illusionModel);
+        illusionModel = null; illusionAnimator = null;
+        illusionRenderers = null; illusionHasWalking = false;
+        if (illusionOriginalRenderers != null) foreach (var renderer in illusionOriginalRenderers) if (renderer != null) renderer.forceRenderingOff = false;
+        illusionOriginalRenderers = null;
+        if (Actor != null && Actor.HPBar != null) Actor.HPBar.ClearPresentationOverride();
+    }
+
+    public override void Dispose()
+    {
+        if (zoroarkEvents != null)
+        {
+            zoroarkEvents.OnOffensiveAction -= BreakZoroarkIllusion;
+            zoroarkEvents.OnDamageTaken -= BreakIllusionOnDamage;
+            zoroarkEvents.OnDeath -= BreakIllusionOnDamage;
+            zoroarkEvents.OnEvolution -= BreakZoroarkIllusion;
+        }
+        zoroarkEvents = null;
+        if (AuxiliaryActionUI.AuxiliaryAction == illusionAction) AuxiliaryActionUI.AuxiliaryAction = null;
+        illusionAction?.Dispose(); illusionAction = null;
+        zoroarkAirborne = zoroarkNightActive = zoroarkAerialSpent = false;
+        bool ownedWindow = zoroarkWindowUntil > 0;
+        zoroarkWindowUntil = 0;
+        if (ownedWindow && Actor != null && Actor.IsLocalHuman && BattleUIManager.instance != null)
+            BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
+        ZoroarkUniqueReady = ZoroarkFeintReady = false;
+        zoroarkAerialSpentLock?.Dispose(); zoroarkAerialSpentLock = null;
+        illusionActive = false; ClearIllusionPresentation();
+        if (zoroarkComboGauge != null) zoroarkComboGauge.SetVisibility(false);
+        ZoroarkNight = null;
+        ZoroarkFeint = null;
     }
 }

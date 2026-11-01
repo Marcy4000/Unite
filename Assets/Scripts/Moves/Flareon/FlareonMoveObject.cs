@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
-/// <summary>Authored presentation, replicated phases, server hitboxes. The player root remains owner-driven.</summary>
 public class FlareonMoveObject : NetworkBehaviour
 {
     [SerializeField] private GameObject graphics, body, wave, impact, strike, recastMarker, fullHeat, flamePreview;
@@ -27,10 +26,7 @@ public class FlareonMoveObject : NetworkBehaviour
     private MovesController combat;
     private PlayerManager actor;
     private Pokemon target;
-    private int cast;
-    private bool initialized, upgraded, holdsAsset, movementEnded, refunded, cleaned;
-    private Vector3 origin, lastPoint;
-    private float lastReportAge;
+    private bool initialized, upgraded, holdsAsset, cleaned;
     private AsyncOperationHandle<GameObject> asset;
     private Transform movedModel;
     private Vector3 modelOrigin;
@@ -52,145 +48,101 @@ public class FlareonMoveObject : NetworkBehaviour
 
     public void HoldAsset(AsyncOperationHandle<GameObject> handle) { asset = handle; holdsAsset = true; }
     public override void OnNetworkSpawn() { if (graphics != null) graphics.SetActive(false); if (IsServer) StartCoroutine(Watchdog()); }
-    public void Initialize(MovesController owner, PlayerManager player, FlareonCast move, int id, Vector3 direction, Pokemon victim, bool plus)
+    public void InitializeCombat(PlayerManager player, FlareonCast move, Vector3 direction, Pokemon victim, bool plus)
     {
-        if (!IsServer || initialized) return;
-        initialized = true; combat = owner; actor = player; target = victim; cast = id; upgraded = plus;
-        origin = lastPoint = player.transform.position;
+        if (!IsServer || initialized || player == null) return;
+        initialized = true; actor = player; combat = player.MovesController; target = victim; upgraded = plus;
         actorId.Value = player.NetworkObjectId; kind.Value = move; aim.Value = direction;
         started.Value = phaseStarted.Value = NetworkManager.ServerTime.Time;
-        actor.Pokemon.OnDeath += OnDeath; StartCoroutine(Run());
+        actor.Pokemon.OnDeath += OnDeath;
     }
-    private IEnumerator Watchdog() { yield return new WaitForSeconds(20); if (kind.Value != FlareonCast.State || !initialized) Despawn(); }
-    private IEnumerator Wait(float seconds, bool interruptible = false)
+    public void SetCombatPhase(byte value)
     {
-        double until = NetworkManager.ServerTime.Time + seconds;
-        while (Live && NetworkManager.ServerTime.Time < until)
+        if (IsServer && initialized) SetPhase(value);
+    }
+    public void MoveCombatObject(Vector3 position, Vector3 direction)
+    {
+        if (!IsServer || !initialized) return;
+        transform.SetPositionAndRotation(position, Quaternion.LookRotation(FlareonMoveRules.Direction(direction, transform.forward)));
+    }
+    public void DamageCombatArea(FlareonCharacterRuntime runtime, FlareonCast move, float burnDuration = 0)
+    {
+        if (!IsServer || !Live || runtime == null) return;
+        foreach (Pokemon victim in InArea())
+            runtime.HitTarget(victim, FlareonMoveRules.Damage(actorId.Value, move, upgraded, victim.HasStatusEffect(StatusType.Burned)), burnDuration);
+    }
+    public void SweepCombatFlame(FlareonCharacterRuntime runtime, float progress)
+    {
+        if (!IsServer || !Live || runtime == null || sweep == null || flameArea == null) return;
+        sweep.localRotation = Quaternion.Euler(0, Mathf.Lerp(-30, 30, Mathf.Clamp01(progress)), 0);
+        foreach (Pokemon victim in InFlame())
         {
-            if (interruptible && actor.Pokemon.HasAnyStatusEffect(FlareonMoveRules.Interrupts)) { Despawn(); yield break; }
-            yield return null;
+            if (!FlareonMoveRules.CanHit(actor, victim) || !hit.Add(victim)) continue;
+            runtime.HitTarget(victim, FlareonMoveRules.Damage(actorId.Value, FlareonCast.Flamethrower, upgraded), 3);
         }
     }
-    private IEnumerator Run()
+    public bool SweepCombatTravel(FlareonCharacterRuntime runtime, FlareonCast move, Vector3 previous, Vector3 point, bool cooldownRefunded)
     {
-        switch (kind.Value)
+        if (!IsServer || !Live || runtime == null) return cooldownRefunded;
+        foreach (Pokemon victim in FlareonMoveRules.Targets(Physics.OverlapCapsule(previous + Vector3.up * 0.6f, point + Vector3.up * 0.6f, 0.8f)))
         {
-            case FlareonCast.State: while (Live) yield return null; break;
-            case FlareonCast.Swift:
-                // Ten ticks over four seconds, independent of frame rate and animation length.
-                for (int i = 0; i < 10 && Live; i++)
-                {
-                    yield return Wait(0.4f); if (!Live) break;
-                    transform.position = actor.transform.position; SetPhase((byte)(i + 1));
-                    foreach (Pokemon victim in InArea()) combat.HitFlareonTarget(victim, FlareonMoveRules.Damage(actorId.Value, kind.Value));
-                }
-                break;
-            case FlareonCast.HeatWave:
-                actor.Pokemon.RemoveAllStatChangeWithIDRPC(FlareonMoveRules.SpeedBuff);
-                actor.Pokemon.AddStatChange(new StatChange(FlareonMoveRules.HeatSpeedBonus, Stat.Speed, 6, true, true, true, FlareonMoveRules.SpeedBuff));
-                for (int i = 0; i < FlareonMoveRules.HeatPulses(upgraded) && Live; i++)
-                {
-                    yield return Wait(i == 0 ? 0.35f : FlareonMoveRules.HeatInterval(upgraded)); if (!Live) break;
-                    transform.position = actor.transform.position; SetPhase((byte)(i + 1));
-                    foreach (Pokemon victim in InArea()) combat.HitFlareonTarget(victim, FlareonMoveRules.Damage(actorId.Value, kind.Value, upgraded, victim.HasStatusEffect(StatusType.Burned)));
-                }
-                yield return Wait(0.25f);
-                break;
-            case FlareonCast.Flamethrower:
-                actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, 0.65f, true, FlareonMoveRules.CastProtection));
-                if (upgraded) Shield(FlareonMoveRules.FlameShield, 0.1f, 4);
-                yield return Wait(0.2f); if (!Live) break;
-                SetPhase(1);
-                double end = NetworkManager.ServerTime.Time + 0.4;
-                while (Live && NetworkManager.ServerTime.Time < end)
-                {
-                    transform.SetPositionAndRotation(actor.transform.position, Quaternion.LookRotation(aim.Value));
-                    sweep.localRotation = Quaternion.Euler(0, Mathf.Lerp(-30, 30, Mathf.Clamp01(PhaseAge / 0.4f)), 0);
-                    foreach (Pokemon victim in InFlame())
-                    {
-                        if (!FlareonMoveRules.CanHit(actor, victim) || !hit.Add(victim)) continue;
-                        combat.HitFlareonTarget(victim, FlareonMoveRules.Damage(actorId.Value, kind.Value, upgraded), 3);
-                    }
-                    yield return null;
-                }
-                SetPhase(2); yield return Wait(0.12f); break;
-            default:
-                if (kind.Value == FlareonCast.Unite) actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Invincible, 0.65f, true, FlareonMoveRules.CastProtection));
-                double timeout = NetworkManager.ServerTime.Time + 2;
-                while (Live && !movementEnded && NetworkManager.ServerTime.Time < timeout)
-                {
-                    if (actor.Pokemon.HasAnyStatusEffect(FlareonMoveRules.Interrupts) || actor.Pokemon.HasStatusEffect(StatusType.Immobilized)) { Despawn(); yield break; }
-                    yield return null;
-                }
-                if (!Live || !movementEnded) break;
-                transform.position = lastPoint; SetPhase(1);
-                if (kind.Value == FlareonCast.Takedown || kind.Value == FlareonCast.Slam) LandTakedown();
-                else if (kind.Value == FlareonCast.Unite)
-                {
-                    foreach (Pokemon victim in InArea())
-                    {
-                        if (!FlareonMoveRules.CanHit(actor, victim)) continue;
-                        if (combat.HitFlareonTarget(victim, FlareonMoveRules.Damage(actorId.Value, kind.Value), 3))
-                            combat.HitFlareonTarget(victim, new DamageInfo(actorId.Value, 0, 0, (short)Mathf.Min(short.MaxValue, Mathf.RoundToInt(victim.GetMissingHp() * 0.05f)), DamageType.Physical, DamageProprieties.IsUniteMove));
-                    }
-                    Shield(FlareonMoveRules.UniteShield, 0.12f, 3);
-                }
-                yield return Wait(kind.Value == FlareonCast.Unite ? 0.4f : 0.2f); break;
+            if (!FlareonMoveRules.CanHit(actor, victim) || !hit.Add(victim)) continue;
+            float burn = move == FlareonCast.FlareBlitz ? upgraded ? 3 : 2 : 0;
+            if (!runtime.HitTarget(victim, FlareonMoveRules.Damage(actorId.Value, move), burn)) continue;
+            if (move != FlareonCast.FlareBlitz) continue;
+            if (FlareonMoveRules.CanControl(actor, victim))
+            {
+                victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.35f, true, FlareonMoveRules.LaunchId));
+                victim.ApplyKnockupRPC(0.8f, 0.35f);
+            }
+            if (!cooldownRefunded)
+            {
+                cooldownRefunded = true;
+                actor.MovesController.Combat.ReduceCooldown(1, 3);
+            }
         }
-        Despawn();
+        return cooldownRefunded;
     }
-    private void LandTakedown()
+    public bool LandCombatTakedown(FlareonCharacterRuntime runtime, bool slam)
     {
-        if (!FlareonMoveRules.CanHit(actor, target) || (target.transform.position - lastPoint).sqrMagnitude > 2.25f) return;
-        bool slam = kind.Value == FlareonCast.Slam;
+        if (!IsServer || !Live || runtime == null || !FlareonMoveRules.CanHit(actor, target)
+            || (target.transform.position - transform.position).sqrMagnitude > 2.25f) return false;
         if (slam)
         {
-            bool connected = combat.HitFlareonTarget(target, FlareonMoveRules.Damage(actorId.Value, kind.Value));
+            bool connected = runtime.HitTarget(target, FlareonMoveRules.Damage(actorId.Value, FlareonCast.Slam));
             if (connected && FlareonMoveRules.CanControl(actor, target))
                 target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, FlareonMoveRules.LaunchId));
-            if (connected) Shield(FlareonMoveRules.SlamShield, 0.05f, 3); return;
+            if (connected) Shield(FlareonMoveRules.SlamShield, 0.05f, 3);
+            return connected;
         }
         bool launched = false;
         foreach (Pokemon victim in InArea())
         {
-            bool connected = combat.HitFlareonTarget(victim, FlareonMoveRules.Damage(actorId.Value, kind.Value, upgraded, victim.HasStatusEffect(StatusType.Burned)));
+            bool connected = runtime.HitTarget(victim, FlareonMoveRules.Damage(actorId.Value, FlareonCast.Takedown, upgraded, victim.HasStatusEffect(StatusType.Burned)));
             if (victim == target) launched = connected;
         }
-        if (launched && FlareonMoveRules.CanControl(actor, target))
-        {
-            float duration = FlareonMoveRules.LaunchDuration(upgraded);
-            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, FlareonMoveRules.LaunchId)); target.ApplyKnockupRPC(1, duration);
-            combat.ArmFlareonRecast(target, duration - 0.08f);
-        }
+        if (!launched || !FlareonMoveRules.CanControl(actor, target)) return false;
+        float duration = FlareonMoveRules.LaunchDuration(upgraded);
+        target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, FlareonMoveRules.LaunchId));
+        target.ApplyKnockupRPC(1, duration);
+        return true;
     }
-    public void ReportMovement(bool finished, Vector3 point)
+    public void LandCombatUnite(FlareonCharacterRuntime runtime)
     {
-        if (!IsServer || !initialized || !Live || !FlareonMoveRules.Driven(kind.Value) || movementEnded || !FlareonMoveRules.Finite(point)
-            || actor.Pokemon.HasAnyStatusEffect(FlareonMoveRules.Interrupts) || actor.Pokemon.HasStatusEffect(StatusType.Immobilized)) return;
-        Vector3 delta = point - origin; delta.y = 0;
-        float maxSpeed = FlareonMoveRules.Range(kind.Value) / FlareonMoveRules.DriveTime(kind.Value) + 4;
-        if (delta.sqrMagnitude > Mathf.Pow(FlareonMoveRules.Range(kind.Value) + 0.8f, 2) || Mathf.Abs(point.y - origin.y) > 2
-            || (point - lastPoint).magnitude > maxSpeed * Mathf.Max(0, Age - lastReportAge) + 0.8f
-            || Age < FlareonMoveRules.Windup(kind.Value) - 0.04f) return;
-        if (kind.Value == FlareonCast.Tackle || kind.Value == FlareonCast.FlareBlitz)
+        if (!IsServer || !Live || runtime == null) return;
+        foreach (Pokemon victim in InArea())
         {
-            foreach (Pokemon victim in FlareonMoveRules.Targets(Physics.OverlapCapsule(lastPoint + Vector3.up * 0.6f, point + Vector3.up * 0.6f, 0.8f)))
-            {
-                if (!FlareonMoveRules.CanHit(actor, victim) || !hit.Add(victim)) continue;
-                if (!combat.HitFlareonTarget(victim, FlareonMoveRules.Damage(actorId.Value, kind.Value), kind.Value == FlareonCast.FlareBlitz ? upgraded ? 3 : 2 : 0)) continue;
-                if (kind.Value == FlareonCast.FlareBlitz)
-                {
-                    if (FlareonMoveRules.CanControl(actor, victim))
-                    {
-                        victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.35f, true, FlareonMoveRules.LaunchId)); victim.ApplyKnockupRPC(0.8f, 0.35f);
-                    }
-                    if (!refunded) { refunded = true; combat.ReduceFlareonCooldown(MoveType.MoveB, 3); }
-                }
-            }
+            if (!FlareonMoveRules.CanHit(actor, victim)) continue;
+            if (runtime.HitTarget(victim, FlareonMoveRules.Damage(actorId.Value, FlareonCast.Unite), 3))
+                runtime.HitTarget(victim, new DamageInfo(actorId.Value, 0, 0, (short)Mathf.Min(short.MaxValue, Mathf.RoundToInt(victim.GetMissingHp() * 0.05f)), DamageType.Physical, DamageProprieties.IsUniteMove));
         }
-        lastPoint = point; lastReportAge = Age; transform.SetPositionAndRotation(point, Quaternion.LookRotation(aim.Value));
-        if (finished) movementEnded = true;
+        Shield(FlareonMoveRules.UniteShield, 0.12f, 3);
     }
+    public void GrantCombatShield(ushort id, float ratio, float duration)
+    {
+        if (IsServer && Live) Shield(id, ratio, duration);
+    }
+    private IEnumerator Watchdog() { yield return new WaitForSeconds(20); if (kind.Value != FlareonCast.State || !initialized) Despawn(); }
     private HashSet<Pokemon> InArea() => FlareonMoveRules.Targets(Physics.OverlapSphere(transform.TransformPoint(area.center), area.radius));
     private HashSet<Pokemon> InFlame() => FlareonMoveRules.Targets(Physics.OverlapBox(flameArea.transform.TransformPoint(flameArea.center), flameArea.size * 0.5f, flameArea.transform.rotation));
     private void Shield(ushort id, float ratio, float duration)
@@ -266,6 +218,28 @@ public class FlareonMoveObject : NetworkBehaviour
     private void PresentState()
     {
         stateViews[actorId.Value] = this;
+        FlareonCharacterRuntime runtime = combat.FlareonRuntime;
+        if (runtime != null)
+        {
+            if (basicStarted != runtime.BasicStarted)
+            {
+                basicStarted = runtime.BasicStarted;
+                basicBoosted = runtime.BasicBoosted;
+                basicDirection = runtime.BasicDirection;
+                if (effectAudio != null && NetworkManager.ServerTime.Time - basicStarted < 0.3)
+                {
+                    effectAudio.pitch = basicBoosted ? 0.85f : 1.15f;
+                    effectAudio.PlayOneShot(ignitionSound, 0.35f);
+                }
+            }
+            if (contactUntil != runtime.ContactUntil)
+            {
+                contactUntil = runtime.ContactUntil;
+                contactBoosted = runtime.ContactBoosted;
+                if (effectAudio != null && NetworkManager.ServerTime.Time < contactUntil)
+                    effectAudio.PlayOneShot(impactSound);
+            }
+        }
         bool owner = actor.IsOwner;
         for (int i = 0; i < heatPips.Length; i++)
         {
@@ -339,7 +313,6 @@ public class FlareonMoveObject : NetworkBehaviour
             cleaned = true;
             if (kind.Value == FlareonCast.State && stateViews.TryGetValue(actorId.Value, out var view) && view == this) stateViews.Remove(actorId.Value);
             if (IsServer && actor != null) actor.Pokemon.OnDeath -= OnDeath;
-            if (IsServer && combat != null) combat.EndFlareonObject(cast);
         }
         base.OnNetworkDespawn();
     }

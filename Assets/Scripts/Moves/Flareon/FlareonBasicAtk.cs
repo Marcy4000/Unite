@@ -2,17 +2,39 @@ using UnityEngine;
 
 public class FlareonBasicAtk : ChargedBasicAttackBase
 {
-    protected override int AttackCharge => playerManager.MovesController != null ? playerManager.MovesController.FlareonAttackCharge : 0;
-    public override void Initialize(PlayerManager manager) { base.Initialize(manager); range = FlareonMoveRules.BasicRange; }
+    private int charge;
+    private FlareonCharacterRuntime Character => playerManager?.MovesController?.FlareonRuntime;
+    protected override int AttackCharge => charge;
+    public override bool ServerResolved => true;
+
+    public override void Initialize(PlayerManager manager)
+    {
+        range = FlareonMoveRules.BasicRange;
+        base.Initialize(manager);
+        ApplySnapshot(Character?.AttackCharge ?? 0);
+    }
+
+    public override void InitializeServer(PlayerManager manager)
+    {
+        base.InitializeServer(manager);
+        range = FlareonMoveRules.BasicRange;
+    }
+
     public override void Perform(bool wildPriority)
     {
-        GameObject target = playerManager.Aim.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
-        if (target == null || !target.TryGetComponent(out Pokemon pokemon)) return;
-        Vector3 direction = FlareonMoveRules.Direction(target.transform.position - playerManager.transform.position, playerManager.transform.forward);
-        playerManager.transform.rotation = Quaternion.LookRotation(direction);
-        FlareonMoveObject.PresentBasic(playerManager.NetworkObjectId, playerManager.MovesController.FlareonAttackCharge == 2, direction);
-        playerManager.MovesController.FlareonBasicRPC(pokemon.NetworkObjectId);
-        // Contact is at 0.1s. No missing Flareon attack clips are requested.
-        playerManager.StopMovementForTime(0.14f, playerManager.Pokemon.CurrentLevel < 3);
+        GameObject target = ActorAim?.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
+        if (target != null && target.TryGetComponent(out Pokemon pokemon))
+            playerManager.MovesController.RequestServerBasicAttack(pokemon.NetworkObjectId);
+    }
+
+    public override void PerformOnServer(Pokemon target) => Character?.PerformBasicAttack(target);
+    public override void ApplyServerState(int value, float empoweredUntil) => ApplySnapshot(value);
+    public void ApplySnapshot(int value) => charge = Mathf.Clamp(value, 0, 2);
+
+    public override void ResetAttack()
+    {
+        if (playerManager != null && playerManager.IsServer) Character?.ResetBasicAttack();
+        charge = 0;
+        base.ResetAttack();
     }
 }

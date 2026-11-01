@@ -1,4 +1,3 @@
-using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -6,205 +5,123 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class JoltSwiftProjectile : NetworkBehaviour
 {
-    private static readonly StatusType[] invulnerableStatuses = { StatusType.Invincible, StatusType.Untargetable, StatusType.Invisible };
-
+    private const string AssetPath = "Assets/Prefabs/Objects/Moves/Jolteon/JoltSwift.prefab";
     [SerializeField] private GameObject starImage;
-    [SerializeField] private float maxDistance = 20f; // Maximum distance before destruction
-
-    private bool isBigStar;
-
-    private bool[] starSpawned = new bool[3] { false, false, false };
-
-    private DamageInfo bigDamage;
-    private DamageInfo smallDamage;
-
-    private float speed = 10f;
+    [SerializeField] private float maxDistance = 20f;
+    private readonly NetworkVariable<bool> bigPresentation = new NetworkVariable<bool>(true);
+    private PlayerManager actor;
+    private GameObject projectilePrefab;
     private Vector3 direction;
+    private ulong lastHit;
+    private float traveledDistance;
+    private bool initialized, isBigStar;
+    private AsyncOperationHandle<GameObject> asset;
 
-    private Team orangeTeam;
-
-    private bool initialized = false;
-    private ulong lastHit = 0;
-
-    private float traveledDistance = 0f;
-
-    private string path = "Assets/Prefabs/Objects/Moves/Jolteon/JoltSwift.prefab";
-    private Rigidbody rb;
-
-    [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 startPos,Vector3 direction, bool isBigStar, DamageInfo bigDamage, DamageInfo smallDamage, Team orangeTeam, ulong lastHit=0)
+    public override void OnNetworkSpawn()
     {
-        transform.position = startPos;
-        this.direction = new Vector3(direction.x, 0, direction.z).normalized; // Ensure the direction is on the xz plane
-        this.isBigStar = isBigStar;
-        this.bigDamage = bigDamage;
-        this.smallDamage = smallDamage;
-        this.orangeTeam = orangeTeam;
-        this.lastHit = lastHit;
+        bigPresentation.OnValueChanged += OnSizeChanged;
+        ApplySize(bigPresentation.Value);
+        if (!IsServer) return;
+        Rigidbody body = GetComponent<Rigidbody>();
+        if (body == null) body = gameObject.AddComponent<Rigidbody>();
+        body.useGravity = false;
+        body.isKinematic = true;
+    }
 
-        starImage.transform.localScale = isBigStar ? new Vector3(1f, 1f, 1f) : new Vector3(0.5f, 0.5f, 1f);
-
-        if (!isBigStar)
-        {
-            maxDistance /= 1.5f;
-        }
-
+    public void InitializeServer(PlayerManager owner, Vector3 travelDirection, bool big, GameObject prefab, ulong ignoredTarget = 0)
+    {
+        if (!IsServer || !IsSpawned || initialized || owner == null || prefab == null) return;
+        actor = owner;
+        projectilePrefab = prefab;
+        Vector3 flat = new Vector3(travelDirection.x, 0f, travelDirection.z);
+        direction = flat.sqrMagnitude > 0.001f ? flat.normalized : owner.transform.forward;
+        isBigStar = big;
+        lastHit = ignoredTarget;
+        if (!big) maxDistance /= 1.5f;
+        asset = Addressables.LoadAssetAsync<GameObject>(AssetPath);
+        bigPresentation.Value = big;
+        ApplySize(big);
+        actor.Pokemon.OnDeath += OnActorDeath;
         initialized = true;
     }
 
-    private void Start()
+    private void OnSizeChanged(bool previous, bool current) => ApplySize(current);
+    private void ApplySize(bool big)
     {
-        if (!IsServer)
-        {
-            return;
-        }
-
-        rb = GetComponent<Rigidbody>();
-        if (rb == null)
-        {
-            rb = gameObject.AddComponent<Rigidbody>();
-        }
-        rb.useGravity = false; // Disable gravity
-        rb.isKinematic = true; // Disable physics-based movement
+        if (starImage != null) starImage.transform.localScale = big ? Vector3.one : Vector3.one * 0.5f;
     }
 
-    void Update()
+    private void Update()
     {
-        if (!initialized || !IsServer)
-            return;
-
-        // Move the projectile
-        Vector3 movement = direction * speed * Time.deltaTime;
+        if (!IsServer || !initialized) return;
+        if (actor == null || !actor.IsSpawned || actor.Pokemon.CurrentHp <= 0) { Despawn(); return; }
+        Vector3 movement = direction * (10f * Time.deltaTime);
         transform.position += movement;
         traveledDistance += movement.magnitude;
-
-        // Destroy the projectile if it has traveled the maximum distance
-        if (traveledDistance >= maxDistance)
-        {
-            if (isBigStar)
-            {
-                Split(null);
-            }
-            else
-            {
-                starSpawned = new bool[3] { true, true, true };
-            }
-
-            StartCoroutine(CheckIfCanDespawn());
-        }
+        if (traveledDistance < maxDistance) return;
+        if (isBigStar) Split(0);
+        Despawn();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer || !initialized)
-        {
-            return;
-        }
-
+        if (!IsServer || !initialized || other == null) return;
         if (other.CompareTag("Wall"))
         {
-            // Perform a raycast to get the exact hit point and normal
-            Ray ray = new Ray(transform.position, direction); // Slight offset backwards to ensure the ray starts outside the collider
-            RaycastHit hit;
-            if (Physics.Raycast(ray, out hit, speed * Time.deltaTime * 10f, LayerMask.GetMask("Default"))) // Adjust distance as needed
+            if (Physics.Raycast(new Ray(transform.position, direction), out RaycastHit hit, 10f * Time.deltaTime * 10f, LayerMask.GetMask("Default")))
             {
-                // Bounce off the wall
-                direction = Vector3.Reflect(direction, hit.normal);
-                direction = new Vector3(direction.x, 0, direction.z).normalized; // Ensure the direction is on the xz plane
+                Vector3 reflected = Vector3.Reflect(direction, hit.normal);
+                reflected.y = 0f;
+                if (reflected.sqrMagnitude > 0.001f) direction = reflected.normalized;
             }
+            return;
         }
-        else if (other.TryGetComponent(out Pokemon pokemon))
-        {
-            if (pokemon.NetworkObjectId == lastHit || !Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
-            {
-                return;
-            }
-
-            OnStarHit(pokemon);
-        }
+        if (!other.TryGetComponent(out Pokemon target) || target.NetworkObjectId == lastHit
+            || !JoltMoveRuntime.CanHit(actor, target) || target.HasStatusEffect(StatusType.Invisible)) return;
+        DamageInfo damage = isBigStar
+            ? new DamageInfo(actor.NetworkObjectId, 1.2f, 8, 220, DamageType.Physical)
+            : new DamageInfo(actor.NetworkObjectId, 1f, 6, 180, DamageType.Physical);
+        target.TakeDamageRPC(damage);
+        if (isBigStar) Split(target.NetworkObjectId);
+        Despawn();
     }
 
-    private void OnStarHit(Pokemon pokemon)
+    private void Split(ulong ignoredTarget)
     {
-        DamageInfo damageInfo = isBigStar ? bigDamage : smallDamage;
-
-        pokemon.TakeDamageRPC(damageInfo);
-
-        if (isBigStar)
-        {
-            Split(pokemon);
-        }
-        else
-        {
-            starSpawned = new bool[3] { true, true, true };
-        }
-
-        StartCoroutine(CheckIfCanDespawn());
-    }
-
-    private IEnumerator CheckIfCanDespawn()
-    {
-        while (true)
-        {
-            if (starSpawned[0] && starSpawned[1] && starSpawned[2])
-            {
-                NetworkObject.Despawn(gameObject);
-                yield break;
-            }
-
-            yield return null;
-        }
-    }
-
-    private void Split(Pokemon pokemon)
-    {
-        // Calculate the directions for the smaller stars
-        Vector3 direction1 = direction;
-        Vector3 direction2 = Quaternion.Euler(0, 60, 0) * direction;
-        Vector3 direction3 = Quaternion.Euler(0, -60, 0) * direction;
-
-        // Spawn the first small star with the original direction
-        SpawnStar(direction1, pokemon, 0);
-
-        // Spawn the second small star with +60 degrees direction
-        SpawnStar(direction2, pokemon, 1);
-
-        // Spawn the third small star with -60 degrees direction
-        SpawnStar(direction3, pokemon, 2);
-
+        if (!IsServer || !initialized || actor == null || projectilePrefab == null) return;
         initialized = false;
+        SpawnChild(direction, ignoredTarget);
+        SpawnChild(Quaternion.Euler(0f, 60f, 0f) * direction, ignoredTarget);
+        SpawnChild(Quaternion.Euler(0f, -60f, 0f) * direction, ignoredTarget);
     }
 
-    private void SpawnStar(Vector3 direction, Pokemon pokemon, int index)
+    private void SpawnChild(Vector3 childDirection, ulong ignoredTarget)
     {
-        ulong clientId;
-
-        if (pokemon != null)
+        GameObject instance = Instantiate(projectilePrefab, transform.position, Quaternion.identity);
+        if (!instance.TryGetComponent(out NetworkObject network) || !instance.TryGetComponent(out JoltSwiftProjectile child))
         {
-            clientId = pokemon.NetworkObjectId;
-        }else
-        {
-            clientId = 0;
+            Destroy(instance);
+            return;
         }
+        network.Spawn(true);
+        child.InitializeServer(actor, childDirection, false, projectilePrefab, ignoredTarget);
+        (actor.MovesController.Combat?.Character as JolteonCharacterRuntime)?.TrackSwiftProjectile(child);
+    }
 
-        // Instantiate the small star
-        // Instantiate the small star
-        Addressables.LoadAssetAsync<GameObject>(path).Completed += (handle) =>
-        {
-            if (handle.Status == AsyncOperationStatus.Succeeded)
-            {
-                GameObject prefab = handle.Result;
-                GameObject spawnedObject = Instantiate(prefab);
-                spawnedObject.GetComponent<NetworkObject>().Spawn(true);
+    private void OnActorDeath(DamageInfo damage) => Despawn();
+    private void Despawn() { if (IsServer && IsSpawned) NetworkObject.Despawn(true); }
 
-                JoltSwiftProjectile star = spawnedObject.GetComponent<JoltSwiftProjectile>();
-                star.InitializeRPC(transform.position, direction, false, bigDamage, smallDamage, orangeTeam, clientId);
-                starSpawned[index] = true;
-            }
-            else
-            {
-                Debug.LogError($"Failed to load addressable: {handle.OperationException}");
-            }
-        };
-    } 
+    public override void OnNetworkDespawn()
+    {
+        bigPresentation.OnValueChanged -= OnSizeChanged;
+        if (actor != null && actor.Pokemon != null) actor.Pokemon.OnDeath -= OnActorDeath;
+        initialized = false;
+        base.OnNetworkDespawn();
+    }
+
+    public override void OnDestroy()
+    {
+        if (asset.IsValid()) Addressables.Release(asset);
+        base.OnDestroy();
+    }
 }
