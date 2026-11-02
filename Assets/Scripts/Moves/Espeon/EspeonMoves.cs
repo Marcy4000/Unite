@@ -52,6 +52,11 @@ public class EspeonStoredPower : EspeonMove
     public override MoveAimStyle AimStyle => MoveAimStyle.Circle;
     public override float Range => EspeonMoveRules.StoredRange;
     public EspeonStoredPower() { Name = "Stored Power"; Cooldown = 5; }
+    public override void Finish()
+    {
+        if (IsActive && !EspeonStoredPowerEffect.HasTargets(playerManager)) { Cancel(); return; }
+        base.Finish();
+    }
 }
 public class EspeonPsybeam : EspeonMove
 {

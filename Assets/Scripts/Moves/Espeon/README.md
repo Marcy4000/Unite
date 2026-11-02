@@ -30,7 +30,9 @@ Reference: https://unite-db.com/pokemon/espeon, including detailed RSB formulas,
   uses the three-attack sequence and the authorized Sylveon damage fallback: the
   supplied configuration references effects but contains no boosted damage formula.
 - Stored Power generates one blast every 2s, ignoring CDR, starts empty and
-  requires ammunition for a normal cast. Target order is own Future Sight mark,
+  requires ammunition for a normal cast. Normal and bonus casts both require a
+  valid enemy in range; an empty target pool spends no blasts, bonus cast or cooldown.
+  Target order is own Future Sight mark,
   enemy players, then wild Pokémon. The selected highest-priority pool absorbs
   the entire volley; it never spills onto wild Pokémon after a player dies.
   The bonus cast fires eight blasts without spending regular stocks and heals
@@ -68,6 +70,8 @@ preserves subsequent prefab edits. Stock orbs, boosted-ready jewel, bonus-cast
 halo and alternate bonus icons expose the resource states. Runtime code creates
 no meshes, primitives or LineRenderers. The supplied model animator is used;
 AGE S12/S21/S22 map to Psybeam/Future Sight/Stored Power respectively.
+Swift sets the animator's `Transition` trigger after releasing its volley only
+while Eevee; evolved Swift/Psyshock leave their animator transitions unchanged.
 
 Rebuild Addressables before testing built players or existing-content play mode.
 All peers must use the same build because status records gained source metadata.

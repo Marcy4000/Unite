@@ -290,11 +290,83 @@ public class EspeonServerTests
         yield return null;
     }
     [UnityTest]
+    public IEnumerator SwiftSetsTransitionOnlyWhileEevee()
+    {
+        var animation = player.GetComponent(T("AnimationManager"));
+        Variable(actor, "currentLevel", 2);
+        Effect("EspeonSwift", Vector3.forward * 5); yield return new WaitForSeconds(0.4f);
+        if (Host)
+        {
+            Assert.That(animation.GetType().GetField("hasPendingTrigger", Private).GetValue(animation), Is.True);
+            Assert.That(animation.GetType().GetField("pendingTrigger", Private).GetValue(animation), Is.EqualTo(Animator.StringToHash("Transition")));
+        }
+        Set(animation, "hasPendingTrigger", false);
+        Variable(actor, "currentLevel", 3);
+        Effect("EspeonSwift", Vector3.forward * 5); yield return new WaitForSeconds(0.4f);
+        Assert.That(animation.GetType().GetField("hasPendingTrigger", Private).GetValue(animation), Is.False);
+        Variable(actor, "currentLevel", 2);
+        Effect("EspeonPsyshock", Vector3.forward * 5); yield return new WaitForSeconds(0.4f);
+        Assert.That(animation.GetType().GetField("hasPendingTrigger", Private).GetValue(animation), Is.False);
+    }
+    [UnityTest]
+    public IEnumerator TargetlessStoredPowerDoesNotSpendAmmoBonusOrCooldown()
+    {
+        Call(actor.GetComponent(T("Unity.Netcode.NetworkObject")), "ChangeOwnership", 0ul);
+        var learned = (Array)moves.GetType().GetField("prefabLearnedMoves", Private).GetValue(moves);
+        learned.SetValue(E("AvailableMoves", "EspeonStoredPower"), 0); Call(Combat, "Tick"); Call(Combat, "AddBlasts", 3);
+#if UNITY_EDITOR
+        var row = Activator.CreateInstance(T("LearnableMove"));
+        var assets = Array.CreateInstance(T("MoveAsset"), 1);
+        assets.SetValue(AssetDatabase.LoadMainAssetAtPath("Assets/Moves/Espeon/EspeonStoredPower.asset"), 0);
+        row.GetType().GetField("moves").SetValue(row, assets);
+        var rows = Array.CreateInstance(T("LearnableMove"), 1); rows.SetValue(row, 0);
+        Set(Get(actor, "BaseStats"), "learnableMoves", rows);
+#endif
+        var clocks = (double[])moves.GetType().GetField("prefabNextCast", Private).GetValue(moves);
+        Physics.SyncTransforms();
+        Assert.That(Call(Combat, "CanCast", E("AvailableMoves", "EspeonStoredPower")), Is.False);
+        Call(moves, "SpawnMoveEffectRPC", E("AvailableMoves", "EspeonStoredPower"), Vector3.forward, 0ul);
+        Assert.That(Get(Combat, "BlastCount"), Is.EqualTo(3)); Assert.That(clocks[0], Is.Zero);
+        Set(Combat, "bonusUntil", 9999d); Call(Combat, "Tick");
+        object[] spend = { E("AvailableMoves", "EspeonStoredPower"), false, 0 };
+        Assert.That(Combat.GetType().GetMethod("Spend").Invoke(Combat, spend), Is.False);
+        Call(moves, "SpawnMoveEffectRPC", E("AvailableMoves", "EspeonStoredPower"), Vector3.forward, 0ul);
+        Assert.That(Get(Combat, "BlastCount"), Is.EqualTo(3)); Assert.That(Get(Combat, "BonusReady"), Is.True); Assert.That(clocks[0], Is.Zero);
+        var move = Activator.CreateInstance(T("EspeonStoredPower"));
+        move.GetType().GetField("playerManager").SetValue(move, player); move.GetType().GetField("IsActive").SetValue(move, true);
+        Call(move, "Finish"); Assert.That(move.GetType().GetField("IsActive").GetValue(move), Is.False);
+        int speed = (int)Call(actor, "GetSpeed");
+        var effect = Effect("EspeonStoredPower", Vector3.forward, empowered: true, blasts: 8); yield return new WaitForSeconds(0.1f);
+        Assert.That(Call(actor, "GetSpeed"), Is.EqualTo(speed)); Assert.That(effect == null, Is.True);
+        Assert.That(Get(moves, "ServerActionLocks"), Is.Zero);
+    }
+    [UnityTest]
+    public IEnumerator StoredPowerRequiresAnAcquirableEnemyInsideItsRange()
+    {
+        var learned = (Array)moves.GetType().GetField("prefabLearnedMoves", Private).GetValue(moves);
+        learned.SetValue(E("AvailableMoves", "EspeonStoredPower"), 0); Call(Combat, "Tick"); Call(Combat, "AddBlasts", 3);
+        Pokemon(Vector3.forward * 2, team: "Blue");
+        var enemy = Pokemon(Vector3.forward * 9); Physics.SyncTransforms();
+        Assert.That(Call(Combat, "CanCast", E("AvailableMoves", "EspeonStoredPower")), Is.False);
+        enemy.transform.position = Vector3.forward * 3; Physics.SyncTransforms();
+        foreach (string status in new[] { "Invincible", "Untargetable", "Invisible" })
+        {
+            Call(enemy, "AddStatusEffect", Status(status));
+            Assert.That(Call(Combat, "CanCast", E("AvailableMoves", "EspeonStoredPower")), Is.False, status);
+            Call(enemy, "ClearStatusEffectsRPC");
+        }
+        Assert.That(Call(Combat, "CanCast", E("AvailableMoves", "EspeonStoredPower")), Is.True);
+        enemy.GetType().GetProperty("Type").SetValue(enemy, E("PokemonType", "Wild"));
+        Assert.That(Call(Combat, "CanCast", E("AvailableMoves", "EspeonStoredPower")), Is.True);
+        yield return null;
+    }
+    [UnityTest]
     public IEnumerator StoredAmmoSpendingAndEmpoweredOpportunityDoNotOverwriteNormalResources()
     {
         var learned = (Array)moves.GetType().GetField("prefabLearnedMoves", Private).GetValue(moves);
         learned.SetValue(E("AvailableMoves", "EspeonStoredPower"), 0); Call(Combat, "Tick");
         Assert.That(Call(Combat, "CanCast", E("AvailableMoves", "EspeonStoredPower")), Is.False);
+        Pokemon(Vector3.forward * 3); Physics.SyncTransforms();
         Call(Combat, "AddBlasts", 3);
         var runtime = Combat; Set(runtime, "bonusUntil", 9999d);
         object[] spend = { E("AvailableMoves", "EspeonStoredPower"), false, 0 };

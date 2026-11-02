@@ -3,6 +3,26 @@
 The two existing shader names and GUIDs are unchanged. Material assets, texture imports,
 presets, and `TrainerModel` are not rewritten. Shared pass code is in `TrainerLighting.hlsl`.
 
+## TrainerHead portrait colors
+
+`PlayerHeadUI` uses `UI/TrainerHead` for the hair and pupil layers instead of multiplying
+the saved color into an already rendered sprite. The shader reconstructs the pre-tone
+value of each neutral sprite pixel, applies the saved trainer color, and reapplies the
+appropriate hair or eye curve. `TrainerColorTone.hlsl` is shared with the 3D shaders so
+their tone response cannot drift independently. Saved colors are passed as shader color
+uniforms, like `TrainerClothingInstance`, not converted to linear a second time.
+
+The neutral sprite supplies the baked lighting and eye brightness; these are not added
+again during recoloring. White retains the original sprite, black stays black, and alpha
+is not tone mapped. Each portrait owns and reuses its color materials, including updating
+stencil copies when recolored inside UI masks. Materials in `Resources/UI` also cover
+older embedded `PlayerHeadUI` instances that do not inherit the current prefab materials.
+
+These remain static sprite portraits: this matches the shader's color response under the
+sprite's baked shading, not changing 3D lighting, specular reflections, or post-processing.
+`TrainerHeadColorTests` checks GPU output against both recovered curves and verifies
+prefab wiring, material reuse, isolation, and cleanup.
+
 ## Packed normal compatibility
 
 The project's assigned textures are a mixture of Unity Normal Maps and sRGB RGBA textures.

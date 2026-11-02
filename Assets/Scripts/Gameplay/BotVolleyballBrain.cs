@@ -46,8 +46,8 @@ public class BotVolleyballBrain : BotModeBrain
         if (!ball.InFlight && server == player) { Task = "Serve"; destination = ball.transform.position; return; }
         Task = "Pressure enemy court";
         Vector3 enemyZone = team == Team.Blue ? game.OrangeLandSpot.transform.position : game.BlueLandSpot.transform.position;
-        if (enemy != null) destination = enemy.transform.position;
-        else destination = enemyZone + new Vector3(team == Team.Blue ? -1 : 1, 0, player.GetInstanceID() % 2 == 0 ? 2 : -2);
+        if (enemy != null) destination = Near(enemy.transform.position, Mathf.Min(1.2f, (player.MovesController.BasicAttack?.range ?? 2) * .5f));
+        else destination = Near(enemyZone + new Vector3(team == Team.Blue ? -1 : 1, 0, player.GetInstanceID() % 2 == 0 ? 2 : -2));
         if (target != null && Distance(transform.position, target.transform.position) < Mathf.Max(1, (player.MovesController.BasicAttack?.range ?? 2) * .8f)) destination = transform.position;
     }
 }

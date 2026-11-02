@@ -34,6 +34,11 @@ uses explicit scene-authored `BotMapContext` camp/team/lane bindings, including
 opening Aipoms/Bunnelbys, not hierarchy-name inference at runtime or the lane
 picker's UI coordinates. Living camps are reserved between allied bots; empty or
 temporarily unreachable camps are not waiting destinations.
+Each bot keeps a small, stable personal destination offset for shared camps,
+goals, combat approaches and patrol anchors, rather than converging on identical
+coordinates. Offsets stay on the local NavMesh, shrink near boundaries and stay
+inside scoring/healing colliders and attack range. Volleyball landing/serve
+positions remain exact; racing retains its existing lateral route variation.
 Perception queries visibility for the bot's team instead of borrowing the host's
 rendered visibility.
 

@@ -76,7 +76,8 @@ public sealed class EspeonRuntime : IDisposable
         actor.Pokemon.RemoveAllStatChangeWithIDRPC(hasteId);
         actor.Pokemon.AddStatChange(new StatChange(70, Stat.Speed, EspeonMoveRules.StoredHasteDuration, true, true, true, hasteId));
     }
-    public bool CanCast(AvailableMoves move) => move != AvailableMoves.EspeonStoredPower || BonusReady || blasts.Count > 0;
+    public bool CanCast(AvailableMoves move) => move != AvailableMoves.EspeonStoredPower
+        || ((BonusReady || blasts.Count > 0) && EspeonStoredPowerEffect.HasTargets(actor));
     public bool Spend(AvailableMoves move, out bool empowered, out int count)
     {
         empowered = EspeonMoveRules.MoveOne(move) && BonusReady;

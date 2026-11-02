@@ -121,13 +121,11 @@ Shader "==PGAME==/LobbyPlayer/m_lob_PlayerPBRColorEye"
             return color * (1.0 + mask.b);
         }
 
+        #include "TrainerColorTone.hlsl"
+
         float3 EyeTone(float3 color)
         {
-            // Guard the log/power domain at black/negative input, but do not saturate HDR.
-            color = max(color,0.0);
-            float3 scaled = color * 0.45;
-            float3 mapped = scaled / (scaled + 0.155) * 1.019;
-            return min(pow(mapped,2.2),100.0);
+            return TrainerEyeTone(color);
         }
 
         float4 EyeFragment(Varyings input) : SV_Target

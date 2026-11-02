@@ -4,6 +4,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
+#include "TrainerColorTone.hlsl"
 
 // Shared by all passes of each trainer shader, not by the lobby clothing shader.
 CBUFFER_START(UnityPerMaterial)
@@ -211,8 +212,7 @@ float3 TrainerTone(float3 color)
 {
     color = max(color,0.0);
     #if !defined(ENABLE_POST_TONE)
-        float3 scaled = color * 0.45;
-        color = min(scaled * (color * 1.1295 + 0.03) / (scaled * (color * 1.0935 + 0.59) + 0.08),100.0);
+        color = TrainerHairTone(color);
     #endif
     return color;
 }

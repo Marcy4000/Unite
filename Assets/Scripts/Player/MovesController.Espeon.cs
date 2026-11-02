@@ -46,7 +46,7 @@ public partial class MovesController
             if (prefab != null) espeonStockView = Instantiate(prefab, transform);
         }
         if (espeonStockView != null) espeonStockView.Present(EspeonBlastCount,
-            pokemon.CurrentHp > 0 && pokemon.CurrentLevel >= 3 && (playerManager.Vision == null || playerManager.Vision.IsRendered), EspeonBoostReady, EspeonBonusReady);
+            pokemon.CurrentHp > 0 && pokemon.CurrentLevel >= 3 && (playerManager.Vision == null || playerManager.Vision.IsRendered), EspeonBonusReady);
         if (!IsOwner || moveStatuses[0] == null) return;
         bool empty = moves[0] is EspeonStoredPower && EspeonBlastCount == 0 && !EspeonBonusReady;
         if (empty && espeonAmmoLock == null) espeonAmmoLock = AcquireMoveStatus(0, ActionStatusType.Disabled);

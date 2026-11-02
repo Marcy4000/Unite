@@ -21,7 +21,8 @@ public class BotRoyaleBrain : BotModeBrain
         if (enemy != null)
         {
             Task = "Fight"; target = enemy.Pokemon;
-            destination = Distance(transform.position, enemy.transform.position) > (player.MovesController.BasicAttack?.range ?? 2) * .8f ? enemy.transform.position : transform.position;
+            destination = Distance(transform.position, enemy.transform.position) > (player.MovesController.BasicAttack?.range ?? 2) * .8f ?
+                Near(enemy.transform.position, Mathf.Min(1.2f, (player.MovesController.BasicAttack?.range ?? 2) * .5f)) : transform.position;
             return;
         }
         if (objective != null && objective.HasLivingPokemon && objective.WildPokemon != null && Time.time < committedUntil)
@@ -42,12 +43,13 @@ public class BotRoyaleBrain : BotModeBrain
         committedUntil = Time.time + 8 + random.Next(6);
         if (objective != null) { AimObjective(); return; }
         Task = "Wander";
-        destination = context.patrolPoints.Length > 0 ? context.patrolPoints[random.Next(context.patrolPoints.Length)] : transform.position;
+        destination = context.patrolPoints.Length > 0 ? Near(context.patrolPoints[random.Next(context.patrolPoints.Length)]) : transform.position;
     }
     private void AimObjective()
     {
         Task = "Secure objective"; target = objective.WildPokemon.Pokemon;
-        destination = Distance(transform.position, target.transform.position) > (player.MovesController.BasicAttack?.range ?? 2) * .8f ? target.transform.position : transform.position;
+        destination = Distance(transform.position, target.transform.position) > (player.MovesController.BasicAttack?.range ?? 2) * .8f ?
+            Near(target.transform.position, Mathf.Min(1.2f, (player.MovesController.BasicAttack?.range ?? 2) * .5f)) : transform.position;
     }
     protected override void OnUnreachable()
     {

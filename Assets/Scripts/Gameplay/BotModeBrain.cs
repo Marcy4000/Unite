@@ -8,6 +8,7 @@ public abstract class BotModeBrain : MonoBehaviour
     protected PlayerManager player;
     protected System.Random random;
     protected Vector3 destination;
+    private Vector3 positionOffset;
     protected Pokemon target;
     protected bool anchored;
     public string Task { get; protected set; } = "Waiting";
@@ -26,6 +27,7 @@ public abstract class BotModeBrain : MonoBehaviour
         player = GetComponent<PlayerManager>();
         if (player == null || !player.IsBot || !player.IsServer) { enabled = false; return; }
         random = new System.Random(player.LobbyPlayer.Id.GetHashCode());
+        positionOffset = BotPositioning.OffsetFor(GetInstanceID());
         path = new NavMeshPath(); destination = lastPosition = transform.position;
         player.OnRespawn += ResetTravel;
     }
@@ -48,6 +50,7 @@ public abstract class BotModeBrain : MonoBehaviour
         if (target != null && target.CurrentHp > 0) Combat();
     }
     protected abstract void Decide();
+    protected Vector3 Near(Vector3 anchor, float radius = 1.2f) => BotPositioning.Around(anchor, positionOffset, radius);
     protected virtual void Drive()
     {
         if (!UsesNavigation) { SetDirection(destination - transform.position); return; }

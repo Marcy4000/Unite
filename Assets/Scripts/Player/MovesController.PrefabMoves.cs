@@ -80,6 +80,7 @@ public partial class MovesController
         direction = definition.AimStyle == MoveAimStyle.Ground ? Vector3.ClampMagnitude(direction, definition.Range)
             : direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
         int espeonBlastCount = 0;
+        double previousNextCast = prefabNextCast[slot];
         double espeonBonusExpiry = espeon != null ? espeon.BonusExpiresAt : 0;
         if (espeon != null && !espeon.Spend(move, out espeonBonus, out espeonBlastCount)) { RejectPrefabExecutionRPC(move); return; }
         if (!aerial && !espeonBonus) prefabNextCast[slot] = now + Mathf.Max(0.25f, definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
@@ -106,6 +107,18 @@ public partial class MovesController
                 Addressables.Release(asset);
                 if (!cancelled && this != null && IsSpawned && espeon != null) espeon.Refund(move, espeonBonus, espeonBlastCount, espeonBonusExpiry);
                 if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition);
+                return;
+            }
+            if (move == AvailableMoves.EspeonStoredPower && !EspeonStoredPowerEffect.HasTargets(playerManager))
+            {
+                Addressables.Release(asset);
+                espeon.Refund(move, espeonBonus, espeonBlastCount, espeonBonusExpiry);
+                if (!espeonBonus)
+                {
+                    prefabNextCast[slot] = previousNextCast;
+                    EspeonCooldownRPC(slot, (float)Math.Max(0, previousNextCast - NetworkManager.ServerTime.Time));
+                }
+                RejectPrefabExecutionRPC(move);
                 return;
             }
             GameObject instance = Instantiate(asset.Result, transform.position + Vector3.up * 0.8f,

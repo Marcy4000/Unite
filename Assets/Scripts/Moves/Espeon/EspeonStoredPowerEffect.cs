@@ -31,17 +31,21 @@ public class EspeonStoredPowerEffect : EspeonMoveEffect
         }
         return players.Count > 0 ? players : wild;
     }
+    public static bool HasTargets(PlayerManager actor) => actor != null
+        && TargetPool(actor, actor.MovesController.EspeonMarkedTarget).Count > 0;
     protected override IEnumerator Execute()
     {
+        // Snapshot the highest-priority pool. A player absorbing the cast never
+        // spills its remaining blasts onto wild Pokémon if it dies mid-volley.
+        // Also guard direct spawns and targets lost while the prefab was loading.
+        List<Pokemon> pool = TargetPool(Actor, Combat.MarkedTarget);
+        if (pool.Count == 0) yield break;
         LockActions(false);
         PlayAnimation(EspeonMoveRules.Animation(Actor, "spell2b"), 0.45f);
         PrepareRPC(Empowered);
         if (acquisitionArea != null) acquisitionArea.radius = EspeonMoveRules.StoredRange;
         Combat.GrantStoredHaste();
         int count = Mathf.Min(BlastCount, projectiles.Length);
-        // Snapshot the highest-priority pool. A player absorbing the cast never
-        // spills its remaining blasts onto wild Pokémon if it dies mid-volley.
-        List<Pokemon> pool = TargetPool(Actor, Combat.MarkedTarget);
         for (int i = 0; i < count && pool.Count > 0; i++)
         {
             pool.RemoveAll(p => !EspeonMoveRules.CanHit(Actor, p));

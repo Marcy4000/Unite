@@ -35,6 +35,8 @@ public class EspeonVolleyEffect : EspeonMoveEffect
             psyshock ? 5 : 3, tracks ? mark.NetworkObjectId : ulong.MaxValue, Empowered,
             psyshock && Upgraded ? EspeonMoveRules.UpgradedProjectileSpeed : EspeonMoveRules.ProjectileSpeed);
         yield return new WaitForSeconds(0.05f);
+        if (MoveId == AvailableMoves.EspeonSwift && Actor.Pokemon.CurrentLevel < 3 && !CastInterrupted)
+            Actor.AnimationManager.SetTrigger("Transition");
         UnlockActions();
         while (running) yield return null;
     }

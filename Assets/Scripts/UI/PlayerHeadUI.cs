@@ -3,6 +3,10 @@ using UnityEngine.UI;
 
 public class PlayerHeadUI : MonoBehaviour
 {
+    private static readonly int TrainerColor = Shader.PropertyToID("_TrainerColor");
+    private Material hairMaterial;
+    private Material pupilMaterial;
+
     [SerializeField] private Image headImage;
     [SerializeField] private Image hairImage;
     [SerializeField] private Image eyesImage;
@@ -27,7 +31,34 @@ public class PlayerHeadUI : MonoBehaviour
         eyesImage.sprite = playerClothesInfo.IsMale ? maleEyes[playerClothesInfo.Face] : femaleEyes[playerClothesInfo.Face];
         pupilImage.sprite = playerClothesInfo.IsMale ? malePupils[playerClothesInfo.Face] : femalePupils[playerClothesInfo.Face];
 
-        hairImage.color = playerClothesInfo.HairColor;
-        pupilImage.color = playerClothesInfo.EyeColor;
+        ApplyColor(hairImage, ref hairMaterial, "UI/TrainerHeadHair", playerClothesInfo.HairColor);
+        ApplyColor(pupilImage, ref pupilMaterial, "UI/TrainerHeadEyes", playerClothesInfo.EyeColor);
+    }
+
+    private static void ApplyColor(Image image, ref Material material, string resource, Color color)
+    {
+        if (material == null)
+        {
+            material = new Material(Resources.Load<Material>(resource));
+            image.material = material;
+        }
+
+        image.color = Color.white;
+        material.SetColor(TrainerColor, color);
+        image.SetMaterialDirty();
+        image.materialForRendering.SetColor(TrainerColor, color);
+    }
+
+    private void OnDestroy()
+    {
+        ReleaseMaterial(hairMaterial);
+        ReleaseMaterial(pupilMaterial);
+    }
+
+    private static void ReleaseMaterial(Material material)
+    {
+        if (material == null) return;
+        if (Application.isPlaying) Destroy(material);
+        else DestroyImmediate(material);
     }
 }
