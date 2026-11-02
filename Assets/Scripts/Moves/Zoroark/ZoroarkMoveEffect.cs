@@ -252,7 +252,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
                     {
                         if (Vector3.Distance(target.transform.position, destination) <= ZoroarkMoveRules.ClawEndpointLength + ZoroarkMoveRules.DashRadius)
                             endpointHits.Add(target);
-                        else target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.05f, true, ZoroarkMoveRules.ClawStatus));
+                        else target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.05f, true, ZoroarkMoveRules.ClawStatus).WithSource(Actor.NetworkObjectId));
                     }
                     if (move == AvailableMoves.ZoroarkCut)
                         Actor.Pokemon.HealDamageRPC(ZoroarkMoveRules.CutHeal(Actor.Pokemon.GetAttack(), Actor.Pokemon.CurrentLevel, Upgraded), Actor.NetworkObjectId);
@@ -263,7 +263,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
                 if (target != null && target.CurrentHp > 0 && !target.HasStatusEffect(StatusType.Unstoppable))
                 {
                     float duration = Upgraded ? ZoroarkMoveRules.ClawThrowPlus : ZoroarkMoveRules.ClawThrow;
-                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, ZoroarkMoveRules.ClawStatus));
+                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, ZoroarkMoveRules.ClawStatus).WithSource(Actor.NetworkObjectId));
                     target.ApplyKnockupRPC(2, duration);
                 }
             DashVisualRPC(false);

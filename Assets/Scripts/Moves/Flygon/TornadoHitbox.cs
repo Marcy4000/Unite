@@ -65,7 +65,7 @@ public class TornadoHitbox : FlygonMoveObject
                     float duration = controllable ? FlygonMoveRules.TornadoLift(stage) : 0;
                     if (controllable)
                     {
-                        target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, EffectId));
+                        target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, EffectId).WithSource(Actor.NetworkObjectId));
                         target.ApplyKnockupRPC(2 * FlygonMoveRules.TornadoPower(stage), duration * 0.6f);
                     }
                     landings.Add(new Landing { Target = target, At = Time.time + duration * 0.6f, Damage = FlygonMoveRules.Damage(Actor.NetworkObjectId, Kind, stage) });

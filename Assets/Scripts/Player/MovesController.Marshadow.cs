@@ -115,7 +115,7 @@ public partial class MovesController
             {
                 if (hit == MarshadowHit.SpectralThief)
                 {
-                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0));
+                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0).WithSource(NetworkObjectId));
                     SlowMarshadowTarget(target, 25, 1f);
                     if ((target.transform.position - to).sqrMagnitude <= MarshadowMoveRules.TheftRadius * MarshadowMoveRules.TheftRadius
                         && target.TransferMarshadowBuffs(pokemon, upgraded) > 0)
@@ -124,13 +124,13 @@ public partial class MovesController
                 }
                 if (hit == MarshadowHit.Rush && stage == 2)
                 {
-                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.45f, true, 0));
+                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.45f, true, 0).WithSource(NetworkObjectId));
                     if (!target.HasStatusEffect(StatusType.Unstoppable) && !target.HasStatusEffect(StatusType.HindranceResistance)) target.ApplyKnockupRPC(1.2f, 0.45f);
                     SlowMarshadowTarget(target, 30, 1f);
                 }
                 if (hit == MarshadowHit.Kick)
                 {
-                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, 62011));
+                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, 62011).WithSource(NetworkObjectId));
                     if (!target.HasStatusEffect(StatusType.Unstoppable) && !target.HasStatusEffect(StatusType.HindranceResistance))
                     {
                         if (target.TryGetComponent(out PlayerMovement movement)) movement.ApplyMarshadowWallKick(direction, upgraded ? 1f : 0.7f, NetworkObjectId);
@@ -154,10 +154,10 @@ public partial class MovesController
         if (healing > 0) pokemon.HealDamageRPC(healing);
     }
 
-    private static void SlowMarshadowTarget(Pokemon target, short amount, float duration)
+    private void SlowMarshadowTarget(Pokemon target, short amount, float duration)
     {
         target.RemoveStatChangeWithIDRPC(MarshadowMoveRules.Slow);
-        target.AddStatChange(new StatChange(amount, Stat.Speed, duration, true, false, true, MarshadowMoveRules.Slow));
+        target.AddStatChange(new StatChange(amount, Stat.Speed, duration, true, false, true, MarshadowMoveRules.Slow).WithSource(NetworkObjectId));
     }
 
     public void MarshadowWallImpact(Vector3 position)

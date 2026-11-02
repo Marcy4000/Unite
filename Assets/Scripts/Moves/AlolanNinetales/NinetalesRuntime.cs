@@ -92,12 +92,12 @@ public sealed class NinetalesRuntime : IDisposable
             affected.Add(target);
             // No post-freeze immunity window. Shared status handling enforces unstoppable/resistance.
             target.RemoveStatusEffectWithID(freezeId);
-            target.AddStatusEffect(new StatusEffect(StatusType.Frozen, NinetalesMoveRules.FreezeDuration, true, freezeId));
+            target.AddStatusEffect(new StatusEffect(StatusType.Frozen, NinetalesMoveRules.FreezeDuration, true, freezeId).WithSource(actor.NetworkObjectId));
             actor.MovesController.ShowCombatVisualRPC(NinetalesMoveRules.Visuals + "Freeze", target.transform.position, Vector3.forward, Vector3.one, NinetalesMoveRules.FreezeDuration);
         }
         else
         {
-            target.AddStatusEffect(new StatusEffect(StatusType.SnowMarked, NinetalesMoveRules.SnowDuration, true, snowId));
+            target.AddStatusEffect(new StatusEffect(StatusType.SnowMarked, NinetalesMoveRules.SnowDuration, true, snowId).WithSource(actor.NetworkObjectId));
             if (target.HasStatusEffect(snowId)) Present(target, stacks.Count); else Clear(target);
         }
     }
@@ -105,7 +105,7 @@ public sealed class NinetalesRuntime : IDisposable
         && target.HasStatusEffect(snowId) ? stacks.Count : 0;
     public void Slow(Pokemon target, short amount, float duration)
     {
-        if (NinetalesMoveRules.Living(target)) { affected.Add(target); NinetalesMoveRules.Refresh(target, new StatChange(amount, Stat.Speed, duration, true, false, true, slowId)); }
+        if (NinetalesMoveRules.Living(target)) { affected.Add(target); NinetalesMoveRules.Refresh(target, new StatChange(amount, Stat.Speed, duration, true, false, true, slowId).WithSource(actor.NetworkObjectId)); }
     }
     private void Present(Pokemon target, int count)
     {

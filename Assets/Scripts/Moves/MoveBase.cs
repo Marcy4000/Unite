@@ -13,6 +13,7 @@ public abstract class MoveBase
 
     public bool wasMoveSuccessful = false;
     public virtual bool CooldownOnFinish => true;
+    public virtual Sprite IconOverride => null;
 
     // Normal moves need no additional configuration. Stored moves declare the
     // type, capacity and cast interval; Cooldown remains the recharge duration.
@@ -86,6 +87,13 @@ public static class MoveDatabase
     {
         switch (move)
         {
+            case AvailableMoves.EspeonSwift: return new EspeonSwift();
+            case AvailableMoves.EspeonGrowl: return new EspeonGrowl();
+            case AvailableMoves.EspeonPsyshock: return new EspeonPsyshock();
+            case AvailableMoves.EspeonStoredPower: return new EspeonStoredPower();
+            case AvailableMoves.EspeonPsybeam: return new EspeonPsybeam();
+            case AvailableMoves.EspeonFutureSight: return new EspeonFutureSight();
+            case AvailableMoves.EspeonPsychicSolare: return new EspeonPsychicSolare();
             case AvailableMoves.LockedMove:
                 return new LockedMove();
 
@@ -452,5 +460,12 @@ public enum AvailableMoves : uint
     ZoroarkCut,
     ZoroarkNightSlash,
     ZoroarkFeintAttack,
-    ZoroarkNightfallDaze
+    ZoroarkNightfallDaze,
+    EspeonSwift,
+    EspeonGrowl,
+    EspeonPsyshock,
+    EspeonStoredPower,
+    EspeonPsybeam,
+    EspeonFutureSight,
+    EspeonPsychicSolare
 }

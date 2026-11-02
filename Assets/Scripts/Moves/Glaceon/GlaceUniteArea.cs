@@ -124,7 +124,7 @@ public class GlaceUniteArea : NetworkBehaviour
 
                 if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
-                    pokemon.AddStatChange(enemiesDebuff);
+                    pokemon.AddStatChange(enemiesDebuff.WithSource(glaceonID.Value));
                 }
             }
 

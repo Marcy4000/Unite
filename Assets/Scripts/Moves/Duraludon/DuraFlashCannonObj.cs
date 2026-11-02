@@ -68,12 +68,12 @@ public class DuraFlashCannonObj : NetworkBehaviour
                     if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam, true) && !hitPokemons.Contains(pokemon))
                     {
                         hitPokemons.Add(pokemon);
-                        pokemon.AddStatChange(speedReduction);
+                        pokemon.AddStatChange(speedReduction.WithSource(damage.attackerId));
                         pokemon.TakeDamageRPC(damage);
 
                         if (isUpgraded)
                         {
-                            pokemon.AddStatusEffect(stunEffect);
+                            pokemon.AddStatusEffect(stunEffect.WithSource(damage.attackerId));
                         }
                     }
                 }

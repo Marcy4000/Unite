@@ -227,7 +227,7 @@ public partial class MovesController
                         leases.Add(new VaporModifierLease(target, Stat.Defense, VaporMoveRules.RainDefense(upgraded), true));
                         leases.Add(new VaporModifierLease(target, Stat.SpDefense, VaporMoveRules.RainDefense(upgraded), true));
                     }
-                    else if (CanVaporeonSlow(target)) leases.Add(new VaporModifierLease(target, Stat.Speed, 20, false));
+                    else if (CanVaporeonSlow(target)) leases.Add(new VaporModifierLease(target, Stat.Speed, 20, false, NetworkObjectId));
                     return leases;
                 }, target => VaporMoveRuntime.CanHeal(playerManager, target) || CanVaporeonSlow(target));
             }
@@ -257,7 +257,7 @@ public partial class MovesController
             if (VaporNow >= nextScan)
             {
                 nextScan = VaporNow + 0.1;
-                occupants.Refresh(targets, target => new List<IDisposable> { new VaporModifierLease(target, Stat.Speed, VaporMoveRules.WhirlpoolSlow(upgraded), false) }, CanVaporeonSlow);
+                occupants.Refresh(targets, target => new List<IDisposable> { new VaporModifierLease(target, Stat.Speed, VaporMoveRules.WhirlpoolSlow(upgraded), false, NetworkObjectId) }, CanVaporeonSlow);
             }
             while (pulses < 6 && age >= pulses * 0.5)
             {
@@ -372,7 +372,7 @@ public partial class MovesController
                     if (!VaporMoveRuntime.CanHit(playerManager, target)) continue;
                     target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0.7f, 6, 200, DamageType.Special));
                     if (!VaporMoveRuntime.Living(target) || target.Type == PokemonType.Objective) continue;
-                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.25f, true, 0));
+                    target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.25f, true, 0).WithSource(NetworkObjectId));
                     if (target.TryGetComponent(out PlayerMovement enemyMovement)) enemyMovement.VaporeonDisplaceRPC(center, 0.6f, false);
                 }
             }

@@ -150,7 +150,7 @@ public class EmboarMoveObject : NetworkBehaviour
         // Query the complete authored flame volume, including the point-blank space.
         foreach (Pokemon victim in InBox())
             if (combat.HitEmboarTarget(victim, EmboarMoveRules.Damage(actorId.Value, kind.Value)) && EmboarMoveRules.CanControl(actor, victim))
-                victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.35f, true, effectId));
+                victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.35f, true, effectId).WithSource(actor.NetworkObjectId));
         yield return Wait(0.32f);
     }
     private IEnumerator HeatCrash()
@@ -165,7 +165,7 @@ public class EmboarMoveObject : NetworkBehaviour
             Slow(victim, 20, 1);
             if (boosted.Value && EmboarMoveRules.CanControl(actor, victim))
             {
-                victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.55f, true, effectId));
+                victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.55f, true, effectId).WithSource(actor.NetworkObjectId));
                 victim.ApplyKnockupRPC(0.9f, 0.55f);
             }
         }
@@ -197,7 +197,7 @@ public class EmboarMoveObject : NetworkBehaviour
             Vector3 delta = victim.transform.position - transform.position; delta.y = 0;
             if (delta.sqrMagnitude <= EmboarMoveRules.UniteInnerRadius * EmboarMoveRules.UniteInnerRadius && EmboarMoveRules.CanControl(actor, victim))
             {
-                victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.8f, true, effectId));
+                victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.8f, true, effectId).WithSource(actor.NetworkObjectId));
                 victim.ApplyKnockupRPC(1.2f, 0.8f);
             }
             else Slow(victim, 35, 1.5f);
@@ -224,7 +224,7 @@ public class EmboarMoveObject : NetworkBehaviour
                 hit.Add(victim);
                 if (kind.Value == EmboarCast.FlameCharge && EmboarMoveRules.CanControl(actor, victim))
                 {
-                    victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.55f, true, effectId));
+                    victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.55f, true, effectId).WithSource(actor.NetworkObjectId));
                     victim.ApplyKnockupRPC(0.8f, 0.55f); Slow(victim, 20, 1.5f);
                 }
             }
@@ -251,7 +251,7 @@ public class EmboarMoveObject : NetworkBehaviour
     {
         if (!EmboarMoveRules.CanControl(actor, victim)) return;
         victim.RemoveAllStatChangeWithIDRPC(effectId);
-        victim.AddStatChange(new StatChange(amount, Stat.Speed, duration, true, false, true, effectId));
+        victim.AddStatChange(new StatChange(amount, Stat.Speed, duration, true, false, true, effectId).WithSource(actor.NetworkObjectId));
     }
     private void SetPhase(byte value) { phaseStarted.Value = NetworkManager.ServerTime.Time; phase.Value = value; }
     private void Update()

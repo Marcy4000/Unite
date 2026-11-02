@@ -61,7 +61,10 @@ public partial class MovesController
             return;
         }
         bool aerial = slot == 0 && ZoroarkNight != null && ZoroarkNight.AerialWindow;
-        if (ServerActionLocks > 0 || (!aerial && now + 0.15 < prefabNextCast[slot])) { RejectPrefabExecutionRPC(move); return; }
+        var espeon = definition is EspeonMove ? EspeonCombat : null;
+        bool espeonBonus = espeon != null && EspeonMoveRules.MoveOne(move) && espeon.BonusReady;
+        if (definition is EspeonMove && (espeon == null || !espeon.CanCast(move))) { RejectPrefabExecutionRPC(move); return; }
+        if (ServerActionLocks > 0 || (!aerial && !espeonBonus && now + 0.15 < prefabNextCast[slot])) { RejectPrefabExecutionRPC(move); return; }
         if (aerial && !ZoroarkNight.TrySpendAerialReposition()) { RejectPrefabExecutionRPC(move); return; }
         Pokemon target = null;
         if (definition.AimStyle == MoveAimStyle.Target)
@@ -76,7 +79,11 @@ public partial class MovesController
         direction.y = 0;
         direction = definition.AimStyle == MoveAimStyle.Ground ? Vector3.ClampMagnitude(direction, definition.Range)
             : direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
-        if (!aerial) prefabNextCast[slot] = now + Mathf.Max(0.25f, definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
+        int espeonBlastCount = 0;
+        double espeonBonusExpiry = espeon != null ? espeon.BonusExpiresAt : 0;
+        if (espeon != null && !espeon.Spend(move, out espeonBonus, out espeonBlastCount)) { RejectPrefabExecutionRPC(move); return; }
+        if (!aerial && !espeonBonus) prefabNextCast[slot] = now + Mathf.Max(0.25f, definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
+        if (espeon != null && !espeonBonus && slot < 2) EspeonCooldownRPC(slot, (float)(prefabNextCast[slot] - now));
         if (definition.CooldownOnEffectEnd) prefabNextCast[slot] = double.PositiveInfinity;
         int generation = ++prefabGenerations[slot];
         int sequence = ++prefabCastSequences[slot];
@@ -97,6 +104,7 @@ public partial class MovesController
             {
                 if (asset.Status != AsyncOperationStatus.Succeeded) Debug.LogError($"Failed to load move {move}: {asset.OperationException}");
                 Addressables.Release(asset);
+                if (!cancelled && this != null && IsSpawned && espeon != null) espeon.Refund(move, espeonBonus, espeonBlastCount, espeonBonusExpiry);
                 if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition);
                 return;
             }
@@ -107,6 +115,7 @@ public partial class MovesController
             effect.HoldAsset(asset);
             effect.MoveId = move;
             effect.CastSequence = sequence;
+            if (effect is EspeonMoveEffect espeonEffect) { espeonEffect.Empowered = espeonBonus; espeonEffect.BlastCount = espeonBlastCount; }
             if (effect is ZoroarkMoveEffect zoroarkEffect) zoroarkEffect.AerialCast = aerial;
             instance.GetComponent<NetworkObject>().Spawn(true);
             prefabEffects.Add(effect);

@@ -16,7 +16,7 @@ public class AbsolSuckerPunchEffect : PrefabMoveEffect
         LockActions(false); FaceRPC(DirectionToTarget()); PlayAnimation(AbsolMoveRules.SuckerAnimation, AbsolMoveRules.SuckerStance, AbsolMoveRules.MoveAnimationBlend);
         Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, AbsolMoveRules.SuckerStance + AbsolMoveRules.SuckerDashDuration, true, AbsolMoveRules.SuckerStatusId));
         AbsolMoveRules.Refresh(Actor.Pokemon, new StatChange(50, Stat.Speed, AbsolMoveRules.SuckerStance, true, false, true, AbsolMoveRules.SuckerSelfSlowId));
-        AbsolMoveRules.Refresh(Target, new StatChange(50, Stat.Speed, AbsolMoveRules.SuckerStance, true, false, true, TargetSlowId));
+        AbsolMoveRules.Refresh(Target, new StatChange(50, Stat.Speed, AbsolMoveRules.SuckerStance, true, false, true, TargetSlowId).WithSource(Actor.NetworkObjectId));
         armed = true;
         Actor.Pokemon.BeforeDamage += Dodge;
         Actor.Pokemon.BeforeStatChange += FilterHitStat;

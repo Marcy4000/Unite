@@ -157,7 +157,7 @@ public partial class MovesController
             connected = true;
             if (launcher && EmboarMoveRules.CanControl(playerManager, target))
             {
-                target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.55f, true, 0));
+                target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.55f, true, 0).WithSource(NetworkObjectId));
                 target.ApplyKnockupRPC(0.8f, 0.55f);
             }
         }

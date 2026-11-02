@@ -107,7 +107,7 @@ public class DuraludonUniteObject : DuraMoveObject
         foreach (Pokemon target in TargetsIn(sweepArea))
         {
             target.TakeDamageRPC(new DamageInfo(Actor.NetworkObjectId, 1.63f, 6, 350, DamageType.Physical, DamageProprieties.IsUniteMove));
-            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0));
+            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0).WithSource(Actor.NetworkObjectId));
             target.ApplyKnockbackRPC((target.transform.position - Origin).normalized, 10f);
         }
         Actor.Pokemon.AddStatChange(new StatChange(30, Stat.Speed, 6f, true, true, true, 0));

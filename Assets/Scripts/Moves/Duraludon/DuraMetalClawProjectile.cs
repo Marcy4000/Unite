@@ -51,7 +51,7 @@ public class DuraMetalClawProjectile : NetworkBehaviour
 
         if (Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam, true) && other.TryGetComponent(out Pokemon pokemon))
         {
-            pokemon.AddStatChange(speedReduction);
+            pokemon.AddStatChange(speedReduction.WithSource(damage.attackerId));
             pokemon.TakeDamageRPC(damage);
         }
     }

@@ -151,7 +151,7 @@ public partial class MovesController
                 if (boosted && MeowsticMoveRules.Living(target) && !target.HasStatusEffect(StatusType.Unstoppable))
                 {
                     target.RemoveAllStatChangeWithIDRPC(7340);
-                    target.AddStatChange(new StatChange(15, Stat.Speed, 0.6f, true, false, true, 7340));
+                    target.AddStatChange(new StatChange(15, Stat.Speed, 0.6f, true, false, true, 7340).WithSource(NetworkObjectId));
                 }
                 ShowMeowsticEffect(MeowsticEffect.Pulse, goal, transform.forward, 0.2f, size: boosted ? 0.6f : 0.3f);
                 yield break;
@@ -395,7 +395,7 @@ public partial class MovesController
                         ShowMeowsticEffect(MeowsticEffect.Pulse, target.transform.position, transform.forward, 0.35f, target.NetworkObjectId, 1);
                     }
                 }
-                else if (MeowsticMoveRules.Enemy(playerManager, target) && !target.HasStatusEffect(StatusType.Unstoppable)) leases.Add(new MeowsticModifier(target, Stat.Speed, 25, false, family: 7));
+                else if (MeowsticMoveRules.Enemy(playerManager, target) && !target.HasStatusEffect(StatusType.Unstoppable)) leases.Add(new MeowsticModifier(target, Stat.Speed, 25, NetworkObjectId, false, family: 7));
                 return leases;
             }, target => MeowsticMoveRules.Ally(playerManager, target) || (MeowsticMoveRules.Enemy(playerManager, target) && !target.HasStatusEffect(StatusType.Unstoppable)));
             if (MeowsticNow >= nextDamage)

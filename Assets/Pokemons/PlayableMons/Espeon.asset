@@ -1,0 +1,103 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ca7b5041289b28418bd1831c17e0128, type: 3}
+  m_Name: Espeon
+  m_EditorClassIdentifier: Assembly-CSharp::PokemonBase
+  pokemonName: Espeon
+  maxHp: 480d0000910d0000e50d0000900f0000001000008010000013110000bd1100008012000061130000631400008b150000e0160000691800002c1a0000
+  attack: 86000000890000008d000000a1000000a6000000ac000000b3000000bb000000c4000000cf000000db000000e9000000f90000000c01000021010000
+  defense: 460000004b000000500000006a0000007100000079000000820000008d00000099000000a7000000b7000000c9000000df000000f700000013010000
+  spAttack: 32000000470000005f000000da000000fa0000001f010000490100007a010000b2010000f30100003d02000092020000f402000065030000e7030000
+  spDefense: 4100000045000000490000005e000000640000006a000000720000007a000000840000008f0000009c000000ab000000bc000000cf000000e6000000
+  critRate: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  cdr: 00000000000000000000000000000000050000000500000005000000050000000f0000000f0000000f0000000f000000190000001900000019000000
+  lifeSteal: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  atkSpeed:
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  - 10
+  speed: 740e0000740e0000740e0000740e00000a0f00000a0f0000a00f0000a00f00003610000036100000cc100000cc100000cc100000cc100000cc100000
+  spellVamp:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  passive: 17
+  learnableMoves:
+  - moves:
+    - {fileID: 11400000, guid: 054a30e059c4fdb65baf0811e3136f13, type: 2}
+    - {fileID: 11400000, guid: dd6d86281a2aac25882fcbfcd5d21c42, type: 2}
+    level: 0
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 054a30e059c4fdb65baf0811e3136f13, type: 2}
+    - {fileID: 11400000, guid: dd6d86281a2aac25882fcbfcd5d21c42, type: 2}
+    level: 1
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 1c20b4f5ff18be1cb9aee4778d010666, type: 2}
+    - {fileID: 11400000, guid: bb7785e96e33bb0728495662c38306d9, type: 2}
+    level: 3
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: fe75e90f92b3927ee8dcaecc0314a3fb, type: 2}
+    - {fileID: 11400000, guid: e28c3ed0880999ee48a62753f16d105d, type: 2}
+    level: 5
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: b76f62708739a13f891e1c3ae3e92bc9, type: 2}
+    level: 7
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 1c20b4f5ff18be1cb9aee4778d010666, type: 2}
+    - {fileID: 11400000, guid: bb7785e96e33bb0728495662c38306d9, type: 2}
+    level: 9
+    isUpgraded: 1
+  - moves:
+    - {fileID: 11400000, guid: fe75e90f92b3927ee8dcaecc0314a3fb, type: 2}
+    - {fileID: 11400000, guid: e28c3ed0880999ee48a62753f16d105d, type: 2}
+    level: 11
+    isUpgraded: 1
+  evolutions:
+  - EvolutionName: Eevee
+    level: 0
+    newModel: {fileID: 6021120288529842924, guid: 35fb9d37d94c96f40926b5817c04418a,
+      type: 3}
+    newSprite: {fileID: 21300000, guid: 21c8bbf93fe5ed34ea551528efd0e606, type: 3}
+  - EvolutionName: Espeon
+    level: 3
+    newModel: {fileID: 3930632362858899932, guid: 42c8870a467c32208933776af166b43d,
+      type: 3}
+    newSprite: {fileID: 21300000, guid: c8474f95afdf95345b828bc266045b42, type: 3}

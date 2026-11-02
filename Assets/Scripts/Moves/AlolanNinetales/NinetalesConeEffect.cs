@@ -25,7 +25,7 @@ public class NinetalesConeEffect : PrefabMoveEffect
             {
                 var damage = dazzlingGleam ? NinetalesMoveRules.GleamDamage(Actor.NetworkObjectId, Upgraded) : NinetalesMoveRules.PowderDamage(Actor.NetworkObjectId);
                 if (combat.Hit(target, damage) <= 0) continue;
-                if (dazzlingGleam && NinetalesMoveRules.Living(target)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, Upgraded ? 1 : 0.8f, true, 0));
+                if (dazzlingGleam && NinetalesMoveRules.Living(target)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, Upgraded ? 1 : 0.8f, true, 0).WithSource(Actor.NetworkObjectId));
                 else if (!dazzlingGleam) combat.Slow(target, 50, 1);
             }
         yield return CastPause(NinetalesMoveRules.ConeRecovery);

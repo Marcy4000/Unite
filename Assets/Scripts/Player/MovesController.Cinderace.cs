@@ -258,7 +258,7 @@ public partial class MovesController
         if (applied && slow && CinderMoveRules.CanHit(playerManager, target) && !target.HasStatusEffect(StatusType.Unstoppable))
         {
             target.RemoveAllStatChangeWithIDRPC(CinderMoveRules.FlameSlow);
-            target.AddStatChange(new StatChange(30, Stat.Speed, 2, true, false, true, CinderMoveRules.FlameSlow));
+            target.AddStatChange(new StatChange(30, Stat.Speed, 2, true, false, true, CinderMoveRules.FlameSlow).WithSource(NetworkObjectId));
         }
         return applied;
     }

@@ -75,7 +75,7 @@ public partial class MovesController
         {
             if (!CresseliaMoveRuntime.CanHit(playerManager, target)) continue;
             target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 1.35f, 9, 840, DamageType.Special, DamageProprieties.IsUniteMove));
-            if (CresseliaMoveRuntime.Living(target)) target.AddStatusEffect(new StatusEffect(StatusType.Asleep, 1.2f, true, 0));
+            if (CresseliaMoveRuntime.Living(target)) target.AddStatusEffect(new StatusEffect(StatusType.Asleep, 1.2f, true, 0).WithSource(NetworkObjectId));
         }
         ShowCresseliaEffect(CresseliaEffect.UniteImpact, cresseliaLandingPoint, Vector3.forward, 0.55f, 0, CresseliaMoveRules.UniteRadius);
         EndCresseliaUniteServer(false);

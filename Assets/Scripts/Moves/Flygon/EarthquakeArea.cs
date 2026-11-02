@@ -43,7 +43,7 @@ public class EarthquakeArea : FlygonMoveObject
                 if (CanControl(target))
                 {
                     RefreshStat(target, Stat.Speed, count == 3 ? (short)25 : (short)20, count == 3 ? 3.2f : 0.6f);
-                    if (count == 3 && !target.HasStatusEffect(StatusType.HindranceResistance)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1.2f, true, EffectId));
+                    if (count == 3 && !target.HasStatusEffect(StatusType.HindranceResistance)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1.2f, true, EffectId).WithSource(Actor.NetworkObjectId));
                 }
             }
             if (Upgraded && shield) Actor.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(Actor.Pokemon.GetMaxHp() * 0.08f), EffectId, 0, 3, true));

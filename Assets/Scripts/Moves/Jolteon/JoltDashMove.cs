@@ -116,7 +116,7 @@ public abstract class JoltDashMove : MoveBase
                 ? new DamageInfo(playerManager.NetworkObjectId, Combo.Empowered ? 1.9f : 1.72f, (short)(Combo.Empowered ? 10 : 9), (short)(Combo.Empowered ? 400 : 350), DamageType.Physical, JoltMoveRules.DirectMoveDamage)
                 : new DamageInfo(playerManager.NetworkObjectId, 1.6f, 6, 300, DamageType.Physical, JoltMoveRules.DirectMoveDamage);
             target.TakeDamageRPC(damage);
-            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, IsFang ? 0.5f : 0.35f, true, 0));
+            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, IsFang ? 0.5f : 0.35f, true, 0).WithSource(playerManager.NetworkObjectId));
             if (!IsFang && Combo.IsSecondPass) Slow(target);
         }
 
@@ -142,7 +142,7 @@ public abstract class JoltDashMove : MoveBase
     private void Slow(Pokemon target)
     {
         if (!slowedTargets.Add(target.NetworkObjectId)) return;
-        JoltMoveRuntime.RefreshStat(target, new StatChange((short)(IsUpgraded ? 35 : 20), Stat.Speed, 1f, true, false, true, JoltMoveRules.DischargeSlow));
+        JoltMoveRuntime.RefreshStat(target, new StatChange((short)(IsUpgraded ? 35 : 20), Stat.Speed, 1f, true, false, true, JoltMoveRules.DischargeSlow).WithSource(playerManager.NetworkObjectId));
     }
 
     private void EndPass()

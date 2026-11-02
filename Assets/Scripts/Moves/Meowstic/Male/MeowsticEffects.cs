@@ -27,12 +27,16 @@ public sealed class MeowsticModifier : IDisposable
     private readonly (Pokemon, Stat, bool, bool, int, float) key;
     private Group group;
     private short amount;
+    private readonly ulong sourceId;
     public short EffectiveAmount
     {
         get { short maximum = 0; if (group != null) foreach (var source in group.Sources) maximum = (short)Mathf.Max(maximum, source.amount); return maximum; }
     }
     public MeowsticModifier(Pokemon target, Stat stat, short amount, bool buff = true, bool percentage = true, int family = 0, float duration = 0)
+        : this(target, stat, amount, ulong.MaxValue, buff, percentage, family, duration) { }
+    public MeowsticModifier(Pokemon target, Stat stat, short amount, ulong sourceId, bool buff = true, bool percentage = true, int family = 0, float duration = 0)
     {
+        this.sourceId = sourceId;
         key = (target, stat, buff, percentage, family, duration); this.amount = amount;
         if (!groups.TryGetValue(key, out group)) { group = new Group(); groups.Add(key, group); }
         group.Sources.Add(this); Rebuild();
@@ -50,7 +54,12 @@ public sealed class MeowsticModifier : IDisposable
         if (group == null || key.Item1 == null || !key.Item1.IsSpawned || !key.Item1.IsServer) return;
         key.Item1.RemoveAllStatChangeWithIDRPC(group.Id);
         if (EffectiveAmount > 0 && key.Item1.CurrentHp > 0)
-            key.Item1.AddStatChange(new StatChange(EffectiveAmount, key.Item2, key.Item6, key.Item6 > 0, key.Item3, key.Item4, group.Id));
+        {
+            var change = new StatChange(EffectiveAmount, key.Item2, key.Item6, key.Item6 > 0, key.Item3, key.Item4, group.Id);
+            var strongest = group.Sources.Find(s => s.amount == EffectiveAmount);
+            if (strongest != null && strongest.sourceId != ulong.MaxValue) change = change.WithSource(strongest.sourceId);
+            key.Item1.AddStatChange(change);
+        }
     }
     public void Dispose()
     {

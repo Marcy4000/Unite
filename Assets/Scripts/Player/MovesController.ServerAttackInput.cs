@@ -27,7 +27,7 @@ public partial class MovesController
         }
         var status = slot == 2 ? uniteMoveStatus : moveStatuses[slot];
         if (pokemon == null || pokemon.CurrentHp <= 0 || pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)
-            || status == null || !status.HasStatus(ActionStatusType.None))
+            || status == null || (!status.HasStatus(ActionStatusType.None) && !CanRecastEspeon(slot)))
         { ClearServerAttackBufferedInput(); return true; }
         if (serverAttackInput.Queue(slot, released, Time.time, ServerAttackBufferDuration))
             serverAttackBufferedMove = slot == 2 ? uniteMove : moves[slot];
@@ -45,7 +45,7 @@ public partial class MovesController
         var move = slot == 2 ? uniteMove : moves[slot];
         var status = slot == 2 ? uniteMoveStatus : moveStatuses[slot];
         if (move != serverAttackBufferedMove) { ClearServerAttackBufferedInput(); return; }
-        if (status == null || !status.HasStatus(ActionStatusType.None)) return;
+        if (status == null || (!status.HasStatus(ActionStatusType.None) && !CanRecastEspeon(slot))) return;
         bool released = serverAttackInput.Released;
         ClearServerAttackBufferedInput();
         move.Start(playerManager);

@@ -322,7 +322,7 @@ public class GoalZone : NetworkBehaviour
         gameObject.SetActive(false);
         visionController.IsEnabled = false;
         onGoalZoneDestroyed?.Invoke(goalLaneId, goalTier);
-        onGoalZoneDestroyedUnityEvent.Invoke();
+        onGoalZoneDestroyedUnityEvent?.Invoke();
         if (IsServer)
         {
             goalStatus.Value = GoalStatus.Destroyed;

@@ -131,6 +131,7 @@ public partial class MovesController : NetworkBehaviour
         UpdateMeowsticRuntime();
         UpdateNinetalesRuntime();
         UpdateZoroarkRuntime();
+        UpdateEspeonRuntime();
         if (!IsOwner)
         {
             return;
@@ -387,7 +388,7 @@ public partial class MovesController : NetworkBehaviour
         }
 
         if (moves[index].IsStoredMove) SynchronizeStoredMove(index);
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastZoroark(index) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastEspeon(index) && !CanRecastZoroark(index) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
         {
             BufferMarshadowInput(index, false);
             BufferCresseliaInput(index, false);
@@ -437,7 +438,7 @@ public partial class MovesController : NetworkBehaviour
             return;
         }
 
-        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastZoroark(index) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
+        if (!moveStatuses[index].HasStatus(ActionStatusType.None) && !CanRecastEspeon(index) && !CanRecastZoroark(index) && !CanRecastFlygon(index) && !CanRecastEmboar(index) && !CanRecastFlareon(index) && !CanRecastMeowstic(index))
         {
             BufferMarshadowInput(index, true);
             BufferCresseliaInput(index, true);
@@ -555,7 +556,7 @@ public partial class MovesController : NetworkBehaviour
         bool showLock = moveStatuses[index].HasStatus(ActionStatusType.Disabled) || moveStatuses[index].HasStatus(ActionStatusType.Stunned) || moveStatuses[index].HasStatus(ActionStatusType.Busy);
         BattleUIManager.instance.SetMoveLock(index, showLock);
 
-        if (index == 0 && ZoroarkAerialOpen)
+        if (index == 0 && (ZoroarkAerialOpen || EspeonBonusReady))
         {
             BattleUIManager.instance.ShowMoveCooldown(index, 0, GetMoveCooldown(moves[index]));
         }
@@ -990,6 +991,7 @@ public partial class MovesController : NetworkBehaviour
         DisposeServerAttack();
         DisposeNinetalesRuntime();
         DisposeZoroarkRuntime();
+        DisposeEspeonRuntime();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();

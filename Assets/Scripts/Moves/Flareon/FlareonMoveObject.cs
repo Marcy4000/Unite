@@ -147,7 +147,7 @@ public class FlareonMoveObject : NetworkBehaviour
         {
             bool connected = combat.HitFlareonTarget(target, FlareonMoveRules.Damage(actorId.Value, kind.Value));
             if (connected && FlareonMoveRules.CanControl(actor, target))
-                target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, FlareonMoveRules.LaunchId));
+                target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, FlareonMoveRules.LaunchId).WithSource(actor.NetworkObjectId));
             if (connected) Shield(FlareonMoveRules.SlamShield, 0.05f, 3); return;
         }
         bool launched = false;
@@ -159,7 +159,7 @@ public class FlareonMoveObject : NetworkBehaviour
         if (launched && FlareonMoveRules.CanControl(actor, target))
         {
             float duration = FlareonMoveRules.LaunchDuration(upgraded);
-            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, FlareonMoveRules.LaunchId)); target.ApplyKnockupRPC(1, duration);
+            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, FlareonMoveRules.LaunchId).WithSource(actor.NetworkObjectId)); target.ApplyKnockupRPC(1, duration);
             combat.ArmFlareonRecast(target, duration - 0.08f);
         }
     }
@@ -182,7 +182,7 @@ public class FlareonMoveObject : NetworkBehaviour
                 {
                     if (FlareonMoveRules.CanControl(actor, victim))
                     {
-                        victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.35f, true, FlareonMoveRules.LaunchId)); victim.ApplyKnockupRPC(0.8f, 0.35f);
+                        victim.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.35f, true, FlareonMoveRules.LaunchId).WithSource(actor.NetworkObjectId)); victim.ApplyKnockupRPC(0.8f, 0.35f);
                     }
                     if (!refunded) { refunded = true; combat.ReduceFlareonCooldown(MoveType.MoveB, 3); }
                 }

@@ -27,6 +27,7 @@ public sealed class VaporModifierLease : IDisposable
     private static readonly Dictionary<(Pokemon, Stat, bool), Group> groups = new Dictionary<(Pokemon, Stat, bool), Group>();
     private readonly (Pokemon, Stat, bool) key;
     private readonly short amount;
+    private readonly ulong sourceId;
     private Group group;
     public short EffectiveAmount
     {
@@ -38,7 +39,10 @@ public sealed class VaporModifierLease : IDisposable
         }
     }
     public VaporModifierLease(Pokemon target, Stat stat, short amount, bool buff)
+        : this(target, stat, amount, buff, ulong.MaxValue) { }
+    public VaporModifierLease(Pokemon target, Stat stat, short amount, bool buff, ulong sourceId)
     {
+        this.sourceId = sourceId;
         key = (target, stat, buff); this.amount = amount;
         if (!groups.TryGetValue(key, out group)) { group = new Group(); groups.Add(key, group); }
         group.Sources.Add(this); Rebuild();
@@ -49,7 +53,12 @@ public sealed class VaporModifierLease : IDisposable
         key.Item1.RemoveAllStatChangeWithIDRPC(group.Id);
         short maximum = EffectiveAmount;
         if (maximum > 0 && key.Item1.CurrentHp > 0)
-            key.Item1.AddStatChange(new StatChange(maximum, key.Item2, 0, false, key.Item3, true, group.Id));
+        {
+            var change = new StatChange(maximum, key.Item2, 0, false, key.Item3, true, group.Id);
+            var strongest = group.Sources.Find(s => s.amount == maximum);
+            if (strongest != null && strongest.sourceId != ulong.MaxValue) change = change.WithSource(strongest.sourceId);
+            key.Item1.AddStatChange(change);
+        }
     }
     public void Dispose()
     {

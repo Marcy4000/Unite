@@ -677,8 +677,9 @@ public partial class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void AddStatChangeRPC(StatChange change)
+    private void AddStatChangeRPC(StatChange change, RpcParams context = default)
     {
+        if (!change.HasSource && EffectSender(context) is ulong source) change = change.WithSource(source);
         if (!InterceptMeowsticStat(ref change)) return;
         // NetworkList invokes callbacks synchronously. Publish only after the
         // matching timer exists, so callbacks can safely remove/replace a stat.
@@ -770,8 +771,9 @@ public partial class Pokemon : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void AddStatusEffectRPC(StatusEffect effect)
+    private void AddStatusEffectRPC(StatusEffect effect, RpcParams context = default)
     {
+        if (!effect.HasSource && EffectSender(context) is ulong source) effect = effect.WithSource(source);
         if (!InterceptMeowsticStatus(effect)) return;
         if (effect.PeriodicDamage.Enabled)
         {
@@ -1207,7 +1209,7 @@ public partial class Pokemon : NetworkBehaviour
 
         float physicalReduction = damage.type == DamageType.Physical ? GetMeowsticPhysicalReduction() : 0;
         return Mathf.FloorToInt(finalDamage * (1f-GetDamageReduction()) * (1f-physicalReduction) * (damage.multiplier > 0 ? damage.multiplier : 1f)
-            * GetRayquazaDamageMultiplier(attacker));
+            * GetRayquazaDamageMultiplier(attacker) * attacker.OutgoingMultiplier(this, damage));
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)

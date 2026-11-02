@@ -124,7 +124,7 @@ public partial class MovesController
             if ((next - goal).sqrMagnitude <= 0.25f * 0.25f)
             {
                 target.TakeDamageRPC(CresseliaMoveRules.BasicDamage(NetworkObjectId, boosted));
-                if (boosted && CresseliaMoveRuntime.Living(target)) target.AddStatusEffect(new StatusEffect(StatusType.Asleep, 0.15f, true, 0));
+                if (boosted && CresseliaMoveRuntime.Living(target)) target.AddStatusEffect(new StatusEffect(StatusType.Asleep, 0.15f, true, 0).WithSource(NetworkObjectId));
                 ShowCresseliaEffect(CresseliaEffect.MoonblastImpact, goal, Vector3.forward, 0.2f, 0, boosted ? 0.55f : 0.3f);
                 break;
             }
@@ -147,7 +147,7 @@ public partial class MovesController
             if (!CresseliaMoveRuntime.CanHit(playerManager, target)) continue;
             if (target.Type == PokemonType.Player) enemyPlayers++;
             target.TakeDamageRPC(CresseliaMoveRules.Damage(CresseliaCast.Psybeam, NetworkObjectId));
-            if (CresseliaMoveRuntime.Living(target)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0));
+            if (CresseliaMoveRuntime.Living(target)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0).WithSource(NetworkObjectId));
         }
         if (enemyPlayers > 0 && IsLivingCresselia)
         {
@@ -308,6 +308,7 @@ public partial class MovesController
 
     public override void OnNetworkDespawn()
     {
+        DisposeEspeonRuntime();
         DisposeZoroarkRuntime();
         DisposeNinetalesRuntime();
         basicAttack?.Dispose();

@@ -66,7 +66,7 @@ public partial class DuraBoostedObj
     private void RefreshSlow(Pokemon target, short amount, float duration, ushort id)
     {
         target.RemoveStatChangeWithIDRPC(id);
-        target.AddStatChange(new StatChange(amount, Stat.Speed, duration, true, false, true, id));
+        target.AddStatChange(new StatChange(amount, Stat.Speed, duration, true, false, true, id).WithSource(duraludon.NetworkObjectId));
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]

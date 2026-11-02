@@ -30,7 +30,7 @@ public class SandstormArea : FlygonMoveObject
                 foreach (Pokemon target in TargetsInArea())
                 {
                     target.TakeDamageRPC(FlygonMoveRules.Damage(Actor.NetworkObjectId, Kind));
-                    if (CanControl(target) && blinded.Add(target)) target.AddStatusEffect(new StatusEffect(StatusType.VisionObscuring, 3, true, EffectId));
+                    if (CanControl(target) && blinded.Add(target)) target.AddStatusEffect(new StatusEffect(StatusType.VisionObscuring, 3, true, EffectId).WithSource(Actor.NetworkObjectId));
                 }
             }
             yield return null;

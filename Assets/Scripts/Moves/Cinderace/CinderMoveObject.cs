@@ -214,7 +214,7 @@ public class CinderMoveObject : NetworkBehaviour
             combat.ApplyCinderaceBurn(target);
             if (target.CurrentHp > 0)
             {
-                target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0));
+                target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0).WithSource(actorId.Value));
                 if (!target.HasStatusEffect(StatusType.Unstoppable) && !target.HasStatusEffect(StatusType.HindranceResistance)) target.ApplyKnockbackRPC(direction, 8);
             }
             if (upgraded) combat.CinderBuff(CinderMoveRules.KickSpeed, Stat.AtkSpeed, 30, 3, false);

@@ -43,7 +43,7 @@ public class AbsolPsychoCutEffect : PrefabMoveEffect
                     if (effect is AbsolPsychoCutEffect other && other != this) other.RemoveMark(target);
                 marks[target] = new Mark { until = Time.time + AbsolMoveRules.MarkDuration };
                 target.AddStatusEffect(new StatusEffect(StatusType.Scriptable, AbsolMoveRules.MarkDuration, true, MarkId));
-                target.AddSteppedDecayingStatRPC(new StatChange(90, Stat.Speed, 2, true, false, true, SlowId), 25, 0.5f);
+                target.AddSteppedDecayingStatRPC(new StatChange(90, Stat.Speed, 2, true, false, true, SlowId).WithSource(Actor.NetworkObjectId), 25, 0.5f);
                 ShowMarksRPC(target.NetworkObjectId, 3);
                 UpdateSpeed();
             }

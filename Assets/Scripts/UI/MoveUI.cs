@@ -18,6 +18,7 @@ public class MoveUI : MonoBehaviour
     private Coroutine cooldownCoroutine;
     private Coroutine secondaryCooldownCoroutine;
     private MoveBase boundMove;
+    private Sprite baseIcon;
     private float cooldownEndsAt, cooldownDuration;
     private float secondaryCooldownEndsAt, secondaryCooldownDuration;
 
@@ -36,6 +37,7 @@ public class MoveUI : MonoBehaviour
         MoveBase definition = runtimeMove ?? MoveDatabase.GetMove(move.move);
         definition.IsUpgraded = move.isUpgraded;
         moveIcon.sprite = move.icon;
+        baseIcon = move.icon;
         moveName.text = definition.Name;
         upgradeFrame.SetActive(move.isUpgraded);
         BindMove(definition);
@@ -69,6 +71,7 @@ public class MoveUI : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (boundMove != null) moveIcon.sprite = boundMove.IconOverride ?? baseIcon;
         RenderStoredUses();
     }
 

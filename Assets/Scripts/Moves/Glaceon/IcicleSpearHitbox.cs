@@ -48,7 +48,7 @@ public class IcicleSpearHitbox : NetworkBehaviour
                 }
 
                 pokemonInTrigger[i-1].TakeDamageRPC(damageInfo);
-                pokemonInTrigger[i-1].AddStatChange(enemySlow);
+                pokemonInTrigger[i-1].AddStatChange(enemySlow.WithSource(damageInfo.attackerId));
 
                 if (isUpgraded)
                 {

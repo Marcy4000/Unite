@@ -138,7 +138,7 @@ public abstract class DuraMoveObject : NetworkBehaviour
     protected void Slow(Pokemon target, short amount, float duration, ushort id)
     {
         target.RemoveStatChangeWithIDRPC(id);
-        target.AddStatChange(new StatChange(amount, Stat.Speed, duration, true, false, true, id));
+        target.AddStatChange(new StatChange(amount, Stat.Speed, duration, true, false, true, id).WithSource(Actor.NetworkObjectId));
     }
 
     protected void AddRefreshingShield(ushort id, int amount, int maximum, float duration)

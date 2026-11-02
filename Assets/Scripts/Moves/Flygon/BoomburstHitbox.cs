@@ -24,7 +24,7 @@ public class BoomburstHitbox : FlygonMoveObject
                 RefreshStat(target, Stat.SpDefense, reduction, FlygonMoveRules.BurstReductionDuration(Upgraded));
             }
             if (!CanControl(target)) continue;
-            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, EffectId));
+            target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.2f, true, EffectId).WithSource(Actor.NetworkObjectId));
             if (target.TryGetComponent(out PlayerMovement movement)) movement.FlygonDisplaceRPC(transform.position, Mathf.Lerp(1.3f, 0.25f, Mathf.Clamp01(distance / 5)), false);
         }
         yield return Wait(0.6f);

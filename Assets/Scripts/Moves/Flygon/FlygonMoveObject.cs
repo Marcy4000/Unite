@@ -90,7 +90,7 @@ public abstract class FlygonMoveObject : NetworkBehaviour
         var old = new List<StatChange>();
         foreach (var change in target.StatChanges) if (change.ID == EffectId && change.AffectedStat == stat) old.Add(change);
         foreach (var change in old) target.RemoveStatChangeRPC(change);
-        target.AddStatChange(new StatChange(amount, stat, duration, duration > 0, buff, true, EffectId));
+        target.AddStatChange(new StatChange(amount, stat, duration, duration > 0, buff, true, EffectId).WithSource(Actor.NetworkObjectId));
     }
     protected virtual void Update()
     {

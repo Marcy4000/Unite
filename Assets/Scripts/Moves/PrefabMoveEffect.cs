@@ -176,8 +176,9 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
         }
     }
 
-    protected static void RefreshStat(Pokemon pokemon, StatChange change)
+    protected void RefreshStat(Pokemon pokemon, StatChange change)
     {
+        if (!change.HasSource && Actor != null) change = change.WithSource(Actor.NetworkObjectId);
         pokemon.RemoveAllStatChangeWithIDRPC(change.ID);
         pokemon.AddStatChange(change);
     }

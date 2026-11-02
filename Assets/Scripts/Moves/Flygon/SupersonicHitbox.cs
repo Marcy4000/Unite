@@ -25,7 +25,7 @@ public class SupersonicHitbox : FlygonMoveObject
             foreach (Pokemon target in CombatTargeting.BoxTargets(center, new Vector3(halfWidth, 1, Mathf.Max(0.1f, (distance - previous) * 0.5f)), Quaternion.LookRotation(Direction)))
             {
                 if (!CanControl(target) || !hit.Add(target)) continue;
-                if (!target.HasStatusEffect(StatusType.HindranceResistance)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1, true, EffectId));
+                if (!target.HasStatusEffect(StatusType.HindranceResistance)) target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 1, true, EffectId).WithSource(Actor.NetworkObjectId));
                 RefreshStat(target, Stat.Speed, FlygonMoveRules.SonicSlow(Upgraded), 4); // Three seconds remain after the stun.
             }
             previous = distance;

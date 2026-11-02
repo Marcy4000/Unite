@@ -52,6 +52,7 @@ public static class BasicAttacksDatabase
        pokemonName = pokemonName.ToLower();
         switch (pokemonName)
         {
+            case "espeon": return new EspeonBasicAtk();
             case "cinderace":
                 return new CinderBasicAtk();
             case "glaceon":
