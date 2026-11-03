@@ -109,6 +109,8 @@ public partial class PlayerMovement : NetworkBehaviour
         pokemon.OnLevelChange += UpdateSpeed;
         pokemon.OnPokemonInitialized += UpdateSpeed;
         pokemon.OnStatChange += UpdateSpeed;
+        pokemon.OnBattleItemStatusChange -= UpdateSpeed;
+        pokemon.OnBattleItemStatusChange += UpdateSpeed;
         UpdateSpeed();
         canMove = IsOwner;
         

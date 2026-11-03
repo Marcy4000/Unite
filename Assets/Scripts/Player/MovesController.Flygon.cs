@@ -77,6 +77,7 @@ public partial class MovesController
             flygonNextCast[slot] = FlygonNow + (slot == 2 ? FlygonMoveRules.UniteDuration + FlygonMoveRules.UniteFormation + 1
                 : FlygonMoveRules.Cooldown(kind) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
             AcceptFlygonRPC(kind, cast, true);
+            playerManager.HeldItemManager?.OnMove((MoveType)slot);
             effect.Initialize(this, playerManager, cast, aim, point, upgraded);
         };
     }

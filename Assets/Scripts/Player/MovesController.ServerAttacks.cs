@@ -9,6 +9,10 @@ public partial class MovesController
     private CombatActionLock serverAttackLock;
     private WallCrossingTraversal attackTraversal;
     private int attackDriveGeneration;
+    private readonly MoveUseState[] legacyItemUses = { new MoveUseState(), new MoveUseState() };
+    private readonly double[] legacyItemNextCast = new double[2];
+    private double legacyItemEnergyTime;
+    private float legacyItemEnergy;
     public int ServerActionLocks { get; internal set; }
 
     public MoveType GetMoveSlot(MoveBase move)
@@ -92,11 +96,92 @@ public partial class MovesController
             legacyNextAttack = NetworkManager.ServerTime.Time + GetAtkSpeedCooldown() * 0.8;
             pokemon.NotifyOffensiveAction(); return;
         }
+        if (pokemon.BaseStats == null) return;
         foreach (var learn in pokemon.BaseStats.LearnableMoves)
             foreach (var asset in learn.moves)
-                if (asset != null && asset.move == id && learn.level <= pokemon.CurrentLevel
-                    && asset.moveLabel != MoveLabels.Buff && asset.moveLabel != MoveLabels.Recovery
-                    && asset.moveLabel != MoveLabels.None) { pokemon.NotifyOffensiveAction(); return; }
+                if (asset != null && asset.move == id && learn.level <= pokemon.CurrentLevel)
+                {
+                    if (!IsServerResolvedItemMove(MoveDatabase.GetMove(asset.move)))
+                    {
+                        if (!AcceptLegacyItemCast(asset)) return;
+                        playerManager.HeldItemManager?.OnMove(asset.moveType);
+                    }
+                    if (asset.moveLabel != MoveLabels.Buff && asset.moveLabel != MoveLabels.Recovery
+                        && asset.moveLabel != MoveLabels.None) pokemon.NotifyOffensiveAction();
+                    return;
+                }
+    }
+
+    private static bool IsServerResolvedItemMove(MoveBase move) => move is PrefabMove || move is VaporMoveBase
+        || move is VaporDive || move is CresseliaMoveBase || move is CresseliaUnite || move is CinderMoveBase
+        || move is FlareonMoveBase || move is FlygonMoveBase || move is EmboarMoveBase || move is MeowsticMoveBase;
+
+    private bool AcceptLegacyItemCast(MoveAsset asset)
+    {
+        int slot = (int)asset.moveType;
+        if (slot < 0 || slot >= prefabLearnedMoves.Length || prefabLearnedMoves[slot] != asset.move) return false;
+        MoveBase definition = MoveDatabase.GetMove(asset.move);
+        if (definition == null || IsServerResolvedItemMove(definition)) return false;
+        foreach (var learn in pokemon.BaseStats.LearnableMoves)
+            if (learn.isUpgraded && learn.level <= pokemon.CurrentLevel)
+                foreach (var upgrade in learn.moves)
+                    if (upgrade != null && upgrade.move == asset.move) definition.IsUpgraded = true;
+        double now = NetworkManager.ServerTime.Time;
+        if (slot == 2)
+        {
+            TickLegacyItemResources();
+            if (asset.uniteEnergyCost <= 0 || legacyItemEnergy < asset.uniteEnergyCost) return false;
+            legacyItemEnergy = 0;
+            return true;
+        }
+        if (now < legacyItemNextCast[slot]) return false;
+        float cooldown = definition.Cooldown * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
+        if (definition.IsStoredMove)
+        {
+            legacyItemUses[slot].Tick((float)now, definition.MaxStoredUses, cooldown);
+            if (!legacyItemUses[slot].TrySpend((float)now, definition.StoredUseInterval)) return false;
+        }
+        legacyItemNextCast[slot] = now + (definition.IsStoredMove ? definition.StoredUseInterval : Mathf.Max(0.25f, cooldown));
+        return true;
+    }
+
+    private int LegacyItemUniteCost()
+    {
+        if (pokemon == null || pokemon.BaseStats == null) return 0;
+        foreach (var learn in pokemon.BaseStats.LearnableMoves)
+            foreach (var asset in learn.moves)
+                if (asset != null && asset.moveType == MoveType.UniteMove && asset.move == prefabLearnedMoves[2]
+                    && learn.level <= pokemon.CurrentLevel) return asset.uniteEnergyCost;
+        return 0;
+    }
+
+    private void TickLegacyItemResources()
+    {
+        if (!IsServer || !IsSpawned) return;
+        double now = NetworkManager.ServerTime.Time;
+        if (legacyItemEnergyTime == 0) legacyItemEnergyTime = now;
+        int ticks = Mathf.Max(0, (int)(now - legacyItemEnergyTime));
+        if (ticks == 0) return;
+        legacyItemEnergyTime += ticks;
+        int cost = LegacyItemUniteCost();
+        legacyItemEnergy = Mathf.Min(cost, legacyItemEnergy + ticks * Mathf.FloorToInt(900 * (1 + pokemon.GetPreciseStatChange(Stat.EnergyRate) / 100f)));
+    }
+
+    public void GrantLegacyItemEnergy(int amount)
+    {
+        if (!IsServer || pokemon == null || amount <= 0) return;
+        TickLegacyItemResources();
+        legacyItemEnergy = Mathf.Min(LegacyItemUniteCost(), legacyItemEnergy
+            + Mathf.FloorToInt(amount * (1 + pokemon.GetPreciseStatChange(Stat.EnergyRate) / 100f)));
+    }
+
+    public void ReduceLegacyItemCooldown(MoveType slot, float seconds)
+    {
+        int index = (int)slot;
+        if (!IsServer || index < 0 || index >= legacyItemNextCast.Length || !float.IsFinite(seconds) || seconds <= 0) return;
+        double now = NetworkManager.ServerTime.Time;
+        legacyItemNextCast[index] = System.Math.Max(now, legacyItemNextCast[index] - seconds);
+        legacyItemUses[index].ReduceRecharge(seconds, (float)now);
     }
 
     private void ResetServerAttack(DamageInfo damage)

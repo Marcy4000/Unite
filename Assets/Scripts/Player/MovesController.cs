@@ -122,6 +122,7 @@ public partial class MovesController : NetworkBehaviour
 
     private void Update()
     {
+        TickLegacyItemResources();
         TickUniteReadiness();
         UpdateCresseliaServer();
         UpdateVaporeonRuntime();
@@ -132,6 +133,7 @@ public partial class MovesController : NetworkBehaviour
         UpdateNinetalesRuntime();
         UpdateZoroarkRuntime();
         UpdateEspeonRuntime();
+        UpdateBattleItemRuntime();
         if (!IsOwner)
         {
             return;
@@ -416,7 +418,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void TryUsingBattleItem()
     {
-        if (!battleItemStatus.HasStatus(ActionStatusType.None))
+        if (!IsOwner || playerManager == null || pokemon.CurrentHp <= 0 || battleItem == null || battleItem.IsActive || battleItemPending || !battleItemStatus.HasStatus(ActionStatusType.None))
             return;
 
         battleItem.Start(playerManager);
@@ -457,7 +459,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void TryFinishingBattleItem()
     {
-        if (!battleItemStatus.HasStatus(ActionStatusType.None))
+        if (!IsOwner || playerManager == null || pokemon.CurrentHp <= 0 || battleItem == null || !battleItem.IsActive || battleItemPending || !battleItemStatus.HasStatus(ActionStatusType.None))
             return;
 
         battleItem.Finish();
@@ -528,8 +530,8 @@ public partial class MovesController : NetworkBehaviour
             return;
         }
 
-        battleItemStatus.AddStatus(ActionStatusType.Cooldown);
         battleItemStatus.Cooldown = battleItem.Cooldown;
+        battleItemStatus.AddStatus(ActionStatusType.Cooldown);
         UpdateBattleItemUI();
 
         onBattleItemUsed?.Invoke();
@@ -744,11 +746,11 @@ public partial class MovesController : NetworkBehaviour
 
     private void SelectBattleItem()
     {
-        BattleItemAsset selectedBattleItem = CharactersList.Instance.GetBattleItemByID(int.Parse(playerManager.LobbyPlayer.Data["BattleItem"].Value));
+        BattleItemAsset selectedBattleItem = GetSelectedBattleItem();
 
-        battleItem = BattleItemDatabase.GetBattleItem(selectedBattleItem.battleItemType);
+        battleItem = BattleItemDatabase.GetBattleItem(selectedBattleItem != null ? selectedBattleItem.battleItemType : AvailableBattleItems.None);
 
-        if (playerManager.IsLocalHuman) BattleUIManager.instance.InitializeBattleItemUI(selectedBattleItem);
+        if (playerManager.IsLocalHuman && selectedBattleItem != null && BattleUIManager.instance != null) BattleUIManager.instance.InitializeBattleItemUI(selectedBattleItem);
 
         battleItem.onBattleItemOver += OnBattleItemOver;
     }
@@ -962,6 +964,7 @@ public partial class MovesController : NetworkBehaviour
 
     public void IncrementUniteCharge(int amount)
     {
+        if (amount > 0) amount = Mathf.FloorToInt(amount * (1 + pokemon.GetPreciseStatChange(Stat.EnergyRate) / 100f));
         uniteMoveCharge = Mathf.Clamp(uniteMoveCharge + amount, 0, uniteMoveMaxCharge);
         if (uniteMoveCharge == uniteMoveMaxCharge && uniteMoveStatus.HasStatus(ActionStatusType.Cooldown))
         {
@@ -987,6 +990,7 @@ public partial class MovesController : NetworkBehaviour
 
     public override void OnDestroy()
     {
+        DisposeBattleItemRuntime();
         basicAttack?.Dispose();
         DisposeServerAttack();
         DisposeNinetalesRuntime();

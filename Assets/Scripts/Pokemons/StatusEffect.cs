@@ -1,7 +1,7 @@
 using System;
 using Unity.Netcode;
 
-public enum StatusType : byte { Immobilized, Incapacitated, Asleep, Frozen, Bound, Unstoppable, Invincible, Untargetable, HindranceResistance, Invisible, VisionObscuring, Scriptable, Burned, Poisoned, RedBuff, BlueBuff, SnowMarked, FutureSightMarked }
+public enum StatusType : byte { Immobilized, Incapacitated, Asleep, Frozen, Bound, Unstoppable, Invincible, Untargetable, HindranceResistance, Invisible, VisionObscuring, Scriptable, Burned, Poisoned, RedBuff, BlueBuff, SnowMarked, FutureSightMarked, SpeedReductionImmunity, BattleItemStasis }
 
 public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
 {
@@ -47,6 +47,9 @@ public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
         serializer.SerializeValue(ref SourceId);
         serializer.SerializeValue(ref HasSource);
     }
+
+    public bool IsHindrance() => Type == StatusType.Immobilized || Type == StatusType.Incapacitated
+        || Type == StatusType.Asleep || Type == StatusType.Frozen || Type == StatusType.Bound || Type == StatusType.VisionObscuring;
 
     public bool IsNegativeStatus()
     {

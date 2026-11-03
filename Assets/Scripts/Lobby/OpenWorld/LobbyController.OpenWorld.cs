@@ -54,13 +54,18 @@ public partial class LobbyController
         return !(staticMenu ?? !SettingsManager.AutoJoinOpenWorldLobby) && !hasSession;
     }
 
+    private static bool ShouldReloadHomeScene(string activeScene, string targetScene, int loadedSceneCount)
+    {
+        return activeScene != targetScene || loadedSceneCount != 1;
+    }
+
     private async Task LoadHomeAsync(bool? staticMenu = null)
     {
         await authenticationTask;
         await OpenWorldLobby.LeaveAsync();
         var useOpenWorld = ShouldUseOpenWorldLobby(staticMenu, session != null);
         var targetScene = useOpenWorld ? "ChineseLobby" : "LobbyScene";
-        if (SceneManager.GetActiveScene().name != targetScene)
+        if (ShouldReloadHomeScene(SceneManager.GetActiveScene().name, targetScene, SceneManager.sceneCount))
             await SceneManager.LoadSceneAsync(targetScene, LoadSceneMode.Single);
         if (!useOpenWorld)
         {

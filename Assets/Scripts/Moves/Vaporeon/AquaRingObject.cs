@@ -21,7 +21,7 @@ public class AquaRingObject : NetworkBehaviour
         this.targetId = targetId;
         healAmount = heal;
         target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetId].GetComponent<PlayerManager>();
-        target.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(target.Pokemon.GetMaxHp()*0.20f), 2, 1, 6f, true));
+        target.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(target.Pokemon.GetMaxHp()*0.20f), 2, 1, 6f, true).WithSource(heal.attackerId));
         target.Pokemon.OnShieldChange += CheckIfShouldBreakEarly;
         target.Pokemon.OnDeath += OnTargetDeath;
         initialized = true;

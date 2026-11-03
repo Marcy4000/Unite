@@ -141,6 +141,11 @@ public partial class MovesController
             if (hit == MarshadowHit.AuraFollowup && !cast.CooldownRewarded)
             {
                 cast.CooldownRewarded = true;
+                if (prefabLearnedMoves[1] != AvailableMoves.LockedMove)
+                {
+                    MoveBase followup = MoveDatabase.GetMove(prefabLearnedMoves[1]);
+                    if (followup != null) ReduceLegacyItemCooldown(MoveType.MoveB, followup.Cooldown * 0.3f);
+                }
                 MarshadowAuraRewardRPC(id);
             }
             if (hit == MarshadowHit.Rush && stage == 2 && upgraded && !cast.CooldownRewarded)

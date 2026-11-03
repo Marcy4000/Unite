@@ -25,6 +25,12 @@ public class HeldItemPicker : MonoBehaviour
 
         foreach (var item in CharactersList.Instance.HeldItems)
         {
+            if (item == null) continue;
+            if (item.heldItemID == AvailableHeldItems.RustedSword)
+            {
+                var character = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["SelectedCharacter"].Value));
+                if (character == null || character.pokemonName != "Zacian") continue;
+            }
             if (categoryDropdown.value != 0 && item.heldItemID != AvailableHeldItems.None)
             {
                 if (categoryDropdown.value >= 1 && categoryDropdown.value <= 2)

@@ -139,6 +139,7 @@ public partial class MovesController
                 effect.RecastReady += () => { if (generation == prefabGenerations[slot]) PrefabExecutionStateRPC(move, false); };
                 effect.Completed += _ => { if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition); };
             }
+            playerManager.HeldItemManager?.OnMove((MoveType)slot);
             effect.Initialize(playerManager, castDirection, target, upgraded);
             PrefabLoadFinishedRPC(move);
         };
@@ -202,6 +203,7 @@ public partial class MovesController
         int index = (int)slot;
         double now = NetworkManager.ServerTime.Time;
         prefabNextCast[index] = now + Math.Max(0, prefabNextCast[index] - now) * (1 - fraction);
+        ReduceLegacyItemCooldown(slot, (float)Math.Max(0, legacyItemNextCast[index] - now) * fraction);
         ReduceMoveCooldownFractionRPC(slot, fraction);
     }
 

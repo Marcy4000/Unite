@@ -41,6 +41,8 @@ public class GoalZone : NetworkBehaviour
     public const ushort GoalSpeedId = 64991;
     private StatChange statChange = new StatChange(60, Stat.Speed, 0, false, true, true, GoalSpeedId);
     private float nextHeal;
+    private readonly NetworkVariable<int> battleItemHack = new NetworkVariable<int>();
+    private double battleItemHackExpiresAt;
     private readonly HashSet<PlayerManager> boostedPlayers = new();
     public bool ProvidesDefense => GoalStatus == GoalStatus.Active;
 
@@ -68,6 +70,7 @@ public class GoalZone : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         nextHeal = Time.time;
+        battleItemHack.OnValueChanged += HandleBattleItemHack;
         scoreText.color = GetTeamColor();
         DestroyUneededModels();
         scoreText.text = $"{maxScore - currentScore.Value}<color=\"white\">/{maxScore}";
@@ -124,7 +127,7 @@ public class GoalZone : NetworkBehaviour
         }
         if (goalZoneShield != null)
         {
-            if (defended) goalZoneShield.ShowShield();
+            if (defended && battleItemHack.Value >= 0) goalZoneShield.ShowShield();
             else goalZoneShield.HideShield();
         }
     }
@@ -140,6 +143,7 @@ public class GoalZone : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        battleItemHack.OnValueChanged -= HandleBattleItemHack;
         currentScore.OnValueChanged -= UpdateGraphics;
         goalStatus.OnValueChanged -= HandleGoalStatusChanged;
         isActive.OnValueChanged -= HandleActivationChanged;
@@ -253,9 +257,29 @@ public class GoalZone : NetworkBehaviour
         }
     }
 
+    public void ApplyGoalHacker(Team sourceTeam)
+    {
+        if (!IsServer || !IsSpawned || GoalStatus != GoalStatus.Active) return;
+        battleItemHackExpiresAt = NetworkManager.ServerTime.Time + 4;
+        int hack = sourceTeam == team ? 1 : -1;
+        if (battleItemHack.Value == hack) HandleBattleItemHack(hack, hack);
+        else battleItemHack.Value = hack;
+    }
+
+    private void HandleBattleItemHack(int previous, int current)
+    {
+        if (IsServer)
+        {
+            foreach (var player in playerManagerList)
+                if (Living(player)) player.Pokemon.RemoveShieldWithIDRPC(GoalShieldId);
+            nextHeal = Time.time;
+        }
+        RefreshDefense();
+    }
+
     private void HealOccupants()
     {
-        if (!ProvidesDefense) return;
+        if (!ProvidesDefense || battleItemHack.Value < 0) return;
         foreach (var player in playerManagerList)
         {
             if (Living(player) && player.CurrentTeam.IsOnSameTeam(team))
@@ -267,7 +291,7 @@ public class GoalZone : NetworkBehaviour
                 // Refresh, rather than accumulating several minutes of shield
                 // duration when a defender has stood here for a long time.
                 player.Pokemon.RemoveShieldWithIDRPC(GoalShieldId);
-                int amount = Mathf.FloorToInt(player.Pokemon.GetMaxHp() * shieldAmount);
+                int amount = Mathf.FloorToInt(player.Pokemon.GetMaxHp() * shieldAmount * (battleItemHack.Value > 0 ? 2 : 1));
                 player.Pokemon.AddShieldRPC(new ShieldInfo(amount, GoalShieldId, 0, 2.5f, true, (ushort)amount));
             }
         }
@@ -375,9 +399,10 @@ public class GoalZone : NetworkBehaviour
         {
             return;
         }
+        if (battleItemHack.Value != 0 && NetworkManager.ServerTime.Time >= battleItemHackExpiresAt) battleItemHack.Value = 0;
         if (Time.time >= nextHeal)
         {
-            nextHeal = Time.time + 1.5f;
+            nextHeal = Time.time + (battleItemHack.Value > 0 ? 0.5f : 1.5f);
             HealOccupants();
         }
 

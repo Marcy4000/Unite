@@ -74,11 +74,13 @@ public sealed class VaporShieldLease : IDisposable
     private Pokemon target;
     public ushort Id { get; private set; }
     public bool Intact => VaporMoveRuntime.Living(target) && target.HasShieldWithID(Id);
-    public VaporShieldLease(Pokemon target, int amount)
+    public VaporShieldLease(Pokemon target, int amount) : this(target, amount, null) { }
+    public VaporShieldLease(Pokemon target, int amount, Pokemon source)
     {
         this.target = target; Id = VaporEffectIds.Acquire();
         target.OnDeath += OnDeath;
-        target.AddShieldRPC(new ShieldInfo(amount, Id, 1, VaporMoveRules.RingDuration, false));
+        var shield = new ShieldInfo(amount, Id, 1, VaporMoveRules.RingDuration, false);
+        target.AddShieldRPC(source != null ? shield.WithSource(source.NetworkObjectId) : shield);
     }
     private void OnDeath(DamageInfo damage) { Dispose(); }
     public void Dispose()

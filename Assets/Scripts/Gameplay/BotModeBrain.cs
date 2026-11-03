@@ -96,7 +96,12 @@ public abstract class BotModeBrain : MonoBehaviour
         if (distance <= (moves.BasicAttack?.range ?? 2)) moves.TryPerformingBasicAttack(target.Type == PokemonType.Wild || target.Type == PokemonType.Objective);
         float health = player.Pokemon.CurrentHp / (float)Mathf.Max(1, player.Pokemon.GetMaxHp());
         bool item = moves.BattleItem is Potion ? health < .6f : moves.BattleItem is XAttack ? distance < 6 :
-            moves.BattleItem is XSpeed ? !anchored && distance > 4 : moves.BattleItem is EjectButton ? !anchored && health < .2f && target.Type == PokemonType.Player : false;
+            moves.BattleItem is XSpeed ? !anchored && distance > 4 :
+            moves.BattleItem is FluffyTail ? target.Type != PokemonType.Player && distance <= BattleItemRules.TargetRange :
+            moves.BattleItem is SlowSmoke ? distance <= BattleItemRules.SmokeRadius :
+            moves.BattleItem is ShedinjaDoll ? health < .2f :
+            moves.BattleItem is FullHeal ? player.Pokemon.HasAnyStatusEffect(new[] { StatusType.Incapacitated, StatusType.Frozen, StatusType.Asleep, StatusType.Bound, StatusType.Immobilized }) :
+            moves.BattleItem is EjectButton ? !anchored && health < .2f && target.Type == PokemonType.Player : false;
         if (item && moves.BattleItemStatus.HasStatus(ActionStatusType.None))
         {
             if (moves.BattleItem is EjectButton) player.Aim.SetBotAim(null, transform.position + (transform.position - target.transform.position).normalized * 5);

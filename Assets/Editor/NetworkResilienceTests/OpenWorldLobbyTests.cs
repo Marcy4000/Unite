@@ -61,6 +61,25 @@ public class OpenWorldLobbyTests
         Assert.That(GameType("LobbyController").GetMethod("IsHomeScene").Invoke(null, new object[] { name }), Is.EqualTo(expected));
     }
 
+    [TestCase("LobbyScene", "LobbyScene", 1, false)]
+    [TestCase("ChineseLobby", "ChineseLobby", 1, false)]
+    [TestCase("LobbyScene", "LobbyScene", 2, true)]
+    [TestCase("LobbyScene", "LobbyScene", 3, true)]
+    [TestCase("ChineseLobby", "ChineseLobby", 2, true)]
+    [TestCase("LobbyScene", "ChineseLobby", 1, true)]
+    [TestCase("ChineseLobby", "LobbyScene", 1, true)]
+    [TestCase("GameResults", "LobbyScene", 2, true)]
+    [TestCase("RacingGameResults", "LobbyScene", 2, true)]
+    [TestCase("UniteRoyaleGameResults", "LobbyScene", 2, true)]
+    public void ReturningHomeReloadsWhenResultsAreStillLoaded(string activeScene, string targetScene,
+        int loadedSceneCount, bool expected)
+    {
+        var method = GameType("LobbyController").GetMethod("ShouldReloadHomeScene",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.That(method, Is.Not.Null);
+        Assert.That(method.Invoke(null, new object[] { activeScene, targetScene, loadedSceneCount }), Is.EqualTo(expected));
+    }
+
     [Test]
     public void MigrationRestoresOnlyValidStablePlayerRecords()
     {

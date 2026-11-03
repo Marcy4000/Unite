@@ -14,10 +14,15 @@ public partial class BotBrain
             moves.BattleItem is XSpeed ? State == BotState.Retreat || (enemy != null && FlatDistance(enemy.transform.position, transform.position) > 4) :
             moves.BattleItem is EjectButton ? State != BotState.Recover && health < 0.22f && enemy != null :
             moves.BattleItem is GoalGetter ? State == BotState.Score && player.CurrentEnergy >= 15 :
+            moves.BattleItem is GoalHacker ? player.GoalZone != null && (State == BotState.Score || health < 0.6f) :
+            moves.BattleItem is FluffyTail ? target != null && target.Type != PokemonType.Player && FlatDistance(target.transform.position, transform.position) <= BattleItemRules.TargetRange :
+            moves.BattleItem is SlowSmoke ? enemy != null && FlatDistance(enemy.transform.position, transform.position) <= BattleItemRules.SmokeRadius :
+            moves.BattleItem is ShedinjaDoll ? enemy != null && health < 0.2f :
             moves.BattleItem is XAttack || moves.BattleItem is BrickLol ? enemy != null && FlatDistance(enemy.transform.position, transform.position) < 6 : false;
         if (!use) return;
-        player.Aim.SetBotAim(moves.BattleItem is EjectButton ? null : enemy?.Pokemon,
-            moves.BattleItem is EjectButton ? transform.position + (transform.position - enemy.transform.position).normalized * 5 : destination);
+        player.Aim.SetBotAim(moves.BattleItem is EjectButton ? null : moves.BattleItem is FluffyTail ? target : enemy?.Pokemon,
+            moves.BattleItem is EjectButton ? transform.position + (transform.position - enemy.transform.position).normalized * 5 :
+            moves.BattleItem is GoalHacker ? player.GoalZone.transform.position : destination);
         moves.TryUsingBattleItem();
         moves.BattleItem.Update();
         moves.TryFinishingBattleItem();

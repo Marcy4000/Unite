@@ -127,6 +127,7 @@ public partial class DuraBoostedObj
             if (pulseBonusAttacks <= 0) return;
             pulseBonusAttacks--;
             bonusSerial = attackSerial;
+            duraludon.MovesController.ReduceLegacyItemCooldown(MoveType.MoveA, 1.5f);
             ReducePulseCooldownRPC(1.5f);
         }
         if (bonusTargets.Add(targetId))
@@ -164,7 +165,9 @@ public partial class DuraBoostedObj
         pulseBonusAttacks = 3;
         pulseBonusExpires = Time.time + 8f;
         bonusSerial = -1;
-        ReducePulseCooldownRPC(DuraMoveRules.PulseCooldown * (1f - duraludon.Pokemon.GetCDR() / 100f) * 0.3f);
+        float reduction = DuraMoveRules.PulseCooldown * (1f - duraludon.Pokemon.GetCDR() / 100f) * 0.3f;
+        duraludon.MovesController.ReduceLegacyItemCooldown(MoveType.MoveA, reduction);
+        ReducePulseCooldownRPC(reduction);
         if (upgraded && playersKnockedOut > 0)
             duraludon.Pokemon.HealDamageRPC(Mathf.RoundToInt(duraludon.Pokemon.GetMaxHp() * 0.08f * playersKnockedOut));
     }

@@ -13,6 +13,8 @@ public abstract class HeldItemBase
     public abstract void Update();
 
     public abstract void Reset();
+
+    public virtual void Dispose() { }
 }
 
 public enum AvailableHeldItems : byte
@@ -35,7 +37,21 @@ public enum AvailableHeldItems : byte
     ResonantGuard,
     DrainCrown,
     RazorClaw,
-    ScopeLens
+    ScopeLens,
+    AssaultVest,
+    WeaknessPolicy,
+    ExpShare,
+    ScoreShield,
+    RescueHood,
+    SlickSpoon,
+    CurseBangle,
+    CurseIncense,
+    ChargingCharm,
+    AccelBracer,
+    DriveLens,
+    BigRoot,
+    VanguardBell,
+    RustedSword
 }
 
 public static class HeldItemDatabase
@@ -85,24 +101,31 @@ public static class HeldItemDatabase
             case AvailableHeldItems.ScopeLens:
                 return new ScopeLens();
             default:
-                return new EmptyHeldItem();
+                return System.Enum.IsDefined(typeof(AvailableHeldItems), heldItem)
+                    ? new HeldItemRuntime(heldItem) : new EmptyHeldItem();
         }
     }
 
     public static string SerializeHeldItems(byte[] heldItemsIds)
     {
-        return System.Convert.ToBase64String(heldItemsIds);
+        return System.Convert.ToBase64String(heldItemsIds ?? System.Array.Empty<byte>());
     }
 
     public static List<HeldItemInfo> DeserializeHeldItems(string heldItemsIds)
     {
-        byte[] itemIDs = System.Convert.FromBase64String(heldItemsIds);
-
         List<HeldItemInfo> items = new List<HeldItemInfo>();
-
-        foreach (byte id in itemIDs)
+        if (CharactersList.Instance == null) return items;
+        byte[] itemIDs = System.Array.Empty<byte>();
+        if (!string.IsNullOrEmpty(heldItemsIds) && heldItemsIds.Length <= 16)
+            try { itemIDs = System.Convert.FromBase64String(heldItemsIds); }
+            catch (System.FormatException) { }
+        var equipped = new HashSet<AvailableHeldItems>();
+        HeldItemInfo empty = CharactersList.Instance.GetHeldItemByID(0);
+        for (int slot = 0; slot < MAX_HELD_ITEMS; slot++)
         {
-            items.Add(CharactersList.Instance.GetHeldItemByID(id));
+            HeldItemInfo item = slot < itemIDs.Length ? CharactersList.Instance.GetHeldItemByID(itemIDs[slot]) : empty;
+            if (item == null || (item.heldItemID != AvailableHeldItems.None && !equipped.Add(item.heldItemID))) item = empty;
+            if (item != null) items.Add(item);
         }
 
         return items;

@@ -13,12 +13,9 @@ MonoBehaviour:
   m_Name: BuddyBarrier
   m_EditorClassIdentifier: 
   heldItemName: Buddy Barrier
-  description: Grant a shield to you and a nearby ally with the lowest HP for 15%/20%/25%
-    of your max HP when using your Unite Move. This shield does not get replaced
-    if you are targeted from another ally, but instead refreshes the duration of
-    your current shield.
+  description: "Using a Unite Move shields you and the nearby ally with the lowest current HP for 25% of your maximum HP for 5 seconds. Shields refresh rather than stack. Cooldown: 30 seconds."
   heldItemCategory: 2
-  damageType: 2
+  damageType: 0
   heldItemID: 14
   icon: {fileID: 21300000, guid: 6157247a78701fa458f0b36476e7696a, type: 3}
   statBoosts:

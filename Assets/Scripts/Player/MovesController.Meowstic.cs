@@ -89,6 +89,7 @@ public partial class MovesController
         meowsticActionUntil = MeowsticNow + MeowsticMoveRules.Commitment(kind);
         meowsticNextCast[slot] = MeowsticNow + (slot == 2 ? 6.35f : MeowsticMoveRules.Cooldown(kind) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
         bool upgraded = MeowsticMoveRules.Upgraded(kind, pokemon.CurrentLevel);
+        playerManager.HeldItemManager?.OnMove((MoveType)slot);
         var scope = new MeowsticScope(this);
         switch (kind)
         {
@@ -391,7 +392,7 @@ public partial class MovesController
                     leases.Add(new MeowsticModifier(target, Stat.Cdr, 10, percentage: false, family: 7));
                     if (granted.Add(target.NetworkObjectId))
                     {
-                        scope.Own(new MeowsticShield(target, (float)(end - MeowsticNow)));
+                        scope.Own(new MeowsticShield(target, (float)(end - MeowsticNow), pokemon));
                         ShowMeowsticEffect(MeowsticEffect.Pulse, target.transform.position, transform.forward, 0.35f, target.NetworkObjectId, 1);
                     }
                 }

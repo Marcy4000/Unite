@@ -67,6 +67,7 @@ public partial class MovesController
         int slot = CresseliaMoveRules.Slot(move);
         if (Time.time + 0.12f < cresseliaNextCast[slot]) return;
         cresseliaNextCast[slot] = Time.time + CresseliaMoveRules.Cooldown(move) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
+        playerManager.HeldItemManager?.OnMove((MoveType)slot);
         direction = CresseliaMoveRules.Direction(direction, transform.forward);
         bool upgraded = CresseliaMoveRules.Upgraded(move, pokemon.CurrentLevel);
         if (CresseliaMoveRules.IsSupport(move))
@@ -247,7 +248,7 @@ public partial class MovesController
 
     private IEnumerator CresseliaBlessing(Pokemon target, int amount)
     {
-        var lease = new CresseliaShieldLease(target, amount);
+        var lease = new CresseliaShieldLease(target, amount, pokemon);
         cresseliaShields.Add(lease);
         int visual = ShowCresseliaEffect(CresseliaEffect.LunarShield, target.transform.position, transform.forward,
             CresseliaMoveRules.BlessingDuration, target.NetworkObjectId, amount, lease.Id);
@@ -308,6 +309,7 @@ public partial class MovesController
 
     public override void OnNetworkDespawn()
     {
+        DisposeBattleItemRuntime();
         DisposeEspeonRuntime();
         DisposeZoroarkRuntime();
         DisposeNinetalesRuntime();
@@ -352,12 +354,14 @@ public sealed class CresseliaShieldLease : IDisposable
     public ushort Id { get; }
     public int Remaining => !disposed && !dead && CresseliaMoveRuntime.Living(target) ? target.GetShieldWithID(Id)?.Amount ?? 0 : 0;
     public bool Intact => Remaining > 0;
-    public CresseliaShieldLease(Pokemon target, int amount)
+    public CresseliaShieldLease(Pokemon target, int amount) : this(target, amount, null) { }
+    public CresseliaShieldLease(Pokemon target, int amount, Pokemon source)
     {
         this.target = target; Id = CresseliaEffectIds.Acquire();
         target.OnDeath += OnDeath;
         // Conversion is the sole expiry owner, independent of VFX and shield timer ordering.
-        target.AddShieldRPC(new ShieldInfo(amount, Id, 0, CresseliaMoveRules.BlessingDuration, false));
+        var shield = new ShieldInfo(amount, Id, 0, CresseliaMoveRules.BlessingDuration, false);
+        target.AddShieldRPC(source != null ? shield.WithSource(source.NetworkObjectId) : shield);
     }
     private void OnDeath(DamageInfo damage) { dead = true; Dispose(); }
     public void Dispose()

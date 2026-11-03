@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: RazorClaw
   m_EditorClassIdentifier: 
   heldItemName: Razor Claw
-  description: "After using a move, the next basic attack deals (10/15/20 + 40%/45%/50%
-    Attack) additional damage to 1 target. This buff lasts for 3s. While this item
-    is held by a Melee Pok\xE9mon, this basic attack also slows enemies by 30% for
-    1s (1.5s cooldown)."
+  description: "After a move, the next basic hit within 3 seconds adds 20 + 50% Attack physical damage. Melee users also slow the target by 30% for 1 second. Cooldown: 1.5 seconds."
+  heldItemCategory: 0
+  damageType: 0
   heldItemID: 17
   icon: {fileID: 21300000, guid: 727e965bc93764649abed4919ade8a09, type: 3}
   statBoosts:
@@ -24,5 +23,5 @@ MonoBehaviour:
     BoostAmount: 15
     IsPercentage: 0
   - AffectedStat: 4
-    BoostAmount: 2
+    BoostAmount: 2.1
     IsPercentage: 0

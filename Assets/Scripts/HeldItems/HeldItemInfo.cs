@@ -19,7 +19,7 @@ public class HeldItemInfo : ScriptableObject
             foreach (HeldItemStatBoost boost in StatBoosts)
             {
                 if (boost == null) continue;
-                desc += $"\n{boost.AffectedStat} +{boost.BoostAmount}{(boost.IsPercentage ? "%" : "")}";
+                desc += $"\n{boost.AffectedStat} +{boost.BoostAmount}{(boost.DisplaysPercentage ? "%" : "")}";
             }
             return desc;
         }
@@ -43,6 +43,8 @@ public class HeldItemInfo : ScriptableObject
 public class HeldItemStatBoost
 {
     public Stat AffectedStat;
-    public short BoostAmount;
+    public float BoostAmount;
     public bool IsPercentage;
+    public bool DisplaysPercentage => IsPercentage || AffectedStat == Stat.CritRate || AffectedStat == Stat.Cdr
+        || AffectedStat == Stat.AtkSpeed || AffectedStat == Stat.CritModifier || AffectedStat == Stat.EnergyRate;
 }

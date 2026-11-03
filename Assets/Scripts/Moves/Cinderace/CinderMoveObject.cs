@@ -150,7 +150,7 @@ public class CinderMoveObject : NetworkBehaviour
                         if (kind == CinderCast.Basic)
                         {
                             // Resolve once, before computing the total wild damage cap.
-                            if ((damage.proprieties & DamageProprieties.CanCrit) != 0 && Random.Range(0, 100) < actor.Pokemon.GetCritRate())
+                            if ((damage.proprieties & DamageProprieties.CanCrit) != 0 && actor.Pokemon.RollCriticalHit())
                                 damage.proprieties |= DamageProprieties.WasCriticalHit;
                             damage.proprieties &= ~DamageProprieties.CanCrit;
                             if (target.Type != PokemonType.Player)

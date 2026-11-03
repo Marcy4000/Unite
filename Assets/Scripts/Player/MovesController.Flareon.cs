@@ -206,6 +206,7 @@ public partial class MovesController
             flareonActionUntil = FlareonNow + FlareonMoveRules.Recovery(kind);
             if (!slam) flareonNextCast[slot] = FlareonNow + (slot == 2 ? 1 : FlareonMoveRules.Cooldown(kind) * Math.Max(0.01, 1 - pokemon.GetCDR() / 100f));
             effect.HoldAsset(handle); go.GetComponent<NetworkObject>().Spawn(true);
+            if (!slam) playerManager.HeldItemManager?.OnMove((MoveType)slot);
             effect.Initialize(this, playerManager, kind, cast, aim, target, FlareonMoveRules.Upgraded(kind, pokemon.CurrentLevel));
             AcceptFlareonRPC(kind, cast, true, point);
         };

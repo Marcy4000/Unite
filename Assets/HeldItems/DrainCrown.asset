@@ -13,16 +13,15 @@ MonoBehaviour:
   m_Name: DrainCrown
   m_EditorClassIdentifier: 
   heldItemName: Drain Crown
-  description: 'Restores HP equal to 7%/10%/13% of damage dealt by auto attacks that
-    are Attack damage (ie: not true damage).'
-  heldItemCategory: 3
+  description: "Attack-based basic attacks restore 15% of actual HP damage dealt. Shield damage and overkill do not grant healing."
+  heldItemCategory: 0
   damageType: 0
   heldItemID: 16
   icon: {fileID: 21300000, guid: 574eac1c04248f944a289a95eec33464, type: 3}
   statBoosts:
-  - AffectedStat: 0
-    BoostAmount: 18
-    IsPercentage: 0
   - AffectedStat: 10
     BoostAmount: 120
+    IsPercentage: 0
+  - AffectedStat: 0
+    BoostAmount: 18
     IsPercentage: 0

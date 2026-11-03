@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e9da8fee8302b34283a0d5474956750, type: 3}
   m_Name: RapidFireScarf
   m_EditorClassIdentifier: 
-  heldItemName: Rapid-Fire Scarf
-  description: Every instance of auto attack damage applies a hidden "stack" for
-    3s. Stacks up to 3 times and the duration can be refreshed before it expires.
-    The 3rd stack increases auto attack speed by 15%/22.5%/30% for 5s (10s cooldown).
+  heldItemName: Rapid Fire Scarf
+  description: "Three basic attack hits within 3 seconds grant 25 percentage points of attack speed for 5 seconds. Cooldown: 10 seconds."
+  heldItemCategory: 0
+  damageType: 0
   heldItemID: 10
   icon: {fileID: 21300000, guid: 17e19a60a98f6f04aa8559687b703485, type: 3}
   statBoosts:
@@ -24,4 +24,4 @@ MonoBehaviour:
     IsPercentage: 0
   - AffectedStat: 7
     BoostAmount: 9
-    IsPercentage: 1
+    IsPercentage: 0

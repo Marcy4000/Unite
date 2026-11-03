@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e9da8fee8302b34283a0d5474956750, type: 3}
+  m_Name: ChargingCharm
+  m_EditorClassIdentifier: 
+  heldItemName: Charging Charm
+  description: "Movement grants one energy per unit traveled; each basic hit grants 9. At 100 energy, the next hit adds 40 + 70% Attack physical damage and consumes the energy."
+  heldItemCategory: 0
+  damageType: 0
+  heldItemID: 27
+  icon: {fileID: 21300000, guid: 4ba4fa90c4febb78881b83e2042a2d43, type: 3}
+  statBoosts:
+  - AffectedStat: 0
+    BoostAmount: 15
+    IsPercentage: 0
+  - AffectedStat: 8
+    BoostAmount: 120
+    IsPercentage: 0

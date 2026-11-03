@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: ResonantGuard
   m_EditorClassIdentifier: 
   heldItemName: Resonant Guard
-  description: "Grants a shield for 60/80/100 + 4%/5%/6% of your max HP that lasts
-    for 3 seconds to the user and a nearby ally with the lowest HP when dealing damage
-    to opposing Pok\xE9mon. This effect goes on cooldown for 10s after it\u2019s
-    triggered."
-  heldItemCategory: 2
-  damageType: 2
+  description: "Damaging an enemy player shields you and the nearby ally with the lowest current HP for 100 + 6% of your maximum HP for 3 seconds. Shields refresh rather than stack. Cooldown: 10 seconds."
+  heldItemCategory: 1
+  damageType: 0
   heldItemID: 15
   icon: {fileID: 21300000, guid: 2e8cb9d7b6231a94799ddf80de674cbb, type: 3}
   statBoosts:
   - AffectedStat: 10
     BoostAmount: 450
+    IsPercentage: 0
+  - AffectedStat: 15
+    BoostAmount: 18
     IsPercentage: 0

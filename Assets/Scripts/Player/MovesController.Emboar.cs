@@ -211,6 +211,7 @@ public partial class MovesController
             emboarActionUntil = EmboarNow + EmboarMoveRules.Recovery(kind);
             emboarNextCast[slot] = EmboarNow + (slot == 2 ? 1 : EmboarMoveRules.Cooldown(kind, upgraded) * Math.Max(0.01, 1 - pokemon.GetCDR() / 100f));
             effect.HoldAsset(handle); go.GetComponent<NetworkObject>().Spawn(true);
+            playerManager.HeldItemManager?.OnMove((MoveType)slot);
             effect.Initialize(this, playerManager, kind, cast, aim, point, target, upgraded, empowered);
             AcceptEmboarRPC(kind, cast, true, empowered, point);
         };

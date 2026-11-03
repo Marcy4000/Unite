@@ -2,6 +2,8 @@ using DG.Tweening;
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class BrickObject : NetworkBehaviour
 {
@@ -14,6 +16,13 @@ public class BrickObject : NetworkBehaviour
 
     private Team teamToIgnore;
     private Vector3 landPosition;
+    private bool initialized;
+    private Tween flight;
+    private Tween spin;
+    private Tween delay;
+    private AsyncOperationHandle<GameObject> assetHandle;
+
+    public void HoldAsset(AsyncOperationHandle<GameObject> handle) => assetHandle = handle;
 
     private void Start()
     {
@@ -41,24 +50,26 @@ public class BrickObject : NetworkBehaviour
         );
 
         // Rotate the modelHolder to the random rotation over a specified duration
-        modelHolder.DORotate(randomRotation, rotationDuration, RotateMode.FastBeyond360)
+        spin = modelHolder.DORotate(randomRotation, rotationDuration, RotateMode.FastBeyond360)
                    .SetEase(Ease.InOutSine) // Smooth easing for a natural feel
                    .OnComplete(() =>
                    {
                        // Add a delay and then rotate again
-                       DOVirtual.DelayedCall(delayBetweenRotations, RotateRandomly);
+                       delay = DOVirtual.DelayedCall(delayBetweenRotations, RotateRandomly);
                    });
     }
 
-    [Rpc(SendTo.Server)]
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Server)]
     public void InitializeRPC(Vector3 startPosition, Vector3 landPosition, Team teamToIgnore, DamageInfo damage)
     {
+        if (initialized || !IsSpawned || !BattleItemRules.Finite(startPosition) || !BattleItemRules.Finite(landPosition)) return;
+        initialized = true;
         this.teamToIgnore = teamToIgnore;
         this.landPosition = landPosition;
         this.damage = damage;
         transform.position = startPosition;
 
-        transform.DOJump(landPosition, 2f, 1, 1f)
+        flight = transform.DOJump(landPosition, 2f, 1, 1f)
                  .OnComplete(() =>
                  {
                      StartCoroutine(DoDamage());
@@ -67,11 +78,10 @@ public class BrickObject : NetworkBehaviour
 
     private IEnumerator DoDamage()
     {
-        GameObject[] enemiesHit = Aim.Instance.AimInCircleAtPosition(landPosition, 2f, AimTarget.NonAlly, teamToIgnore);
-
-        foreach (GameObject enemy in enemiesHit)
+        foreach (Pokemon pokemon in CombatTargeting.SphereTargets(landPosition, 2f))
         {
-            if (enemy.TryGetComponent(out Pokemon pokemon))
+            if (pokemon.CurrentHp > 0 && !pokemon.TeamMember.IsOnSameTeam(teamToIgnore)
+                && !pokemon.HasStatusEffect(StatusType.Invincible) && !pokemon.HasStatusEffect(StatusType.Untargetable))
             {
                 pokemon.TakeDamageRPC(damage);
                 pokemon.AddStatusEffect(stun);
@@ -81,5 +91,23 @@ public class BrickObject : NetworkBehaviour
         yield return new WaitForSeconds(0.1f);
 
         NetworkObject.Despawn(true);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        flight?.Kill();
+        spin?.Kill();
+        delay?.Kill();
+        StopAllCoroutines();
+        base.OnNetworkDespawn();
+    }
+
+    public override void OnDestroy()
+    {
+        flight?.Kill();
+        spin?.Kill();
+        delay?.Kill();
+        if (assetHandle.IsValid()) Addressables.Release(assetHandle);
+        base.OnDestroy();
     }
 }

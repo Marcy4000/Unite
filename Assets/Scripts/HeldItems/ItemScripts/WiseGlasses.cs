@@ -1,20 +1,4 @@
-public class WiseGlasses : HeldItemBase
+public class WiseGlasses : HeldItemRuntime
 {
-    private StatChange spAtkBoost = new StatChange(7, Stat.SpAttack, 0f, false, true, true, 0, false);
-
-    public override void Initialize(PlayerManager controller)
-    {
-        base.Initialize(controller);
-        playerManager.Pokemon.AddStatChange(spAtkBoost);
-    }
-
-    public override void Update()
-    {
-        // Nothing
-    }
-
-    public override void Reset()
-    {
-        // Nothing
-    }
+    public WiseGlasses() : base(AvailableHeldItems.WiseGlasses) { }
 }

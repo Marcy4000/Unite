@@ -117,7 +117,7 @@ public class CharactersList : MonoBehaviour
 
     public BattleItemAsset GetBattleItemByID(int id)
     {
-        if (id > battleItems.Length)
+        if (battleItems == null || id < 0 || id >= battleItems.Length)
         {
             return null;
         }
@@ -146,9 +146,9 @@ public class CharactersList : MonoBehaviour
 
     public HeldItemInfo GetHeldItemByID(int id)
     {
-        if (id > heldItems.Length)
+        if (heldItems == null || id < 0 || id >= heldItems.Length)
         {
-            return heldItems[0];
+            return null;
         }
 
         return heldItems[id];

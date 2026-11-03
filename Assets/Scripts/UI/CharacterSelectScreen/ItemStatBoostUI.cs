@@ -9,6 +9,6 @@ public class ItemStatBoostUI : MonoBehaviour
     public void Initialize(HeldItemStatBoost statBoost)
     {
         statName.text = statBoost.AffectedStat.ToString();
-        statValue.text = $"+{statBoost.BoostAmount}" + (statBoost.IsPercentage ? "%" : "");
+        statValue.text = $"+{statBoost.BoostAmount}" + (statBoost.DisplaysPercentage ? "%" : "");
     }
 }

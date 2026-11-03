@@ -13,10 +13,9 @@ MonoBehaviour:
   m_Name: MuscleBand
   m_EditorClassIdentifier: 
   heldItemName: Muscle Band
-  description: "Deal additional damage with auto attacks by 1%/2%/3% of the target's
-    remaining HP, capped against players at 120/240/360. This additional damage can
-    only happen once per instance and only the first Pok\xE9mon hit by this instance
-    will receive damage from this item."
+  description: "Basic attacks add physical damage equal to 3% of the target's remaining HP, capped at 360 against enemy players."
+  heldItemCategory: 0
+  damageType: 0
   heldItemID: 7
   icon: {fileID: 21300000, guid: e460743435e44a14f92a1d66f0cc2490, type: 3}
   statBoosts:
@@ -24,5 +23,5 @@ MonoBehaviour:
     BoostAmount: 15
     IsPercentage: 0
   - AffectedStat: 7
-    BoostAmount: 7
-    IsPercentage: 1
+    BoostAmount: 7.5
+    IsPercentage: 0

@@ -22,6 +22,7 @@ public partial class MovesController
         // This server guard also prevents duplicate begin messages within a cast.
         cresseliaNextUnite = Time.time + CresseliaMoveRules.FlightDuration + CresseliaMoveRules.LandingDuration;
         cresseliaUniteAirborne = true; cresseliaUniteLanding = false;
+        playerManager.HeldItemManager?.OnMove(MoveType.UniteMove);
         cresseliaFlightStarted = CresseliaNow;
         // Owner-predicted ascent may already have replicated before this RPC.
         // Never add flight height to an already airborne authoritative transform.

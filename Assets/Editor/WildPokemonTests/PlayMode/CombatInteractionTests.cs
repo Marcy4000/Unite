@@ -562,15 +562,17 @@ public abstract class CombatInteractionTests
         Observe(pokemon, "OnHealingDone", args => healingDone += (int)args[0]);
         Call(item, "Initialize", player);
         Hp(pokemon, 600);
-        Assert.That(Get(pokemon, "CurrentHp"), Is.EqualTo(1200), "The immediate heal must not recursively start another recovery.");
-        Assert.That(healingDone, Is.EqualTo(600), "Held-item recovery must count as self-healing.");
+        Call(item, "Update");
+        Assert.That(Get(pokemon, "CurrentHp"), Is.EqualTo(1128), "The immediate heal uses missing HP and must not recursively start another recovery.");
+        Assert.That(healingDone, Is.EqualTo(528), "Held-item recovery must count as self-healing.");
         Call(pokemon, "TakeDamageRPC", Damage(source, 2000, "True"));
         Assert.That(Get(pokemon, "CurrentHp"), Is.Zero);
         Call(pokemon, "RestoreHealthOnRespawnRPC", Activator.CreateInstance(T("Unity.Netcode.RpcParams")));
         Call(pokemon, "TakeDamageRPC", Damage(source, 1000, "True"));
         yield return new WaitForSeconds(1.1f);
+        Call(item, "Update");
         Assert.That(Get(pokemon, "CurrentHp"), Is.EqualTo(4000), "The old recovery must not resume in a new life.");
-        Assert.That(healingDone, Is.EqualTo(600), "Death and respawn must not add healing credit.");
+        Assert.That(healingDone, Is.EqualTo(528), "Death and respawn must not add healing credit.");
     }
 
     [UnityTest]

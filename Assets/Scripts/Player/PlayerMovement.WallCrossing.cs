@@ -33,6 +33,7 @@ public partial class PlayerMovement
 
     public override void OnNetworkDespawn()
     {
+        if (pokemon != null) pokemon.OnBattleItemStatusChange -= UpdateSpeed;
         teleportGeneration++;
         isDashing = false;
         SetDashWallCollisionOverride(false);

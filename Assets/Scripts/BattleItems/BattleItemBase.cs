@@ -22,17 +22,19 @@ public abstract class BattleItemBase
 
     public virtual void Finish()
     {
-        onBattleItemOver?.Invoke();
+        if (!IsActive) return;
         IsActive = false;
+        onBattleItemOver?.Invoke();
     }
 
     public virtual void Cancel()
     {
         IsActive = false;
+        wasUseSuccessful = false;
     }
 }
 
-public enum AvailableBattleItems { None, Eject, XSpeed, XAttack, FullHeal, GoalGetter, Potion, SlowSmoke, ShedinjaDoll, Brick }
+public enum AvailableBattleItems { None, Eject, XSpeed, XAttack, FullHeal, GoalGetter, Potion, SlowSmoke, ShedinjaDoll, Brick, FluffyTail, GoalHacker }
 
 public static class BattleItemDatabase
 {
@@ -55,9 +57,13 @@ public static class BattleItemDatabase
             case AvailableBattleItems.Potion:
                 return new Potion();
             case AvailableBattleItems.SlowSmoke:
-                //return new SlowSmoke();
+                return new SlowSmoke();
             case AvailableBattleItems.ShedinjaDoll:
-            //return new ShedinjaDoll();
+                return new ShedinjaDoll();
+            case AvailableBattleItems.FluffyTail:
+                return new FluffyTail();
+            case AvailableBattleItems.GoalHacker:
+                return new GoalHacker();
             case AvailableBattleItems.Brick:
                 return new BrickLol();
             default:

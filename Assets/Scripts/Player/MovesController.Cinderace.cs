@@ -200,6 +200,7 @@ public partial class MovesController
                 cinderActionUntil = CinderNow + (kind == CinderCast.BlazeKick ? 0.5 : CinderMoveRules.Dash(kind) ? 0.2 : CinderMoveRules.Recovery(kind));
                 cinderNextCast[CinderMoveRules.Slot(kind)] = CinderNow + Math.Max(0.25, CinderMoveRules.Cooldown(kind) * (1 - pokemon.GetCDR() / 100f));
                 AcceptCinderaceRPC(kind, cast, true);
+                playerManager.HeldItemManager?.OnMove((MoveType)CinderMoveRules.Slot(kind));
             }
             effect.Initialize(this, playerManager, kind, cast, direction, target, upgraded, boosted, heal, slow);
         };

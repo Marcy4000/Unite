@@ -116,6 +116,7 @@ public partial class Pokemon : NetworkBehaviour
         statusEffects = new NetworkList<StatusEffect>();
         shields = new NetworkList<ShieldInfo>();
         statChanges.OnListChanged += OnStatListChanged;
+        statusEffects.OnListChanged += OnBattleItemStatusListChanged;
         shields.OnListChanged += OnShieldListChanged;
     }
 
@@ -251,12 +252,12 @@ public partial class Pokemon : NetworkBehaviour
     public int GetMaxHp(int level)
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.MaxHp && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -266,28 +267,28 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.MaxHp && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueHp = baseStats.MaxHp[level] + flatModifierSum;
+        float trueHp = baseStats.MaxHp[level] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueHp = Mathf.RoundToInt(trueHp * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueHp, 0, 99999);
+        return Mathf.RoundToInt(Mathf.Clamp(trueHp, 0, 99999));
     }
 
     public int GetAttack()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.Attack && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -297,28 +298,28 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.Attack && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueAtk = baseStats.Attack[currentLevel.Value] + flatModifierSum;
+        float trueAtk = baseStats.Attack[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueAtk = Mathf.RoundToInt(trueAtk * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueAtk, 0, 2000);
+        return Mathf.RoundToInt(Mathf.Clamp(trueAtk, 0, 2000));
     }
 
     public int GetDefense()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.Defense && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -328,28 +329,28 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.Defense && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueDef = baseStats.Defense[currentLevel.Value] + flatModifierSum;
+        float trueDef = baseStats.Defense[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueDef = Mathf.RoundToInt(trueDef * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueDef, 0, 999999);
+        return Mathf.RoundToInt(Mathf.Clamp(trueDef, 0, 999999));
     }
 
     public int GetSpAttack()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.SpAttack && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -359,28 +360,28 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.SpAttack && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueSpAtk = baseStats.SpAttack[currentLevel.Value] + flatModifierSum;
+        float trueSpAtk = baseStats.SpAttack[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueSpAtk = Mathf.RoundToInt(trueSpAtk * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueSpAtk, 0, 3000);
+        return Mathf.RoundToInt(Mathf.Clamp(trueSpAtk, 0, 3000));
     }
 
     public int GetSpDefense()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.SpDefense && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -390,28 +391,28 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.SpDefense && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueSpDef = baseStats.SpDefense[currentLevel.Value] + flatModifierSum;
+        float trueSpDef = baseStats.SpDefense[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueSpDef = Mathf.RoundToInt(trueSpDef * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueSpDef, 0, 999999);
+        return Mathf.RoundToInt(Mathf.Clamp(trueSpDef, 0, 999999));
     }
 
-    public int GetCritRate()
+    public float GetCritRate()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.CritRate && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -421,28 +422,34 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.CritRate && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueCrit = baseStats.CritRate[currentLevel.Value] + flatModifierSum;
+        float trueCrit = baseStats.CritRate[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
-        trueCrit = Mathf.RoundToInt(trueCrit * (1f + percentModifierSum / 100f));
+        trueCrit *= 1f + percentModifierSum / 100f;
 
         return Mathf.Clamp(trueCrit, 0, 100);
     }
 
-    public int GetCDR()
+    public bool RollCriticalHit(float bonusRate = 0)
+    {
+        float chance = Mathf.Clamp(GetCritRate() + bonusRate, 0, 100);
+        return chance >= 100 || (chance > 0 && UnityEngine.Random.value * 100f < chance);
+    }
+
+    public float GetCDR()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.Cdr && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -452,15 +459,15 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.Cdr && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueCDR = baseStats.Cdr[currentLevel.Value] + flatModifierSum;
+        float trueCDR = baseStats.Cdr[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
-        trueCDR = Mathf.RoundToInt(trueCDR * (1f + percentModifierSum / 100f));
+        trueCDR *= 1f + percentModifierSum / 100f;
 
         return Mathf.Clamp(trueCDR, 0, 60);
     }
@@ -468,12 +475,12 @@ public partial class Pokemon : NetworkBehaviour
     public int GetLifeSteal()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.LifeSteal && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -483,28 +490,28 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.LifeSteal && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueLifeSteal = baseStats.LifeSteal[currentLevel.Value] + flatModifierSum;
+        float trueLifeSteal = baseStats.LifeSteal[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueLifeSteal = Mathf.RoundToInt(trueLifeSteal * (1f + percentModifierSum / 100f));
 
-        return Mathf.Clamp(trueLifeSteal, 0, 100);
+        return Mathf.RoundToInt(Mathf.Clamp(trueLifeSteal, 0, 100));
     }
 
     public float GetSpellVamp()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.SpellVamp && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -514,7 +521,7 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.SpellVamp && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -530,12 +537,18 @@ public partial class Pokemon : NetworkBehaviour
     public float GetAtkSpeed()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
+        bool appliedSmoke = false;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.AtkSpeed && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                if (change.ID == BattleItemRules.SmokeId && !change.IsBuff)
+                {
+                    if (appliedSmoke) continue;
+                    appliedSmoke = true;
+                }
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -545,7 +558,7 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.AtkSpeed && change.Percentage)
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -562,27 +575,33 @@ public partial class Pokemon : NetworkBehaviour
     public int GetSpeed()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.Speed && !change.Percentage)
+            if (change.AffectedStat == Stat.Speed && !change.Percentage && (!BattleItemRules.IsSlow(change) || !HasStatusEffect(StatusType.SpeedReductionImmunity)))
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 2: Sum together all percent modifiers
         float percentModifierSum = 0;
+        bool appliedSmoke = false;
         foreach (StatChange change in statChanges)
         {
-            if (change.AffectedStat == Stat.Speed && change.Percentage)
+            if (change.AffectedStat == Stat.Speed && change.Percentage && (!BattleItemRules.IsSlow(change) || !HasStatusEffect(StatusType.SpeedReductionImmunity)))
             {
-                percentModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                if (change.ID == BattleItemRules.SmokeId && !change.IsBuff)
+                {
+                    if (appliedSmoke) continue;
+                    appliedSmoke = true;
+                }
+                percentModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
         // Step 3: Add the flat modifier to the Pok�mon's natural movement speed stat
-        int trueSpeed = baseStats.Speed[currentLevel.Value] + flatModifierSum;
+        float trueSpeed = baseStats.Speed[currentLevel.Value] + flatModifierSum;
 
         // Step 4: Multiply the resultant movement speed stat with 100% plus the net percentage modifier
         trueSpeed = Mathf.RoundToInt(trueSpeed * (1f + percentModifierSum / 100f));
@@ -608,7 +627,7 @@ public partial class Pokemon : NetworkBehaviour
         // Cap Effective MS to 9000
         trueSpeed = Mathf.Clamp(trueSpeed, 1250, 9000);
 
-        return trueSpeed;
+        return Mathf.RoundToInt(trueSpeed);
     }
 
     public float GetDamageReduction()
@@ -619,7 +638,7 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.DamageReduction && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -633,15 +652,15 @@ public partial class Pokemon : NetworkBehaviour
         return flatModifierSum;
     }
 
-    public int GetDefensePenetration()
+    public float GetDefensePenetration()
     {
         // Step 1: Sum together all flat modifiers
-        int flatModifierSum = 0;
+        float flatModifierSum = 0;
         foreach (StatChange change in statChanges)
         {
             if (change.AffectedStat == Stat.DefensePenetration && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -658,7 +677,7 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (change.AffectedStat == Stat.CritModifier && !change.Percentage)
             {
-                flatModifierSum += change.IsBuff ? change.Amount : -change.Amount;
+                flatModifierSum += change.IsBuff ? change.EffectiveAmount : -change.EffectiveAmount;
             }
         }
 
@@ -679,12 +698,16 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void AddStatChangeRPC(StatChange change, RpcParams context = default)
     {
+        if (!float.IsFinite(change.FractionalAmount) || Mathf.Abs(change.FractionalAmount) >= 1) return;
+        if (!change.IsBuff && (HasStatusEffect(StatusType.BattleItemStasis) || HasStatusEffect(StatusType.Invincible)
+            || (BattleItemRules.IsSlow(change) && HasStatusEffect(StatusType.Unstoppable)))) return;
         if (!change.HasSource && EffectSender(context) is ulong source) change = change.WithSource(source);
         if (!InterceptMeowsticStat(ref change)) return;
         // NetworkList invokes callbacks synchronously. Publish only after the
         // matching timer exists, so callbacks can safely remove/replace a stat.
         statTimers.Add(change.IsTimed ? change.Duration : -1);
         statChanges.Add(change);
+        if (!change.IsBuff && change.HasSource && change.AffectedStat == Stat.Speed) NotifyHeldItemHindrance(change.SourceId);
     }
 
     private void RemoveStatAt(int index)
@@ -816,6 +839,7 @@ public partial class Pokemon : NetworkBehaviour
             statusEffects.Add(effect);
             OnStatusListChangedRPC(effect, true);
         }
+        if (effect.IsHindrance() && effect.HasSource) NotifyHeldItemHindrance(effect.SourceId);
     }
 
     public void RemoveStatusEffectWithID(ushort id)
@@ -1030,7 +1054,7 @@ public partial class Pokemon : NetworkBehaviour
                 outOfCombatTimer -= Time.deltaTime;
             }
 
-            isOutOfCombat.Value = outOfCombatTimer < 0;
+            isOutOfCombat.Value = outOfCombatTimer <= 0;
 
             if (killStreakTimer > 0)
             {
@@ -1114,7 +1138,7 @@ public partial class Pokemon : NetworkBehaviour
 
         if (damage.proprieties.HasFlag(DamageProprieties.CanCrit))
         {
-            if (UnityEngine.Random.Range(0, 100) < Mathf.Clamp(attacker.GetCritRate() + damage.bonusCritRate, 0, 100))
+            if (attacker.RollCriticalHit(damage.bonusCritRate))
             {
                 damage.proprieties |= DamageProprieties.WasCriticalHit;
             }
@@ -1126,7 +1150,8 @@ public partial class Pokemon : NetworkBehaviour
 
         if (damage.type != DamageType.True)
         {
-            List<ShieldInfo> remainingShields = TakeDamageFromShields(localShields.ToArray(), actualDamage, out damageRemainder);
+            DamageType shieldDamageType = HeldItemRules.AttackBased(attacker, damage) ? DamageType.Physical : DamageType.Special;
+            List<ShieldInfo> remainingShields = TakeDamageFromShields(localShields.ToArray(), actualDamage, out damageRemainder, shieldDamageType);
             UpdateDamagedShields(remainingShields);
         }
         else
@@ -1142,16 +1167,27 @@ public partial class Pokemon : NetworkBehaviour
         if (localHp <= 0)
         {
             localHp = 0;
-            attacker.OnKilledPokemonRPC(NetworkObjectId);
         }
 
-        OnResolvedDamage?.Invoke(damage, Mathf.Min(actualDamage, previousHp + (damage.type == DamageType.True ? 0 : localShields.Sum(shield => shield.Amount))));
+        int resolved = Mathf.Max(0, previousHp - localHp) + Mathf.Max(0, localShields.Sum(shield => shield.Amount) - ShieldHp);
+        RecordHeldItemContributor(attacker, resolved);
+        OnResolvedDamage?.Invoke(damage, resolved);
         currentHp.Value = localHp;
 
+        bool scoringProtected = RayquazaBuff.ProtectsScoring(HasRayquazaShield, damage.type)
+            || (damage.type != DamageType.True && HasShieldWithID(HeldItemRules.ScoreShieldId));
+        if (localHp <= 0)
+        {
+            if (Type == PokemonType.Wild) attacker.GetComponent<MovesController>()?.GrantLegacyItemEnergy(5000);
+            attacker.OnKilledPokemonRPC(NetworkObjectId);
+            AwardHeldItemKnockout(attacker);
+        }
+
         attacker.OnHealthDamageDealt?.Invoke(this, damage, Mathf.Max(0, previousHp - localHp));
-        int resolved = Mathf.Min(actualDamage, previousHp + (damage.type == DamageType.True ? 0 : localShields.Sum(shield => shield.Amount)));
         attacker.OnDamageApplied?.Invoke(this, damage, resolved);
-        ClientDamageRPC(actualDamage, damage, RayquazaBuff.ProtectsScoring(HasRayquazaShield, damage.type));
+        attacker.HeldItems?.OnHit(this, damage, resolved, Mathf.Max(0, previousHp - localHp), previousHp);
+        HeldItems?.OnTaken(attacker, damage, resolved);
+        ClientDamageRPC(actualDamage, damage, scoringProtected);
         attacker.OnDamageDealtRPC(NetworkObjectId, damage);
         return resolved;
     }
@@ -1204,15 +1240,20 @@ public partial class Pokemon : NetworkBehaviour
         }
 
         defStat = Mathf.Max(Mathf.FloorToInt(defStat * (1 - (attacker.GetDefensePenetration() / 100f))), 0);
+        if (damage.type != DamageType.True && !HeldItemRules.AttackBased(attacker, damage)
+            && attacker.HasHeldItem(AvailableHeldItems.SlickSpoon)) defStat = Mathf.FloorToInt(defStat * 0.85f);
 
         float finalDamage = (float)attackDamage * 600 / (600 + defStat);
 
         float physicalReduction = damage.type == DamageType.Physical ? GetMeowsticPhysicalReduction() : 0;
         return Mathf.FloorToInt(finalDamage * (1f-GetDamageReduction()) * (1f-physicalReduction) * (damage.multiplier > 0 ? damage.multiplier : 1f)
-            * GetRayquazaDamageMultiplier(attacker) * attacker.OutgoingMultiplier(this, damage));
+            * GetRayquazaDamageMultiplier(attacker) * attacker.OutgoingMultiplier(this, damage) * (attacker.HeldItems != null ? attacker.HeldItems.DamageMultiplier : 1));
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)
+        => TakeDamageFromShields(shields, damage, out remainder, DamageType.Special);
+
+    public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder, DamageType damageType)
     {
         // Copy the original shields to the result list
         List<ShieldInfo> resultShields = new List<ShieldInfo>(shields);
@@ -1225,6 +1266,7 @@ public partial class Pokemon : NetworkBehaviour
         int remainingDamage = damage;
         foreach (var shield in sortedShields)
         {
+            if (shield.ID == HeldItemRules.AssaultVestId && damageType != DamageType.Special) continue;
             for (int i = 0; i < resultShields.Count; i++)
             {
                 if (resultShields[i].Equals(shield))
@@ -1312,6 +1354,7 @@ public partial class Pokemon : NetworkBehaviour
     {
         int oldHp = currentHp.Value;
         if (oldHp <= 0 || amount <= 0 || baseStats == null) return;
+        amount = HeldItemHealing(amount, healer);
         int healAmount = Mathf.Min(amount, Mathf.Max(0, GetMaxHp() - oldHp));
         if (healAmount == 0) return;
         currentHp.Value = oldHp + healAmount;
@@ -1370,9 +1413,16 @@ public partial class Pokemon : NetworkBehaviour
         ApplyHealing(healAmount, attacker);
     }
 
+    public void AddShieldRPC(ShieldInfo info) => AddShieldRPC(info, default);
+
     [Rpc(SendTo.Server)]
-    public void AddShieldRPC(ShieldInfo info)
+    public void AddShieldRPC(ShieldInfo info, RpcParams context)
     {
+        if (!info.HasSource && EffectSender(context) is ulong sourceId) info = info.WithSource(sourceId);
+        if (info.HasSource && info.SourceId != NetworkObjectId
+            && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(info.SourceId, out var sourceObject)
+            && sourceObject.TryGetComponent(out Pokemon source) && source.TeamMember.IsOnSameTeam(TeamMember)
+            && source.HasHeldItem(AvailableHeldItems.RescueHood)) info.Amount = Mathf.FloorToInt(info.Amount * 1.23f);
         if (HasShieldWithID(info.ID))
         {
             for (int i = 0; i < shields.Count; i++)

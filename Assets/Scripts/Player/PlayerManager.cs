@@ -206,6 +206,8 @@ public partial class PlayerManager : NetworkBehaviour
             pokemon.OnDeath += OnPokemonDeath;
             pokemon.OnDamageTaken += OnPokemonDamage;
             pokemon.OnStatusChange += OnPokemonStatusChange;
+            pokemon.OnBattleItemStatusChange += SynchronizeBattleItemStasis;
+            SynchronizeBattleItemStasis();
             pokemon.OnOtherPokemonKilled += OnOtherPokemonKilled;
             playerState.OnValueChanged += OnPlayerStateChange;
 
@@ -314,8 +316,8 @@ public partial class PlayerManager : NetworkBehaviour
         if (IsOwner)
         {
             passiveController.LearnPassive();
-            heldItemManager.Initialize(this);
         }
+        heldItemManager.Initialize(this);
     }
 
     public void StopMovementForTime(float time, bool setTrigger=true)
@@ -398,6 +400,8 @@ public partial class PlayerManager : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        if (pokemon != null) pokemon.OnBattleItemStatusChange -= SynchronizeBattleItemStasis;
+        RemoveBattleItemStasis();
         if (registeredGameManager != null) registeredGameManager.RemovePlayer(this);
         if (MinimapManager.Instance != null) MinimapManager.Instance.RemovePlayerIcon(this);
         if (pokemon != null) pokemon.OnHpChange -= UpdateLifeVisibility;
@@ -632,7 +636,7 @@ public partial class PlayerManager : NetworkBehaviour
         if (IsLocalHuman) BattleUIManager.instance.SetRecallBarActive(true);
     }
 
-    private bool IsRayquazaScoringProtected => isScoring && pokemon.HasRayquazaShield;
+    private bool IsRayquazaScoringProtected => isScoring && (pokemon.HasRayquazaShield || pokemon.HasShieldWithID(HeldItemRules.ScoreShieldId));
 
     private void StartScoring()
     {
@@ -646,6 +650,7 @@ public partial class PlayerManager : NetworkBehaviour
         goalZone.GetAlliesInGoal(CurrentTeam.Team, out int alliesInGoal, out int enemiesInGoal);
 
         isScoring = true;
+        heldItemManager.SetScoringRPC(true);
         
         maxScoreTime = ScoringSystem.CalculateTrueScoreTime(alliesInGoal, GetScoreBuffs(), currentEnergy.Value);
 
@@ -707,6 +712,7 @@ public partial class PlayerManager : NetworkBehaviour
         }
 
         isScoring = false;
+        heldItemManager.SetScoringRPC(false);
         scoreStatus.Cooldown = 0;
         playerMovement.CanMove = true;
         if (IsLocalHuman) BattleUIManager.instance.UpdateScoreGauge(scoreStatus.Cooldown, maxScoreTime);

@@ -67,6 +67,7 @@ public partial class MovesController
         }
         bool upgraded = VaporMoveRules.Upgraded(kind, pokemon.CurrentLevel);
         vaporNextCast[slot] = VaporNow + (slot == 2 ? 1 : VaporMoveRules.Cooldown(kind) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
+        playerManager.HeldItemManager?.OnMove((MoveType)slot);
         destination = VaporMoveRules.ClampDestination(transform.position, destination, VaporMoveRules.Range(kind));
         var scope = new VaporScope(this);
         switch (kind)
@@ -175,7 +176,7 @@ public partial class MovesController
     private IEnumerator VaporeonRing(VaporScope scope, Pokemon target, bool upgraded)
     {
         ulong recipientId = target.NetworkObjectId;
-        var shield = new VaporShieldLease(target, Mathf.FloorToInt(target.GetMaxHp() * VaporMoveRules.ShieldRatio(upgraded)));
+        var shield = new VaporShieldLease(target, Mathf.FloorToInt(target.GetMaxHp() * VaporMoveRules.ShieldRatio(upgraded)), pokemon);
         scope.Own(shield);
         var attack = new VaporModifierLease(target, Stat.Attack, 25, true);
         var special = new VaporModifierLease(target, Stat.SpAttack, 25, true);
@@ -313,6 +314,7 @@ public partial class MovesController
     {
         if (!IsLivingVaporeon || pokemon.CurrentLevel < 5 || vaporLearned[1] != AvailableMoves.VaporDive || vaporDive != null
             || VaporNow + 0.3 < vaporNextCast[1] || pokemon.HasAnyStatusEffect(VaporMoveRules.Interrupts)) return;
+        playerManager.HeldItemManager?.OnMove(MoveType.MoveB);
         vaporDiveStarted = VaporNow; vaporDiveEnds.Value = VaporNow + VaporMoveRules.DiveDuration + VaporMoveRules.DiveWarning;
         vaporEmergeRequested = false;
         vaporDiveHasExit = false;

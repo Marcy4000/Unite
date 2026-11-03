@@ -50,7 +50,7 @@ public class PlayerLoadoutInitializationTests
     }
 
     [Test]
-    public void HumanWithThreeUnequippedSlotsCompletesHeldItemInitialization()
+    public void OfflineEmptyLoadoutDefersAuthoritativeHeldItemInitialization()
     {
         var root = new GameObject("human empty-loadout regression"); root.SetActive(false);
         var catalogType = GameType("CharactersList"); var lobbyType = GameType("LobbyController");
@@ -73,9 +73,9 @@ public class PlayerLoadoutInitializationTests
             ((NetworkVariable<FixedString32Bytes>)player.GetType().GetField("lobbyPlayerId", Private).GetValue(player)).Value = new FixedString32Bytes(human.Id);
             var manager = root.AddComponent(GameType("HeldItemManager"));
             Assert.DoesNotThrow(() => manager.GetType().GetMethod("Initialize").Invoke(manager, new object[] { player }));
-            Assert.That(manager.GetType().GetField("initialized", Private).GetValue(manager), Is.True);
-            var runtimeItems = (Array)manager.GetType().GetField("heldItemBases", Private).GetValue(manager);
-            Assert.That(runtimeItems.Cast<object>().Select(entry => entry.GetType().Name), Is.EqualTo(new[] { "EmptyHeldItem", "EmptyHeldItem", "EmptyHeldItem" }));
+            Assert.That(manager.GetType().GetField("initialized", Private).GetValue(manager), Is.False);
+            var runtimeItems = (System.Collections.ICollection)manager.GetType().GetField("items", Private).GetValue(manager);
+            Assert.That(runtimeItems, Is.Empty);
         }
         finally
         {

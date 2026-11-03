@@ -13,13 +13,15 @@ MonoBehaviour:
   m_Name: EnergyAmp
   m_EditorClassIdentifier: 
   heldItemName: Energy Amplifier
-  description: After activating your Unite move, deal increased damage by 7%/14%/21%
-    for a short time. (4s duration - 15s cooldown)
+  description: "Using a Unite Move increases damage dealt by 21% for 4 seconds. Cooldown: 15 seconds."
   heldItemCategory: 0
-  damageType: 2
+  damageType: 0
   heldItemID: 12
   icon: {fileID: 21300000, guid: a7b67832f8298914ba13a1885116cec5, type: 3}
   statBoosts:
+  - AffectedStat: 16
+    BoostAmount: 6
+    IsPercentage: 0
   - AffectedStat: 5
-    BoostAmount: 5
+    BoostAmount: 4.5
     IsPercentage: 0

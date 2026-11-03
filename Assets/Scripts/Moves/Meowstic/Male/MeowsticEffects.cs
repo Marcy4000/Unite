@@ -74,10 +74,12 @@ public sealed class MeowsticShield : IDisposable
 {
     private Pokemon target;
     public ushort Id { get; private set; }
-    public MeowsticShield(Pokemon target, float duration)
+    public MeowsticShield(Pokemon target, float duration) : this(target, duration, null) { }
+    public MeowsticShield(Pokemon target, float duration, Pokemon source)
     {
         this.target = target; Id = MeowsticEffectIds.Acquire();
-        target.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(target.GetMaxHp() * 0.25f), Id, 0, duration, true));
+        var shield = new ShieldInfo(Mathf.RoundToInt(target.GetMaxHp() * 0.25f), Id, 0, duration, true);
+        target.AddShieldRPC(source != null ? shield.WithSource(source.NetworkObjectId) : shield);
     }
     public void Dispose()
     {
