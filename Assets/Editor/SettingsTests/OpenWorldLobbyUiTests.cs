@@ -45,7 +45,7 @@ public class OpenWorldLobbyUiTests
     }
 
     [Test]
-    public void EmoteMenuHasAuthoredScrollableButtonsForEveryCatalogEntry()
+    public void EmoteMenuHasEmptyScrollableContentAndRuntimeButtonTemplate()
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPath);
         var menu = prefab.GetComponent(GameType("OpenWorldEmoteMenu"));
@@ -63,24 +63,12 @@ public class OpenWorldLobbyUiTests
         Assert.That(scroll.verticalScrollbar, Is.Not.Null);
         var catalog = serialized.FindProperty("catalog").objectReferenceValue;
         Assert.That(catalog, Is.Not.Null);
-        var catalogData = new SerializedObject(catalog);
-        var maleEntries = catalogData.FindProperty("maleAnimations");
-        var femaleEntries = catalogData.FindProperty("femaleAnimations");
-        var rows = serialized.FindProperty("animationButtons");
-        Assert.That(rows.arraySize, Is.GreaterThanOrEqualTo(maleEntries.arraySize + femaleEntries.arraySize));
-        Assert.That(rows.arraySize, Is.GreaterThan(0));
-        for (int index = 0; index < rows.arraySize; index++)
-        {
-            var row = rows.GetArrayElementAtIndex(index);
-            Assert.That(row.FindPropertyRelative("animationIndex").intValue, Is.EqualTo(index));
-            var button = (Button)row.FindPropertyRelative("button").objectReferenceValue;
-            var label = (TMP_Text)row.FindPropertyRelative("label").objectReferenceValue;
-            Assert.That(button.transform.parent, Is.EqualTo(scroll.content));
-            Assert.That(label, Is.Not.Null);
-            AssertClick(button, menu, "PlayEmote");
-            var callback = new SerializedObject(button).FindProperty("m_OnClick.m_PersistentCalls.m_Calls").GetArrayElementAtIndex(0);
-            Assert.That(callback.FindPropertyRelative("m_Arguments.m_IntArgument").intValue, Is.EqualTo(index));
-        }
+        Assert.That(scroll.content.childCount, Is.Zero);
+        var buttonPrefab = (Button)serialized.FindProperty("buttonPrefab").objectReferenceValue;
+        Assert.That(buttonPrefab, Is.Not.Null);
+        Assert.That(AssetDatabase.Contains(buttonPrefab), Is.True);
+        Assert.That(buttonPrefab.GetComponentInChildren<TMP_Text>(true), Is.Not.Null);
+        Assert.That(buttonPrefab.onClick.GetPersistentEventCount(), Is.Zero);
         AssertClick((Button)serialized.FindProperty("openButton").objectReferenceValue, menu, "Toggle");
         AssertClick(panel.GetComponentsInChildren<Button>(true).Single(button => button.name == "Close emotes"), menu, "Close");
         var avatar = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Lobby/OpenWorldTrainer.prefab");

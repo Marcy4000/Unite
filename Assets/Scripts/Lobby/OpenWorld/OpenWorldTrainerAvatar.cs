@@ -48,6 +48,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
     private CharacterController characterController;
     private ClientNetworkTransform networkTransform;
     private OpenWorldTrainerEmotes emotes;
+    private OpenWorldTrainerInteractionAnimation interactionAnimation;
     private TrainerModel trainerModel;
     private Animator movementAnimator;
     private Camera localCamera;
@@ -80,7 +81,18 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
     public Camera LocalCamera => localCamera;
     public CinemachineCamera FollowCamera => followCamera;
     public Animator AnimationAnimator => trainerModel != null && trainerModel.IsInitialized ? trainerModel.ActiveAnimator : null;
-    public bool CanStartEmote => !IsInputBlocked();
+    public bool CanStartEmote => !IsInputBlocked() && (interactionAnimation == null || !interactionAnimation.IsPlaying);
+
+    public bool PlayNpcInteractionAnimation(AnimationClip maleAnimation, AnimationClip femaleAnimation, float blendDuration = 0.2f)
+    {
+        if (!IsSpawned || !IsOwner || !IsClient || LocalAvatar != this || AnimationAnimator == null) return false;
+        var clip = trainerModel.IsMale ? maleAnimation : femaleAnimation;
+        if (clip == null) return false;
+        if (emotes != null) emotes.CancelForMovement();
+        if (interactionAnimation == null)
+            interactionAnimation = GetComponent<OpenWorldTrainerInteractionAnimation>() ?? gameObject.AddComponent<OpenWorldTrainerInteractionAnimation>();
+        return interactionAnimation.Play(AnimationAnimator, clip, blendDuration);
+    }
 
     private void Awake()
     {
@@ -256,6 +268,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
     private void ApplyClothing()
     {
         if (trainerModel == null || clothing.Value.IsEmpty) return;
+        if (interactionAnimation != null) interactionAnimation.StopPlayback();
         try
         {
             trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(Clothing));
@@ -332,6 +345,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
 
     private void ReleaseLocalControl()
     {
+        if (interactionAnimation != null) interactionAnimation.StopPlayback();
         if (characterController != null) characterController.enabled = false;
         if (LocalAvatar == this)
         {
@@ -368,6 +382,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
 
     private bool IsInputBlocked()
     {
+        if (DialogueSystem.Instance != null && DialogueSystem.Instance.BlocksWorldInput) return true;
         if (!hasFocus || isPaused || explicitInputBlocked || OpenWorldEmoteMenu.IsMenuOpen || OpenWorldPokemonMenu.IsMenuOpen || (inputBlocked != null && inputBlocked()) ||
             (SettingsManager.Instance != null && SettingsManager.Instance.IsMenuOpen)) return true;
         if (movementBlockingPanels != null)
@@ -401,7 +416,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
     {
         if (!IsSpawned || !IsOwner || !IsClient || LocalAvatar != this || !characterController.enabled) return;
         var lobby = LobbyController.Instance;
-        if (!SettingsManager.OpenWorldLobbyEnabled || lobby == null || lobby.OpenWorldLobby == null || !lobby.OpenWorldLobby.IsConnected)
+        if (lobby == null || lobby.OpenWorldLobby == null || !lobby.OpenWorldLobby.IsConnected)
         {
             verticalSpeed = 0f;
             return;
@@ -442,6 +457,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
         var movement = CalculatePlanarMovement(input, cameraYaw);
         if (movement.sqrMagnitude > 0.0001f)
         {
+            if (interactionAnimation != null) interactionAnimation.CancelForMovement();
             if (emotes != null) emotes.CancelForMovement();
             transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(movement), turnSpeed * Time.deltaTime);
         }
@@ -468,7 +484,8 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
 
     private void UpdateAnimation(bool shouldRun)
     {
-        if (emotes != null && emotes.IsPlaying)
+        if ((emotes != null && emotes.IsPlaying) ||
+            (interactionAnimation != null && interactionAnimation.IsPlaying && !interactionAnimation.IsBlendingOut))
         {
             movementAnimator = null;
             isRunning = false;

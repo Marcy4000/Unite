@@ -12,7 +12,7 @@ public class OpenWorldPokemonUiTests
         .Select(assembly => assembly.GetType(name)).First(type => type != null);
 
     [Test]
-    public void CompanionPickerHasAuthoredPortraitsAndPersistentCallbacksForTheRoster()
+    public void CompanionPickerHasEmptyGridAndRuntimePortraitTemplate()
     {
         var hud = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Lobby/OpenWorldLobbyHUD.prefab");
         var menu = hud.GetComponent(GameType("OpenWorldPokemonMenu"));
@@ -33,27 +33,13 @@ public class OpenWorldPokemonUiTests
         Assert.That(scroll.verticalScrollbar, Is.Not.Null);
         Assert.That(scroll.viewport.GetComponent<RectMask2D>(), Is.Not.Null);
         Assert.That(scroll.content.GetComponent<GridLayoutGroup>().constraintCount, Is.EqualTo(3));
-        var boot = EditorSceneManager.OpenPreviewScene("Assets/Scenes/BootScene.unity");
-        try
-        {
-            var roster = boot.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren(GameType("CharactersList"), true)).Single();
-            var characters = new SerializedObject(roster).FindProperty("characters");
-            var expected = Enumerable.Range(0, characters.arraySize).Select(index => characters.GetArrayElementAtIndex(index).objectReferenceValue)
-                .Where(character => character != null && !new SerializedObject(character).FindProperty("Hidden").boolValue).ToArray();
-            var rows = data.FindProperty("pokemonButtons");
-            Assert.That(rows.arraySize, Is.EqualTo(expected.Length));
-            for (int index = 0; index < rows.arraySize; index++)
-            {
-                var row = rows.GetArrayElementAtIndex(index);
-                Assert.That(row.FindPropertyRelative("character").objectReferenceValue, Is.EqualTo(expected[index]));
-                var button = (Button)row.FindPropertyRelative("button").objectReferenceValue;
-                AssertClick(button, menu, "SelectPokemon");
-                var callback = new SerializedObject(button).FindProperty("m_OnClick.m_PersistentCalls.m_Calls").GetArrayElementAtIndex(0);
-                Assert.That(callback.FindPropertyRelative("m_Arguments.m_IntArgument").intValue, Is.EqualTo(index));
-                Assert.That(button.transform.Find("Portrait").GetComponent<Image>().sprite, Is.Not.Null);
-            }
-        }
-        finally { EditorSceneManager.ClosePreviewScene(boot); }
+        Assert.That(scroll.content.childCount, Is.Zero);
+        var buttonPrefab = (Button)data.FindProperty("buttonPrefab").objectReferenceValue;
+        Assert.That(buttonPrefab, Is.Not.Null);
+        Assert.That(AssetDatabase.Contains(buttonPrefab), Is.True);
+        Assert.That(buttonPrefab.onClick.GetPersistentEventCount(), Is.Zero);
+        Assert.That(buttonPrefab.GetComponentInChildren<TMPro.TMP_Text>(true), Is.Not.Null);
+        Assert.That(buttonPrefab.transform.Find("Portrait").GetComponent<Image>().preserveAspect, Is.True);
     }
 
     [Test]

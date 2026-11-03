@@ -118,25 +118,11 @@ public static class OpenWorldEmoteMenuAuthoring
             serialized.FindProperty("openButton").objectReferenceValue = open;
             serialized.FindProperty("panel").objectReferenceValue = panel.gameObject;
             serialized.FindProperty("scroll").objectReferenceValue = scroll;
-            var rows = serialized.FindProperty("animationButtons");
-            rows.arraySize = catalog.Entries.Count;
-            for (int index = 0; index < catalog.Entries.Count; index++)
-            {
-                var row = (GameObject)PrefabUtility.InstantiatePrefab(rowPrefab, content);
-                row.name = catalog.Entries[index].DisplayName;
-                var button = row.GetComponent<Button>();
-                var label = row.GetComponentInChildren<TMP_Text>(true);
-                label.text = catalog.Entries[index].DisplayName;
-                UnityEventTools.AddIntPersistentListener(button.onClick, menu.PlayEmote, index);
-                var binding = rows.GetArrayElementAtIndex(index);
-                binding.FindPropertyRelative("animationIndex").intValue = index;
-                binding.FindPropertyRelative("button").objectReferenceValue = button;
-                binding.FindPropertyRelative("label").objectReferenceValue = label;
-            }
+            serialized.FindProperty("buttonPrefab").objectReferenceValue = rowPrefab.GetComponent<Button>();
             serialized.ApplyModifiedPropertiesWithoutUndo();
             panel.gameObject.SetActive(false);
             PrefabUtility.SaveAsPrefabAsset(root, HudPath);
-            Debug.Log($"Authored {catalog.Entries.Count} emote buttons in {HudPath}.");
+            Debug.Log($"Authored emote menu with runtime-generated buttons in {HudPath}.");
         }
         finally { PrefabUtility.UnloadPrefabContents(root); }
     }

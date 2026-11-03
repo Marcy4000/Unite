@@ -11,16 +11,6 @@ public partial class LobbyController
     private void InitializeOpenWorldLobby()
     {
         OpenWorldLobby = gameObject.AddComponent<OpenWorldLobbyController>();
-        SettingsManager.OpenWorldLobbyChanged += OnOpenWorldLobbySettingChanged;
-    }
-
-    private async void OnOpenWorldLobbySettingChanged(bool enabled)
-    {
-        if (!enabled) OpenWorldLobby.CancelPendingConnection();
-        if (session != null || changingHome || lobbyOperationInProgress || handlingSessionLoss ||
-            isSearching || !IsHomeScene(SceneManager.GetActiveScene().name)) return;
-        try { await ChangeHomeAsync(false); }
-        catch (Exception exception) { Debug.LogException(exception); }
     }
 
     public static bool IsHomeScene(string sceneName) => sceneName == "LobbyScene" || sceneName == "ChineseLobby";
@@ -34,13 +24,13 @@ public partial class LobbyController
 
     public async void EnterOpenWorldLobby()
     {
-        if (!SettingsManager.OpenWorldLobbyEnabled || session != null || changingHome ||
+        if (session != null || changingHome ||
             lobbyOperationInProgress || handlingSessionLoss) return;
         try { await ChangeHomeAsync(false); }
         catch (Exception exception) { Debug.LogException(exception); }
     }
 
-    private async Task ChangeHomeAsync(bool staticMenu)
+    private async Task ChangeHomeAsync(bool? staticMenu = null)
     {
         changingHome = true;
         LoadingScreen.Instance?.ShowGenericLoadingScreen();
@@ -59,19 +49,19 @@ public partial class LobbyController
         }
     }
 
-    private async Task LoadHomeAsync(bool staticMenu = false)
+    private static bool ShouldUseOpenWorldLobby(bool? staticMenu, bool hasSession)
+    {
+        return !(staticMenu ?? !SettingsManager.AutoJoinOpenWorldLobby) && !hasSession;
+    }
+
+    private async Task LoadHomeAsync(bool? staticMenu = null)
     {
         await authenticationTask;
         await OpenWorldLobby.LeaveAsync();
-        var useOpenWorld = !staticMenu && session == null && SettingsManager.OpenWorldLobbyEnabled;
+        var useOpenWorld = ShouldUseOpenWorldLobby(staticMenu, session != null);
         var targetScene = useOpenWorld ? "ChineseLobby" : "LobbyScene";
         if (SceneManager.GetActiveScene().name != targetScene)
             await SceneManager.LoadSceneAsync(targetScene, LoadSceneMode.Single);
-        if (!staticMenu && session == null && useOpenWorld != SettingsManager.OpenWorldLobbyEnabled)
-        {
-            await LoadHomeAsync();
-            return;
-        }
         if (!useOpenWorld)
         {
             ShowStaticHomeMenu();
@@ -82,7 +72,6 @@ public partial class LobbyController
             var view = FindFirstObjectByType<OpenWorldLobbyView>();
             if (view == null) throw new InvalidOperationException("ChineseLobby is missing its open world lobby view.");
             await OpenWorldLobby.EnterAsync(localPlayer, view);
-            if (!SettingsManager.OpenWorldLobbyEnabled) await LoadHomeAsync(true);
         }
         catch (Exception exception)
         {
@@ -90,8 +79,7 @@ public partial class LobbyController
             await OpenWorldLobby.LeaveAsync();
             await SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
             ShowStaticHomeMenu();
-            if (SettingsManager.OpenWorldLobbyEnabled)
-                LastOperationError = "The open world lobby could not connect. You can retry from the main menu or use a match lobby.";
+            LastOperationError = "The open world lobby could not connect. You can retry from the main menu or use a match lobby.";
         }
     }
 

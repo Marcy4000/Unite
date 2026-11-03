@@ -23,7 +23,7 @@ public sealed class OpenWorldLobbyView : MonoBehaviour
             return;
         }
         AudioManager.StopAllMusic();
-        AudioManager.PlayMusic(DefaultAudioMusic.LobbyTheme, true);
+        AudioManager.PlayMusic(DefaultAudioMusic.MainLobbyCityTheme, true);
     }
 
     public void OpenSettings() => SettingsManager.Instance?.OpenSettings();

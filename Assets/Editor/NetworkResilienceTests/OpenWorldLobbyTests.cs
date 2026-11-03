@@ -56,7 +56,7 @@ public class OpenWorldLobbyTests
     [TestCase("BootScene", false)]
     [TestCase("CharacterSelect", false)]
     [TestCase("RemoatStadium", false)]
-    public void OnlyHomeScenesPermitImmediatePreferenceRouting(string name, bool expected)
+    public void OnlyHomeScenesAreRecognizedAsHome(string name, bool expected)
     {
         Assert.That(GameType("LobbyController").GetMethod("IsHomeScene").Invoke(null, new object[] { name }), Is.EqualTo(expected));
     }

@@ -10,7 +10,7 @@ public sealed class OpenWorldHomeButton : MonoBehaviour
     private void Update()
     {
         if (button != null)
-            button.gameObject.SetActive(SettingsManager.OpenWorldLobbyEnabled && LobbyController.Instance != null &&
+            button.gameObject.SetActive(LobbyController.Instance != null &&
                 LobbyController.Instance.Lobby == null);
     }
 }

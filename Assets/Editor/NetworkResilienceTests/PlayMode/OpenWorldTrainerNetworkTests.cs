@@ -214,10 +214,15 @@ public class OpenWorldTrainerNetworkTests
             Assert.That((bool)GameType("OpenWorldPokemonMenu").GetProperty("IsMenuOpen").GetValue(null), Is.True);
             Assert.That(Get(owner.GetComponent(avatarType), "CanStartEmote"), Is.False);
             var data = new SerializedObject(menu);
-            var rows = data.FindProperty("pokemonButtons");
-            var selection = Enumerable.Range(0, rows.arraySize).Select(index => rows.GetArrayElementAtIndex(index))
-                .Single(row => row.FindPropertyRelative("character").objectReferenceValue == second);
-            ((Button)selection.FindPropertyRelative("button").objectReferenceValue).onClick.Invoke();
+            var content = ((ScrollRect)data.FindProperty("scroll").objectReferenceValue).content;
+            Assert.That(content.childCount, Is.EqualTo(2), "Hidden companions must not generate buttons.");
+            var selection = content.GetComponentsInChildren<Button>(true).Single(button => button.name == "Cinderace");
+            Assert.That(selection.transform.Find("Portrait").GetComponent<Image>().sprite, Is.EqualTo(Get(second, "CircleIcon")));
+            int buttonCount = content.childCount;
+            Call(menu, "Close");
+            Call(menu, "Toggle");
+            Assert.That(content.childCount, Is.EqualTo(buttonCount), "Reopening must reuse generated buttons.");
+            selection.onClick.Invoke();
             Assert.That(((GameObject)data.FindProperty("panel").objectReferenceValue).activeSelf, Is.False);
             Assert.That(Get(owner.GetComponent(avatarType), "CanStartEmote"), Is.True);
         }
@@ -330,25 +335,31 @@ public class OpenWorldTrainerNetworkTests
             var panel = (GameObject)menuData.FindProperty("panel").objectReferenceValue;
             Assert.That(panel.activeSelf, Is.True);
             Assert.That(Get(ownerAvatar, "CanStartEmote"), Is.False);
-            var rows = menuData.FindProperty("animationButtons");
+            var content = ((ScrollRect)menuData.FindProperty("scroll").objectReferenceValue).content;
+            var rows = content.GetComponentsInChildren<Button>(true);
+            Assert.That(rows.Length, Is.EqualTo(entries.Length));
             int visible = 0;
-            for (int rowIndex = 0; rowIndex < rows.arraySize; rowIndex++)
+            for (int rowIndex = 0; rowIndex < rows.Length; rowIndex++)
             {
-                var button = (Button)rows.GetArrayElementAtIndex(rowIndex).FindPropertyRelative("button").objectReferenceValue;
+                var button = rows[rowIndex];
                 bool valid = rowIndex < entries.Length && ownerAnimator.HasState(0, (int)Get(entries[rowIndex], "StateHash"));
                 Assert.That(button.gameObject.activeSelf, Is.EqualTo(valid));
                 if (valid)
                 {
                     visible++;
-                    var label = (TMP_Text)rows.GetArrayElementAtIndex(rowIndex).FindPropertyRelative("label").objectReferenceValue;
+                    var label = button.GetComponentInChildren<TMP_Text>(true);
                     Assert.That(label.text, Is.EqualTo(Get(entries[rowIndex], "DisplayName")));
                 }
             }
             Assert.That(visible, Is.GreaterThan(0));
-            var selected = (Button)rows.GetArrayElementAtIndex(index).FindPropertyRelative("button").objectReferenceValue;
+            int generatedObjectCount = hud.GetComponentsInChildren<Transform>(true).Length;
+            Assert.That(generatedObjectCount, Is.GreaterThan(objectCount));
+            Call(menu, "Close");
+            Call(menu, "Toggle");
+            var selected = rows[index];
             selected.onClick.Invoke();
             Assert.That(panel.activeSelf, Is.False);
-            Assert.That(hud.GetComponentsInChildren<Transform>(true).Length, Is.EqualTo(objectCount));
+            Assert.That(hud.GetComponentsInChildren<Transform>(true).Length, Is.EqualTo(generatedObjectCount));
 #endif
         }
         else Assert.That(Call(owner, "TryPlay", index), Is.True);

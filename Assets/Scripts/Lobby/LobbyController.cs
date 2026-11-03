@@ -156,7 +156,6 @@ public partial class LobbyController : MonoBehaviour
     {
         if (Instance != this) return;
         lifetimeCancellation.Cancel();
-        SettingsManager.OpenWorldLobbyChanged -= OnOpenWorldLobbySettingChanged;
         matchmakingCancellation?.Cancel();
         failureGuard.BeginIntentionalLeave(failureGuard.Generation);
         UnsubscribeFromSession();
@@ -1248,10 +1247,10 @@ public partial class LobbyController : MonoBehaviour
         catch (Exception exception) { Debug.LogException(exception); }
     }
 
-    private IEnumerator LoadLobbyAsync()
+    private IEnumerator LoadLobbyAsync(bool? staticMenu = null)
     {
         LoadingScreen.Instance.ShowGenericLoadingScreen();
-        var loading = ChangeHomeAsync(false);
+        var loading = ChangeHomeAsync(staticMenu);
         yield return new WaitUntil(() => loading.IsCompleted);
         if (loading.IsFaulted) Debug.LogException(loading.Exception);
         LoadingScreen.Instance.HideGenericLoadingScreen();

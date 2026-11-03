@@ -25,7 +25,7 @@ public class OpenWorldLobbySettingsTests
     private readonly List<bool> changes = new List<bool>();
     private Action<bool> changed;
 
-    private bool Enabled => (bool)settingsType.GetProperty("OpenWorldLobbyEnabled").GetValue(null);
+    private bool Enabled => (bool)settingsType.GetProperty("AutoJoinOpenWorldLobby").GetValue(null);
     private Toggle LobbyToggle => (Toggle)settingsType.GetField("openWorldLobbyToggle", Private).GetValue(manager);
 
     [SetUp]
@@ -61,6 +61,23 @@ public class OpenWorldLobbySettingsTests
         PlayerPrefs.Save();
         QualitySettings.vSyncCount = previousVSync;
         Application.targetFrameRate = previousTargetFrameRate;
+    }
+
+    [TestCase(0, null, false, false)]
+    [TestCase(1, null, false, true)]
+    [TestCase(0, false, false, true)]
+    [TestCase(1, true, false, false)]
+    [TestCase(1, null, true, false)]
+    [TestCase(0, false, true, false)]
+    public void HomeNavigationRespectsPreferenceUnlessExplicitlyOverridden(
+        int preference, bool? staticMenu, bool hasSession, bool expected)
+    {
+        PlayerPrefs.SetInt(PreferenceKey, preference);
+        var controllerType = AppDomain.CurrentDomain.GetAssemblies()
+            .Select(assembly => assembly.GetType("LobbyController")).First(type => type != null);
+        var useOpenWorld = controllerType.GetMethod("ShouldUseOpenWorldLobby", BindingFlags.Static | BindingFlags.NonPublic)
+            .Invoke(null, new object[] { staticMenu, hasSession });
+        Assert.That(useOpenWorld, Is.EqualTo(expected));
     }
 
     private void CreateManager()
@@ -246,9 +263,11 @@ public class OpenWorldLobbySettingsTests
         Assert.That(root.GetComponentsInChildren<Transform>(true).Length, Is.EqualTo(objectCount));
     }
 
-    [Test]
-    public void BootSceneContainsEditableSettingsRowWithoutChangingQualityOrCreatingUi()
+    [TestCase(false)]
+    [TestCase(true)]
+    public void BootSceneContainsEditableAutoJoinRowWithoutChangingQualityOrCreatingUi(bool autoJoin)
     {
+        PlayerPrefs.SetInt(PreferenceKey, autoJoin ? 1 : 0);
         var scene = EditorSceneManager.OpenPreviewScene("Assets/Scenes/BootScene.unity");
         try
         {
@@ -266,8 +285,8 @@ public class OpenWorldLobbySettingsTests
 
             Assert.That(LobbyToggle.transform.parent.parent, Is.SameAs(scroll.content));
             Assert.That(scroll.content.childCount, Is.EqualTo(previousRows));
-            Assert.That(LobbyToggle.transform.parent.GetComponentInChildren<TMP_Text>().text, Is.EqualTo("Open world lobby"));
-            Assert.That(LobbyToggle.isOn, Is.True);
+            Assert.That(LobbyToggle.transform.parent.GetComponentInChildren<TMP_Text>().text, Is.EqualTo("Auto-join open world lobby on Start"));
+            Assert.That(LobbyToggle.isOn, Is.EqualTo(autoJoin));
             CollectionAssert.AreEqual(previousStates, quality.Select(toggle => toggle.isOn).ToArray());
             Assert.That(changes, Is.Empty);
         }

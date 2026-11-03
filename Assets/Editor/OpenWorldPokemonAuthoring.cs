@@ -14,6 +14,7 @@ public static class OpenWorldPokemonAuthoring
     private const string HudPath = "Assets/Prefabs/Lobby/OpenWorldLobbyHUD.prefab";
     private const string TrainerPath = "Assets/Prefabs/Lobby/OpenWorldTrainer.prefab";
     private const string FollowerPath = "Assets/Prefabs/Lobby/OpenWorldPokemonFollower.prefab";
+    private const string ButtonPath = "Assets/Prefabs/Lobby/OpenWorldPokemonButton.prefab";
 
     [MenuItem("Tools/Open World Lobby/Rebuild Pokémon Companions")]
     public static void Rebuild()
@@ -157,29 +158,25 @@ public static class OpenWorldPokemonAuthoring
             data.FindProperty("status").objectReferenceValue = status;
             data.FindProperty("panel").objectReferenceValue = panel.gameObject;
             data.FindProperty("scroll").objectReferenceValue = scroll;
-            var rows = data.FindProperty("pokemonButtons");
-            rows.arraySize = characters.Length;
-            for (int index = 0; index < characters.Length; index++)
+            var buttonPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ButtonPath);
+            if (buttonPrefab == null)
             {
-                var character = characters[index];
                 var button = Object.Instantiate(template, content, false);
-                button.name = character.pokemonName;
+                button.name = "OpenWorldPokemonButton";
                 button.onClick = new Button.ButtonClickedEvent();
-                UnityEventTools.AddIntPersistentListener(button.onClick, menu.SelectPokemon, index);
                 var label = button.GetComponentInChildren<TMP_Text>(true);
-                label.text = character.pokemonName;
+                label.text = "Companion";
                 label.fontSize = 22f;
                 label.enableAutoSizing = true;
                 label.fontSizeMin = 16f;
                 label.fontSizeMax = 22f;
                 Position(label.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(164f, 32f));
                 var icon = Icon("Portrait", button.transform);
-                icon.sprite = character.CircleIcon;
                 Position(icon.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -8f), new Vector2(84f, 84f));
-                var row = rows.GetArrayElementAtIndex(index);
-                row.FindPropertyRelative("character").objectReferenceValue = character;
-                row.FindPropertyRelative("button").objectReferenceValue = button;
+                buttonPrefab = PrefabUtility.SaveAsPrefabAsset(button.gameObject, ButtonPath);
+                Object.DestroyImmediate(button.gameObject);
             }
+            data.FindProperty("buttonPrefab").objectReferenceValue = buttonPrefab.GetComponent<Button>();
             data.ApplyModifiedPropertiesWithoutUndo();
             panel.gameObject.SetActive(false);
             PrefabUtility.SaveAsPrefabAsset(root, HudPath);

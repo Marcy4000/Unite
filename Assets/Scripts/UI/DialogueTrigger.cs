@@ -4,6 +4,8 @@ public class DialogueTrigger : MonoBehaviour
 {
     [SerializeField] private Dialogue[] dialogue;
     [SerializeField] private bool triggerOnlyOnce = true;
+    [SerializeField] private DialoguePortraitMode portraitMode;
+    [SerializeField] private GameObject portraitPrefab;
 
     private string prefsKey;
 
@@ -24,7 +26,8 @@ public class DialogueTrigger : MonoBehaviour
             return; // Dialogue has already been triggered
         }
 
-        DialogueSystem.Instance.SetDialogues(dialogue);
+        if (DialogueSystem.Instance == null || dialogue == null || dialogue.Length == 0) return;
+        DialogueSystem.Instance.SetDialogues(dialogue, portraitMode, portraitPrefab);
 
         if (triggerOnlyOnce)
         {

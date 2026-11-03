@@ -18,7 +18,9 @@ public sealed class OpenWorldEmoteMenu : MonoBehaviour
     [SerializeField] private Button openButton;
     [SerializeField] private GameObject panel;
     [SerializeField] private ScrollRect scroll;
-    [SerializeField] private AnimationButton[] animationButtons;
+    [SerializeField] private Button buttonPrefab;
+
+    private AnimationButton[] animationButtons = Array.Empty<AnimationButton>();
 
     private static OpenWorldEmoteMenu activeMenu;
     private Animator displayedAnimator;
@@ -92,7 +94,7 @@ public sealed class OpenWorldEmoteMenu : MonoBehaviour
     private void RefreshButtons(OpenWorldTrainerEmotes emotes)
     {
         displayedAnimator = emotes.ActiveAnimator;
-        if (animationButtons == null) return;
+        EnsureButtons();
         foreach (var row in animationButtons)
         {
             if (row.button == null) continue;
@@ -100,6 +102,32 @@ public sealed class OpenWorldEmoteMenu : MonoBehaviour
                 catalog.TryGet(row.animationIndex, displayedAnimator, out _);
             row.button.gameObject.SetActive(available);
             if (available && row.label != null) row.label.text = catalog.Entries[row.animationIndex].DisplayName;
+        }
+    }
+
+    private void EnsureButtons()
+    {
+        if (catalog == null || buttonPrefab == null || scroll == null || scroll.content == null ||
+            animationButtons.Length == catalog.Entries.Count) return;
+        foreach (var row in animationButtons)
+        {
+            row.button.gameObject.SetActive(false);
+            Destroy(row.button.gameObject);
+        }
+        animationButtons = new AnimationButton[catalog.Entries.Count];
+        for (int index = 0; index < animationButtons.Length; index++)
+        {
+            int animationIndex = index;
+            var button = Instantiate(buttonPrefab, scroll.content, false);
+            button.name = catalog.Entries[index]?.DisplayName ?? "Emote";
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(() => PlayEmote(animationIndex));
+            animationButtons[index] = new AnimationButton
+            {
+                animationIndex = index,
+                button = button,
+                label = button.GetComponentInChildren<TMP_Text>(true)
+            };
         }
     }
 }

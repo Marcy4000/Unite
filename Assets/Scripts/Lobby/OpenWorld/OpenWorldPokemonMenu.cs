@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -19,7 +20,10 @@ public sealed class OpenWorldPokemonMenu : MonoBehaviour
     [SerializeField] private TMP_Text status;
     [SerializeField] private GameObject panel;
     [SerializeField] private ScrollRect scroll;
-    [SerializeField] private PokemonButton[] pokemonButtons;
+    [SerializeField] private Button buttonPrefab;
+
+    private PokemonButton[] pokemonButtons = Array.Empty<PokemonButton>();
+    private CharacterInfo[] displayedRoster;
 
     private static OpenWorldPokemonMenu activeMenu;
     private OpenWorldPokemonCompanion companion;
@@ -53,6 +57,7 @@ public sealed class OpenWorldPokemonMenu : MonoBehaviour
         if (companion == null || !companion.CanSelect) return;
         if (activeMenu != null && activeMenu != this) activeMenu.Close();
         GetComponent<OpenWorldEmoteMenu>()?.Close();
+        EnsureButtons();
         RefreshSelection();
         activeMenu = this;
         panel.SetActive(true);
@@ -70,6 +75,33 @@ public sealed class OpenWorldPokemonMenu : MonoBehaviour
         if (companion == null || pokemonButtons == null || index < 0 || index >= pokemonButtons.Length ||
             CharactersList.Instance == null) return;
         if (companion.TrySelect(CharactersList.Instance.GetCharacterID(pokemonButtons[index].character))) Close();
+    }
+
+    private void EnsureButtons()
+    {
+        var roster = CharactersList.Instance != null ? CharactersList.Instance.Characters : null;
+        if (roster == null || roster == displayedRoster || buttonPrefab == null || scroll == null || scroll.content == null) return;
+        foreach (var row in pokemonButtons)
+        {
+            row.button.gameObject.SetActive(false);
+            Destroy(row.button.gameObject);
+        }
+        displayedRoster = roster;
+        var rows = new List<PokemonButton>();
+        for (int index = 0; index < roster.Length && index <= short.MaxValue; index++)
+        {
+            var character = roster[index];
+            if (character == null || character.Hidden || character.pokemon == null || !character.pokemon.RuntimeKeyIsValid()) continue;
+            int buttonIndex = rows.Count;
+            var button = Instantiate(buttonPrefab, scroll.content, false);
+            button.name = character.pokemonName;
+            button.GetComponentInChildren<TMP_Text>(true).text = character.pokemonName;
+            button.transform.Find("Portrait").GetComponent<Image>().sprite = character.CircleIcon;
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(() => SelectPokemon(buttonIndex));
+            rows.Add(new PokemonButton { character = character, button = button });
+        }
+        pokemonButtons = rows.ToArray();
     }
 
     private void RefreshSelection()

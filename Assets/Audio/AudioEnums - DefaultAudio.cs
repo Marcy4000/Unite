@@ -250,5 +250,6 @@
         PsyduckRacingBGM,
         PhotoMakerTheme,
         ElectrodeVolleyballTheme,
-        ElectrodeVolleyballThemeFinalStretch
+        ElectrodeVolleyballThemeFinalStretch,
+        MainLobbyCityTheme
     }
