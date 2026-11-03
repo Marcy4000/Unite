@@ -3,14 +3,17 @@ using System.Collections;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 // Runtime scripts live in Assembly-CSharp, so use reflection from this test assembly.
-public class LobbyChatNotificationTests
+public abstract class LobbyChatNotificationTestsBase
 {
+    protected virtual bool UseCityUi => false;
+    private GameObject cityRoot;
     private Scene scene;
     private bool openedScene;
     private Component manager;
@@ -40,6 +43,13 @@ public class LobbyChatNotificationTests
     [OneTimeSetUp]
     public void LoadLobbyScene()
     {
+        if (UseCityUi)
+        {
+            cityRoot = PrefabUtility.LoadPrefabContents("Assets/Prefabs/Lobby/OpenWorldLobbyHUD.prefab");
+            manager = cityRoot.GetComponent(GameType("ChatManager"));
+            Assert.That(manager, Is.Not.Null);
+            return;
+        }
         scene = SceneManager.GetSceneByPath("Assets/Scenes/LobbyScene.unity");
         openedScene = !scene.isLoaded;
         if (openedScene)
@@ -57,21 +67,70 @@ public class LobbyChatNotificationTests
         root.SetActive(false); // Never initialize authentication or networking.
         controller = root.AddComponent(controllerType);
         instanceProperty.SetValue(null, controller);
-        SetField(controller, "localPlayer", Activator.CreateInstance(GameType("Unite.Multiplayer.GameSessionPlayer"), "local"));
+        SetField(controller, "localPlayer", Activator.CreateInstance(GameType("Unite.Multiplayer.GameSessionPlayer"), "local", false));
         SetField(controller, "partyLobby", NewParty());
         Call("SyncLobby");
     }
 
-    private static object NewParty() => Activator.CreateInstance(GameType("Unite.Multiplayer.GameSessionView"));
+    private static object NewParty()
+    {
+        var party = Activator.CreateInstance(GameType("Unite.Multiplayer.GameSessionView"));
+        party.GetType().GetProperty("Id").SetValue(party, "party");
+        return party;
+    }
 
-    private void Receive(string sender = "remote", string text = "Ready to play?")
+    private static object Message(string sender = "remote", string text = "Ready to play?", string recipient = null,
+        string lobby = "party")
     {
         var messageType = GameType("ChatManager+ChatMessage");
         var message = Activator.CreateInstance(messageType);
         messageType.GetField("senderID").SetValue(message, sender);
+        messageType.GetField("recipientID").SetValue(message, recipient);
+        messageType.GetField("lobbyID").SetValue(message, lobby);
         messageType.GetField("message").SetValue(message, text);
-        Call("RecieveMessageRPC", message);
+        return message;
     }
+
+    private void Receive(string sender = "remote", string text = "Ready to play?", string recipient = null,
+        string lobby = "party") => Call("RecieveMessageRPC", Message(sender, text, recipient, lobby));
+
+    private IList PartyPlayers => (IList)Field(controller, "partyLobby").GetType().GetProperty("Players")
+        .GetValue(Field(controller, "partyLobby"));
+
+    private object AddPlayer(string id, ulong clientId, string name = "Party member", bool isBot = false)
+    {
+        var player = Activator.CreateInstance(GameType("Unite.Multiplayer.GameSessionPlayer"), id, isBot);
+        SetPlayerProperty(player, "PlayerName", name);
+        SetPlayerProperty(player, "OwnerID", clientId.ToString());
+        SetPlayerProperty(player, "ClothingInfo", Convert.ToBase64String(new byte[16]));
+        PartyPlayers.Add(player);
+        return player;
+    }
+
+    private static void SetPlayerProperty(object player, string key, string value)
+    {
+        var propertyType = GameType("Unity.Services.Multiplayer.PlayerProperty");
+        var visibilityType = propertyType.GetConstructors().Single().GetParameters()[1].ParameterType;
+        var data = (IDictionary)player.GetType().GetProperty("Data").GetValue(player);
+        data[key] = Activator.CreateInstance(propertyType, value, Enum.ToObject(visibilityType, 0));
+    }
+
+    private bool Route(object message, ulong senderClientId, out IList targets)
+    {
+        var arguments = new[] { Field(controller, "partyLobby"), message, senderClientId, null };
+        var result = (bool)GameType("ChatMessageReciever").GetMethod("TryGetMessageTargets",
+            BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, arguments);
+        targets = (IList)arguments[3];
+        return result;
+    }
+
+    private string SelectedPlayer => (string)manager.GetType().GetProperty("SelectedPrivatePlayerId").GetValue(manager);
+    private string Channel => manager.GetType().GetProperty("CurrentChannel").GetValue(manager).ToString();
+    private bool DropdownEnabled => ((Component)Field(manager, "privatePlayerDropdown")).gameObject.activeSelf &&
+        (bool)Field(manager, "privatePlayerDropdown").GetType()
+        .GetProperty("interactable").GetValue(Field(manager, "privatePlayerDropdown"));
+    private bool[] MessageVisibility => ((IList)Field(manager, "chatMessages")).Cast<Component>()
+        .Select(message => message.gameObject.activeSelf).ToArray();
 
     private void RemoveMessageObjects()
     {
@@ -95,6 +154,7 @@ public class LobbyChatNotificationTests
     [OneTimeTearDown]
     public void CloseLobbyScene()
     {
+        if (cityRoot != null) PrefabUtility.UnloadPrefabContents(cityRoot);
         if (openedScene) EditorSceneManager.CloseScene(scene, true);
     }
 
@@ -195,4 +255,216 @@ public class LobbyChatNotificationTests
         Assert.That(UnreadCount, Is.EqualTo(100));
         Assert.That(Text("unreadCountText"), Is.EqualTo("99+"));
     }
+
+    [Test]
+    public void SceneWiresBothTogglesAndPlayerDropdown()
+    {
+        Assert.That(((Component)Field(manager, "globalChatToggle")).name, Is.EqualTo("GlobalChat"));
+        Assert.That(((Component)Field(manager, "privateChatToggle")).name, Is.EqualTo("PrivateChat"));
+        Assert.That(((Component)Field(manager, "privatePlayerDropdown")).name, Is.EqualTo("PrivatePlayerDropdown"));
+    }
+
+    [Test]
+    public void GlobalChatDisablesDropdownAndHidesPrivateMessages()
+    {
+        AddPlayer("remote", 1);
+        Receive();
+        Receive(recipient: "local");
+        Receive(sender: "local", recipient: "remote");
+        Call("OpenGlobalChat");
+        Assert.That(Channel, Is.EqualTo("Global"));
+        Assert.That(DropdownEnabled, Is.False);
+        Assert.That(MessageVisibility, Is.EqualTo(new[] { true, false, false }));
+        Assert.That(UnreadCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void PrivateChatShowsOnlySelectedPlayersConversationInBothDirections()
+    {
+        AddPlayer("remote", 1);
+        AddPlayer("other", 2);
+        Receive();
+        Receive(recipient: "local");
+        Receive(sender: "local", recipient: "remote");
+        Receive(sender: "other", recipient: "local");
+        Call("OpenPrivateChat", "remote");
+        Assert.That(Channel, Is.EqualTo("Private"));
+        Assert.That(SelectedPlayer, Is.EqualTo("remote"));
+        Assert.That(DropdownEnabled, Is.True);
+        Assert.That(MessageVisibility, Is.EqualTo(new[] { false, true, true, false }));
+        Assert.That(UnreadCount, Is.EqualTo(2));
+        Call("SelectPrivatePlayer", 1);
+        Assert.That(SelectedPlayer, Is.EqualTo("other"));
+        Assert.That(MessageVisibility, Is.EqualTo(new[] { false, false, false, true }));
+        Assert.That(UnreadCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void MessagesForAnotherConversationRemainUnreadWhileChatIsOpen()
+    {
+        AddPlayer("remote", 1);
+        AddPlayer("other", 2);
+        Call("OpenPrivateChat", "remote");
+        Receive(recipient: "local");
+        Receive(sender: "other", recipient: "local");
+        Receive();
+        Assert.That(UnreadCount, Is.EqualTo(2));
+        Assert.That(MessageVisibility, Is.EqualTo(new[] { true, false, false }));
+        Call("OpenGlobalChat");
+        Assert.That(UnreadCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void NotificationOpensTheCorrespondingPrivateConversation()
+    {
+        AddPlayer("remote", 1);
+        Receive(recipient: "local");
+        Call("OpenChat");
+        Assert.That(Channel, Is.EqualTo("Private"));
+        Assert.That(SelectedPlayer, Is.EqualTo("remote"));
+        Assert.That(UnreadCount, Is.Zero);
+        Assert.That(Popup.activeSelf, Is.False);
+    }
+
+    [Test]
+    public void GlobalNotificationReturnsToGlobalConversation()
+    {
+        AddPlayer("remote", 1);
+        Call("OpenPrivateChat", "remote");
+        Call("CloseChat");
+        Receive();
+        Call("OpenChat");
+        Assert.That(Channel, Is.EqualTo("Global"));
+        Assert.That(UnreadCount, Is.Zero);
+    }
+
+    [Test]
+    public void UiEventsSwitchChannelsAndSelectPartyPlayers()
+    {
+        AddPlayer("local", 0);
+        AddPlayer("remote", 1, "First player");
+        AddPlayer("other", 2, "Second player");
+        AddPlayer("bot", 0, isBot: true);
+        Call("OnDisable");
+        Call("OnEnable");
+        Call("OpenGlobalChat");
+        var toggle = Field(manager, "privateChatToggle");
+        toggle.GetType().GetProperty("isOn").SetValue(toggle, true);
+        Assert.That(Channel, Is.EqualTo("Private"));
+        Assert.That(DropdownEnabled, Is.True);
+        var dropdown = Field(manager, "privatePlayerDropdown");
+        Assert.That(((IList)dropdown.GetType().GetProperty("options").GetValue(dropdown)).Count, Is.EqualTo(2));
+        dropdown.GetType().GetProperty("value").SetValue(dropdown, 1);
+        Assert.That(SelectedPlayer, Is.EqualTo("other"));
+        toggle = Field(manager, "globalChatToggle");
+        toggle.GetType().GetProperty("isOn").SetValue(toggle, true);
+        Assert.That(Channel, Is.EqualTo("Global"));
+        Assert.That(DropdownEnabled, Is.False);
+    }
+
+    [Test]
+    public void RosterChangesPreserveSelectionByIdAndHandleDeparture()
+    {
+        var first = AddPlayer("remote", 1, "Duplicate name");
+        var second = AddPlayer("other", 2, "Duplicate name");
+        Call("OpenPrivateChat", "other");
+        PartyPlayers.Remove(first);
+        PartyPlayers.Add(first);
+        SetPlayerProperty(second, "PlayerName", "New name");
+        Call("SyncLobby");
+        Assert.That(SelectedPlayer, Is.EqualTo("other"));
+        var dropdown = Field(manager, "privatePlayerDropdown");
+        var options = (IList)dropdown.GetType().GetProperty("options").GetValue(dropdown);
+        Assert.That(options[0].GetType().GetProperty("text").GetValue(options[0]), Is.EqualTo("New name"));
+        PartyPlayers.Remove(second);
+        Call("SyncLobby");
+        Assert.That(SelectedPlayer, Is.EqualTo("remote"));
+        PartyPlayers.Clear();
+        Call("SyncLobby");
+        Assert.That(SelectedPlayer, Is.Null);
+        Assert.That(DropdownEnabled, Is.False);
+    }
+
+    [TestCase("local")]
+    [TestCase("missing")]
+    [TestCase("bot")]
+    public void InvalidPrivateChatTargetDoesNotOpenAnotherConversation(string playerId)
+    {
+        AddPlayer("remote", 1);
+        AddPlayer("bot", 0, isBot: true);
+        Call("OpenPrivateChat", playerId);
+        Assert.That(Channel, Is.EqualTo("Global"));
+        Assert.That(((GameObject)Field(manager, "chatContainer")).activeSelf, Is.False);
+    }
+
+    [Test]
+    public void UnrelatedPrivateMessagesAndOldPartyMessagesAreDiscarded()
+    {
+        Receive(sender: "remote", recipient: "other");
+        Receive(lobby: "previous-party");
+        Assert.That(MessageVisibility, Is.Empty);
+        Assert.That(UnreadCount, Is.Zero);
+    }
+
+    [Test]
+    public void ChangingPartyWithTheSamePlayersResetsAndRebuildsSelection()
+    {
+        var player = AddPlayer("remote", 1);
+        Call("OpenPrivateChat", "remote");
+        SetField(controller, "partyLobby", NewParty());
+        PartyPlayers.Add(player);
+        Call("SyncLobby");
+        Assert.That(Channel, Is.EqualTo("Global"));
+        Assert.That(SelectedPlayer, Is.EqualTo("remote"));
+        Assert.That(DropdownEnabled, Is.False);
+    }
+
+    [Test]
+    public void ServerRoutesGlobalMessagesToHumanPartyMembersOnly()
+    {
+        AddPlayer("local", 0);
+        AddPlayer("remote", 1);
+        AddPlayer("other", 2);
+        AddPlayer("bot", 0, isBot: true);
+        Assert.That(Route(Message(), 1, out var targets), Is.True);
+        Assert.That(targets, Is.EquivalentTo(new ulong[] { 0, 1, 2 }));
+    }
+
+    [TestCase("remote", "other", 1ul, 2ul)]
+    [TestCase("local", "remote", 0ul, 1ul)]
+    [TestCase("remote", "local", 1ul, 0ul)]
+    public void ServerRoutesPrivateMessagesOnlyToSenderAndRecipient(string sender, string recipient,
+        ulong senderClientId, ulong recipientClientId)
+    {
+        AddPlayer("local", 0);
+        AddPlayer("remote", 1);
+        AddPlayer("other", 2);
+        Assert.That(Route(Message(sender: sender, recipient: recipient), senderClientId, out var targets), Is.True);
+        Assert.That(targets, Is.EquivalentTo(new[] { senderClientId, recipientClientId }));
+    }
+
+    [TestCase("local", "remote", 1ul, "party", "Hello")]
+    [TestCase("missing", "remote", 1ul, "party", "Hello")]
+    [TestCase("remote", "missing", 1ul, "party", "Hello")]
+    [TestCase("remote", "remote", 1ul, "party", "Hello")]
+    [TestCase("remote", "bot", 1ul, "party", "Hello")]
+    [TestCase("remote", "local", 1ul, "previous-party", "Hello")]
+    [TestCase("remote", "local", 1ul, "party", "   ")]
+    public void ServerRejectsSpoofedOrInvalidMessages(string sender, string recipient, ulong senderClientId,
+        string lobby, string text)
+    {
+        AddPlayer("local", 0);
+        AddPlayer("remote", 1);
+        AddPlayer("bot", 0, isBot: true);
+        Assert.That(Route(Message(sender, text, recipient, lobby), senderClientId, out _), Is.False);
+    }
+}
+
+public sealed class LobbyChatNotificationTests : LobbyChatNotificationTestsBase
+{
+}
+
+public sealed class OpenWorldChatNotificationTests : LobbyChatNotificationTestsBase
+{
+    protected override bool UseCityUi => true;
 }

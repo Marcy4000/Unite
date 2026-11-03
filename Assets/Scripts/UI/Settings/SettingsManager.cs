@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -7,6 +8,8 @@ using JSAM;
 public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance { get; private set; }
+    public static bool OpenWorldLobbyEnabled => PlayerPrefs.GetInt("OpenWorldLobbyEnabled", 1) != 0;
+    public static event Action<bool> OpenWorldLobbyChanged;
 
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private GameObject creditsPanel;
@@ -18,6 +21,7 @@ public class SettingsManager : MonoBehaviour
     [SerializeField] private TMP_Dropdown resolutionDropdown;
     [SerializeField] private Toggle fullscreenToggle;
     [SerializeField] private Toggle vsyncToggle;
+    [SerializeField] private Toggle openWorldLobbyToggle;
     [SerializeField] private Toggle[] qualityToggles;
 
     [SerializeField] private Slider masterVolumeSlider;
@@ -44,6 +48,8 @@ public class SettingsManager : MonoBehaviour
 
     void Start()
     {
+        InitializeOpenWorldLobbyToggle();
+
         // Populate resolution dropdown
         resolutions = Screen.resolutions;
         resolutionDropdown.ClearOptions();
@@ -110,8 +116,28 @@ public class SettingsManager : MonoBehaviour
         CloseKeybinds();
     }
 
+    private void InitializeOpenWorldLobbyToggle()
+    {
+        if (openWorldLobbyToggle == null) return;
+        openWorldLobbyToggle.SetIsOnWithoutNotify(OpenWorldLobbyEnabled);
+        openWorldLobbyToggle.onValueChanged.RemoveListener(SetOpenWorldLobby);
+        openWorldLobbyToggle.onValueChanged.AddListener(SetOpenWorldLobby);
+    }
+
+    private void OnDestroy()
+    {
+        if (openWorldLobbyToggle != null)
+            openWorldLobbyToggle.onValueChanged.RemoveListener(SetOpenWorldLobby);
+
+        if (Instance == this)
+            Instance = null;
+    }
+
     private void UpdateOptions()
     {
+        if (openWorldLobbyToggle != null)
+            openWorldLobbyToggle.SetIsOnWithoutNotify(OpenWorldLobbyEnabled);
+
         int currentResolutionIndex = 0;
         for (int i = 0; i < resolutions.Length; i++)
         {
@@ -200,6 +226,19 @@ public class SettingsManager : MonoBehaviour
     {
         if (!AndroidDisplaySettings.ApplyMobileFrameRatePolicy())
             QualitySettings.vSyncCount = enabled ? 1 : 0;
+    }
+
+    public void SetOpenWorldLobby(bool enabled)
+    {
+        bool changed = OpenWorldLobbyEnabled != enabled;
+        PlayerPrefs.SetInt("OpenWorldLobbyEnabled", enabled ? 1 : 0);
+        PlayerPrefs.Save();
+
+        if (openWorldLobbyToggle != null)
+            openWorldLobbyToggle.SetIsOnWithoutNotify(enabled);
+
+        if (changed)
+            OpenWorldLobbyChanged?.Invoke(enabled);
     }
 
     public void SetMasterVolume(float volume)

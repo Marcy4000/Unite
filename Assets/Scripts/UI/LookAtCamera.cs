@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[DefaultExecutionOrder(100)]
 public class LookAtCamera : MonoBehaviour
 {
     private Camera mainCamera;
@@ -11,6 +12,11 @@ public class LookAtCamera : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (mainCamera == null || !mainCamera.isActiveAndEnabled)
+        {
+            mainCamera = Camera.main;
+        }
+
         if (mainCamera != null)
         {
             transform.LookAt(transform.position + mainCamera.transform.rotation * Vector3.forward,

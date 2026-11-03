@@ -11,7 +11,7 @@ public class ChatMessageUI : MonoBehaviour
     {
         messageText.text = message.message;
 
-        var player = LobbyController.Instance.Lobby.Players.Find(player => player.Id == message.senderID);
+        var player = LobbyController.Instance?.ChatLobby?.Players.Find(player => player.Id == message.senderID);
 
         if (player != null)
         {

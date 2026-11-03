@@ -14,7 +14,7 @@ using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public class LobbyController : MonoBehaviour
+public partial class LobbyController : MonoBehaviour
 {
 #if UNITY_EDITOR
     [Header("Debug")]
@@ -83,6 +83,7 @@ public class LobbyController : MonoBehaviour
 
     // These game-owned views preserve the existing UI contract without exposing Lobby SDK models.
     public GameSessionView Lobby => partyLobby;
+    public GameSessionView ChatLobby => OpenWorldLobby != null && OpenWorldLobby.IsActive ? OpenWorldLobby.ChatLobby : Lobby;
     public GameSessionPlayer Player => localPlayer;
     public ISession Session => session;
     public List<PlayerNetworkManager> PlayerNetworkManagers => playerNetworkManagers;
@@ -143,6 +144,7 @@ public class LobbyController : MonoBehaviour
         SceneManager.sceneLoaded += OnUnitySceneLoaded;
         authenticationTask = InitializeUnityAuthenticationAsync();
         ObserveTask(authenticationTask);
+        InitializeOpenWorldLobby();
     }
 
     private void Start()
@@ -154,6 +156,7 @@ public class LobbyController : MonoBehaviour
     {
         if (Instance != this) return;
         lifetimeCancellation.Cancel();
+        SettingsManager.OpenWorldLobbyChanged -= OnOpenWorldLobbySettingChanged;
         matchmakingCancellation?.Cancel();
         failureGuard.BeginIntentionalLeave(failureGuard.Generation);
         UnsubscribeFromSession();
@@ -295,7 +298,7 @@ public class LobbyController : MonoBehaviour
         bool showLoadingScreen = true, bool showFailureNotice = true,
         [System.Runtime.CompilerServices.CallerMemberName] string operationName = null)
     {
-        if (lobbyOperationInProgress || isSearching || handlingSessionLoss) return false;
+        if (lobbyOperationInProgress || isSearching || handlingSessionLoss || changingHome) return false;
         lobbyOperationInProgress = true;
         LastOperationError = null;
         var gateTaken = false;
@@ -308,6 +311,7 @@ public class LobbyController : MonoBehaviour
             sessionOperationStage = "initializing authentication";
             await authenticationTask;
             lifetimeCancellation.Token.ThrowIfCancellationRequested();
+            await OpenWorldLobby.LeaveAsync();
             sessionOperationStage = "executing operation";
             await operation();
             return failureGuard.PendingReason == SessionFailureReason.None;
@@ -1037,7 +1041,7 @@ public class LobbyController : MonoBehaviour
         {
             await LeaveCurrentSessionAsync();
             ResetMatchState();
-            lobbyUI?.ShowMainMenuUI();
+            await LoadHomeAsync();
         });
     }
 
@@ -1247,7 +1251,9 @@ public class LobbyController : MonoBehaviour
     private IEnumerator LoadLobbyAsync()
     {
         LoadingScreen.Instance.ShowGenericLoadingScreen();
-        yield return SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
+        var loading = ChangeHomeAsync(false);
+        yield return new WaitUntil(() => loading.IsCompleted);
+        if (loading.IsFaulted) Debug.LogException(loading.Exception);
         LoadingScreen.Instance.HideGenericLoadingScreen();
     }
 
@@ -1266,8 +1272,7 @@ public class LobbyController : MonoBehaviour
         {
             await LeaveCurrentSessionAsync();
             ResetMatchState();
-            await SceneManager.LoadSceneAsync("LobbyScene", LoadSceneMode.Single);
-            lobbyUI?.ShowMainMenuUI();
+            await LoadHomeAsync();
         });
     }
 

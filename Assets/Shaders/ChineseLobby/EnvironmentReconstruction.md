@@ -180,6 +180,13 @@ textures. Those importer changes are outside the ownership of these files.
 
 ## Inferred paths and remaining fidelity limits
 
+Foliage variants always sample texture alpha and clip at `_Cutoff` in forward,
+shadow, depth, and depth-normal passes. Legacy `_UseAlphaInput` / `_UseAlphaClip`
+zeros in the export do not disable the foliage variant's intrinsic cutout.
+Billboard always samples `_MainTex` because its property contract has no
+`_UseMainMap` switch. Its emission is modulated by the source texture RGB/alpha
+rather than adding a flat emission color over the entire image.
+
 - Gloss interprets `_NormalMap.RGB` as normal and A as roughness, supported by
   `t_nr_*` texture names and the compiled Fullroughness family. Metal uses MROE.
 - Mix uses height-A plus vertex RG weighting from compiled two-layer terrain,

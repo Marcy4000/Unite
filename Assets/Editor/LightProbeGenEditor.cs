@@ -1,136 +1,86 @@
 using UnityEngine;
 using UnityEditor;
-using UnityEditor.EditorTools;
 using UnityEditor.IMGUI.Controls;
 
 [CustomEditor(typeof(LightProbeGenerator))]
 public class LightProbeGenEditor : Editor
 {
-	private BoxBoundsHandle _boundsHandle = new BoxBoundsHandle();
-	private bool _editBounds = false;
-	private GUIStyle _buttonStyle;
-	private GUILayoutOption[] _editBoundsOptions;
-	private LightProbeGenerator _gen;
-	private GUIContent _editModeButton;
+    private readonly BoxBoundsHandle boundsHandle = new BoxBoundsHandle();
+    private bool editBounds;
+    private bool previousToolsHidden;
+    private LightProbeGenerator generator;
 
-
-	public override void OnInspectorGUI()
-	{
-		GUIContent content = new GUIContent(EditorGUIUtility.IconContent("EditCollider").image, 
-			EditorGUIUtility.TrTextContent("Edit bounding volume.\n\n - Hold Alt after clicking control handle to pin center in place." +
-            "\n - Hold Shift after clicking control handle to scale uniformly.").text);
-
-		_buttonStyle = new GUIStyle(GUI.skin.button);
-
-        EditorGUILayout.BeginHorizontal();
-		GUILayout.Space(70);
-		GUILayout.FlexibleSpace();
-
-        if (_editBounds = GUILayout.Toggle(_editBounds, content, _buttonStyle, _editBoundsOptions))
-        {
+    public override void OnInspectorGUI()
+    {
+        serializedObject.Update();
+        var content = new GUIContent(EditorGUIUtility.IconContent("EditCollider").image,
+            "Edit bounding volume. Hold Alt to pin the center; Shift to scale uniformly.");
+        EditorGUI.BeginChangeCheck();
+        editBounds = GUILayout.Toggle(editBounds, content, GUI.skin.button, GUILayout.Width(35), GUILayout.Height(25));
+        if (EditorGUI.EndChangeCheck())
             SceneView.RepaintAll();
-        }
 
-		GUILayout.BeginVertical();
-		GUILayout.Space(10);
-
-		GUILayout.Label("Edit Bounding Volume");
-
-		GUILayout.FlexibleSpace();
-		GUILayout.EndVertical();
-		GUILayout.FlexibleSpace();
-
-		EditorGUILayout.EndHorizontal();
-
-		DrawPropertiesExcluding(serializedObject, "m_Script");
-		EditorGUILayout.Separator();
-
-		EditorGUILayout.BeginHorizontal();
-		GUILayout.FlexibleSpace();
-
-		if (GUILayout.Button("Generate", GUILayout.Width(160), GUILayout.Height(40)))
-		{
-			(target as LightProbeGenerator).GenProbes();
-		}
-
-		EditorGUILayout.Separator();
-
-		if (GUILayout.Button("Clear", GUILayout.Width(160), GUILayout.Height(40)))
-		{
-			(target as LightProbeGenerator).ClearProbes();
-		}
-
-		GUILayout.FlexibleSpace();
-		EditorGUILayout.EndHorizontal();
-	}
-
-	public void OnSceneGUI()
-	{
-		if (_editBounds)
+        DrawPropertiesExcluding(serializedObject, "m_Script");
+        serializedObject.ApplyModifiedProperties();
+        EditorGUILayout.HelpBox("Subdivisions are whole-number intervals per axis. Random Count is the number of candidates before filtering. Mesh filtering uses enabled renderers on Obstacle Layers; closed, outward-facing meshes work best.", MessageType.Info);
+        using (new EditorGUILayout.HorizontalScope())
         {
-			_boundsHandle.center = _gen.LightProbeVolumes.ProbeVolume.center;
-			_boundsHandle.size = _gen.LightProbeVolumes.ProbeVolume.size;
-			_boundsHandle.wireframeColor = Color.red;
-			_boundsHandle.handleColor = Color.green;
-		}
-
-		if (_editBounds)
-		{
-			EditorGUI.BeginChangeCheck();
-			_boundsHandle.DrawHandle();
-		}
-
-		if (Tools.current == Tool.Move && !_editBounds)
-		{
-			Undo.RecordObject(target, "ProbeGenerator Move");
-
-			_gen.LightProbeVolumes.ProbeVolume.center = Handles.PositionHandle(
-					_gen.LightProbeVolumes.ProbeVolume.center, Quaternion.identity);
-		}
-
-		if (Tools.current == Tool.Rotate && !_editBounds)
-		{
-			Undo.RecordObject(target, "ProbeGenerator Rotation");
-
-			_gen.LightProbeVolumes.Rotation = Handles.RotationHandle(_gen.LightProbeVolumes.Rotation, _gen.LightProbeVolumes.ProbeVolume.center);
-		}
-
-		if (Tools.current == Tool.Scale && !_editBounds)
-		{
-			Undo.RecordObject(target, "ProbeGenerator Scale");
-
-			_gen.LightProbeVolumes.ProbeVolume.extents = Handles.ScaleHandle(
-							_gen.LightProbeVolumes.ProbeVolume.extents,
-							_gen.LightProbeVolumes.ProbeVolume.center,
-							Quaternion.identity,
-							5.0f);
-		}
-
-        if (EditorGUI.EndChangeCheck() && _editBounds)
-        {
-			Undo.RecordObject(target, "Change Bounds");
-
-			Bounds newBounds = new Bounds();
-			newBounds.center = _boundsHandle.center;
-			newBounds.size = _boundsHandle.size;
-			_gen.LightProbeVolumes.ProbeVolume.center = newBounds.center;
-			_gen.LightProbeVolumes.ProbeVolume.extents = newBounds.extents;
+            if (GUILayout.Button("Generate", GUILayout.Height(40)))
+                generator.GenProbes();
+            if (GUILayout.Button("Clear", GUILayout.Height(40)))
+                generator.ClearProbes();
         }
-	}
+    }
+
+    public void OnSceneGUI()
+    {
+        if (generator.LightProbeVolumes == null)
+            return;
+        var area = generator.LightProbeVolumes;
+        Bounds bounds = area.ProbeVolume;
+        Quaternion rotation = area.Rotation;
+        EditorGUI.BeginChangeCheck();
+        if (editBounds)
+        {
+            using (new Handles.DrawingScope(Matrix4x4.TRS(bounds.center, rotation, Vector3.one)))
+            {
+                boundsHandle.center = Vector3.zero;
+                boundsHandle.size = bounds.size;
+                boundsHandle.wireframeColor = Color.red;
+                boundsHandle.handleColor = Color.green;
+                boundsHandle.DrawHandle();
+                bounds.center += rotation * boundsHandle.center;
+                bounds.size = boundsHandle.size;
+            }
+        }
+        else if (Tools.current == Tool.Move)
+            bounds.center = Handles.PositionHandle(bounds.center, rotation);
+        else if (Tools.current == Tool.Rotate)
+            rotation = Handles.RotationHandle(rotation, bounds.center);
+        else if (Tools.current == Tool.Scale)
+            bounds.size = Handles.ScaleHandle(bounds.size, bounds.center, rotation, HandleUtility.GetHandleSize(bounds.center));
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(generator, "Edit Light Probe Volume");
+            Vector3 size = bounds.size;
+            bounds.size = new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z));
+            area.ProbeVolume = bounds;
+            area.Rotation = rotation;
+            EditorUtility.SetDirty(generator);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(generator);
+        }
+    }
 
     private void OnEnable()
     {
-		_gen = target as LightProbeGenerator;
-		Tools.hidden = true;
-		_editBoundsOptions = new GUILayoutOption[]
-		{
-			GUILayout.Width(35),
-			GUILayout.Height(25)
-		};
-	}
+        generator = (LightProbeGenerator)target;
+        previousToolsHidden = Tools.hidden;
+        Tools.hidden = true;
+    }
 
     private void OnDisable()
     {
-		Tools.hidden = false;
+        Tools.hidden = previousToolsHidden;
     }
 }

@@ -142,6 +142,8 @@ half EnvironmentAlpha(EnvironmentVaryings input, half textureAlpha)
     return lerp(1.0h, textureAlpha, saturate(_IFMask));
 #elif defined(ENV_MESHBLEND)
     return saturate((textureAlpha + _AlphaOffset) * input.color.a);
+#elif defined(ENV_FOLIAGE)
+    return saturate(textureAlpha + _AlphaOffset);
 #else
     return lerp(1.0h, saturate(textureAlpha + _AlphaOffset), saturate(_UseAlphaInput));
 #endif
@@ -149,7 +151,11 @@ half EnvironmentAlpha(EnvironmentVaryings input, half textureAlpha)
 
 void EnvironmentClip(half alpha)
 {
+#if defined(ENV_FOLIAGE)
+    clip(alpha - _Cutoff);
+#else
     if (max(_UseAlphaClip, _AlphaClip) > 0.5) clip(alpha - _Cutoff);
+#endif
 }
 
 float3 EnvironmentNormal(EnvironmentVaryings input, half4 normalSample, float strength)
@@ -213,7 +219,7 @@ half4 EnvironmentSurfaceFragment(EnvironmentVaryings input, FRONT_FACE_TYPE face
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
     float2 uv = EnvironmentMainUV(input);
     half4 main = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
-#if !defined(ENV_LM)
+#if !defined(ENV_LM) && !defined(ENV_BILLBOARD)
     if (_UseMainMap < 0.5) main = 1.0h.xxxx;
 #endif
     half alpha = EnvironmentAlpha(input, main.a);
@@ -326,7 +332,7 @@ half4 EnvironmentSurfaceFragment(EnvironmentVaryings input, FRONT_FACE_TYPE face
 #if defined(ENV_BUILDING)
     color += main.a * _EmissionColor.rgb;
 #elif defined(ENV_BILLBOARD)
-    color = albedo + main.a * _EmissionColor.rgb;
+    color = albedo + main.rgb * main.a * _EmissionColor.rgb;
 #elif defined(ENV_FARPLANE)
     color = albedo;
 #elif defined(ENV_MIRROR) || defined(ENV_WINDOW)
