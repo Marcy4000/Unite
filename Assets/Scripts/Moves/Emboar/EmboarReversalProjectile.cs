@@ -51,7 +51,7 @@ public class EmboarReversalProjectile : NetworkBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (!IsServer || !initialized || !other.TryGetComponent(out Pokemon target)
-            || !Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, team) || !hit.Add(target)) return;
+            || !CombatTargeting.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, team) || !hit.Add(target)) return;
         target.TakeDamageRPC(damageInfo);
         target.AddStatusEffect(stun);
     }

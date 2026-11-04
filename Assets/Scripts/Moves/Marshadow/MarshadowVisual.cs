@@ -46,7 +46,7 @@ public class MarshadowVisual : MonoBehaviour
     }
     private void ApplyPresentation()
     {
-        bool friendly = actor.IsOwner || (LobbyController.Instance != null && actor.CurrentTeam.Team == LobbyController.Instance.GetLocalPlayerTeam());
+        bool friendly = SpectatorUIAssets.IsSpectating || actor.IsOwner || (LobbyController.Instance != null && actor.CurrentTeam.Team == LobbyController.Instance.GetLocalPlayerTeam());
         bool ownDecoration = effect == MarshadowEffect.Passive || effect == MarshadowEffect.AuraMark
             || effect == MarshadowEffect.ShadowSneak || effect == MarshadowEffect.PhantomForce;
         bool follows = ownDecoration || effect == MarshadowEffect.Punch || effect == MarshadowEffect.BoostedPunch

@@ -73,7 +73,10 @@ public class VisionManager : MonoBehaviour
         {
             var vision = allVisions[i];
             if (vision == null) { allVisions.RemoveAt(i); continue; }
-            vision.SetVisibility(IsVisibleToTeam(vision, LocalPlayerTeam));
+            // Observer rendering must never flow into IsVisibleToTeam: server
+            // bot perception still uses the combat team's actual vision.
+            vision.SetVisibility(SpectatorUIAssets.IsSpectating
+                ? vision.IsAliveForSpectator : IsVisibleToTeam(vision, LocalPlayerTeam));
         }
     }
 

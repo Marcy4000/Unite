@@ -258,7 +258,7 @@ public partial class LobbyController : MonoBehaviour
     {
         // Allocate once for all supported map sizes. The compatibility adapter can
         // subsequently shrink/grow the lobby limit without exceeding Relay capacity.
-        return Math.Max(10, CharactersList.Instance.Maps.Max(map => map.maxTeamSize * map.availableTeams.Count));
+        return Math.Max(10, CharactersList.Instance.Maps.Max(map => map.maxTeamSize * map.availableTeams.Count)) + SpectatorSlotRules.Capacity;
     }
 
     private SessionOptions BuildSessionOptions(LobbyType type, Dictionary<string, SessionProperty> properties = null)
@@ -515,7 +515,11 @@ public partial class LobbyController : MonoBehaviour
         partyLobby.Apply(session, localPlayer, pendingPlayerProperties);
         if (partyLobby.Data.TryGetValue("LobbyType", out var lobbyType) && Enum.TryParse(lobbyType.Value, out LobbyType parsed))
             currentLobbyType = parsed;
+        BotRoster?.ComposeLobbySeats(partyLobby);
         BotRoster?.ComposeParticipants(partyLobby);
+        if (IsCustomLobby() && BotRoster != null && BotRoster.TryGetSeat(localPlayer.Id, out var seat))
+            PersistAuthoritativeSeat(seat.Spectator ? SpectatorSlotRules.TeamValue : seat.Team.ToString(), seat.Position);
+        else if (!IsCustomLobby()) { persistedSeat = null; persistedSeatSession = null; }
         onLobbyUpdate?.Invoke(partyLobby);
         foreach (var player in partyLobby.Players)
             onPlayerDataChanged?.Invoke(player);
@@ -652,6 +656,7 @@ public partial class LobbyController : MonoBehaviour
     public void UpdatePlayerHeldItems(string heldItems) => SetPlayerProperty("HeldItems", heldItems);
     public void ChangePlayerCharacter(short characterID)
     {
+        if (IsLocalSpectator) return;
         if (characterID >= 0 && BotRoster != null && BotRoster.UsesBotSelection)
         {
             BotRoster.SelectParticipantCharacterRpc(characterID);
@@ -689,6 +694,11 @@ public partial class LobbyController : MonoBehaviour
 
     public void UpdatePlayerTeamAndPos(Team team, short pos)
     {
+        if (IsCustomLobby())
+        {
+            BotRoster?.RequestLobbySeatRpc(team, pos, false);
+            return;
+        }
         if (localPlayer.Data["PlayerTeam"].Value == team.ToString() &&
             localPlayer.Data["PlayerPos"].Value == NumberEncoder.ToBase64(pos)) return;
         ObserveTask(SetLocalPlayerPropertiesAsync(new Dictionary<string, PlayerProperty>
@@ -701,6 +711,9 @@ public partial class LobbyController : MonoBehaviour
     public void CheckIfShouldChangePos(int maxTeamSize)
     {
         if (partyLobby == null || maxTeamSize <= 0) return;
+        // Custom seats are arbitrated by the host, including automatic overflow
+        // into spectator slots. Do not race this with owner-written corrections.
+        if (IsCustomLobby()) { RefreshParticipants(); return; }
         var teams = CharactersList.Instance.GetCurrentLobbyMap().availableTeams;
         var team = GetLocalPlayerTeam();
         var position = NumberEncoder.FromBase64<short>(localPlayer.Data["PlayerPos"].Value);
@@ -728,7 +741,7 @@ public partial class LobbyController : MonoBehaviour
     public void ChangeLobbyMap(MapInfo map)
     {
         if (!IsPartyLeader || isSearching || !CanSwitchToMap(map)) return;
-        var capacity = currentLobbyType == LobbyType.Standards ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
+        var capacity = GetSessionCapacity(map, currentLobbyType);
         ObserveTask(UpdateHostAsync(host => host.SetProperty("SelectedMap", new SessionProperty(
             NumberEncoder.ToBase64(CharactersList.Instance.GetMapID(map)))), capacity));
         // Each member fixes its own team/slot on the resulting session event;
@@ -740,15 +753,30 @@ public partial class LobbyController : MonoBehaviour
         if (map == null || partyLobby == null) return false;
         int capacity = IsStandardsLobby() ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
         int humans = 0;
-        foreach (var player in partyLobby.Players) if (!player.IsBot) humans++;
+        foreach (var player in partyLobby.Players) if (!player.IsBot && !player.IsSpectator) humans++;
         return humans <= capacity;
     }
 
     public void ChangeLobbyType(LobbyType newType)
     {
         if (!IsPartyLeader || isSearching || currentLobbyType == newType) return;
+        if (newType == LobbyType.Standards && partyLobby.Players.Any(player => player.IsSpectator))
+        {
+            LastOperationError = "Spectators must take a normal player slot or leave before switching to Standards.";
+            return;
+        }
+        if (newType == LobbyType.Standards && !HavePublishedSeatRoles())
+        {
+            LastOperationError = "Seat changes are still being saved. Wait a moment before switching to Standards.";
+            return;
+        }
         var map = CharactersList.Instance.GetCurrentLobbyMap();
-        var capacity = newType == LobbyType.Standards ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
+        var capacity = GetSessionCapacity(map, newType);
+        if (newType == LobbyType.Standards && partyLobby.Players.Count(player => !player.IsBot) > capacity)
+        {
+            LastOperationError = "Too many players for a Standards party on this map.";
+            return;
+        }
         ObserveTask(UpdateHostAsync(host =>
         {
             host.SetProperty("LobbyType", new SessionProperty(newType.ToString()));
@@ -763,7 +791,7 @@ public partial class LobbyController : MonoBehaviour
     public int GetMaxPartyMembers()
     {
         var map = CharactersList.Instance.GetCurrentLobbyMap();
-        return IsStandardsLobby() ? map.maxTeamSize : map.maxTeamSize * map.availableTeams.Count;
+        return GetSessionCapacity(map, currentLobbyType);
     }
 
     public async void KickPlayer(string playerID)
@@ -1209,6 +1237,13 @@ public partial class LobbyController : MonoBehaviour
         {
             await UpdateHostAsync(host => { host.IsLocked = true; host.IsPrivate = true; });
             if (session != targetSession || !session.IsHost) return;
+            if (!ValidateCombatantRosterForStart())
+            {
+                LastOperationError = "The combatant roster does not satisfy this map's team/slot requirements.";
+                await UpdateHostAsync(host => host.IsLocked = false);
+                return;
+            }
+            BotRoster?.FreezeLobbySeats();
             if (BotRoster != null && !BotRoster.ValidateBotRosterForStart())
             {
                 Debug.LogWarning("Bot match cannot start: the map or participant slots are invalid.");

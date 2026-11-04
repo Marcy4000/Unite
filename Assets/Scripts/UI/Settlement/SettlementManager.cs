@@ -69,8 +69,8 @@ public class SettlementManager : MonoBehaviour
             LobbyController.Instance.ReturnToHomeWithoutLeavingLobby();
         });
 
-        settlementTeamModels.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam()));
-        teamPlayersMenu.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.GetLocalPlayerTeam()));
+        settlementTeamModels.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.ResultsPerspectiveTeam));
+        teamPlayersMenu.Initialize(LobbyController.Instance.GetTeamPlayers(LobbyController.Instance.ResultsPerspectiveTeam));
 
         yield return InitializeScoreboards();
 
@@ -213,7 +213,7 @@ public class SettlementManager : MonoBehaviour
         blueScoreText.text = blueScoreValue.ToString();
         orangeScoreText.text = orangeScoreValue.ToString();
 
-        Team localPlayerTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localPlayerTeam = LobbyController.Instance.ResultsPerspectiveTeam;
         gameWon = LobbyController.Instance.GameResults.WinningTeam == localPlayerTeam;
         
         ProcessRankedResults(gameWon);
@@ -223,6 +223,7 @@ public class SettlementManager : MonoBehaviour
     
     private void ProcessRankedResults(bool won)
     {
+        if (LobbyController.Instance.IsLocalSpectator) { isRankedGame = false; return; }
         if (RankedManager.Instance == null)
         {
             Debug.LogWarning("RankedManager not found, skipping rank processing");
@@ -333,7 +334,7 @@ public class SettlementManager : MonoBehaviour
             }
         }
 
-        if (LobbyController.Instance.GetLocalPlayerTeam() == Team.Blue)
+        if (LobbyController.Instance.ResultsPerspectiveTeam == Team.Blue)
         {
             teamPlayersMenu.SetGameResultImage(blueResultText.sprite);
         }

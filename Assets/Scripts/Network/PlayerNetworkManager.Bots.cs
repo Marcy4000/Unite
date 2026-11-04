@@ -45,6 +45,7 @@ public partial class PlayerNetworkManager
 
     private void InitializeBotRoster()
     {
+        lobbySeats.OnListChanged += OnSeatsChanged;
         bots.OnListChanged += OnBotsChanged;
         participantCharacters.OnListChanged += OnCharactersChanged;
         botSelectionActive.OnValueChanged += OnBotSelectionChanged;
@@ -53,6 +54,7 @@ public partial class PlayerNetworkManager
 
     private void UnsubscribeBotRoster()
     {
+        lobbySeats.OnListChanged -= OnSeatsChanged;
         bots.OnListChanged -= OnBotsChanged;
         participantCharacters.OnListChanged -= OnCharactersChanged;
         botSelectionActive.OnValueChanged -= OnBotSelectionChanged;
@@ -75,7 +77,7 @@ public partial class PlayerNetworkManager
         composingParticipants = true;
         try
         {
-            var humans = view.Players.Where(player => !player.IsBot).ToArray();
+            var humans = view.Players.Where(player => !player.IsBot && !player.IsSpectator).ToArray();
             var ids = new HashSet<string>(humans.Select(player => player.Id));
             string map = view.Data.TryGetValue("SelectedMap", out var selectedMap) ? selectedMap.Value : string.Empty;
             bool inLobby = SceneManager.GetActiveScene().name == "LobbyScene";
@@ -144,7 +146,7 @@ public partial class PlayerNetworkManager
         if (!IsServer || !IsBotRoster || !lobby.CanManageBots) return;
         lobby.RefreshParticipants();
         var map = CharactersList.Instance.GetCurrentLobbyMap();
-        var humans = lobby.Lobby.Players.Where(player => !player.IsBot).ToArray();
+        var humans = lobby.Lobby.Players.Where(player => !player.IsBot && !player.IsSpectator).ToArray();
         ulong membership = BotAllocationRules.MembershipHash(humans.Select(player => player.Id));
         foreach (var team in map.availableTeams)
             for (short position = 0; position < map.maxTeamSize; position++)
@@ -172,7 +174,7 @@ public partial class PlayerNetworkManager
     {
         if (!HasBots) return true;
         if (!SupportsBots) return false;
-        var players = LobbyController.Instance.Lobby.Players;
+        var players = LobbyController.Instance.Lobby.Players.Where(player => !player.IsSpectator).ToList();
         var map = CharactersList.Instance.GetCurrentLobbyMap();
         return players.Count <= map.maxTeamSize * map.availableTeams.Count && players.All(player =>
             map.availableTeams.Contains(TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value)) &&
@@ -221,7 +223,7 @@ public partial class PlayerNetworkManager
         botPreferences.Clear();
         matchBotLanes.Clear();
         var pool = SupportedBotCharacters();
-        foreach (var player in LobbyController.Instance.Lobby.Players)
+        foreach (var player in LobbyController.Instance.Lobby.Players.Where(player => !player.IsSpectator))
         {
             participantCharacters.Add(new ParticipantCharacter { Id = player.Id, Character = -1 });
             if (player.IsBot)
@@ -241,7 +243,7 @@ public partial class PlayerNetworkManager
         var manager = LobbyController.Instance.PlayerNetworkManagers.Find(value => value != null && value.IsSpawned &&
             value.OwnerClientId == rpcParams.Receive.SenderClientId);
         var player = manager?.LocalPlayer;
-        if (player == null || player.IsBot || character < 0 || character >= CharactersList.Instance.Characters.Length ||
+        if (player == null || player.IsBot || player.IsSpectator || character < 0 || character >= CharactersList.Instance.Characters.Length ||
             CharactersList.Instance.GetCharacterFromID(character).Hidden) return;
         var teammates = LobbyController.Instance.GetTeamPlayers(TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value));
         if (teammates.Any(teammate => !teammate.IsBot && teammate.Id != player.Id && GetSelectedCharacter(teammate.Id) == character)) return;
@@ -363,7 +365,7 @@ public partial class PlayerNetworkManager
         ResetCommittedCharactersRpc();
         matchBotLanes.Clear();
         participantCharacters.Clear();
-        foreach (var player in LobbyController.Instance.Lobby.Players)
+        foreach (var player in LobbyController.Instance.Lobby.Players.Where(player => !player.IsSpectator))
             participantCharacters.Add(new ParticipantCharacter { Id = player.Id, Character = -1 });
         // Draft has its own authenticated confirmation flow. Enabling the
         // blind-pick arbitrator here would swallow human session writes/swaps.

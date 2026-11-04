@@ -276,7 +276,7 @@ public partial class WildPokemonAI : NetworkBehaviour
         float closestDistance = float.PositiveInfinity;
         foreach (var pokemon in noticeTargets)
         {
-            if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.Enemy, Team.Neutral, true)) continue;
+            if (!CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.Enemy, Team.Neutral, true)) continue;
             float distance = (pokemon.transform.position - transform.position).sqrMagnitude;
             if (distance < closestDistance) { closestDistance = distance; closest = pokemon.transform; }
         }

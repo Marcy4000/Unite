@@ -175,7 +175,7 @@ public class VolleyballManager : NetworkBehaviour
 
             if (player.IsLocalHuman) CameraController.Instance.ForcePan(true);
             player.PlayerMovement.CanMove = false;
-            player.UpdatePosAndRotRPC(new Vector3(0, -50, -50), Quaternion.identity);
+            player.UpdatePosAndRotRPC(new Vector3(0, -50, -50), Quaternion.identity, true);
 
         }
     }

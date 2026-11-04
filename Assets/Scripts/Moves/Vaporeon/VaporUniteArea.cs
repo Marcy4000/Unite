@@ -41,7 +41,7 @@ public class VaporUniteArea : NetworkBehaviour
                     continue;
                 }
 
-                if (Aim.Instance.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, vaporeonTeam))
+                if (CombatTargeting.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, vaporeonTeam))
                 {
                     if (hit.TryGetComponent(out Pokemon pokemon))
                     {

@@ -48,7 +48,7 @@ public class VaporSwiftProjectile : NetworkBehaviour
 
         foreach (var hit in hits)
         {
-            if (Aim.Instance.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, orangeTeam) && hit.TryGetComponent(out Pokemon pokemon))
+            if (CombatTargeting.CanPokemonBeTargeted(hit.gameObject, AimTarget.NonAlly, orangeTeam) && hit.TryGetComponent(out Pokemon pokemon))
             {
                 pokemon.TakeDamageRPC(damageInfo);
             }

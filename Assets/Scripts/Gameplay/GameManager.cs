@@ -497,6 +497,7 @@ public class GameManager : NetworkBehaviour
 
         foreach (var playerNetworkManager in playerNetworkManagers)
         {
+            if (playerNetworkManager.IsSpectator) continue;
             stats.Add(playerNetworkManager.PlayerStats);
         }
         foreach (var player in players)

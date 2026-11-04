@@ -40,7 +40,7 @@ public partial class MovesController
     public bool ZoroarkDisguiseIsPlayer { get; private set; }
     public Pokemon ZoroarkDisguiseSource => illusionActive && NetworkManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(illusionSource, out var obj) ? obj.GetComponent<Pokemon>() : null;
     private bool IsZoroark => pokemon != null && pokemon.BaseStats != null && pokemon.BaseStats.Passive == AvailablePassives.ZoroarkPassive;
-    public bool IsZoroarkEnemyView => illusionActive && LobbyController.Instance != null && !playerManager.CurrentTeam.IsOnSameTeam(LobbyController.Instance.GetLocalPlayerTeam());
+    public bool IsZoroarkEnemyView => illusionActive && LobbyController.Instance != null && !LobbyController.Instance.IsLocalSpectator && !playerManager.CurrentTeam.IsOnSameTeam(LobbyController.Instance.GetLocalPlayerTeam());
 
     private void UpdateZoroarkRuntime()
     {

@@ -45,6 +45,7 @@ public class InfoHolderManager : MonoBehaviour
 
     private void ReconcilePlayers()
     {
+        if (SpectatorUIAssets.IsSpectating) return;
         Team localTeam = Team.Neutral;
         if (lobby != null && lobby.Player?.Data != null && lobby.Player.Data.TryGetValue("PlayerTeam", out var teamData))
             localTeam = TeamMember.GetTeamFromString(teamData.Value);

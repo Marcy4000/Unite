@@ -49,6 +49,8 @@ public class CharacterSelectController : NetworkBehaviour
 
     private int lastValue = 0;
     private short displayedCharacter = -1;
+    public float SpectatorTimeRemaining => selectionTimer.Value;
+    public bool SpectatorIsPreparation => currentPhase.Value == CharacterSelectPhase.Preview;
 
     private AsyncOperationHandle<GameObject> characterSelectModelHandle;
 
@@ -85,6 +87,14 @@ public class CharacterSelectController : NetworkBehaviour
         LobbyController.Instance.onLobbyUpdate += OnParticipantSelectionChanged;
         AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon, true);
+        skipPreviewPhase = CharactersList.Instance.GetCurrentLobbyMap().customProperties.Find(x => x.HasProperty("skipPreparationPhaseBlind")) != null;
+
+        if (LobbyController.Instance.IsLocalSpectator)
+        {
+            SpectatorSelectionOverlay.Show(this);
+            LoadingScreen.Instance.HideGameBeginScreen();
+            return;
+        }
 
         if (IsClient)
         {
@@ -128,8 +138,6 @@ public class CharacterSelectController : NetworkBehaviour
         pokemonInfo.gameObject.SetActive(false);
 
         trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
-
-        skipPreviewPhase = CharactersList.Instance.GetCurrentLobbyMap().customProperties.Find(x => x.HasProperty("skipPreparationPhaseBlind")) != null;
 
         LoadingScreen.Instance.HideGameBeginScreen();
     }
@@ -235,7 +243,7 @@ public class CharacterSelectController : NetworkBehaviour
             }
         }
 
-        if (LobbyController.Instance.BotRoster?.UsesBotSelection != true && selectionTimer.Value <= 0.3f && !hasSelectedCharacter)
+        if (!LobbyController.Instance.IsLocalSpectator && LobbyController.Instance.BotRoster?.UsesBotSelection != true && selectionTimer.Value <= 0.3f && !hasSelectedCharacter)
         {
             if (NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["SelectedCharacter"].Value) < 0)
             {
@@ -248,7 +256,7 @@ public class CharacterSelectController : NetworkBehaviour
     private void ShowLoadingScreenRpc()
     {
         GetComponent<LaneSelectionNetwork>()?.StopSelection();
-        LobbyController.Instance.PersistPlayerCharacter();
+        if (!LobbyController.Instance.IsLocalSpectator) LobbyController.Instance.PersistPlayerCharacter();
         AudioManager.StopMusic(DefaultAudioMusic.ChoosePokemon);
         AudioManager.PlayMusic(DefaultAudioMusic.LoadingTheme, true);
         AudioManager.PlaySound(DefaultAudioSounds.Play_Load17051302578487348);
@@ -299,6 +307,7 @@ public class CharacterSelectController : NetworkBehaviour
 
     private void OnParticipantSelectionChanged(Unite.Multiplayer.GameSessionView lobby)
     {
+        if (LobbyController.Instance.IsLocalSpectator) return;
         if (LobbyController.Instance.BotRoster?.UsesBotSelection != true) return;
         short selected = NumberEncoder.FromBase64<short>(LobbyController.Instance.Player.Data["SelectedCharacter"].Value);
         if (selected < 0 || selected == displayedCharacter) return;

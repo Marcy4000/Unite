@@ -152,10 +152,6 @@ public partial class PlayerManager : NetworkBehaviour
         }
 
         pokemon.OnPokemonInitialized += OnPokemonInitialized;
-        lobbyPlayerId.OnValueChanged += (previous, current) =>
-        {
-            hpBar.UpdatePlayerName(LobbyController.Instance.GetPlayerByID(current.ToString()).Data["PlayerName"].Value);
-        };
 
         goalBuffs = new NetworkList<ScoreBoost>();
 
@@ -164,6 +160,8 @@ public partial class PlayerManager : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        lobbyPlayerId.OnValueChanged -= HandleLobbyPlayerIdChanged;
+        lobbyPlayerId.OnValueChanged += HandleLobbyPlayerIdChanged;
         if (IsBot)
         {
             StartCoroutine(InitializeBotAvatar());
@@ -191,7 +189,7 @@ public partial class PlayerManager : NetworkBehaviour
         vision.IsVisiblyEligible = true;
 
         hpBar.InitializeEnergyUI(PokemonType.Player, tempTeam, IsLocalHuman);
-        hpBar.UpdateHpBarColor(tempTeam != currentPlayerTeam, IsLocalHuman);
+        hpBar.UpdateHpBarColor(tempTeam != (SpectatorUIAssets.IsSpectating ? Team.Blue : currentPlayerTeam), IsLocalHuman);
 
         if (IsOwner)
         {
@@ -386,6 +384,12 @@ public partial class PlayerManager : NetworkBehaviour
         LoadSelectedPokemon(pokemonId);
     }
 
+    private void HandleLobbyPlayerIdChanged(FixedString32Bytes previous, FixedString32Bytes current)
+    {
+        var player = LobbyController.Instance != null ? LobbyController.Instance.GetPlayerByID(current.ToString()) : null;
+        if (hpBar != null && player != null) hpBar.UpdatePlayerName(player.Data["PlayerName"].Value);
+    }
+
     private void UpdateLifeVisibility()
     {
         bool alive = pokemon != null && pokemon.CurrentHp > 0;
@@ -437,9 +441,12 @@ public partial class PlayerManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Owner)]
-    public void UpdatePosAndRotRPC(Vector3 pos, Quaternion rot)
+    public void UpdatePosAndRotRPC(Vector3 pos, Quaternion rot, bool parkedForSpectators = false)
     {
-        playerMovement.Teleport(pos, rot, pos != deathPosition);
+        // Notify observers before moving the owner-driven transform. All peers
+        // retain a parked player's follow lock without chasing off-map storage.
+        NotifySpectatorTeleportRpc(pos, parkedForSpectators);
+        playerMovement.Teleport(pos, rot, !parkedForSpectators && pos != deathPosition);
     }
 
     private void OnPlayerStateChange(PlayerState prev, PlayerState curr)
@@ -482,7 +489,7 @@ public partial class PlayerManager : NetworkBehaviour
 
         if (IsLocalHuman) CameraController.Instance.ForcePan(true);
 
-        UpdatePosAndRotRPC(deathPosition, Quaternion.identity);
+        UpdatePosAndRotRPC(deathPosition, Quaternion.identity, true);
         ChangeCurrentState(PlayerState.Dead);
     }
 

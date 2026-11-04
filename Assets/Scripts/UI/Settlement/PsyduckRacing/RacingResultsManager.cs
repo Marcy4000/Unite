@@ -45,8 +45,12 @@ public class RacingResultsManager : MonoBehaviour
             }
         }
 
-        RacePlayerResult localPlayerResult = raceGameResults.PlayerResults.Where(p => p.PlayerID == LobbyController.Instance.Player.Id).First();
-        placingText.text = $"{localPlayerResult.Position}{GetOrdinalSuffix(localPlayerResult.Position)} Place";
+        placingText.gameObject.SetActive(!LobbyController.Instance.IsLocalSpectator);
+        if (!LobbyController.Instance.IsLocalSpectator)
+        {
+            RacePlayerResult localPlayerResult = raceGameResults.PlayerResults.First(p => p.PlayerID == LobbyController.Instance.Player.Id);
+            placingText.text = $"{localPlayerResult.Position}{GetOrdinalSuffix(localPlayerResult.Position)} Place";
+        }
 
         yield return new WaitForSeconds(1.5f);
 
@@ -96,6 +100,11 @@ public class RacingResultsManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.4f);
 
+        if (LobbyController.Instance.IsLocalSpectator)
+        {
+            AudioManager.PlayMusic(DefaultAudioMusic.GameEnd, true);
+            yield break;
+        }
         RacePlayerResult localPlayerResult = LobbyController.Instance.RaceGameResults.PlayerResults.Where(p => p.PlayerID == LobbyController.Instance.Player.Id).First();
         bool gameWon = localPlayerResult.Position <= 3;
         

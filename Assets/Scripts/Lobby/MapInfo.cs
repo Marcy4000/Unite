@@ -75,6 +75,15 @@ public AssetReferenceSprite mapResultsBlue;
     [Tooltip("Restrictions for starting the match.")]
     public StartRestriction startRestriction;
 
+    [Header("Spectator Presentation (custom lobbies)")]
+    [Tooltip("Independent of combat teams and scoring rules. BlueVersusOthers groups all non-Blue combatants on the orange side.")]
+    public SpectatorTeamLayout spectatorBattleLayout = SpectatorTeamLayout.BlueVersusOthers;
+    public SpectatorTeamLayout spectatorSelectionLayout = SpectatorTeamLayout.ProportionalTeams;
+    [Tooltip("Use the existing score-bearing timer for spectators, preserving this map's countdown/count-up rules.")]
+    public bool spectatorScoreTimerOverride;
+    [Tooltip("World-space point the spectator camera initially looks at. Usually the map center.")]
+    public Vector3 spectatorCameraStart = Vector3.zero;
+
     [Space]
     [Header("Respawn Settings")]
     [Tooltip("Base respawn duration for each level (index = level, value = seconds). Used as the starting value in the respawn time calculation.")]

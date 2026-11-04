@@ -26,14 +26,20 @@ public class QuickChatSelectorUI : MonoBehaviour
 
     private float inputDelay = 0.2f; // Delay in seconds
     private float lastInputTime; // Time of the last input
+    private UnityEngine.InputSystem.InputAction openQuickChatAction;
 
     private void Start()
     {
+        if (SpectatorUIAssets.IsSpectating) { gameObject.SetActive(false); return; }
         button.onClick.AddListener(OnButtonClicked);
         quickChatSelectorPanel.SetActive(false);
         cooldownImage.fillAmount = 0f;
 
-        InputManager.Instance.Controls.UI.OpenQuickChat.performed += OnButtonClicked;
+        if (InputManager.Instance != null && InputManager.Instance.Controls != null)
+        {
+            openQuickChatAction = InputManager.Instance.Controls.UI.OpenQuickChat;
+            openQuickChatAction.performed += OnButtonClicked;
+        }
 
         CreateQuickChatButtons();
     }
@@ -60,6 +66,7 @@ public class QuickChatSelectorUI : MonoBehaviour
 
     private void OnButtonClicked()
     {
+        if (!isActiveAndEnabled || SpectatorUIAssets.IsSpectating) return;
         isPanelOpen = !isPanelOpen;
         quickChatSelectorPanel.SetActive(isPanelOpen);
     }
@@ -119,7 +126,9 @@ public class QuickChatSelectorUI : MonoBehaviour
         if (isOnCooldown)
             return;
 
-        ulong senderID = GameManager.Instance.Players.Where(x => x.IsLocalPlayer).FirstOrDefault().NetworkObjectId;
+        var sender = GameManager.Instance != null ? GameManager.Instance.Players.FirstOrDefault(player => player != null && player.IsLocalHuman) : null;
+        if (SpectatorUIAssets.IsSpectating || sender == null || QuickChatManager.Instance == null) return;
+        ulong senderID = sender.NetworkObjectId;
 
         QuickChatMessage quickChatMessage = new QuickChatMessage
         {
@@ -148,7 +157,11 @@ public class QuickChatSelectorUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        button.onClick.RemoveListener(OnButtonClicked);
-        InputManager.Instance.Controls.UI.OpenQuickChat.performed -= OnButtonClicked;
+        if (button != null) button.onClick.RemoveListener(OnButtonClicked);
+        // Spectator HUDs may be destroyed before Start, and input can already
+        // be gone when a match exits. Unsubscribe from the action we bound,
+        // rather than dereferencing a global singleton during teardown.
+        if (openQuickChatAction != null) openQuickChatAction.performed -= OnButtonClicked;
+        openQuickChatAction = null;
     }
 }

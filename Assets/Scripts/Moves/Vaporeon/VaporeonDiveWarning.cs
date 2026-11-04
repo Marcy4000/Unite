@@ -36,7 +36,7 @@ public class VaporeonDiveWarning : NetworkBehaviour
         {
             if (hit.TryGetComponent(out Pokemon pokemon))
             {
-                if (!Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
+                if (!CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
                     continue;
                 }

@@ -33,6 +33,7 @@ public class Vision : MonoBehaviour
     private bool isVisiblyEligible = true;
 
     public bool IsRendered => isRendered;
+    public bool IsAliveForSpectator => isActiveAndEnabled && (owner == null || owner.CurrentHp > 0);
     public bool IsInBush => currentBush != null;
     public bool IsRevealedByBushCombat => owner != null && owner.IsRevealedByBushCombat;
 

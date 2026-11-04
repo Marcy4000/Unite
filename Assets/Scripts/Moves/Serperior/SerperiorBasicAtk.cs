@@ -31,7 +31,7 @@ public class SerperiorBasicAtk : BasicAttackBase
     public override void Perform(bool wildPriority)
     {
         if (dashing || playerManager.Pokemon.CurrentHp <= 0) return;
-        GameObject closest = Aim.Instance.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
+        GameObject closest = playerManager.Aim.AimInCircle(range, wildPriority ? PokemonType.Wild : PokemonType.Player);
         if (closest != null)
         {
             Vector3 facing = closest.transform.position - playerManager.transform.position; facing.y = 0;
@@ -40,7 +40,7 @@ public class SerperiorBasicAtk : BasicAttackBase
         else if (playerManager.PlayerMovement.IsMoving) return;
         float scale = range / 2.5f;
         Vector3 origin = playerManager.transform.position;
-        var targets = Aim.Instance.AimInCircleAtPosition(origin + playerManager.transform.forward * (1.377f * scale), scale, AimTarget.NonAlly);
+        var targets = playerManager.Aim.AimInCircleAtPosition(origin + playerManager.transform.forward * (1.377f * scale), scale, AimTarget.NonAlly);
         bool boosted = nextAttackDashes;
         Pokemon dashTarget = null;
         foreach (GameObject hit in targets)

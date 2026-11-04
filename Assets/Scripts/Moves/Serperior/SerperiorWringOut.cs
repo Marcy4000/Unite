@@ -26,7 +26,7 @@ public class SerperiorWringOut : MoveBase
     public override void Start(PlayerManager controller)
     {
         base.Start(controller);
-        Aim.Instance.InitializeAutoAim(range, 60f, AimTarget.NonAlly);
+        playerManager.Aim.InitializeAutoAim(range, 60f, AimTarget.NonAlly);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
 
         if (!subscribed)
@@ -79,7 +79,7 @@ public class SerperiorWringOut : MoveBase
         {
             return;
         }
-        target = Aim.Instance.SureHitAim();
+        target = playerManager.Aim.SureHitAim();
     }
 
     public override void Finish()
@@ -106,14 +106,14 @@ public class SerperiorWringOut : MoveBase
             playerManager.transform.rotation = Quaternion.Euler(0, playerManager.transform.rotation.eulerAngles.y, 0);
             wasMoveSuccessful = false;
         }
-        Aim.Instance.HideAutoAim();
+        playerManager.Aim.HideAutoAim();
         base.Finish();
     }
 
     public override void Cancel()
     {
         base.Cancel();
-        Aim.Instance.HideAutoAim();
+        playerManager.Aim.HideAutoAim();
     }
 
     public override void ResetMove()

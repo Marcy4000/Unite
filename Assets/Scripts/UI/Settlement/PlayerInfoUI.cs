@@ -67,7 +67,7 @@ public class PlayerInfoUI : MonoBehaviour
         playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)).icon;
 
         Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
-        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localTeam = LobbyController.Instance.ResultsPerspectiveTeam;
         if (relativeMode)
         {
             playerBGImage.sprite = playerTeam == localTeam ? blueBG : orangeBG;
@@ -109,7 +109,7 @@ public class PlayerInfoUI : MonoBehaviour
         playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)).icon;
 
         Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
-        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localTeam = LobbyController.Instance.ResultsPerspectiveTeam;
         if (relativeMode)
         {
             playerBGImage.sprite = playerTeam == localTeam ? blueBG : orangeBG;
@@ -137,7 +137,7 @@ public class PlayerInfoUI : MonoBehaviour
         playerAvatarImage.sprite = CharactersList.Instance.GetCharacterFromID(NumberEncoder.FromBase64<short>(player.Data["SelectedCharacter"].Value)).icon;
 
         Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
-        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localTeam = LobbyController.Instance.ResultsPerspectiveTeam;
         if (relativeMode)
         {
             playerBGImage.sprite = playerTeam == localTeam ? blueBG : orangeBG;

@@ -9,6 +9,7 @@ public class DraftTimerUI : MonoBehaviour
     [SerializeField] private TMP_Text messageText, timerText;
 
     private int lastValue;
+    public void SetCountdownVisible(bool visible) => timerText.gameObject.SetActive(visible);
 
     public void DoFadeIn(byte bgID)
     {

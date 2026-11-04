@@ -80,6 +80,163 @@ public class CameraControllerPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator SpectatorStartupFollowsFirstRosterCardOnceAfterCameraAndPlayersAreReady()
+    {
+        var hudType = Type.GetType("SpectatorBattleHUD, Assembly-CSharp", true);
+        var cardType = Type.GetType("SpectatorPlayerCard, Assembly-CSharp", true);
+        var actorType = Type.GetType("PlayerManager, Assembly-CSharp", true);
+        var holder = new GameObject("Inactive spectator startup fixture");
+        holder.transform.SetParent(root.transform);
+        holder.SetActive(false);
+        var hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Spectator/SpectatorBattleHUD.prefab");
+        var cardPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Spectator/SpectatorPlayerCard.prefab");
+        var hud = UnityEngine.Object.Instantiate(hudPrefab, holder.transform).GetComponent(hudType);
+        var cards = (IList)hudType.GetField("cards", PrivateInstance).GetValue(hud);
+        var startup = hudType.GetMethod("FollowFirstPlayerOnStartup", PrivateInstance);
+        var ready = hudType.GetField("cameraReady", PrivateInstance);
+        var assigned = hudType.GetField("initialFollowAssigned", PrivateInstance);
+        Invoke("InitializeSpectator", Vector3.zero);
+        ready.SetValue(hud, true);
+        startup.Invoke(hud, null);
+        Assert.That(assigned.GetValue(hud), Is.False, "An empty roster must not consume the startup selection.");
+
+        var actors = new Transform[2];
+        for (int i = 0; i < actors.Length; i++)
+        {
+            var actorObject = new GameObject("Roster player " + i);
+            actorObject.transform.SetParent(holder.transform);
+            actorObject.transform.position = new Vector3(10 + i * 5, 0, 8);
+            var actor = actorObject.AddComponent(actorType);
+            actors[i] = actorObject.transform;
+            var card = UnityEngine.Object.Instantiate(cardPrefab, hud.transform).GetComponent(cardType);
+            cardType.GetField("player", PrivateInstance).SetValue(card, actor);
+            cards.Add(card);
+        }
+        ready.SetValue(hud, false);
+        startup.Invoke(hud, null);
+        Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.Null);
+        ready.SetValue(hud, true);
+        startup.Invoke(hud, null);
+        Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.SameAs(actors[0]));
+        Assert.That(camera.Follow.position, Is.EqualTo(actors[0].position));
+        Assert.That(assigned.GetValue(hud), Is.True);
+
+        Invoke("FollowSpectator", actors[1]);
+        startup.Invoke(hud, null);
+        Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.SameAs(actors[1]));
+        Invoke("BeginTouchPan");
+        Invoke("DragTouchPan", new Vector2(40, 10));
+        Invoke("EndTouchPan");
+        cards.RemoveAt(0); // A roster refresh must not snap back after unlocking.
+        startup.Invoke(hud, null);
+        Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.Null);
+        Assert.That(camera.Follow, Is.Null);
+
+        assigned.SetValue(hud, false); // Also preserve a choice made before the HUD is ready.
+        Invoke("FollowSpectator", target);
+        startup.Invoke(hud, null);
+        Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.SameAs(target));
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator SpectatorFollowUnlocksOnlyOnActualDragAndStaysFreeAfterRelease()
+    {
+        ((Behaviour)controller).enabled = true;
+        Invoke("InitializeSpectator", new Vector3(3, 0, 4));
+        Assert.That(camera.Follow.position, Is.EqualTo(new Vector3(3, 0, 4)));
+        Invoke("FollowSpectator", target);
+        Assert.That(camera.Follow.position, Is.EqualTo(target.position));
+        Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.SameAs(target));
+        target.position += new Vector3(4, 0, 2);
+        yield return null;
+        Assert.That(camera.Follow.position, Is.EqualTo(target.position));
+        Invoke("BeginTouchPan");
+        Assert.That(camera.Follow, Is.Not.Null, "Pointer-down alone must not unlock a followed player.");
+        Invoke("DragTouchPan", new Vector2(40, 10));
+        Assert.That(camera.Follow, Is.Null);
+        Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.Null);
+        Invoke("EndTouchPan");
+        yield return null;
+        Assert.That(camera.Follow, Is.Null, "Ending a spectator pan must not snap back to the player.");
+        Invoke("FollowSpectator", target);
+        Assert.That(camera.Follow.position, Is.EqualTo(target.position));
+        Invoke("ForcePan", true);
+        Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.SameAs(target), "Player death/special-mode ForcePan calls must not override an observer's selection.");
+    }
+
+    [UnityTest]
+    public IEnumerator SpectatorLockDoesNotChaseDeadParkingPositionAndResumesAtRespawn()
+    {
+        var actorObject = new GameObject("Observed actor");
+        actorObject.transform.SetParent(root.transform);
+        actorObject.SetActive(false);
+        var actorType = Type.GetType("PlayerManager, Assembly-CSharp", true);
+        var actor = actorObject.AddComponent(actorType);
+        var state = actorType.GetField("playerState", PrivateInstance).GetValue(actor);
+        var value = state.GetType().GetProperty("Value");
+        var stateType = value.PropertyType;
+        actorObject.transform.position = new Vector3(5, 0, 7);
+        Invoke("InitializeSpectator", Vector3.zero);
+        Invoke("FollowSpectator", actorObject.transform);
+        Assert.That(camera.Follow.position, Is.EqualTo(new Vector3(5, 0, 7)));
+        value.SetValue(state, Enum.Parse(stateType, "Dead"));
+        actorObject.transform.position = new Vector3(0, -50, -50);
+        ControllerType.GetMethod("LateUpdate", PrivateInstance).Invoke(controller, null);
+        Assert.That(camera.Follow.position, Is.EqualTo(new Vector3(5, 0, 7)));
+        Invoke("FollowSpectator", actorObject.transform); // Selecting an already-dead actor keeps the current view.
+        Invoke("BeginTouchPan"); Invoke("EndTouchPan");
+        Assert.That(camera.Follow, Is.Null);
+        actorObject.transform.position = new Vector3(14, 0, 12);
+        value.SetValue(state, Enum.Parse(stateType, "Alive"));
+        ControllerType.GetMethod("LateUpdate", PrivateInstance).Invoke(controller, null);
+        Assert.That(camera.Follow.position, Is.EqualTo(new Vector3(14, 0, 12)));
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator SpectatorLockIgnoresAliveVolleyballAndRaceParkingAndReturnInterpolation()
+    {
+        var actorObject = new GameObject("Temporarily parked observed actor");
+        actorObject.transform.SetParent(root.transform);
+        actorObject.SetActive(false);
+        var actorType = Type.GetType("PlayerManager, Assembly-CSharp", true);
+        var actor = actorObject.AddComponent(actorType);
+        var parked = actorType.GetMethod("ApplySpectatorTeleportState", PrivateInstance);
+        Invoke("InitializeSpectator", Vector3.zero);
+        foreach (var parkingPosition in new[] { new Vector3(0, -50, -50), new Vector3(-100, -50, 0) })
+        {
+            Vector3 lastPlayable = new Vector3(5, 0, 7), returned = new Vector3(14, 0, 12);
+            actorObject.transform.position = lastPlayable;
+            Invoke("FollowSpectator", actorObject.transform);
+            parked.Invoke(actor, new object[] { parkingPosition, true });
+            actorObject.transform.position = parkingPosition;
+            ControllerType.GetMethod("LateUpdate", PrivateInstance).Invoke(controller, null);
+            Assert.That(camera.Follow.position, Is.EqualTo(lastPlayable));
+            Assert.That(actorType.GetProperty("PlayerState").GetValue(actor).ToString(), Is.EqualTo("Alive"));
+            Assert.That(ControllerType.GetProperty("SpectatorTarget").GetValue(controller), Is.SameAs(actorObject.transform));
+            Invoke("FollowSpectator", actorObject.transform);
+            Invoke("BeginTouchPan"); Invoke("EndTouchPan");
+            Assert.That(camera.Follow, Is.Null, "Selecting a parked living player must not reveal their storage location.");
+            // Volleyball can issue two return teleports. Neither may clear
+            // protection while the remote transform is still below the map.
+            parked.Invoke(actor, new object[] { returned, false });
+            parked.Invoke(actor, new object[] { returned, false });
+            ControllerType.GetMethod("LateUpdate", PrivateInstance).Invoke(controller, null);
+            Assert.That(camera.Follow.position, Is.EqualTo(returned));
+            actorObject.transform.position = Vector3.Lerp(parkingPosition, returned, 0.5f);
+            ControllerType.GetMethod("LateUpdate", PrivateInstance).Invoke(controller, null);
+            Assert.That(camera.Follow.position, Is.EqualTo(returned), "Do not follow the replicated flight out of storage.");
+            actorObject.transform.position = returned;
+            ControllerType.GetMethod("LateUpdate", PrivateInstance).Invoke(controller, null);
+            actorObject.transform.position += Vector3.forward * 3;
+            ControllerType.GetMethod("LateUpdate", PrivateInstance).Invoke(controller, null);
+            Assert.That(camera.Follow.position, Is.EqualTo(actorObject.transform.position));
+        }
+        yield return null;
+    }
+
+    [UnityTest]
     public IEnumerator SuperJumpZoomAndResetCompleteOverRealFrames()
     {
         Invoke("SetSuperJumpCamera", true);

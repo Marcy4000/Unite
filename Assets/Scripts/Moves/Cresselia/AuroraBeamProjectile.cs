@@ -52,7 +52,7 @@ public class AuroraBeamProjectile : NetworkBehaviour
             return;
         }
 
-        if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
+        if (!CombatTargeting.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
         {
             return;
         }

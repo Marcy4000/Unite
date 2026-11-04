@@ -35,6 +35,7 @@ public class UniteRoyaleResultsManager : MonoBehaviour
         });
 
         gameResults = LobbyController.Instance.UniteRoyaleGameResults;
+        placingText.gameObject.SetActive(!LobbyController.Instance.IsLocalSpectator);
 
         List<Unite.Multiplayer.GameSessionPlayer> players = new();
 
@@ -54,7 +55,7 @@ public class UniteRoyaleResultsManager : MonoBehaviour
             if (i < players.Count)
             {
                 playerNames[i].text = $"{gameResults.PlayerStats[i].position}\n{players[i].Data["PlayerName"].Value}";
-                if (players[i].Id == LobbyController.Instance.Player.Id)
+                if (!LobbyController.Instance.IsLocalSpectator && players[i].Id == LobbyController.Instance.Player.Id)
                 {
                     playerNames[i].color = Color.yellow;
                 }
@@ -114,6 +115,11 @@ public class UniteRoyaleResultsManager : MonoBehaviour
 
         yield return new WaitForSeconds(2f);
 
+        if (LobbyController.Instance.IsLocalSpectator)
+        {
+            AudioManager.PlayMusic(DefaultAudioMusic.GameEnd, true);
+            yield break;
+        }
         UniteRoyalePlayerResult localPlayerResult = gameResults.PlayerStats.Where(p => p.PlayerStats.playerId.ToString() == LobbyController.Instance.Player.Id).First();
         bool gameWon = localPlayerResult.position <= 2;
 

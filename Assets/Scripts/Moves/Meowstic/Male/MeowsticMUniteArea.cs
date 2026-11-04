@@ -103,7 +103,7 @@ public class MeowsticMUniteArea : NetworkBehaviour
         {
             foreach (Pokemon enemy in enemiesInArea)
             {
-                if (enemy != null && Aim.Instance.CanPokemonBeTargeted(enemy.gameObject, AimTarget.NonAlly, meowstic.CurrentTeam))
+                if (enemy != null && CombatTargeting.CanPokemonBeTargeted(enemy.gameObject, AimTarget.NonAlly, meowstic.CurrentTeam))
                 {
                     enemy.TakeDamageRPC(damage);
                 }

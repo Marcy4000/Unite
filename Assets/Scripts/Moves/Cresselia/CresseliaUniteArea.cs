@@ -23,7 +23,7 @@ public class CresseliaUniteArea : NetworkBehaviour
         Collider[] colliders = Physics.OverlapSphere(transform.position, 5.5f, pokemonLayer);
         foreach (Collider collider in colliders)
         {
-            if (!Aim.Instance.CanPokemonBeTargeted(collider.gameObject, AimTarget.NonAlly, orangeTeam))
+            if (!CombatTargeting.CanPokemonBeTargeted(collider.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 continue;
             }

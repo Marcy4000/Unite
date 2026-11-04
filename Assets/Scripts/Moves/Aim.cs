@@ -32,8 +32,6 @@ public class Aim : NetworkBehaviour
 
     public const int MAX_ENEMIES = 15; // Maximum number of enemies to detect
 
-    private static readonly StatusType[] invulnerableStatuses = { StatusType.Invincible, StatusType.Untargetable, StatusType.Invisible };
-
     [SerializeField] private LayerMask targetMask;
     [SerializeField] private GameObject autoAimIndicator, indicatorHolders, circleIndicator, dashIndicator, skillShotLine, circleAreaIndicator;
     [SerializeField] private GameObject glaceonUniteIndicator, hyperVoiceIndicator;
@@ -353,19 +351,7 @@ public class Aim : NetworkBehaviour
 
     public GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget target, Team teamToIgnore, bool canHitInvisTargets = true)
     {
-        List<GameObject> foundTargets = new List<GameObject>();
-
-        foreach (Pokemon pokemon in CombatTargeting.SphereTargets(position, radius))
-        {
-            if (!CanPokemonBeTargeted(pokemon.gameObject, target, teamToIgnore, canHitInvisTargets))
-            {
-                continue;
-            }
-
-            foundTargets.Add(pokemon.gameObject);
-        }
-
-        return foundTargets.ToArray();
+        return CombatTargeting.AimInCircleAtPosition(position, radius, target, teamToIgnore, canHitInvisTargets, IsBot);
     }
 
     public GameObject SureHitAim()
@@ -581,65 +567,6 @@ public class Aim : NetworkBehaviour
 
     public bool CanPokemonBeTargeted(GameObject pokemonObject, AimTarget targetType, TeamMember teamToIgnore, bool canHitInvisTargets=true)
     {
-        if (pokemonObject.TryGetComponent(out Pokemon pokemon))
-        {
-            if (pokemon.CurrentHp <= 0 || pokemon.HasAnyStatusEffect(invulnerableStatuses))
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-
-        switch (targetType)
-        {
-            case AimTarget.Enemy:
-                if (pokemon.TeamMember.Team == Team.Neutral)
-                {
-                    return false;
-                }
-
-                if (pokemon.TeamMember.IsOnSameTeam(teamToIgnore))
-                {
-                    return false;
-                }
-                break;
-            case AimTarget.Ally:
-                if (pokemon.TeamMember.Team == Team.Neutral)
-                {
-                    return false;
-                }
-
-                if (!pokemon.TeamMember.IsOnSameTeam(teamToIgnore))
-                {
-                    return false;
-                }
-                break;
-            case AimTarget.Wild:
-                if (pokemon.TeamMember.Team != Team.Neutral)
-                {
-                    return false;
-                }
-                break;
-            case AimTarget.NonAlly:
-                if (pokemon.TeamMember.IsOnSameTeam(teamToIgnore))
-                {
-                    return false;
-                }
-                break;
-        }
-
-        if (pokemonObject.TryGetComponent(out Vision vision))
-        {
-            bool visible = IsBot ? VisionManager.Instance != null && VisionManager.Instance.IsVisibleToTeam(vision, teamToIgnore.Team) : vision.IsRendered;
-            if ((!visible || !vision.IsVisiblyEligible) && !canHitInvisTargets)
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return CombatTargeting.CanPokemonBeTargeted(pokemonObject, targetType, teamToIgnore, canHitInvisTargets, IsBot);
     }
 }

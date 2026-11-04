@@ -18,7 +18,7 @@ public class SerperiorAerialAce : MoveBase
     public override void Start(PlayerManager controller)
     {
         base.Start(controller);
-        Aim.Instance.InitializeAutoAim(range, 30f, AimTarget.NonAlly);
+        playerManager.Aim.InitializeAutoAim(range, 30f, AimTarget.NonAlly);
         damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
     }
 
@@ -29,7 +29,7 @@ public class SerperiorAerialAce : MoveBase
             return;
         }
 
-        target = Aim.Instance.SureHitAim();
+        target = playerManager.Aim.SureHitAim();
     }
 
     public override void Finish()
@@ -50,14 +50,14 @@ public class SerperiorAerialAce : MoveBase
             playerManager.transform.rotation = Quaternion.Euler(0f, playerManager.transform.rotation.eulerAngles.y, 0f);
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideAutoAim();
+        playerManager.Aim.HideAutoAim();
         base.Finish();
     }
 
     public override void Cancel()
     {
         base.Cancel();
-        Aim.Instance.HideAutoAim();
+        playerManager.Aim.HideAutoAim();
     }
 
     public override void ResetMove()

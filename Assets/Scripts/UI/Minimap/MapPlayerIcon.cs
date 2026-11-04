@@ -62,7 +62,7 @@ public class MapPlayerIcon : MonoBehaviour
     private void RefreshPresentation()
     {
         if (player == null || source == null || LobbyController.Instance == null) return;
-        isTeammate = player.CurrentTeam.IsOnSameTeam(LobbyController.Instance.GetLocalPlayerTeam());
+        isTeammate = player.CurrentTeam.IsOnSameTeam(LobbyController.Instance.IsLocalSpectator ? Team.Blue : LobbyController.Instance.GetLocalPlayerTeam());
         background.sprite = isTeammate ? blueBG : orangeBG;
         if (source.BaseStats != null) pokemonIcon.sprite = source.Portrait;
         RefreshVisibility();
@@ -71,7 +71,7 @@ public class MapPlayerIcon : MonoBehaviour
     private void RefreshVisibility()
     {
         if (player == null || player.Pokemon == null) { SetVisibility(false); return; }
-        SetVisibility(isTeammate || player.Vision.IsRendered);
+        SetVisibility(SpectatorUIAssets.IsSpectating || isTeammate || player.Vision.IsRendered);
     }
 
     private void Update()
@@ -79,7 +79,7 @@ public class MapPlayerIcon : MonoBehaviour
         if (player == null || player.Pokemon == null) { Destroy(gameObject); return; }
 
         var disguise = player.MovesController;
-        bool disguised = disguise != null && disguise.IsZoroarkEnemyView;
+        bool disguised = !SpectatorUIAssets.IsSpectating && disguise != null && disguise.IsZoroarkEnemyView;
         bool wildDisguise = disguised && !disguise.ZoroarkDisguiseIsPlayer && wildDisguiseSprite != null;
         background.sprite = disguised || isTeammate ? blueBG : orangeBG;
         background.gameObject.SetActive(!wildDisguise && displayed);

@@ -39,6 +39,13 @@ public class BattleUIManager : MonoBehaviour
 
     private void Start()
     {
+        if (SpectatorUIAssets.IsSpectating)
+        {
+            if (desktopUI != null) desktopUI.gameObject.SetActive(false);
+            if (mobileUI != null) mobileUI.gameObject.SetActive(false);
+            if (SpectatorUIAssets.Instance != null && SpectatorUIAssets.Instance.battleHUD != null)
+                Instantiate(SpectatorUIAssets.Instance.battleHUD);
+        }
         GameManager.Instance.onGameStateChanged += HandleGameStateChanged;
 
 #if UNITY_ANDROID
@@ -122,7 +129,8 @@ public class BattleUIManager : MonoBehaviour
     public void ShowKill(Pokemon attacker, Pokemon killed, int streak, string killNotification, IReadOnlyList<Pokemon> assistants)
     {
         if (attacker == null || killed == null) return;
-        KillInfo killInfo = new KillInfo(attacker, killed, streak, killNotification, LobbyController.Instance.GetLocalPlayerTeam(), assistants);
+        KillInfo killInfo = new KillInfo(attacker, killed, streak, killNotification,
+            LobbyController.Instance.IsLocalSpectator ? Team.Blue : LobbyController.Instance.GetLocalPlayerTeam(), assistants);
         killNotificationUI.EnqueueKill(killInfo);
     }
 

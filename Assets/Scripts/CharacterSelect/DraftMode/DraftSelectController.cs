@@ -93,18 +93,22 @@ public partial class DraftSelectController : NetworkBehaviour
             InitializePlayerStates();
         }
 
-        if (IsClient)
+        if (IsClient && !LobbyController.Instance.IsLocalSpectator)
         {
             LobbyController.Instance.ChangePlayerCharacter(-1);
             trainerModel.InitializeClothes(PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value));
         }
 
-        switchController.Initialize(draftPlayerHolderBlue.PlayerIcons);
-        switchController.OnCharacterChanged += (characterID) =>
+        if (!LobbyController.Instance.IsLocalSpectator)
         {
-            SpawnPokemon(CharactersList.Instance.GetCharacterFromID(characterID));
-            UpdateHoveredSelectedCharacterRPC(LobbyController.Instance.Player.Id, characterID);
-        };
+            switchController.Initialize(draftPlayerHolderBlue.PlayerIcons);
+            switchController.OnCharacterChanged += (characterID) =>
+            {
+                SpawnPokemon(CharactersList.Instance.GetCharacterFromID(characterID));
+                UpdateHoveredSelectedCharacterRPC(LobbyController.Instance.Player.Id, characterID);
+            };
+        }
+        else SpectatorSelectionOverlay.Show(this);
 
         AudioManager.StopAllMusic();
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon);
@@ -127,6 +131,30 @@ public partial class DraftSelectController : NetworkBehaviour
     }
 
     private readonly Dictionary<string, short> selectedCharacters = new Dictionary<string, short>();
+    private readonly Dictionary<string, short> spectatorCharacters = new();
+    private readonly Dictionary<string, short> spectatorBanCandidates = new();
+    private readonly Dictionary<Team, List<short>> spectatorBans = new();
+    public float SpectatorTimeRemaining => draftTimer.Value;
+    public int SpectatorMaxBans => maxBansPerTeam;
+    public bool SpectatorIsBanning => currentDraftPhase.Value == DraftPhase.Banning;
+    public Team SpectatorActiveTeam => currentDraftPhase.Value == DraftPhase.Banning || currentDraftPhase.Value == DraftPhase.Picking
+        ? (Unite.Multiplayer.DraftTurnRules.IsBlueTurn(currentTurnIndex.Value) ? Team.Blue : Team.Orange) : Team.Neutral;
+    public string SpectatorPhaseMessage => currentDraftPhase.Value switch
+    {
+        DraftPhase.Banning => SpectatorActiveTeam + " team banning",
+        DraftPhase.Picking => SpectatorActiveTeam + " team picking",
+        DraftPhase.Preparation => "Final preparations",
+        DraftPhase.Starting => "Starting match",
+        _ => "Waiting for players"
+    };
+    public IEnumerable<short> GetSpectatorBans(Team team) => spectatorBans.TryGetValue(team, out var list) ? list : Enumerable.Empty<short>();
+    public short GetSpectatorCharacter(string id)
+    {
+        var choices = SpectatorIsBanning ? spectatorBanCandidates : spectatorCharacters;
+        return choices.TryGetValue(id, out var character) ? character : (short)-1;
+    }
+    public bool IsSpectatorActivePlayer(string id) => (currentDraftPhase.Value == DraftPhase.Banning || currentDraftPhase.Value == DraftPhase.Picking) &&
+        blueTeamPlayers != null && orangeTeamPlayers != null && IsCurrentPlayerTurn(id);
 
     public override void OnNetworkDespawn()
     {
@@ -144,6 +172,7 @@ public partial class DraftSelectController : NetworkBehaviour
         var character = NumberEncoder.FromBase64<short>(property.Value);
         if (selectedCharacters.TryGetValue(player.Id, out var previous) && previous == character) return;
         selectedCharacters[player.Id] = character;
+        if (currentDraftPhase.Value == DraftPhase.Preparation && !player.IsSpectator) spectatorCharacters[player.Id] = character;
         draftCharacterSelector.UpdateUnavailablePokemons();
         UpdatePlayerSelectedCharacter(player.Id, character);
     }
@@ -403,6 +432,18 @@ public partial class DraftSelectController : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     private void HandlePlayerConfirmationRPC(string playerID, int selectedCharacter, bool isBan)
     {
+        if (isBan)
+        {
+            spectatorBanCandidates[playerID] = (short)selectedCharacter;
+            var player = LobbyController.Instance.GetPlayerByID(playerID);
+            if (player != null)
+            {
+                var team = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
+                if (!spectatorBans.TryGetValue(team, out var list)) spectatorBans[team] = list = new List<short>();
+                list.Add((short)selectedCharacter);
+            }
+        }
+        else spectatorCharacters[playerID] = (short)selectedCharacter;
         if (!isBan) UpdatePlayerSelectedCharacter(playerID, (short)selectedCharacter);
         // Notify clients and progress
         OnPlayerConfirmed?.Invoke(playerID, selectedCharacter);
@@ -610,6 +651,7 @@ public partial class DraftSelectController : NetworkBehaviour
     {
         // Update the client UI for the current player's turn
         UpdatePlayerIcons();
+        if (LobbyController.Instance.IsLocalSpectator) return;
 
         bool isCurrentPlayer = IsCurrentPlayerTurn(LobbyController.Instance.Player.Id);
         int localPlayerIndex = GetPlayerIndex(LobbyController.Instance.Player.Id);
@@ -639,7 +681,7 @@ public partial class DraftSelectController : NetworkBehaviour
 
     private void UpdateTimerUI(float previousValue, float newValue)
     {
-        draftTimerUI.UpdateTimer(newValue);
+        if (!LobbyController.Instance.IsLocalSpectator) draftTimerUI.UpdateTimer(newValue);
     }
 
     private void UpdatePlayerIcons()
@@ -672,7 +714,7 @@ public partial class DraftSelectController : NetworkBehaviour
     private void StartMatch()
     {
         if (LobbyController.Instance.BotRoster?.HasBots == true &&
-            (committedDraftPicks.Count != LobbyController.Instance.Lobby.Players.Count ||
+            (committedDraftPicks.Count != LobbyController.Instance.Combatants.Count() ||
              committedDraftPicks.Values.Distinct().Count() != committedDraftPicks.Count))
         {
             AbortExhaustedBotDraft(); return;
@@ -798,6 +840,7 @@ public partial class DraftSelectController : NetworkBehaviour
 
     private void OnCharacterSelected(CharacterInfo info)
     {
+        if (LobbyController.Instance.IsLocalSpectator) return;
         string playerID = LobbyController.Instance.Player.Id;
         int selectedCharacter = CharactersList.Instance.GetCharacterID(info);
 
@@ -828,6 +871,7 @@ public partial class DraftSelectController : NetworkBehaviour
 
     private void UpdateHoveredCharacter()
     {
+        if (LobbyController.Instance.IsLocalSpectator) return;
         if (currentDraftPhase.Value == DraftPhase.Banning)
         {
             if (!IsCurrentPlayerTurn(LobbyController.Instance.Player.Id))
@@ -849,8 +893,10 @@ public partial class DraftSelectController : NetworkBehaviour
     }
 
     [Rpc(SendTo.Everyone)]
-    private void UpdateHoveredBanCharacterRPC(string playerID, short selectedCharacter)
+    private void UpdateHoveredBanCharacterRPC(string playerID, short selectedCharacter, RpcParams rpcParams = default)
     {
+        if (!ValidDraftPresentationSender(playerID, rpcParams.Receive.SenderClientId)) return;
+        spectatorBanCandidates[playerID] = selectedCharacter;
         foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
         {
             if (playerIcon.AssignedPlayer.Id == playerID)
@@ -871,8 +917,10 @@ public partial class DraftSelectController : NetworkBehaviour
     }
 
     [Rpc(SendTo.Everyone)]
-    private void UpdateHoveredSelectedCharacterRPC(string playerID, short selectedCharacter)
+    private void UpdateHoveredSelectedCharacterRPC(string playerID, short selectedCharacter, RpcParams rpcParams = default)
     {
+        if (!ValidDraftPresentationSender(playerID, rpcParams.Receive.SenderClientId)) return;
+        spectatorCharacters[playerID] = selectedCharacter;
         foreach (var playerIcon in draftPlayerHolderBlue.PlayerIcons)
         {
             if (playerIcon.AssignedPlayer.Id == playerID)
@@ -969,6 +1017,14 @@ public partial class DraftSelectController : NetworkBehaviour
 
         characterSelectModelHandle = Addressables.LoadAssetAsync<GameObject>(character.model);
         characterSelectModelHandle.Completed += OnCharacterSelectModelLoaded;
+    }
+
+    private bool ValidDraftPresentationSender(string playerID, ulong senderID)
+    {
+        if (LobbyController.Instance.GetPlayerByID(playerID)?.IsSpectator != false) return false;
+        if (senderID == Unity.Netcode.NetworkManager.ServerClientId) return true;
+        var sender = LobbyController.Instance.PlayerNetworkManagers.Find(manager => manager != null && manager.IsSpawned && manager.OwnerClientId == senderID);
+        return sender != null && !sender.IsSpectator && sender.LocalPlayer?.Id == playerID;
     }
 
     private void ClearPokemonPreview()

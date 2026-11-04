@@ -94,7 +94,7 @@ public class MeowsticMMagicCoatArea : NetworkBehaviour
         foreach (var col in nearbyPokemons)
         {
             PlayerManager playerManager = col.GetComponent<PlayerManager>();
-            if (playerManager != null && Aim.Instance.CanPokemonBeTargeted(playerManager.gameObject, AimTarget.Enemy, meowstic.CurrentTeam))
+            if (playerManager != null && CombatTargeting.CanPokemonBeTargeted(playerManager.gameObject, AimTarget.Enemy, meowstic.CurrentTeam))
             {
                 enemies.Add(playerManager);
             }

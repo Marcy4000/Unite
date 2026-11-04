@@ -75,7 +75,7 @@ public class FlareonSwiftArea : NetworkBehaviour
         {
             tickCooldown = 0.4f;
 
-            GameObject[] enemies = Aim.Instance.AimInCircleAtPosition(transform.position, 2f, AimTarget.NonAlly, orangeTeam);
+            GameObject[] enemies = CombatTargeting.AimInCircleAtPosition(transform.position, 2f, AimTarget.NonAlly, orangeTeam);
 
             foreach (GameObject enemy in enemies)
             {

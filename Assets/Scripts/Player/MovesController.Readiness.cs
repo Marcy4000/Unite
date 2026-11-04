@@ -24,6 +24,9 @@ public partial class MovesController
         foreach (var other in GameManager.Instance.Players)
             if (other != null && !other.IsBot && other.CurrentTeam.Team == actor.CurrentTeam.Team)
                 ReceiveUniteReadyRpc(ready, RpcTarget.Single(other.OwnerClientId, RpcTargetUse.Temp));
+        foreach (var observer in LobbyController.Instance.PlayerNetworkManagers)
+            if (observer != null && observer.IsSpawned && observer.IsSpectator)
+                ReceiveUniteReadyRpc(ready, RpcTarget.Single(observer.OwnerClientId, RpcTargetUse.Temp));
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -31,6 +34,13 @@ public partial class MovesController
     {
         var actor = GetComponent<PlayerManager>();
         if (actor == null || GameManager.Instance == null) return;
+        var observer = LobbyController.Instance.PlayerNetworkManagers.Find(manager => manager != null && manager.IsSpawned &&
+            manager.OwnerClientId == rpcParams.Receive.SenderClientId && manager.IsSpectator);
+        if (observer != null)
+        {
+            ReceiveUniteReadyRpc(allyUniteReady, RpcTarget.Single(observer.OwnerClientId, RpcTargetUse.Temp));
+            return;
+        }
         foreach (var other in GameManager.Instance.Players)
             if (other != null && !other.IsBot && other.OwnerClientId == rpcParams.Receive.SenderClientId &&
                 other.CurrentTeam.Team == actor.CurrentTeam.Team)

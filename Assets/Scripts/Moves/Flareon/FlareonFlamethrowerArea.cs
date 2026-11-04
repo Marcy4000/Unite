@@ -72,7 +72,7 @@ public class FlareonFlamethrowerArea : NetworkBehaviour
         {
             if (collider.TryGetComponent(out Pokemon pokemon))
             {
-                if (hitPokemon.Contains(pokemon) || !Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
+                if (hitPokemon.Contains(pokemon) || !CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
                     continue;
                 }

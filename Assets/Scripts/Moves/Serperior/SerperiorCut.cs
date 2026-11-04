@@ -21,7 +21,7 @@ public class SerperiorCut : MoveBase
     {
         base.Start(controller);
         damage.attackerId = playerManager.NetworkObjectId;
-        Aim.Instance.InitializeSkillshotAim(range);
+        playerManager.Aim.InitializeSkillshotAim(range);
     }
 
     public override void Update()
@@ -31,7 +31,7 @@ public class SerperiorCut : MoveBase
             return;
         }
 
-        direction = Aim.Instance.SkillshotAim();
+        direction = playerManager.Aim.SkillshotAim();
     }
 
     public override void Finish()
@@ -41,7 +41,7 @@ public class SerperiorCut : MoveBase
             damageRoutine = playerManager.StartCoroutine(DamageRoutine());
             wasMoveSuccessful = true;
         }
-        Aim.Instance.HideSkillshotAim();
+        playerManager.Aim.HideSkillshotAim();
         base.Finish();
     }
 
@@ -53,7 +53,7 @@ public class SerperiorCut : MoveBase
 
         yield return new WaitForSeconds(0.2f);
 
-        GameObject[] hitColliders = Aim.Instance.AimInCircleAtPosition(playerManager.transform.position + (direction * 1.377f * (range / 2.5f)), 1f * (range / 2.5f), AimTarget.NonAlly);
+        GameObject[] hitColliders = playerManager.Aim.AimInCircleAtPosition(playerManager.transform.position + (direction * 1.377f * (range / 2.5f)), 1f * (range / 2.5f), AimTarget.NonAlly);
 
         foreach (var hitCollider in hitColliders)
         {
@@ -71,7 +71,7 @@ public class SerperiorCut : MoveBase
 
     public override void Cancel()
     {
-        Aim.Instance.HideSkillshotAim();
+        playerManager.Aim.HideSkillshotAim();
         base.Cancel();
     }
 

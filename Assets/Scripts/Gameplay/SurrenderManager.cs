@@ -70,8 +70,12 @@ public class SurrenderManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    public void StartSurrenderVoteRPC(Team orangeTeam)
+    public void StartSurrenderVoteRPC(Team orangeTeam, RpcParams rpcParams = default)
     {
+        var sender = LobbyController.Instance.PlayerNetworkManagers.Find(manager => manager != null && manager.IsSpawned &&
+            manager.OwnerClientId == rpcParams.Receive.SenderClientId);
+        if (sender?.LocalPlayer == null || sender.IsSpectator ||
+            TeamMember.GetTeamFromString(sender.LocalPlayer.Data["PlayerTeam"].Value) != orangeTeam) return;
         if (isSurrendering)
         {
             return;
@@ -123,8 +127,11 @@ public class SurrenderManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)]
-    private void SendVoteRPC(string playerId, bool vote)
+    private void SendVoteRPC(string playerId, bool vote, RpcParams rpcParams = default)
     {
+        var sender = LobbyController.Instance.PlayerNetworkManagers.Find(manager => manager != null && manager.IsSpawned &&
+            manager.OwnerClientId == rpcParams.Receive.SenderClientId);
+        if (sender?.LocalPlayer?.Id != playerId || sender.IsSpectator) return;
         if (!playerVotes.ContainsKey(playerId) || playerVotes[playerId] != 0)
         {
             return; // Already voted or invalid player ID

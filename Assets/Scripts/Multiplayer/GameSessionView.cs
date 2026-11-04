@@ -10,6 +10,10 @@ namespace Unite.Multiplayer
     {
         public string Id { get; }
         public bool IsBot { get; }
+        // A reserved seat value, not a combat team. Reuses existing UGS metadata
+        // because the party handoff already consumes the ten player properties.
+        public bool IsSpectator => Data.TryGetValue("PlayerTeam", out var team) &&
+            team.Value == SpectatorSlotRules.TeamValue;
         public Dictionary<string, PlayerProperty> Data { get; } = new Dictionary<string, PlayerProperty>();
 
         public GameSessionPlayer(string id, bool isBot = false)

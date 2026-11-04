@@ -14,6 +14,7 @@ public class MobileCameraPanArea : MonoBehaviour, IPointerDownHandler, IPointerU
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (cameraController == null) cameraController = CameraController.Instance;
         if (!isActiveAndEnabled || activePointerId.HasValue
             || eventData.button != PointerEventData.InputButton.Left
             || cameraController == null || !cameraController.BeginTouchPan()) return;

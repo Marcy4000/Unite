@@ -5,6 +5,8 @@ using Unite.Multiplayer;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Linq;
+using Unity.Collections;
 
 public class RacingReadyScreenManager : NetworkBehaviour
 {
@@ -17,12 +19,17 @@ public class RacingReadyScreenManager : NetworkBehaviour
     private NetworkSceneManager subscribedSceneManager;
     private bool placeholderStarted;
     private bool transitionRequested;
+    private NetworkList<FixedString64Bytes> readyRacers = new NetworkList<FixedString64Bytes>();
+    public short SpectatorCharacter => CharactersList.Instance.GetCharacterID(initialCharacter);
+    public int SpectatorReadyCount => readyRacers.Count + LobbyController.Instance.Combatants.Count(player => player.IsBot);
+    public bool IsSpectatorRacerReady(string id) => LobbyController.Instance.GetPlayerByID(id)?.IsBot == true || readyRacers.Contains(new FixedString64Bytes(id));
 
     public override void OnNetworkSpawn()
     {
         if (IsServer) LobbyController.Instance.BotRoster?.PrepareRacingBots(initialCharacter);
         placeholderStarted = false;
         transitionRequested = false;
+        if (LobbyController.Instance.IsLocalSpectator) SpectatorSelectionOverlay.Show(this);
         subscribedNetworkManager = NetworkManager;
         subscribedSceneManager = NetworkManager.SceneManager;
         subscribedSceneManager.OnLoadEventCompleted += HandleSceneLoaded;
@@ -95,6 +102,7 @@ public class RacingReadyScreenManager : NetworkBehaviour
     {
         AudioManager.StopMusic(DefaultAudioMusic.LobbyTheme);
         AudioManager.PlayMusic(DefaultAudioMusic.ChoosePokemon, true);
+        if (LobbyController.Instance.IsLocalSpectator) yield break;
 
         PlayerClothesInfo playerClothesInfo = PlayerClothesInfo.Deserialize(LobbyController.Instance.Player.Data["ClothingInfo"].Value);
         trainerModel.InitializeClothes(playerClothesInfo);
@@ -109,7 +117,7 @@ public class RacingReadyScreenManager : NetworkBehaviour
 
     private IEnumerator PlaceholderStart()
     {
-        LobbyController.Instance.UpdatePlayerItemsPokemonAndBattleItem(
+        if (!LobbyController.Instance.IsLocalSpectator) LobbyController.Instance.UpdatePlayerItemsPokemonAndBattleItem(
             HeldItemDatabase.SerializeHeldItems(new byte[] { 0, 0, 0 }),
             CharactersList.Instance.GetCharacterID(initialCharacter),
             "0"
@@ -148,7 +156,13 @@ public class RacingReadyScreenManager : NetworkBehaviour
     private void NotifyPlayerReadyRpc(ulong clientId, RpcParams rpcParams = default)
     {
         if (!IsServer) return;
-        playerReady.MarkReady(rpcParams.Receive.SenderClientId, clientId, ClientLoadStage.Ready);
+        if (!playerReady.MarkReady(rpcParams.Receive.SenderClientId, clientId, ClientLoadStage.Ready)) return;
+        var manager = LobbyController.Instance.PlayerNetworkManagers.Find(value => value != null && value.IsSpawned && value.OwnerClientId == clientId);
+        if (manager?.LocalPlayer != null && !manager.IsSpectator)
+        {
+            var id = new FixedString64Bytes(manager.LocalPlayer.Id);
+            if (!readyRacers.Contains(id)) readyRacers.Add(id);
+        }
     }
 
     [Rpc(SendTo.ClientsAndHost)]

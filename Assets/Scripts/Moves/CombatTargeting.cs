@@ -6,6 +6,52 @@ using UnityEngine;
 // Collider.bounds/ClosestPoint: those can retain a pre-teleport pose until the next physics sync.
 public static class CombatTargeting
 {
+    private static readonly StatusType[] untargetableStatuses = { StatusType.Invincible, StatusType.Untargetable, StatusType.Invisible };
+
+    // Simulation queries cannot depend on Aim.Instance: a spectator or a
+    // dedicated server has no local human avatar. Explicit teams also keep
+    // server AI independent of the spectator's omniscient rendered vision.
+    public static bool CanPokemonBeTargeted(GameObject target, AimTarget kind, Team team, bool canHitInvisTargets = true, bool useTeamVision = true) =>
+        CanPokemonBeTargeted(target, kind, new TeamMember(team), canHitInvisTargets, useTeamVision);
+
+    public static bool CanPokemonBeTargeted(GameObject target, AimTarget kind, TeamMember team, bool canHitInvisTargets = true, bool useTeamVision = true)
+    {
+        if (target == null || !target.TryGetComponent(out Pokemon pokemon) || pokemon.CurrentHp <= 0 ||
+            pokemon.HasAnyStatusEffect(untargetableStatuses)) return false;
+        switch (kind)
+        {
+            case AimTarget.Enemy:
+                if (pokemon.TeamMember.Team == Team.Neutral || pokemon.TeamMember.IsOnSameTeam(team)) return false;
+                break;
+            case AimTarget.Ally:
+                if (pokemon.TeamMember.Team == Team.Neutral || !pokemon.TeamMember.IsOnSameTeam(team)) return false;
+                break;
+            case AimTarget.Wild:
+                if (pokemon.TeamMember.Team != Team.Neutral) return false;
+                break;
+            case AimTarget.NonAlly:
+                if (pokemon.TeamMember.IsOnSameTeam(team)) return false;
+                break;
+        }
+        if (!canHitInvisTargets && target.TryGetComponent(out Vision vision))
+        {
+            bool visible = useTeamVision ? VisionManager.Instance != null && VisionManager.Instance.IsVisibleToTeam(vision, team.Team) : vision.IsRendered;
+            if (!visible || !vision.IsVisiblyEligible) return false;
+        }
+        return true;
+    }
+
+    public static GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget kind, TeamMember team, bool canHitInvisTargets = true, bool useTeamVision = true) =>
+        AimInCircleAtPosition(position, radius, kind, team.Team, canHitInvisTargets, useTeamVision);
+
+    public static GameObject[] AimInCircleAtPosition(Vector3 position, float radius, AimTarget kind, Team team, bool canHitInvisTargets = true, bool useTeamVision = true)
+    {
+        var targets = new List<GameObject>();
+        foreach (var pokemon in SphereTargets(position, radius))
+            if (CanPokemonBeTargeted(pokemon.gameObject, kind, team, canHitInvisTargets, useTeamVision)) targets.Add(pokemon.gameObject);
+        return targets.ToArray();
+    }
+
     public static bool Finite(Vector3 value) => float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
     public static bool WithinMeleeRange(Vector3 origin, Vector3 target, float range) => Finite(origin) && Finite(target)
         && float.IsFinite(range) && range > 0 && (target - origin).sqrMagnitude <= (range + 0.5f) * (range + 0.5f);

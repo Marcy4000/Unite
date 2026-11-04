@@ -64,7 +64,7 @@ public class FlareonHeatWaveArea : NetworkBehaviour
 
         yield return new WaitForSeconds(0.1f);
 
-        GameObject[] enemies = Aim.Instance.AimInCircleAtPosition(transform.position, 3.7f, AimTarget.NonAlly, orangeTeam);
+        GameObject[] enemies = CombatTargeting.AimInCircleAtPosition(transform.position, 3.7f, AimTarget.NonAlly, orangeTeam);
 
         foreach (GameObject enemy in enemies)
         {

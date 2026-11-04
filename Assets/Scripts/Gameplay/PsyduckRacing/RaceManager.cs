@@ -234,7 +234,7 @@ public class RaceManager : NetworkBehaviour
         player.SetBotMovement(Vector2.zero);
         if (player.IsLocalHuman) CameraController.Instance.ForcePan(true);
 
-        player.UpdatePosAndRotRPC(new Vector3(-100f, -50f, 0f), Quaternion.identity);
+        player.UpdatePosAndRotRPC(new Vector3(-100f, -50f, 0f), Quaternion.identity, true);
     }
 
     [Rpc(SendTo.Everyone)]

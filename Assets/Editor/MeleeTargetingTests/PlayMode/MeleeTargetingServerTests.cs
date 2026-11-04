@@ -82,6 +82,8 @@ public abstract class MeleeTargetingServerTests
             Set(stats, "passive", Value("AvailablePassives", "FlareonPassive"));
             combat = go.AddComponent(GameType("MovesController")); ((Behaviour)combat).enabled = false;
             aim = go.AddComponent(GameType("Aim")); ((Behaviour)aim).enabled = false;
+            var animation = go.AddComponent(GameType("AnimationManager")); ((Behaviour)animation).enabled = false;
+            var wildAI = go.AddComponent(GameType("WildPokemonAI")); ((Behaviour)wildAI).enabled = false;
             var view = Node("Inactive player view"); view.SetActive(false);
             var player = view.AddComponent(GameType("PlayerManager")); Set(player, "pokemon", pokemon);
             Set(combat, "pokemon", pokemon); Set(combat, "playerManager", player);
@@ -108,6 +110,35 @@ public abstract class MeleeTargetingServerTests
     }
     private IEnumerator Contact(Component primary) => (IEnumerator)combat.GetType().GetMethod("ResolveFlareonBasic", Private)
         .Invoke(combat, new object[] { primary, Vector3.forward, false, 0 });
+
+    [UnityTest]
+    public IEnumerator WildAggroAndDamageWorkWithoutALocalHumanAim()
+    {
+        Assert.That((UnityEngine.Object)GameType("Aim").GetProperty("Instance").GetValue(null) == null, Is.True);
+        Call(source, "UpdateTeamRPC", Value("Team", "Neutral"));
+        source.GetType().GetProperty("Type").SetValue(source, Value("PokemonType", "Wild"));
+        var enemy = Pokemon("Bot victim", Vector3.forward * 1.5f);
+        var otherWild = Pokemon("Other wild", Vector3.forward, "Neutral", "Wild");
+        var ai = source.GetComponent(GameType("WildPokemonAI"));
+        var settings = Activator.CreateInstance(GameType("WildPokemonAISettings"));
+        settings.GetType().GetField("aggressionType").SetValue(settings, Value("WildPokemonAISettings+AggressionType", "Aggressive"));
+        settings.GetType().GetField("movementType").SetValue(settings, Value("WildPokemonAISettings+MovementType", "Stationary"));
+        settings.GetType().GetField("noticeRadius").SetValue(settings, 8f);
+        Set(ai, "aiSettings", settings);
+        Set(ai, "animationManager", source.GetComponent(GameType("AnimationManager")));
+        Physics.SyncTransforms();
+        var idle = ai.GetType().GetMethod("HandleIdleState", Private);
+        Assert.DoesNotThrow(() => idle.Invoke(ai, null));
+        Assert.That(ai.GetType().GetField("currentTarget", Private).GetValue(ai), Is.SameAs(enemy.transform));
+        Assert.That(Get(ai, "State"), Is.EqualTo(Value("WildPokemonAI+WildPokemonState", "Attacking")));
+        var attack = Activator.CreateInstance(GameType("WildPokemonBasicAtk"));
+        Call(attack, "Initialize", ai, 2.5f);
+        Assert.DoesNotThrow(() => Call(attack, "Perform", false));
+        Assert.That(Hp(enemy), Is.LessThan(5000));
+        Assert.That(Hp(otherWild), Is.EqualTo(5000));
+        yield return null;
+        LogAssert.NoUnexpectedReceived();
+    }
 
     [UnityTest]
     public IEnumerator SharedMeleeAimRejectsStalePlayerCollidersAndKeepsNearbyWildTargets()

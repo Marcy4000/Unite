@@ -97,6 +97,26 @@ public class BotNetworkContractTests
     }
 
     [Test]
+    public void FreshBotConfigurationInitializesValuesWithoutDirtyingUnboundVariables()
+    {
+        var root = new GameObject("Bot spawn configuration"); root.SetActive(false);
+        var warnings = new System.Collections.Generic.List<string>();
+        Application.LogCallback capture = (message, trace, type) => { if (type == LogType.Warning) warnings.Add(message); };
+        Application.logMessageReceived += capture;
+        try
+        {
+            root.AddComponent<NetworkObject>();
+            var player = root.AddComponent(GameType("PlayerManager"));
+            player.GetType().GetMethod("ConfigureBotBeforeSpawn").Invoke(player, new[] { (object)"bot-7", Enum.Parse(GameType("Team"), "Orange"), (short)4 });
+            Assert.That(warnings.Any(message => message.Contains("NetworkVariable")), Is.False);
+            Assert.That(player.GetType().GetProperty("IsBot").GetValue(player), Is.True);
+            Assert.That(((NetworkVariable<FixedString32Bytes>)player.GetType().GetField("lobbyPlayerId", Fields).GetValue(player)).Value.ToString(), Is.EqualTo("bot-7"));
+            Assert.That(((NetworkVariable<short>)player.GetType().GetField("botCharacter", Fields).GetValue(player)).Value, Is.EqualTo((short)4));
+        }
+        finally { Application.logMessageReceived -= capture; UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    [Test]
     public void BrainConstructionDoesNotCallNativeNavigationBeforeStart()
     {
         var root = new GameObject("Bot brain construction");

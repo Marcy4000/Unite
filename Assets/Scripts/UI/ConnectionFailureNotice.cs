@@ -32,7 +32,7 @@ public sealed class ConnectionFailureNotice : MonoBehaviour
             return;
         }
         if (overlay == null && !BuildOverlay()) return;
-        titleText.text = controller.LastConnectionFailure != SessionFailureReason.None ? "Connection interrupted" : "Unable to connect";
+        titleText.text = controller.LastConnectionFailure != SessionFailureReason.None ? "Connection interrupted" : "Unable to complete action";
         messageText.text = controller.LastConnectionFailure != SessionFailureReason.None
             ? GetMessage(controller.LastConnectionFailure) + "\n\nThis interruption did not generate a match result."
             : controller.LastOperationError;

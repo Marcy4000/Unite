@@ -78,7 +78,8 @@ public class PlayerClothesPreloader : MonoBehaviour
         var playerClothes = PlayerClothesInfo.Deserialize(clothing.Value);
 
         playerModel.InitializeClothes(playerClothes);
-        DontDestroyOnLoad(playerModel.gameObject);
+        // The preloader root already persists; child models inherit its scene
+        // lifetime. DontDestroyOnLoad on a child only emits a warning.
     }
 
     private void TryUpdatingPlayerModel(Player player)

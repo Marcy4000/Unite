@@ -28,11 +28,13 @@ public class GameTimerUI : MonoBehaviour
     private int previousFinalSeconds = -1;
 
     private TMP_Text activeTimer;
+    private bool UsesScoreTimer => GameManager.Instance.CurrentMap.gameMode != GameMode.Timed ||
+        (SpectatorUIAssets.IsSpectating && GameManager.Instance.CurrentMap.spectatorScoreTimerOverride);
 
     private void Start()
     {
         // Activate the appropriate UI elements based on the game mode
-        bool isTimedMode = GameManager.Instance.CurrentMap.gameMode == GameMode.Timed;
+        bool isTimedMode = !UsesScoreTimer;
         timedModeTimer.SetActive(isTimedMode);
         timelessModeTimer.SetActive(!isTimedMode);
         finalSecondsHolder.SetActive(false);
@@ -126,7 +128,7 @@ public class GameTimerUI : MonoBehaviour
         timelessModeTimerHolder.SetActive(!isFinalStretch);
         timelessModeTimerHolderFinalStretch.SetActive(isFinalStretch);
 
-        activeTimer = GetActiveTimerText(GameManager.Instance.CurrentMap.gameMode, isFinalStretch);
+        activeTimer = GetActiveTimerText(UsesScoreTimer ? GameMode.Timeless : GameMode.Timed, isFinalStretch);
     }
 
     private void EnableFinalSecondsDisplay(bool enable)
@@ -137,8 +139,9 @@ public class GameTimerUI : MonoBehaviour
             {
                 timedModeTimerHolder.SetActive(false);
                 timedModeTimerHolderFinalStretch.SetActive(false);
-                timelessModeTimerHolder.SetActive(false);
-                timelessModeTimerHolderFinalStretch.SetActive(false);
+                bool keepSpectatorScores = SpectatorUIAssets.IsSpectating && GameManager.Instance.CurrentMap.spectatorScoreTimerOverride;
+                timelessModeTimerHolder.SetActive(keepSpectatorScores && !GameManager.Instance.FinalStretch);
+                timelessModeTimerHolderFinalStretch.SetActive(keepSpectatorScores && GameManager.Instance.FinalStretch);
             }
             else {
                 SetActiveTimer(GameManager.Instance.FinalStretch);

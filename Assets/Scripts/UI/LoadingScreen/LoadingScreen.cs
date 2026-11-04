@@ -250,8 +250,8 @@ public class LoadingScreen : MonoBehaviour
 
         var map = CharactersList.Instance.GetCurrentLobbyMap();
         var teams = map.availableTeams;
-        var allPlayers = LobbyController.Instance.Lobby.Players;
-        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        var allPlayers = new List<Player>(LobbyController.Instance.Combatants);
+        Team localTeam = LobbyController.Instance.IsLocalSpectator ? Team.Blue : LobbyController.Instance.GetLocalPlayerTeam();
 
         // For 2 teams: local team on top (blueTeamSpawn), other on bottom (orangeTeamSpawn)
         // For 3+ teams: alternate spawn top/bottom (blueTeamSpawn/orangeTeamSpawn)

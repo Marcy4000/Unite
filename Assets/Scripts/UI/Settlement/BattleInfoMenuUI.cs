@@ -18,11 +18,11 @@ public class BattleInfoMenuUI : MonoBehaviour
     {
         currentLobby = LobbyController.Instance.Lobby;
 
-        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localTeam = LobbyController.Instance.ResultsPerspectiveTeam;
 
         if (relativeMode)
         {
-            foreach (var player in currentLobby.Players)
+            foreach (var player in LobbyController.Instance.Combatants)
             {
                 Team playerTeam = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
                 Transform parentList = playerTeam == localTeam ? blueTeamList : orangeTeamList;

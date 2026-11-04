@@ -87,7 +87,7 @@ public class GlaceUniteArea : NetworkBehaviour
 
         foreach (Pokemon pokemon in GetLivePokemonInZone())
         {
-            if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
+            if (CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 pokemon.TakeDamageRPC(damageInfo);
             }
@@ -122,7 +122,7 @@ public class GlaceUniteArea : NetworkBehaviour
                     continue;
                 }
 
-                if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
+                if (CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
                     pokemon.AddStatChange(enemiesDebuff.WithSource(glaceonID.Value));
                 }

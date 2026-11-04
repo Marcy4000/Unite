@@ -65,7 +65,7 @@ public class HypervoiceHitbox : NetworkBehaviour
             return;
         }
 
-        if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, teamToIgnore))
+        if (!CombatTargeting.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, teamToIgnore))
         {
             return;
         }

@@ -60,7 +60,7 @@ public class MoonblastProjectile : NetworkBehaviour
 
         if (other.TryGetComponent(out Pokemon pokemon))
         {
-            if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
+            if (!CombatTargeting.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 return;
             }
@@ -79,7 +79,7 @@ public class MoonblastProjectile : NetworkBehaviour
         {
             if (hitCollider.TryGetComponent(out Pokemon pokemon))
             {
-                if (!Aim.Instance.CanPokemonBeTargeted(hitCollider.gameObject, AimTarget.NonAlly, orangeTeam))
+                if (!CombatTargeting.CanPokemonBeTargeted(hitCollider.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
                     continue;
                 }

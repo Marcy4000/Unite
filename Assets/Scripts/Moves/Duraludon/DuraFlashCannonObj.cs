@@ -65,7 +65,7 @@ public class DuraFlashCannonObj : NetworkBehaviour
             {
                 if (hit.TryGetComponent(out Pokemon pokemon))
                 {
-                    if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam, true) && !hitPokemons.Contains(pokemon))
+                    if (CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam, true) && !hitPokemons.Contains(pokemon))
                     {
                         hitPokemons.Add(pokemon);
                         pokemon.AddStatChange(speedReduction.WithSource(damage.attackerId));

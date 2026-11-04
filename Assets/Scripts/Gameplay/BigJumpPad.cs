@@ -349,7 +349,7 @@ public class BigJumpPad : NetworkBehaviour
         serverJumpers.Remove(playerID);
         if (player == null || !player.IsSpawned || player.Pokemon.CurrentHp <= 0) yield break;
 
-        GameObject[] enemiesHit = Aim.Instance.AimInCircleAtPosition(targetPosition.transform.position, 1f, AimTarget.NonAlly, player.CurrentTeam);
+        GameObject[] enemiesHit = CombatTargeting.AimInCircleAtPosition(targetPosition.transform.position, 1f, AimTarget.NonAlly, player.CurrentTeam);
 
         foreach (var enemy in enemiesHit)
         {

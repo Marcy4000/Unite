@@ -48,7 +48,7 @@ public class CresseliaPsybeamProjectile : NetworkBehaviour
 
         if (other.TryGetComponent(out Pokemon pokemon))
         {
-            if (!Aim.Instance.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
+            if (!CombatTargeting.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 return;
             }

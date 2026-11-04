@@ -12,7 +12,7 @@ public class ScoreboardUI : MonoBehaviour
     {
         List<PlayerManager> players = GameManager.Instance.Players;
 
-        Team localTeam = LobbyController.Instance.GetLocalPlayerTeam();
+        Team localTeam = LobbyController.Instance.IsLocalSpectator ? Team.Blue : LobbyController.Instance.GetLocalPlayerTeam();
         foreach (PlayerManager player in players)
         {
             Transform parentList;

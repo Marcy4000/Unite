@@ -95,7 +95,7 @@ public class EmboarHeatCrashArea : NetworkBehaviour
 
             foreach (Collider col in colliders)
             {
-                if (!Aim.Instance.CanPokemonBeTargeted(col.gameObject, AimTarget.NonAlly, orangeTeam))
+                if (!CombatTargeting.CanPokemonBeTargeted(col.gameObject, AimTarget.NonAlly, orangeTeam))
                 {
                     continue;
                 }

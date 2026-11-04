@@ -27,7 +27,7 @@ public class WildPokemonBasicAtk : BasicAttackBase
 
         float offsetMultiplier = range / 2.5f;
         Vector3 offsetPosition = wildPokemonAI.transform.position + (wildPokemonAI.transform.forward * 1.377f * offsetMultiplier);
-        GameObject[] hitColliders = Aim.Instance.AimInCircleAtPosition(offsetPosition, 1f * offsetMultiplier, AimTarget.NonAlly, Team.Neutral);
+        GameObject[] hitColliders = CombatTargeting.AimInCircleAtPosition(offsetPosition, 1f * offsetMultiplier, AimTarget.NonAlly, Team.Neutral);
 
         foreach (var hitCollider in hitColliders)
         {
@@ -46,7 +46,7 @@ public class WildPokemonBasicAtk : BasicAttackBase
 
     private Transform GetClosestGameobject()
     {
-        GameObject[] gameObjects = Aim.Instance.AimInCircleAtPosition(wildPokemonAI.transform.position, range, AimTarget.NonAlly, Team.Neutral);
+        GameObject[] gameObjects = CombatTargeting.AimInCircleAtPosition(wildPokemonAI.transform.position, range, AimTarget.NonAlly, Team.Neutral);
 
         GameObject closest = null;
         float distance = Mathf.Infinity;

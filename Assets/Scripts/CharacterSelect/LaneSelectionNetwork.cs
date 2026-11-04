@@ -14,7 +14,7 @@ public class LaneSelectionNetwork : NetworkBehaviour
     public static LaneSelectionNetwork Instance { get; private set; }
     public LanePickerLayout Layout { get; private set; }
     public bool IsAvailable => IsSpawned && Layout != null;
-    public bool CanSelect => IsAvailable && acceptingSelections && receivedSnapshot;
+    public bool CanSelect => IsAvailable && acceptingSelections && receivedSnapshot && !SpectatorUIAssets.IsSpectating;
     public event Action Changed;
     public event Action<Team> ServerChoicesChanged;
 
@@ -79,7 +79,7 @@ public class LaneSelectionNetwork : NetworkBehaviour
     private void Update()
     {
         // Player/session identity may arrive after the scene NetworkObject spawns.
-        if (!IsClient || !IsAvailable || receivedSnapshot || Time.unscaledTime < nextSnapshotRequest) return;
+        if (!IsClient || !IsAvailable || SpectatorUIAssets.IsSpectating || receivedSnapshot || Time.unscaledTime < nextSnapshotRequest) return;
         nextSnapshotRequest = Time.unscaledTime + 1f;
         RequestSnapshotRpc();
     }
@@ -129,7 +129,7 @@ public class LaneSelectionNetwork : NetworkBehaviour
     {
         if (!IsAvailable) return;
         var player = GetPlayerForClient(rpcParams.Receive.SenderClientId);
-        if (player == null) return;
+        if (player == null || player.IsSpectator) return;
         SendSnapshot(TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value), rpcParams.Receive.SenderClientId);
     }
 
@@ -139,7 +139,7 @@ public class LaneSelectionNetwork : NetworkBehaviour
         if (!IsAvailable || !acceptingSelections || laneId == null || (laneId.Length > 0 && Layout.FindLane(laneId) == null)) return;
         ulong sender = rpcParams.Receive.SenderClientId;
         var player = GetPlayerForClient(sender);
-        if (player == null) return;
+        if (player == null || player.IsSpectator) return;
         if (acknowledgedRequests.TryGetValue(sender, out uint previous) && clientRequest <= previous) return;
         acknowledgedRequests[sender] = clientRequest;
         Team team = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);

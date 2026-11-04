@@ -30,7 +30,7 @@ public class EmboarSmogArea : NetworkBehaviour
 
         if (other.TryGetComponent(out Pokemon pokemon))
         {
-            if (!hitPokemons.Contains(pokemon) && Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
+            if (!hitPokemons.Contains(pokemon) && CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
             {
                 hitPokemons.Add(pokemon);
                 pokemon.AddStatusEffect(blindEffect);

@@ -20,9 +20,64 @@ public partial class CameraController : MonoBehaviour
     private bool touchPanning;
     private Transform cameraTransform;
     private Transform playerTransform;
+    private bool spectatorMode;
+    private Transform spectatorTarget;
+    private Transform spectatorAnchor;
+    private PlayerManager spectatorActor;
+    private bool spectatorWaitingForReturn;
+    public Transform SpectatorTarget => spectatorTarget;
+    public event System.Action OnSpectatorTargetChanged;
+
+    public void InitializeSpectator(Vector3 center)
+    {
+        if (spectatorMode) return;
+        spectatorMode = true;
+        ClearSkillAim();
+        spectatorAnchor = new GameObject("Spectator Camera Anchor").transform;
+        spectatorAnchor.position = center;
+        playerTransform = spectatorAnchor;
+        cameraTransform = virtualCamera != null ? virtualCamera.transform : null;
+        forcePanning = true;
+        SetPanning(false);
+        // Start centered through the existing Cinemachine follow rig. Detach
+        // only when the first real pan occurs (not on the setup frame).
+    }
+
+    public void FollowSpectator(Transform target)
+    {
+        if (!spectatorMode || target == null) return;
+        spectatorTarget = target;
+        spectatorActor = target.GetComponent<PlayerManager>();
+        spectatorWaitingForReturn = !TryGetSpectatorPosition(out var position);
+        if (!spectatorWaitingForReturn) spectatorAnchor.position = position;
+        playerTransform = spectatorAnchor;
+        forcePanning = false;
+        keyboardPanning = touchPanning = false;
+        SetPanning(spectatorWaitingForReturn);
+        OnSpectatorTargetChanged?.Invoke();
+    }
+
+    private void UnlockSpectator()
+    {
+        if (!spectatorMode) return;
+        bool wasLocked = spectatorTarget != null;
+        spectatorTarget = null;
+        spectatorActor = null;
+        spectatorWaitingForReturn = false;
+        playerTransform = spectatorAnchor;
+        forcePanning = true;
+        SetPanning(true);
+        if (wasLocked) OnSpectatorTargetChanged?.Invoke();
+    }
 
     public CinemachineCamera VirtualCamera => virtualCamera as CinemachineCamera;
     public bool IsPanning => isPanning;
+
+    private bool TryGetSpectatorPosition(out Vector3 position)
+    {
+        position = spectatorTarget != null ? spectatorTarget.position : Vector3.zero;
+        return spectatorTarget != null && (spectatorActor == null || spectatorActor.TryGetSpectatorFollowPosition(out position));
+    }
 
     private Coroutine superJumpCameraCoroutine;
     private readonly Dictionary<object, ZoomOverride> zoomOverrides = new();
@@ -37,6 +92,16 @@ public partial class CameraController : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (spectatorMode && spectatorTarget != null)
+        {
+            // Dead and temporarily parked living actors both retain their last
+            // playable view. Availability is replicated independently of HP.
+            if (TryGetSpectatorPosition(out var position))
+            {
+                spectatorAnchor.position = position;
+                if (spectatorWaitingForReturn) { spectatorWaitingForReturn = false; SetPanning(false); }
+            }
+        }
         TickSkillAim(Time.time);
         var camera = VirtualCamera;
         var follow = camera != null ? camera.GetComponent<CinemachineFollow>() : null;
@@ -56,6 +121,7 @@ public partial class CameraController : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (spectatorAnchor != null) Destroy(spectatorAnchor.gameObject);
         ClearSkillAim();
         renderScalePolicy.Restore();
         if (Instance == this) Instance = null;
@@ -84,6 +150,7 @@ public partial class CameraController : MonoBehaviour
 
     public void Initialize(Transform playerTransform)
     {
+        if (spectatorMode) return;
         ClearSkillAim();
         this.playerTransform = playerTransform;
         if (virtualCamera != null && !isPanning)
@@ -95,6 +162,7 @@ public partial class CameraController : MonoBehaviour
 
     public void ForcePan(bool value)
     {
+        if (spectatorMode) return;
         forcePanning = value;
         if (!value)
         {
@@ -110,13 +178,14 @@ public partial class CameraController : MonoBehaviour
 
         cameraTransform = virtualCamera.transform;
         touchPanning = true;
-        SetPanning(true);
+        if (!spectatorMode) SetPanning(true);
         return true;
     }
 
     public void DragTouchPan(Vector2 screenDelta)
     {
         if (!touchPanning || cameraTransform == null) return;
+        if (spectatorMode && screenDelta.sqrMagnitude > 0.001f) UnlockSpectator();
 
         // Displacement, not velocity: independent of frame rate, DPI and resolution.
         Vector2 movement = screenDelta * (touchPanSensitivity / Mathf.Max(1, Screen.height));
@@ -128,7 +197,7 @@ public partial class CameraController : MonoBehaviour
     public void EndTouchPan()
     {
         touchPanning = false;
-        SetPanning(forcePanning || keyboardPanning);
+        SetPanning((spectatorMode && spectatorWaitingForReturn) || forcePanning || keyboardPanning);
     }
 
     private void SetPanning(bool value)
@@ -231,7 +300,24 @@ public partial class CameraController : MonoBehaviour
 
     void Update()
     {
+        if (spectatorMode && spectatorTarget == null && !forcePanning) UnlockSpectator();
         if (InputManager.Instance == null || InputManager.Instance.Controls == null) return;
+
+        if (spectatorMode)
+        {
+            if (SettingsManager.Instance != null && SettingsManager.Instance.IsMenuOpen) return;
+            moveInput = InputManager.Instance.Controls.PanCamera.CameraMove.ReadValue<Vector2>();
+            bool panHeld = InputManager.Instance.Controls.PanCamera.ShouldPan.IsPressed();
+            // Same actions/bindings as normal play. Unlocked observers can pan
+            // continuously; a locked observer uses the existing pan modifier.
+            if (!touchPanning && moveInput.sqrMagnitude > 0.001f && (forcePanning || panHeld))
+            {
+                UnlockSpectator();
+                PanCamera();
+            }
+            if (spectatorTarget == null && !forcePanning) UnlockSpectator();
+            return;
+        }
 
         if (!forcePanning)
         {

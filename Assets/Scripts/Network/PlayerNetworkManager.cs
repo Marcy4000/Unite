@@ -267,7 +267,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
 
     public void SpawnPlayerObject()
     {
-        if (IsOwner)
+        if (IsOwner && !IsSpectator)
         {
             Team currentTeam = LobbyController.Instance.GetLocalPlayerTeam();
             SpawnPlayerRpc(OwnerClientId, currentTeam);
@@ -277,6 +277,10 @@ public partial class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void SpawnPlayerRpc(ulong clientID, Team team)
     {
+        if (IsSpectator || clientID != OwnerClientId || playerManager != null) return;
+        var participant = LocalPlayer;
+        if (participant == null || participant.IsSpectator) return;
+        team = TeamMember.GetTeamFromString(participant.Data["PlayerTeam"].Value);
         serverAssists.Value = 0;
         Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(team);
         GameObject spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);

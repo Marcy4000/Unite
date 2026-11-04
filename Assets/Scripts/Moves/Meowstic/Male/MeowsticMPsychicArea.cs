@@ -71,7 +71,7 @@ public class MeowsticMPsychicArea : NetworkBehaviour
             {
                 if (hitCollider != null && hitCollider.TryGetComponent(out Pokemon pokemon))
                 {
-                    if (Aim.Instance.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, meowstic.CurrentTeam))
+                    if (CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, meowstic.CurrentTeam))
                     {
                         pokemon.TakeDamageRPC(damage);
                         if (pokemon.GetStatChange(Stat.Attack) > -60)

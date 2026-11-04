@@ -27,12 +27,16 @@ public partial class PlayerManager
 
     public void ConfigureBotBeforeSpawn(string id, Team team, short character)
     {
-        if (IsSpawned) throw new System.InvalidOperationException("Configure a bot before spawning it.");
-        botControlled.Value = true;
-        lobbyPlayerId.Value = new FixedString32Bytes(id);
-        botTeam.Value = team;
-        botCharacter.Value = character;
-        botStats.Value = new PlayerStats(id, 0, 0, 0, 0, 0, 0, 0);
+        if (IsSpawned || botControlled.GetBehaviour() != null)
+            throw new System.InvalidOperationException("Configure a fresh bot avatar before its first spawn.");
+        // Initial values belong in constructors, before NGO registers the
+        // variables. Value setters dirty an unbound NetworkBehaviour and warn
+        // once per field per bot; initial state must also reach remote spawns.
+        botControlled = new NetworkVariable<bool>(true);
+        lobbyPlayerId = new NetworkVariable<FixedString32Bytes>(new FixedString32Bytes(id), writePerm: NetworkVariableWritePermission.Owner);
+        botTeam = new NetworkVariable<Team>(team);
+        botCharacter = new NetworkVariable<short>(character);
+        botStats = new NetworkVariable<PlayerStats>(new PlayerStats(id, 0, 0, 0, 0, 0, 0, 0));
     }
 
     private IEnumerator InitializeBotAvatar()

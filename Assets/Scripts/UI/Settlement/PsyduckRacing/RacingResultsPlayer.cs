@@ -20,7 +20,7 @@ public class RacingResultsPlayer : MonoBehaviour
         trainerNameText.text = player.Data["PlayerName"].Value;
         
         // Set local player's name to yellow
-        if (racePlayerResult.PlayerID == LobbyController.Instance.Player.Id)
+        if (!LobbyController.Instance.IsLocalSpectator && racePlayerResult.PlayerID == LobbyController.Instance.Player.Id)
         {
             trainerNameText.color = Color.yellow;
         }

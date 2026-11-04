@@ -23,6 +23,8 @@ public class PartyScreenUI : MonoBehaviour
 
     [SerializeField] private GameObject standardsLobbyRoot; // UI alternativa per standards (assegnala da Inspector)
     [SerializeField] private GameObject customsLobbyRoot;   // Container per la UI custom (assegnala da Inspector)
+    [Header("Spectator slots (scene references, in seat order)")]
+    [SerializeField] private LobbyPlayerIcon[] spectatorIcons = new LobbyPlayerIcon[Unite.Multiplayer.SpectatorSlotRules.Capacity];
 
     [SerializeField] private PartyPlayerModel[] standardsLobbyPlayers;
 
@@ -37,6 +39,18 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
 
     private LobbyController.LobbyType? lastLobbyType = null;
     private bool lastMatchmakingState = false;
+
+    private void Awake()
+    {
+        for (short slot = 0; slot < spectatorIcons.Length; slot++)
+        {
+            short captured = slot;
+            var icon = spectatorIcons[slot];
+            icon.InitializeElement(Team.Neutral, slot);
+            icon.ResetName();
+            icon.SwitchButton.onClick.AddListener(() => LobbyController.Instance.JoinSpectatorSlot(captured));
+        }
+    }
 
     private void Start()
     {
@@ -131,7 +145,8 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
             addBotsButton.gameObject.SetActive(visible);
             clearBotsButton.gameObject.SetActive(visible);
             addBotsButton.interactable = LobbyController.Instance.CanManageBots &&
-                LobbyController.Instance.Lobby.Players.Count < LobbyController.Instance.GetMaxPartyMembers();
+                System.Linq.Enumerable.Count(LobbyController.Instance.Combatants) <
+                    CharactersList.Instance.GetCurrentLobbyMap().maxTeamSize * CharactersList.Instance.GetCurrentLobbyMap().availableTeams.Count;
             clearBotsButton.interactable = LobbyController.Instance.CanManageBots && LobbyController.Instance.BotRoster.HasBots;
         }
         startGameButton.interactable = !LobbyController.Instance.IsAnyPlayerInResultScreen();
@@ -207,6 +222,7 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
     public void InitializeUI(Lobby lobby)
     {
         ClearUI();
+        foreach (var icon in spectatorIcons) icon.ResetName();
 
         openLobbyToggle.SetIsOnWithoutNotify(!lobby.IsPrivate);
 
@@ -353,6 +369,7 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
         var teams = selectedMap.availableTeams;
         int slotsPerTeam = selectedMap.maxTeamSize;
 
+        foreach (var icon in spectatorIcons) icon.ResetName();
         foreach (var iconList in teamPlayerIcons.Values)
         {
             foreach (var icon in iconList)
@@ -366,6 +383,11 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
             try
             {
                 int playerPos = NumberEncoder.FromBase64<short>(player.Data["PlayerPos"].Value);
+                if (player.IsSpectator)
+                {
+                    if (playerPos >= 0 && playerPos < spectatorIcons.Length) spectatorIcons[playerPos].InitializePlayer(player);
+                    continue;
+                }
                 Team team = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
                 if (!teamPlayerIcons.ContainsKey(team)) continue;
                 if (playerPos < 0 || playerPos >= teamPlayerIcons[team].Count)
@@ -394,7 +416,7 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
                 var teamCounts = new Dictionary<Team, int>();
                 foreach (var team in teams)
                     teamCounts[team] = 0;
-                foreach (var player in LobbyController.Instance.Lobby.Players)
+                foreach (var player in LobbyController.Instance.Combatants)
                 {
                     Team t = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
                     if (teamCounts.ContainsKey(t))
@@ -415,7 +437,7 @@ private Dictionary<Team, List<LobbyPlayerIcon>> teamPlayerIcons = new Dictionary
                 var teamCountsFull = new Dictionary<Team, int>();
                 foreach (var team in teamsFull)
                     teamCountsFull[team] = 0;
-                foreach (var player in LobbyController.Instance.Lobby.Players)
+                foreach (var player in LobbyController.Instance.Combatants)
                 {
                     Team t = TeamMember.GetTeamFromString(player.Data["PlayerTeam"].Value);
                     if (teamCountsFull.ContainsKey(t))

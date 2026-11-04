@@ -248,7 +248,7 @@ public class HPBar : MonoBehaviour
         switch (type)
         {
             case PokemonType.Player:
-                if (team != LobbyController.Instance.GetLocalPlayerTeam())
+                if (team != (SpectatorUIAssets.IsSpectating ? Team.Blue : LobbyController.Instance.GetLocalPlayerTeam()))
                 {
                     energyBG.sprite = orangeEnergyBG;
                 }

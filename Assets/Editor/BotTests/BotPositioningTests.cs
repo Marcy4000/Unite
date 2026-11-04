@@ -57,6 +57,24 @@ public class BotPositioningTests
     }
 
     [Test]
+    public void OppositeSignedIdentitiesHaveDifferentOffsets()
+    {
+        Assert.That(Vector3.Distance(OffsetFor(42), OffsetFor(-42)), Is.GreaterThan(.1f));
+    }
+
+    [Test]
+    public void BlockedPreferredDirectionTriesOtherDirectionsBeforeShrinking()
+    {
+        BuildNavigation(Floor(0, 3));
+        Vector3 result = Around(origin, Vector3.right * 2, 2);
+        Vector3 delta = result - origin;
+        delta.y = 0;
+        Assert.That(delta.magnitude, Is.GreaterThan(1.75f));
+        Assert.That(NavMesh.Raycast(origin, result, out _, NavMesh.AllAreas), Is.False);
+        Assert.That(Around(origin, Vector3.right * 2, 2), Is.EqualTo(result));
+    }
+
+    [Test]
     public void SharedAnchorsProduceStableDistinctNavigableDestinations()
     {
         BuildNavigation(Floor(0, 12));
