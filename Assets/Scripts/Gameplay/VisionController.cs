@@ -10,6 +10,7 @@ public class VisionController : MonoBehaviour
 
     private SphereCollider visionCollider;
     private Pokemon owner;
+    private Vision ownerVision;
     private GameObject currentBush;
 
     public Team CurrentTeam { get; set; }
@@ -31,6 +32,7 @@ public class VisionController : MonoBehaviour
         visionCollider.radius = visionRange;
         visionCollider.isTrigger = true;
         owner = GetComponentInParent<Pokemon>();
+        ownerVision = GetComponentInParent<Vision>();
     }
 
     private void OnEnable() => VisionManager.Instance?.RegisterController(this);
@@ -51,7 +53,12 @@ public class VisionController : MonoBehaviour
         return (vision.transform.position - transform.TransformPoint(visionCollider.center)).sqrMagnitude <= radius * radius;
     }
 
-    public bool CanSee(Vision vision) => ContainsVision(vision) && (!vision.IsInBush || vision.CurrentBush == CurrentBush);
+    private bool SharesBush(Vision vision) => ownerVision != null
+        ? vision.SharesBushWith(ownerVision) : vision.OccupiesBush(currentBush);
+
+    public bool CanSee(Vision vision) => ContainsVision(vision)
+        && vision.isActiveAndEnabled && vision.IsVisiblyEligible
+        && (!vision.IsInBush || vision.IsRevealedByBushCombat || SharesBush(vision));
 
     public void ClearTrackedVisions()
     {
@@ -96,7 +103,7 @@ public class VisionController : MonoBehaviour
         foreach (var vision in visibleObjects)
         {
             if (vision == null) continue;
-            if (vision.CurrentBush == currentBush)
+            if (SharesBush(vision))
                 vision.IsVisibleInBush.Add(gameObject.GetInstanceID());
             else
                 vision.IsVisibleInBush.Remove(gameObject.GetInstanceID());

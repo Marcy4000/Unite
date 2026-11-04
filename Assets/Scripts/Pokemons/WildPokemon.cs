@@ -123,6 +123,10 @@ public class WildPokemon : NetworkBehaviour
             return;
         }
 
+        // Reward/capture ownership follows KO credit, not necessarily the last
+        // damage source (a wild/objective finishing hit may promote a player).
+        if (pokemon.CreditedKnockoutKiller != null) info.attackerId = pokemon.CreditedKnockoutKiller.NetworkObjectId;
+
         if (pokemon.Type == PokemonType.Objective)
         {
             if (pokemonLoadHandle.IsValid())

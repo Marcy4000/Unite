@@ -43,7 +43,7 @@ public class NinetalesVeilEffect : PrefabMoveEffect
         foreach (var target in inside)
         {
             recipients.Add(target);
-            if (!target.HasStatChangeWithID(reductionId)) target.AddStatChange(new StatChange((short)(Upgraded ? 40 : 35), Stat.DamageReduction, 0, false, true, false, reductionId));
+            if (!target.HasStatChangeWithID(reductionId)) target.AddStatChange(new StatChange((short)(Upgraded ? 40 : 35), Stat.DamageReduction, 0, false, true, false, reductionId).WithSource(Actor.NetworkObjectId));
         }
         // Only this Ninetales' own veil enables its boosted attacks/movement speed.
         combat?.SetInside(this, inside.Contains(Actor.Pokemon));

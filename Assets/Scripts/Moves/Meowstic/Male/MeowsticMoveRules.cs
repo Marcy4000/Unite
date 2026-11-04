@@ -56,7 +56,7 @@ public static class MeowsticMoveRules
         foreach (var obj in actor.NetworkManager.SpawnManager.SpawnedObjects.Values)
             if (obj.TryGetComponent(out PlayerManager ally) && Living(ally.Pokemon) && ally.CurrentTeam.IsOnSameTeam(actor.CurrentTeam)
                 && !ally.Pokemon.HasStatusEffect(StatusType.VisionObscuring) && ally.VisionController != null
-                && ally.VisionController.ContainsVision(vision) && (!vision.IsInBush || (ally.Vision != null && ally.Vision.CurrentBush == vision.CurrentBush))) return true;
+                && ally.VisionController.CanSee(vision)) return true;
         return false;
     }
     public static List<Pokemon> Targets(Vector3 center, float radius)

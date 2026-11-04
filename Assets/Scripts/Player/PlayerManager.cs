@@ -389,13 +389,15 @@ public partial class PlayerManager : NetworkBehaviour
     private void UpdateLifeVisibility()
     {
         bool alive = pokemon != null && pokemon.CurrentHp > 0;
-        if (alive != wasAliveForVision)
+        bool lifeChanged = alive != wasAliveForVision;
+        if (lifeChanged)
         {
             vision.ClearTransientState();
             visionController.ClearTrackedVisions();
         }
         wasAliveForVision = alive;
-        vision.IsVisiblyEligible = alive;
+        vision.IsVisiblyEligible = alive && !pokemon.HasStatusEffect(StatusType.Invisible);
+        if (alive && lifeChanged) vision.RefreshBushOverlaps();
     }
 
     public override void OnNetworkDespawn()

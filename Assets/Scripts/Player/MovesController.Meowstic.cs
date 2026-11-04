@@ -184,8 +184,8 @@ public partial class MovesController
             if (MeowsticMoveRules.Enemy(playerManager, target) && MeowsticMoveRules.InCone(transform.position, direction, target.transform.position, 3))
             {
                 target.RemoveAllStatChangeWithIDRPC(7341); target.RemoveAllStatChangeWithIDRPC(7342);
-                target.AddStatChange(new StatChange(20, Stat.Defense, 3, true, false, true, 7341));
-                target.AddStatChange(new StatChange(20, Stat.SpDefense, 3, true, false, true, 7342));
+                target.AddStatChange(new StatChange(20, Stat.Defense, 3, true, false, true, 7341).WithSource(NetworkObjectId));
+                target.AddStatChange(new StatChange(20, Stat.SpDefense, 3, true, false, true, 7342).WithSource(NetworkObjectId));
                 ShowMeowsticEffect(MeowsticEffect.Pulse, target.transform.position, direction, 0.25f, target.NetworkObjectId, 0.7f);
             }
         yield return MeowsticWait(scope, 0.2);
@@ -195,7 +195,7 @@ public partial class MovesController
     {
         meowsticDetonate = false; meowsticStoredDamage.Value = 0;
         meowsticReflectStarted = MeowsticNow; meowsticReflectUntil.Value = MeowsticNow + 4;
-        scope.Own(new MeowsticModifier(recipient, Stat.PhysicalDamageReduction, 35, percentage: false, family: 2));
+        scope.Own(new MeowsticModifier(recipient, Stat.PhysicalDamageReduction, 35, NetworkObjectId, percentage: false, family: 2));
         int stored = 0;
         bool exploded = false;
         Vector3 lastPosition = recipient.transform.position;
@@ -241,8 +241,8 @@ public partial class MovesController
 
     private IEnumerator MeowsticPsychic(MeowsticScope scope, Pokemon recipient, bool upgraded)
     {
-        var defense = new MeowsticModifier(recipient, Stat.Defense, 15, family: 3);
-        var specialDefense = new MeowsticModifier(recipient, Stat.SpDefense, 15, family: 3);
+        var defense = new MeowsticModifier(recipient, Stat.Defense, 15, NetworkObjectId, family: 3);
+        var specialDefense = new MeowsticModifier(recipient, Stat.SpDefense, 15, NetworkObjectId, family: 3);
         scope.Own(defense); scope.Own(specialDefense);
         scope.Visual(MeowsticEffect.Psychic, recipient.transform.position, transform.forward, 3.5f, recipient.NetworkObjectId, MeowsticMoveRules.PsychicRadius);
         var debuffs = new Dictionary<Pokemon, MeowsticPsychicDebuff>();
@@ -257,7 +257,7 @@ public partial class MovesController
                     {
                         target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0.45f, 3, 55, DamageType.Special));
                         if (!MeowsticMoveRules.Living(target)) continue;
-                        if (!debuffs.TryGetValue(target, out var debuff)) { debuff = new MeowsticPsychicDebuff(target); debuffs.Add(target, debuff); scope.Own(debuff); }
+                        if (!debuffs.TryGetValue(target, out var debuff)) { debuff = new MeowsticPsychicDebuff(target, NetworkObjectId); debuffs.Add(target, debuff); scope.Own(debuff); }
                         debuff.Pulse(MeowsticNow);
                     }
                 recipient.HealDamageRPC(new DamageInfo(NetworkObjectId, MeowsticMoveRules.PsychicHealingRatio(upgraded), 2, 45, DamageType.Special));
@@ -277,10 +277,10 @@ public partial class MovesController
     {
         private readonly MeowsticModifier attack, special;
         private readonly MeowsticPsychicStacks stacks = new MeowsticPsychicStacks();
-        public MeowsticPsychicDebuff(Pokemon target)
+        public MeowsticPsychicDebuff(Pokemon target, ulong sourceId)
         {
-            attack = new MeowsticModifier(target, Stat.Attack, 0, false, family: 4, duration: 3);
-            special = new MeowsticModifier(target, Stat.SpAttack, 0, false, family: 4, duration: 3);
+            attack = new MeowsticModifier(target, Stat.Attack, 0, sourceId, false, family: 4, duration: 3);
+            special = new MeowsticModifier(target, Stat.SpAttack, 0, sourceId, false, family: 4, duration: 3);
         }
         public void Pulse(double now) { short amount = stacks.Pulse(now); attack.RefreshAmount(amount); special.RefreshAmount(amount); }
         public void Tick(double now) { if (stacks.Amount(now) > 0) return; attack.SetAmount(0); special.SetAmount(0); }
@@ -301,12 +301,13 @@ public partial class MovesController
                 var leases = new List<IDisposable>();
                 if (MeowsticMoveRules.Ally(playerManager, target))
                 {
-                    leases.Add(new MeowsticModifier(target, Stat.Defense, MeowsticMoveRules.RoomDefense(upgraded), family: 5));
-                    leases.Add(new MeowsticModifier(target, Stat.SpDefense, MeowsticMoveRules.RoomDefense(upgraded), family: 5));
+                    leases.Add(new MeowsticModifier(target, Stat.Defense, MeowsticMoveRules.RoomDefense(upgraded), NetworkObjectId, family: 5));
+                    leases.Add(new MeowsticModifier(target, Stat.SpDefense, MeowsticMoveRules.RoomDefense(upgraded), NetworkObjectId, family: 5));
                 }
                 else if (MeowsticMoveRules.Enemy(playerManager, target))
                 {
                     object source = new object(); target.SetWonderRoomSource(source, true);
+                    target.RecordHostileContribution(pokemon);
                     leases.Add(new MeowsticCleanup(() => { if (target != null && target.IsSpawned) target.SetWonderRoomSource(source, false); }));
                     int visual = ShowMeowsticEffect(MeowsticEffect.Inversion, target.transform.position, direction, (float)(end - MeowsticNow), target.NetworkObjectId);
                     leases.Add(new MeowsticCleanup(() => { if (this != null && IsSpawned) StopMeowsticEffectRPC(visual); }));
@@ -330,10 +331,11 @@ public partial class MovesController
             StatChange? StatFilter(StatChange change)
             {
                 if (!Protected() || change.IsBuff || !change.IsTimed || !change.CanBeRemoved) return change;
+                ally.RecordSupport(pokemon);
                 Pokemon enemy = MeowsticReflectionTarget();
                 if (enemy != null)
                 {
-                    change.ID = 0; MeowsticReflection.Run(() => enemy.AddStatChange(change));
+                    change.ID = 0; change = change.WithSource(NetworkObjectId); MeowsticReflection.Run(() => enemy.AddStatChange(change));
                     ShowMeowsticEffect(MeowsticEffect.Reflection, ally.transform.position + Vector3.up, transform.forward, 0.4f, enemy.NetworkObjectId);
                 }
                 return null;
@@ -341,10 +343,11 @@ public partial class MovesController
             bool StatusFilter(StatusEffect effect)
             {
                 if (!Protected() || !MeowsticMoveRules.Reflectable(effect)) return true;
+                ally.RecordSupport(pokemon);
                 Pokemon enemy = MeowsticReflectionTarget();
                 if (enemy != null)
                 {
-                    effect.ID = 0; MeowsticReflection.Run(() => enemy.AddStatusEffect(effect));
+                    effect.ID = 0; effect = effect.WithSource(NetworkObjectId); MeowsticReflection.Run(() => enemy.AddStatusEffect(effect));
                     ShowMeowsticEffect(MeowsticEffect.Reflection, ally.transform.position + Vector3.up, transform.forward, 0.4f, enemy.NetworkObjectId);
                 }
                 return false;
@@ -388,8 +391,8 @@ public partial class MovesController
                 var leases = new List<IDisposable>();
                 if (MeowsticMoveRules.Ally(playerManager, target))
                 {
-                    leases.Add(new MeowsticModifier(target, Stat.Speed, 20, family: 7));
-                    leases.Add(new MeowsticModifier(target, Stat.Cdr, 10, percentage: false, family: 7));
+                    leases.Add(new MeowsticModifier(target, Stat.Speed, 20, NetworkObjectId, family: 7));
+                    leases.Add(new MeowsticModifier(target, Stat.Cdr, 10, NetworkObjectId, percentage: false, family: 7));
                     if (granted.Add(target.NetworkObjectId))
                     {
                         scope.Own(new MeowsticShield(target, (float)(end - MeowsticNow), pokemon));

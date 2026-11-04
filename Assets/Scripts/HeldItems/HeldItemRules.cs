@@ -6,7 +6,6 @@ public static class HeldItemRules
     public const ushort AssaultVestId = 26001;
     public const ushort BuddyBarrierId = 26002;
     public const ushort ResonantGuardId = 26003;
-    public const float AssistWindow = 10;
 
     public static bool Primary(DamageInfo damage) => damage.source == DamageSource.Direct && !damage.suppressOnHitEffects
         && !damage.proprieties.HasFlag(DamageProprieties.IsMuscleBand);

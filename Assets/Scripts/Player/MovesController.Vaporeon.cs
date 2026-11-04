@@ -166,8 +166,8 @@ public partial class MovesController
     }
     private IEnumerator VaporeonHelpingHand(VaporScope scope, Pokemon target)
     {
-        scope.Own(new VaporModifierLease(target, Stat.Attack, 35, true));
-        scope.Own(new VaporModifierLease(target, Stat.SpAttack, 35, true));
+        scope.Own(new VaporModifierLease(target, Stat.Attack, 35, true, NetworkObjectId));
+        scope.Own(new VaporModifierLease(target, Stat.SpAttack, 35, true, NetworkObjectId));
         scope.Visual(VaporEffect.HelpingHand, target.transform.position, 3.5f, target.NetworkObjectId);
         SupportVaporeonAlly(target);
         double end = VaporNow + 3.5;
@@ -178,8 +178,8 @@ public partial class MovesController
         ulong recipientId = target.NetworkObjectId;
         var shield = new VaporShieldLease(target, Mathf.FloorToInt(target.GetMaxHp() * VaporMoveRules.ShieldRatio(upgraded)), pokemon);
         scope.Own(shield);
-        var attack = new VaporModifierLease(target, Stat.Attack, 25, true);
-        var special = new VaporModifierLease(target, Stat.SpAttack, 25, true);
+        var attack = new VaporModifierLease(target, Stat.Attack, 25, true, NetworkObjectId);
+        var special = new VaporModifierLease(target, Stat.SpAttack, 25, true, NetworkObjectId);
         scope.Own(attack); scope.Own(special);
         scope.Visual(VaporEffect.AquaRing, target.transform.position, 6, target.NetworkObjectId, 1, shield.Id);
         SupportVaporeonAlly(target);
@@ -225,8 +225,8 @@ public partial class MovesController
                     var leases = new List<IDisposable>();
                     if (VaporMoveRuntime.CanHeal(playerManager, target))
                     {
-                        leases.Add(new VaporModifierLease(target, Stat.Defense, VaporMoveRules.RainDefense(upgraded), true));
-                        leases.Add(new VaporModifierLease(target, Stat.SpDefense, VaporMoveRules.RainDefense(upgraded), true));
+                        leases.Add(new VaporModifierLease(target, Stat.Defense, VaporMoveRules.RainDefense(upgraded), true, NetworkObjectId));
+                        leases.Add(new VaporModifierLease(target, Stat.SpDefense, VaporMoveRules.RainDefense(upgraded), true, NetworkObjectId));
                     }
                     else if (CanVaporeonSlow(target)) leases.Add(new VaporModifierLease(target, Stat.Speed, 20, false, NetworkObjectId));
                     return leases;
@@ -301,8 +301,8 @@ public partial class MovesController
             {
                 target.TakeDamageRPC(VaporMoveRules.TempestDamage(NetworkObjectId));
                 if (!VaporMoveRuntime.Living(target)) continue;
-                scope.Own(new VaporModifierLease(target, Stat.Defense, 35, false));
-                scope.Own(new VaporModifierLease(target, Stat.SpDefense, 35, false));
+                scope.Own(new VaporModifierLease(target, Stat.Defense, 35, false, NetworkObjectId));
+                scope.Own(new VaporModifierLease(target, Stat.SpDefense, 35, false, NetworkObjectId));
             }
             else if (VaporMoveRuntime.CanHeal(playerManager, target)) HealVaporeonAlly(target, VaporMoveRules.Heal(pokemon, 2.6f, 5, 840));
         }

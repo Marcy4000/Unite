@@ -3,7 +3,7 @@ using UnityEngine;
 public class BushCollider : MonoBehaviour
 {
     [SerializeField] private GameObject bushRoot; // Optional field to set in the inspector
-    public GameObject BushRoot => bushRoot;
+    public GameObject BushRoot => bushRoot != null ? bushRoot : transform.parent?.gameObject;
 
     private void Awake()
     {

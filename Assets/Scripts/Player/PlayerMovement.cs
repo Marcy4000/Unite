@@ -433,6 +433,7 @@ public partial class PlayerMovement : NetworkBehaviour
         currentMovement = inputMovement = Vector3.zero;
         transform.SetPositionAndRotation(position, rotation);
         Physics.SyncTransforms();
+        GetComponent<Vision>()?.RefreshBushOverlaps();
         if (recordSafePosition) lastValidPosition = position;
         UpdateActiveWalkmesh();
     }

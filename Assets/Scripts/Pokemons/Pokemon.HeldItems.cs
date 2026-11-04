@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public partial class Pokemon
@@ -6,7 +5,6 @@ public partial class Pokemon
     private HeldItemManager heldItemEffects;
     private HeldItemManager HeldItems => heldItemEffects != null ? heldItemEffects : heldItemEffects = GetComponent<HeldItemManager>();
     private float curseEndsAt;
-    private readonly Dictionary<ulong, double> heldItemContributors = new Dictionary<ulong, double>();
 
     public bool HasHeldItem(AvailableHeldItems item) => HeldItems != null && HeldItems.Has(item);
 
@@ -54,8 +52,7 @@ public partial class Pokemon
     public void GrantHeldItemShield(ShieldInfo shield, Pokemon source)
     {
         if (!IsServer || CurrentHp <= 0) return;
-        if (source != null && source != this && source.TeamMember.IsOnSameTeam(TeamMember)
-            && source.HasHeldItem(AvailableHeldItems.RescueHood)) shield.Amount = Mathf.FloorToInt(shield.Amount * 1.23f);
+        if (source != null) shield = shield.WithSource(source.NetworkObjectId);
         for (int index = 0; index < shields.Count; index++)
             if (shields[index].ID == shield.ID)
             {
@@ -81,26 +78,6 @@ public partial class Pokemon
         if (!IsServer || CurrentHp <= 0 || baseStats == null) return;
         if (baseStats.IsLevelBeforeEvo(CurrentLevel)) StoreExperience(amount);
         else GainExperienceRPC(amount);
-    }
-
-    private void RecordHeldItemContributor(Pokemon attacker, int amount)
-    {
-        if (amount <= 0 || Type != PokemonType.Player || attacker.Type != PokemonType.Player
-            || attacker == this || attacker.TeamMember.IsOnSameTeam(TeamMember)) return;
-        heldItemContributors[attacker.NetworkObjectId] = NetworkManager.ServerTime.Time;
-    }
-
-    private void AwardHeldItemKnockout(Pokemon attacker)
-    {
-        if (Type != PokemonType.Player) return;
-        double now = NetworkManager.ServerTime.Time;
-        foreach (var contribution in heldItemContributors)
-            if (now - contribution.Value <= HeldItemRules.AssistWindow
-                && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(contribution.Key, out var obj)
-                && obj.TryGetComponent(out Pokemon contributor) && !contributor.TeamMember.IsOnSameTeam(TeamMember))
-                contributor.HeldItems?.OnKnockout(contributor != attacker);
-        heldItemContributors.Clear();
-        curseEndsAt = 0;
     }
 
     private void NotifyHeldItemHindrance(ulong source)

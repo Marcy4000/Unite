@@ -27,16 +27,24 @@ public class HeldItemRuntime : HeldItemBase
         lastPosition = Pokemon.transform.position;
         nextTick = Time.time + 1;
         Pokemon.OnDeath += OnDeath;
+        Pokemon.OnKnockoutAwarded += OnKnockoutAwarded;
         if (kind == AvailableHeldItems.WiseGlasses) SetModifier(7, Stat.SpAttack, true, 0, false);
         if (kind == AvailableHeldItems.AssaultVest) nextUse = Time.time + 15;
     }
 
     private void OnDeath(DamageInfo damage) => Reset();
 
+    private void OnKnockoutAwarded(KnockoutResult result)
+    {
+        // These items reward opposing player KOs, not farming/objectives.
+        if (Pokemon.IsServer && result.VictimType == PokemonType.Player) Knockout(result.Killer != Pokemon);
+    }
+
     public override void Dispose()
     {
         if (playerManager == null || Pokemon == null) return;
         Pokemon.OnDeath -= OnDeath;
+        Pokemon.OnKnockoutAwarded -= OnKnockoutAwarded;
         Pokemon.ClearHeldItemModifier(ModifierId);
         if (Pokemon.IsSpawned)
         {

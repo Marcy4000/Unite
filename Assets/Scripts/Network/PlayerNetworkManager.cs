@@ -31,7 +31,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
     private int killsSinceLastDeath = 0;
     private int pointsSinceLastDeath = 0;
 
-    public PlayerStats PlayerStats => playerStats.Value;
+    public PlayerStats PlayerStats => WithAuthoritativeAssists(playerStats.Value);
 
     private const float DefaultDeathTimer = 5f;
     private float localDeathTimer = DefaultDeathTimer;
@@ -58,6 +58,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
         subscribedLobbyController = LobbyController.Instance;
         subscribedLobbyController.onLobbyUpdate += HandleLobbyUpdate;
         playerStats.OnValueChanged += HandlePlayerStatsChange;
+        serverAssists.OnValueChanged += HandleAssistCountChanged;
         deathTimer.OnValueChanged += HandleDeathTimerChange;
 
         if (!subscribedLobbyController.PlayerNetworkManagers.Contains(this))
@@ -98,6 +99,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
             subscribedGameManager = null;
         }
         playerStats.OnValueChanged -= HandlePlayerStatsChange;
+        serverAssists.OnValueChanged -= HandleAssistCountChanged;
         deathTimer.OnValueChanged -= HandleDeathTimerChange;
 
         // Rimuovi la sottoscrizione all'evento OnRespawn se necessario
@@ -111,6 +113,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
                 pokemon.OnDamageDealt -= OnPlayerDealDamage;
                 pokemon.OnHealingDone -= OnPlayerHeal;
                 pokemon.OnOtherPokemonKilled -= OnOtherPokemonKilled;
+                pokemon.OnKnockoutAwarded -= HandleKnockoutAwarded;
             }
             playerManager.onGoalScored -= OnGoalScored;
             playerManager.OnRespawn -= OnPlayerRespawned;
@@ -197,6 +200,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
 
     private void HandlePlayerStatsChange(PlayerStats previous, PlayerStats updated)
     {
+        updated = WithAuthoritativeAssists(updated);
         if (playerManager != null)
         {
             playerManager.PlayerStats = updated;
@@ -273,6 +277,7 @@ public partial class PlayerNetworkManager : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void SpawnPlayerRpc(ulong clientID, Team team)
     {
+        serverAssists.Value = 0;
         Transform spawnpoint = SpawnpointManager.Instance.GetSpawnpoint(team);
         GameObject spawnedPlayer = Instantiate(playerPrefab, spawnpoint.position, spawnpoint.rotation);
         var spawnedPlayerNetworkObject = spawnedPlayer.GetComponent<NetworkObject>();
@@ -309,6 +314,8 @@ public partial class PlayerNetworkManager : NetworkBehaviour
         if (IsOwner) ResetMatchStats();
         player.ChangeCurrentTeam(team);
         player.Initialize();
+        player.PlayerStats = PlayerStats;
+        if (IsServer) player.Pokemon.OnKnockoutAwarded += HandleKnockoutAwarded;
         match.AddPlayer(player);
         MinimapManager.Instance.CreatePlayerIcon(player);
         if (!IsOwner) yield break;

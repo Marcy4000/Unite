@@ -61,6 +61,7 @@ public partial class PlayerManager
         {
             pokemon.OnDeath += RecordBotDeath;
             pokemon.OnOtherPokemonKilled += RecordBotKill;
+            pokemon.OnKnockoutAwarded += RecordBotAssist;
             pokemon.OnDamageTaken += RecordBotDamageTaken;
             pokemon.OnDamageDealt += RecordBotDamageDealt;
             movesController.OnMoveLearned += RecordBotMove;
@@ -129,6 +130,14 @@ public partial class PlayerManager
         stats.kills++;
         botStats.Value = stats;
         botKillsSinceDeath++;
+    }
+
+    private void RecordBotAssist(KnockoutResult result)
+    {
+        if (!IsServer || result.Killer == pokemon) return;
+        var stats = botStats.Value;
+        if (stats.assists < ushort.MaxValue) stats.assists++;
+        botStats.Value = stats;
     }
 
     private void RecordBotScore(int points)

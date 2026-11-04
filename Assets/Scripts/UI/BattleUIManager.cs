@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BattleUIManager : MonoBehaviour
@@ -115,8 +116,13 @@ public class BattleUIManager : MonoBehaviour
 
     public void ShowKill(Pokemon attacker, Pokemon killed, int streak, string killNotification)
     {
+        ShowKill(attacker, killed, streak, killNotification, null);
+    }
+
+    public void ShowKill(Pokemon attacker, Pokemon killed, int streak, string killNotification, IReadOnlyList<Pokemon> assistants)
+    {
         if (attacker == null || killed == null) return;
-        KillInfo killInfo = new KillInfo(attacker, killed, streak, killNotification, LobbyController.Instance.GetLocalPlayerTeam());
+        KillInfo killInfo = new KillInfo(attacker, killed, streak, killNotification, LobbyController.Instance.GetLocalPlayerTeam(), assistants);
         killNotificationUI.EnqueueKill(killInfo);
     }
 

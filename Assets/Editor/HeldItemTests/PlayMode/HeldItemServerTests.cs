@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-public abstract class HeldItemServerTests
+public abstract partial class HeldItemServerTests
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
     private readonly List<GameObject> objects = new List<GameObject>();

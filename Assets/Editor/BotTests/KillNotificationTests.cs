@@ -174,4 +174,31 @@ public class KillNotificationTests
         object queue = ui.GetType().GetField("killQueue", Private).GetValue(ui);
         Assert.That(Get(queue, "Count"), Is.Zero);
     }
+
+    [Test]
+    public void AssistPortraitsAreSnapshotsAndUnusedSlotsAreCleared()
+    {
+        var holder = new GameObject("AssistsHolder"); holder.transform.SetParent(root.transform);
+        Set(ui, "assistsHolder", holder);
+        Array images = Array.CreateInstance(GameType("UnityEngine.UI.Image"), 4);
+        for (int i = 0; i < 4; i++)
+        {
+            var slot = new GameObject("AssistBG " + i); slot.transform.SetParent(holder.transform);
+            var preview = new GameObject("PokemonPreview", typeof(RectTransform)); preview.transform.SetParent(slot.transform);
+            images.SetValue(preview.AddComponent(GameType("UnityEngine.UI.Image")), i);
+        }
+        Set(ui, "assistPortraits", images);
+        var helper = Actor("Assistant", "Player", "Blue", true); Set(helper, "portrait", sprites[3]);
+        Array helpers = Array.CreateInstance(GameType("Pokemon"), 1); helpers.SetValue(helper, 0);
+        object info = Activator.CreateInstance(GameType("KillInfo"), attacker, victim, 1, null, Value("Team", "Blue"), helpers);
+        UnityEngine.Object.DestroyImmediate(helper.gameObject);
+        Call(ui, "ApplyPresentation", info);
+        Assert.That(holder.activeSelf, Is.True);
+        Assert.That(Get(images.GetValue(0), "sprite"), Is.SameAs(sprites[3]));
+        for (int i = 1; i < 4; i++) Assert.That(((Component)images.GetValue(i)).transform.parent.gameObject.activeSelf, Is.False);
+        Call(ui, "ApplyPresentation", Snapshot(1));
+        Assert.That(holder.activeSelf, Is.False);
+        Assert.That(Get(images.GetValue(0), "sprite"), Is.Null);
+        Assert.That(((Component)images.GetValue(0)).transform.parent.gameObject.activeSelf, Is.False);
+    }
 }

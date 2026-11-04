@@ -46,7 +46,7 @@ public static class CresseliaMoveRuntime
         }
         return result;
     }
-    public static void Cleanse(Pokemon target)
+    public static bool Cleanse(Pokemon target)
     {
         // NetworkList mutates synchronously on a host. Never remove while walking it.
         var statuses = new List<StatusEffect>();
@@ -55,6 +55,7 @@ public static class CresseliaMoveRuntime
         foreach (StatChange change in target.StatChanges) if (!change.IsBuff && change.IsTimed && change.CanBeRemoved) stats.Add(change);
         foreach (StatusEffect effect in statuses) target.RemoveStatusEffectRPC(effect);
         foreach (StatChange change in stats) target.RemoveStatChangeRPC(change);
+        return statuses.Count > 0 || stats.Count > 0;
     }
     public static void ReturnToLocomotion(PlayerManager actor)
     {

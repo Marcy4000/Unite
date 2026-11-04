@@ -35,16 +35,16 @@ public static class BattleItemRules
     {
         switch (kind)
         {
-            case AvailableBattleItems.Eject: return 80;
+            case AvailableBattleItems.Eject: return 60;
             case AvailableBattleItems.XSpeed: return 50;
             case AvailableBattleItems.XAttack: return 40;
-            case AvailableBattleItems.FullHeal: return 60;
+            case AvailableBattleItems.FullHeal: return 55;
             case AvailableBattleItems.GoalGetter: return 60;
             case AvailableBattleItems.Potion: return 30;
             case AvailableBattleItems.SlowSmoke: return 35;
             case AvailableBattleItems.ShedinjaDoll: return 45;
             case AvailableBattleItems.FluffyTail: return 22;
-            case AvailableBattleItems.GoalHacker: return 80;
+            case AvailableBattleItems.GoalHacker: return 65;
             case AvailableBattleItems.Brick: return 55;
             default: return 0;
         }

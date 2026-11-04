@@ -217,10 +217,10 @@ public partial class MovesController
         if (!CresseliaMoveRuntime.Living(target)) return;
         ushort id = moonblast ? cresseliaMoonblastDebuff : cresseliaAuroraDebuff;
         target.RemoveAllStatChangeWithIDRPC(id);
-        target.AddStatChange(new StatChange(15, Stat.AtkSpeed, moonblast ? 5 : 3, true, false, true, id));
+        target.AddStatChange(new StatChange(15, Stat.AtkSpeed, moonblast ? 5 : 3, true, false, true, id).WithSource(NetworkObjectId));
         if (!moonblast) return;
-        target.AddStatChange(new StatChange(30, Stat.Attack, 5, true, false, true, id));
-        target.AddStatChange(new StatChange(20, Stat.SpAttack, 5, true, false, true, id));
+        target.AddStatChange(new StatChange(30, Stat.Attack, 5, true, false, true, id).WithSource(NetworkObjectId));
+        target.AddStatChange(new StatChange(20, Stat.SpAttack, 5, true, false, true, id).WithSource(NetworkObjectId));
     }
 
     private void AdvanceCresseliaRhythm()
@@ -235,7 +235,7 @@ public partial class MovesController
         ShowCresseliaEffect(CresseliaEffect.Cleanse, transform.position, transform.forward, 0.45f, NetworkObjectId);
         if (ally != null)
         {
-            CresseliaMoveRuntime.Cleanse(ally);
+            if (CresseliaMoveRuntime.Cleanse(ally)) ally.RecordSupport(pokemon);
             ShowCresseliaEffect(CresseliaEffect.Cleanse, ally.transform.position, transform.forward, 0.45f, ally.NetworkObjectId);
         }
         if (move == CresseliaCast.LunarBlessing)

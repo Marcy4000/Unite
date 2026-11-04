@@ -150,6 +150,8 @@ public partial class Pokemon : NetworkBehaviour
         // (or any other gameplay state) using its local copy of the stats.
         if (IsServer)
         {
+            ResetCombatContributions();
+            ClearBushCombatReveal();
             currentHp.Value = GetMaxHp();
             currentExp.Value = 0;
             shieldTimers.Clear();
@@ -188,6 +190,7 @@ public partial class Pokemon : NetworkBehaviour
         {
             if (IsServer)
             {
+                ClearBushCombatReveal();
                 RemoveShieldWithIDRPC(RayquazaBuff.ShieldId);
             }
             OnDeath?.Invoke(lastHit);
@@ -707,6 +710,7 @@ public partial class Pokemon : NetworkBehaviour
         // matching timer exists, so callbacks can safely remove/replace a stat.
         statTimers.Add(change.IsTimed ? change.Duration : -1);
         statChanges.Add(change);
+        if (change.HasSource && change.EffectiveAmount > 0) RecordEffectContribution(change.SourceId, change.IsBuff);
         if (!change.IsBuff && change.HasSource && change.AffectedStat == Stat.Speed) NotifyHeldItemHindrance(change.SourceId);
     }
 
@@ -819,7 +823,8 @@ public partial class Pokemon : NetworkBehaviour
             }
             else if (HasStatusEffect(StatusType.HindranceResistance))
             {
-                AddStatChange(new StatChange(20, Stat.Speed, 3, true, false, true, 0));
+                var slow = new StatChange(20, Stat.Speed, 3, true, false, true, 0);
+                AddStatChange(effect.HasSource ? slow.WithSource(effect.SourceId) : slow);
                 return;
             }
         }
@@ -840,6 +845,8 @@ public partial class Pokemon : NetworkBehaviour
             OnStatusListChangedRPC(effect, true);
         }
         if (effect.IsHindrance() && effect.HasSource) NotifyHeldItemHindrance(effect.SourceId);
+        if (effect.HasSource && (effect.IsNegativeStatus() || IsAssistSupportStatus(effect)))
+            RecordEffectContribution(effect.SourceId, !effect.IsNegativeStatus());
     }
 
     public void RemoveStatusEffectWithID(ushort id)
@@ -1119,7 +1126,7 @@ public partial class Pokemon : NetworkBehaviour
     // Existing RPC callers retain exactly the same damage flow.
     public int ResolveDamage(DamageInfo damage)
     {
-        if (!IsServer || HasStatusEffect(StatusType.Invincible) || currentHp.Value <= 0)
+        if (!IsServer || HasStatusEffect(StatusType.Invincible) || currentHp.Value <= 0 || resolvedKnockout != null)
         {
             return 0;
         }
@@ -1133,6 +1140,7 @@ public partial class Pokemon : NetworkBehaviour
                 if (block(damage)) return 0;
 
         int previousHp = currentHp.Value;
+        RefreshActiveContributions();
         int localHp = previousHp;
         List<ShieldInfo> localShields = shields.AsNativeArray().ToList();
 
@@ -1170,8 +1178,14 @@ public partial class Pokemon : NetworkBehaviour
         }
 
         int resolved = Mathf.Max(0, previousHp - localHp) + Mathf.Max(0, localShields.Sum(shield => shield.Amount) - ShieldHp);
-        RecordHeldItemContributor(attacker, resolved);
+        RecordBushCombat(attacker, resolved);
+        if (resolved > 0) RecordHostileContribution(attacker);
+        // Snapshot and award before synchronous death callbacks can clear the
+        // effects, move the victim, or generate the match's final results.
+        KnockoutResult knockout = localHp <= 0 ? ResolveKnockout(attacker) : null;
+        if (knockout != null) resolvedKnockout = knockout;
         OnResolvedDamage?.Invoke(damage, resolved);
+        if (knockout != null) PublishKnockout(knockout);
         currentHp.Value = localHp;
 
         bool scoringProtected = RayquazaBuff.ProtectsScoring(HasRayquazaShield, damage.type)
@@ -1179,8 +1193,7 @@ public partial class Pokemon : NetworkBehaviour
         if (localHp <= 0)
         {
             if (Type == PokemonType.Wild) attacker.GetComponent<MovesController>()?.GrantLegacyItemEnergy(5000);
-            attacker.OnKilledPokemonRPC(NetworkObjectId);
-            AwardHeldItemKnockout(attacker);
+            if (knockout.Killer != null && knockout.Killer.IsSpawned) knockout.Killer.OnKilledPokemonRPC(NetworkObjectId);
         }
 
         attacker.OnHealthDamageDealt?.Invoke(this, damage, Mathf.Max(0, previousHp - localHp));
@@ -1358,6 +1371,7 @@ public partial class Pokemon : NetworkBehaviour
         int healAmount = Mathf.Min(amount, Mathf.Max(0, GetMaxHp() - oldHp));
         if (healAmount == 0) return;
         currentHp.Value = oldHp + healAmount;
+        if (healer != null) RecordSupport(healer);
         ClientHealRpc(healAmount);
         if (type == PokemonType.Player && healer != null && healer.Type == PokemonType.Player
             && (GameManager.Instance == null || GameManager.Instance.GameState == GameState.Playing))
@@ -1383,6 +1397,8 @@ public partial class Pokemon : NetworkBehaviour
         ulong sender = rpcParams.Receive.SenderClientId;
         if ((sender != OwnerClientId && sender != Unity.Netcode.NetworkManager.ServerClientId)
             || type != PokemonType.Player || baseStats == null) return;
+        ResetCombatContributions();
+        ClearBushCombatReveal();
         currentHp.Value = GetMaxHp();
     }
 
@@ -1418,6 +1434,7 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void AddShieldRPC(ShieldInfo info, RpcParams context)
     {
+        if (info.Amount <= 0 || CurrentHp <= 0) return;
         if (!info.HasSource && EffectSender(context) is ulong sourceId) info = info.WithSource(sourceId);
         if (info.HasSource && info.SourceId != NetworkObjectId
             && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(info.SourceId, out var sourceObject)
@@ -1430,8 +1447,11 @@ public partial class Pokemon : NetworkBehaviour
                 if (shields[i].ID == info.ID)
                 {
                     shieldTimers[i] += info.Duration;
-                    shields[i] = new ShieldInfo(info.MaxStacks == 0 ? shields[i].Amount + info.Amount : Mathf.Min(shields[i].Amount + info.Amount, info.MaxStacks),
-                            info.ID, shields[i].Priority, shields[i].Duration, shields[i].IsTimed, info.MaxStacks);
+                    ShieldInfo updated = shields[i];
+                    updated.Amount = info.MaxStacks == 0 ? updated.Amount + info.Amount : Mathf.Min(updated.Amount + info.Amount, info.MaxStacks);
+                    if (info.HasSource) { updated.HasSource = true; updated.SourceId = info.SourceId; }
+                    shields[i] = updated;
+                    if (info.HasSource) RecordEffectContribution(info.SourceId, true);
                     return;
                 }
             }
@@ -1439,6 +1459,7 @@ public partial class Pokemon : NetworkBehaviour
 
         shieldTimers.Add(info.IsTimed ? info.Duration : -1);
         shields.Add(info);
+        if (info.HasSource) RecordEffectContribution(info.SourceId, true);
     }
 
     [Rpc(SendTo.Server)]
@@ -1537,7 +1558,7 @@ public partial class Pokemon : NetworkBehaviour
         if (!damage.suppressOnHitEffects) OnDamageDealt?.Invoke(targetID, damage);
     }
 
-    [Rpc(SendTo.Everyone)]
+    [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
     public void OnKilledPokemonRPC(ulong targetID)
     {
         if (IsServer)
@@ -1551,21 +1572,25 @@ public partial class Pokemon : NetworkBehaviour
             if (killedPokemon.type == PokemonType.Player ||
                 (killedPokemon.type == PokemonType.Objective && targetID != NetworkObjectId))
             {
-                killedPokemon.PresentKnockoutRpc(NetworkObjectId, killStreak.Value);
+                killedPokemon.PresentKnockoutRpc(NetworkObjectId, killStreak.Value, killedPokemon.KnockoutAssistantIds());
             }
         }
         OnOtherPokemonKilled?.Invoke(targetID);
     }
 
     [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
-    private void PresentKnockoutRpc(ulong attackerId, int streak)
+    private void PresentKnockoutRpc(ulong attackerId, int streak, ulong[] assistantIds)
     {
         if (BattleUIManager.instance == null ||
             !NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(attackerId, out var attackerObject) ||
             !attackerObject.TryGetComponent(out Pokemon attacker)) return;
         string notification = type == PokemonType.Objective && TryGetComponent(out WildPokemon wildPokemon) && wildPokemon.WildPokemonInfo != null
             ? wildPokemon.WildPokemonInfo.KillNotification : null;
-        BattleUIManager.instance.ShowKill(attacker, this, streak, notification);
+        var assistants = new List<Pokemon>();
+        foreach (ulong id in assistantIds)
+            if (assistants.Count < AssistRules.MaximumAssists && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(id, out var obj)
+                && obj.TryGetComponent(out Pokemon assistant)) assistants.Add(assistant);
+        BattleUIManager.instance.ShowKill(attacker, this, streak, notification, assistants);
     }
 
     [Rpc(SendTo.Server)]
@@ -1620,6 +1645,11 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void UpdateTeamRPC(Team team)
     {
+        if (this.team.Value.Team != team)
+        {
+            ResetCombatContributions();
+            ClearBushCombatReveal();
+        }
         this.team.Value = new TeamMember(team);
     }
 
@@ -1679,7 +1709,15 @@ public partial class Pokemon : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void GiveExpRpc(ulong attackerID, Vector3 deathPos, float baseExp)
     {
-        Pokemon attacker = NetworkManager.SpawnManager.SpawnedObjects[attackerID].GetComponent<Pokemon>();
+        if (resolvedKnockout != null)
+        {
+            if (knockoutExperienceAwarded || resolvedKnockout.Killer == null) return;
+            attackerID = resolvedKnockout.Killer.NetworkObjectId;
+            deathPos = resolvedKnockout.Position;
+            knockoutExperienceAwarded = true;
+        }
+        if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(attackerID, out var attackerObject)
+            || !attackerObject.TryGetComponent(out Pokemon attacker)) return;
 
         List<Pokemon> playersInProximity;
 

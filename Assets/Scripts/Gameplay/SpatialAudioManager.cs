@@ -263,6 +263,7 @@ public class SpatialAudioManager : NetworkBehaviour
 
     private bool IsVisionVisibleToTeam(Vision vision, Team viewerTeam)
     {
+        if (VisionManager.Instance != null) return VisionManager.Instance.IsVisibleToTeam(vision, viewerTeam);
         // Same team always sees
         if (vision.CurrentTeam == viewerTeam)
             return true;

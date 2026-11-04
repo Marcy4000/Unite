@@ -81,12 +81,6 @@ public class HeldItemManager : NetworkBehaviour
         foreach (HeldItemRuntime item in items) item.Score();
     }
 
-    public void OnKnockout(bool assist)
-    {
-        if (!IsServer) return;
-        foreach (HeldItemRuntime item in items) item.Knockout(assist);
-    }
-
     public void OnHindrance(Pokemon target)
     {
         if (!IsServer || target == null) return;

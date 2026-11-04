@@ -18,6 +18,8 @@ public class KillNotificationUI : MonoBehaviour
 
     [SerializeField] Sprite[] orangeKoSprites;
     [SerializeField] Sprite[] blueKoSprites;
+    [SerializeField] GameObject assistsHolder;
+    [SerializeField] Image[] assistPortraits = new Image[0];
 
     private bool isShowingKill;
 
@@ -53,6 +55,16 @@ public class KillNotificationUI : MonoBehaviour
         rightPreview.sprite = killInfo.VictimPortrait;
         notificationHolder.SetActive(!string.IsNullOrEmpty(killInfo.Notification));
         notificationText.text = killInfo.Notification;
+        for (int i = 0; i < assistPortraits.Length; i++)
+        {
+            Image image = assistPortraits[i];
+            if (image == null) continue;
+            bool occupied = i < killInfo.AssistantPortraits.Count;
+            image.sprite = occupied ? killInfo.AssistantPortraits[i] : null;
+            // Toggle the complete prepared slot, including its background.
+            image.transform.parent.gameObject.SetActive(occupied);
+        }
+        if (assistsHolder != null) assistsHolder.SetActive(killInfo.AssistantPortraits.Count > 0);
     }
 
     private void SetStreakText(KillInfo killInfo)
@@ -165,9 +177,23 @@ public class KillInfo
     public bool VictimIsAlly { get; }
     public int Streak { get; }
     public string Notification { get; }
+    public IReadOnlyList<Sprite> AssistantPortraits { get; }
 
     public KillInfo(Pokemon attacker, Pokemon killed, int streak, string killNotification, Team localTeam)
+        : this(attacker, killed, streak, killNotification, localTeam, null) { }
+
+    public KillInfo(Pokemon attacker, Pokemon killed, int streak, string killNotification, Team localTeam, IReadOnlyList<Pokemon> assistants)
     {
+        var portraits = new List<Sprite>();
+        var seen = new HashSet<Pokemon>();
+        if (assistants != null)
+            foreach (Pokemon assistant in assistants)
+            {
+                if (assistant == null || assistant == attacker || assistant == killed || assistant.Type != PokemonType.Player || !seen.Add(assistant)) continue;
+                portraits.Add(assistant.Portrait);
+                if (portraits.Count == AssistRules.MaximumAssists) break;
+            }
+        AssistantPortraits = portraits.AsReadOnly();
         AttackerPortrait = attacker.Portrait;
         VictimPortrait = killed.Portrait;
         AttackerType = attacker.Type;
