@@ -26,15 +26,16 @@ public class AbsolPsychoCutEffect : PrefabMoveEffect
         yield return CastPause(AbsolMoveRules.PsychoWindup);
         if (CastInterrupted) yield break;
         ShowBladeRPC();
-        Vector3 origin = Actor.transform.position + Vector3.up * 0.8f, previous = origin;
+        Vector3 origin = Actor.transform.position, previous = origin;
         float began = Time.time;
         var hit = new HashSet<Pokemon>();
-        while (Time.time - began < AbsolMoveRules.PsychoRange / AbsolMoveRules.PsychoSpeed)
+        while (true)
         {
             float distance = Mathf.Min(AbsolMoveRules.PsychoRange, (Time.time - began) * AbsolMoveRules.PsychoSpeed);
             Vector3 point = origin + Direction * distance;
-            transform.position = point;
-            foreach (var target in CombatTargeting.SweptSphereTargets(previous, point, AbsolMoveRules.PsychoWidth * 0.5f))
+            transform.position = point + Vector3.up * 0.8f;
+            Physics.SyncTransforms();
+            foreach (var target in AbsolMoveRules.PsychoTargets(previous, point, Direction))
             {
                 if (!CanHit(target) || !hit.Add(target)) continue;
                 int dealt = target.ResolveDamage(AbsolMoveRules.PsychoDamage(Actor.NetworkObjectId));
@@ -47,6 +48,7 @@ public class AbsolPsychoCutEffect : PrefabMoveEffect
                 ShowMarksRPC(target.NetworkObjectId, 3);
                 UpdateSpeed();
             }
+            if (distance >= AbsolMoveRules.PsychoRange) break;
             previous = point; yield return null;
         }
         HideBladeRPC();

@@ -83,13 +83,13 @@ public static class ZoroarkAssetAuthoring
         var root = Node(name); root.AddComponent<TimedCombatVisual>();
         if (name == "CrossSlash")
         {
-            // Long, thin diagonal crescents and their bright cores bound the
-            // two agreed 6 x 1.5 landing strips, not a circular blast.
+            // Match the AGE cross's horizontal 8 x 2.5 strips, not a circular blast.
             for (int i = 0; i < 2; i++)
             {
                 var pivot = Node("Diagonal" + i, root.transform);
                 pivot.transform.localRotation = Quaternion.Euler(0, i == 0 ? -45 : 45, 0);
-                Slash(pivot.transform, new Vector3(0, 0.12f, -2.8f), new Vector3(0.75f, 1, 5.6f));
+                float length = ZoroarkMoveRules.CrossLength - 0.4f;
+                Slash(pivot.transform, new Vector3(0, 0.12f, -length / 2), new Vector3(ZoroarkMoveRules.CrossWidth / 2, 1, length));
             }
         }
         else if (name == "DarkShockwave" || name == "IllusionSmoke")
@@ -258,7 +258,7 @@ public static class ZoroarkAssetAuthoring
     {
         string[] names = { "Slash", "Fury Swipes", "Shadow Claw", "Cut", "Night Slash", "Feint Attack", "Nightfall Daze" };
         string[] icons = { "S1", "S2", "S11", "S12", "S21", "S22", "U" };
-        string[] previews = { "S1", "S2", "S1A", "S1B", "S2A", "S2B", "U" };
+        string[] previews = { "S1", "S2", "S1A", "S2A", "S1B", "S2B", "U" };
         string[] descriptions = {
             "Dash forward, damaging opposing Pokemon in the path.",
             "Dash forward, damaging opposing Pokemon. A hit grants one recast within 4s. Cooldown begins after the recast or window ends.",

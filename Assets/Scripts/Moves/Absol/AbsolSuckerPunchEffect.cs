@@ -13,7 +13,7 @@ public class AbsolSuckerPunchEffect : PrefabMoveEffect
     protected override IEnumerator Execute()
     {
         if (!CanHit(Target, true) || Vector3.Distance(Actor.transform.position, Target.transform.position) > AbsolMoveRules.SuckerRange) yield break;
-        LockActions(false); FaceRPC(DirectionToTarget()); PlayAnimation(AbsolMoveRules.SuckerAnimation, AbsolMoveRules.SuckerStance, AbsolMoveRules.MoveAnimationBlend);
+        LockActions(); FaceRPC(DirectionToTarget()); PlayAnimation(AbsolMoveRules.SuckerAnimation, AbsolMoveRules.SuckerStance, AbsolMoveRules.MoveAnimationBlend);
         Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.Unstoppable, AbsolMoveRules.SuckerStance + AbsolMoveRules.SuckerDashDuration, true, AbsolMoveRules.SuckerStatusId));
         AbsolMoveRules.Refresh(Actor.Pokemon, new StatChange(50, Stat.Speed, AbsolMoveRules.SuckerStance, true, false, true, AbsolMoveRules.SuckerSelfSlowId));
         AbsolMoveRules.Refresh(Target, new StatChange(50, Stat.Speed, AbsolMoveRules.SuckerStance, true, false, true, TargetSlowId).WithSource(Actor.NetworkObjectId));
@@ -23,6 +23,17 @@ public class AbsolSuckerPunchEffect : PrefabMoveEffect
         Actor.Pokemon.BeforeStatusEffect += FilterHitStatus;
         Target.OnOffensiveAction += TargetAttacks;
         float until = Time.time + AbsolMoveRules.SuckerStance;
+        // S22 first retreats along the opposite of the caster's facing. Use
+        // the same bounded traversal as the subsequent lunge (including walls).
+        Drive(Actor.transform.position - Actor.transform.forward * AbsolMoveRules.SuckerRetreatDistance, AbsolMoveRules.SuckerRetreatDuration);
+        float retreatUntil = Time.time + AbsolMoveRules.SuckerRetreatDuration;
+        while (Time.time < retreatUntil)
+        {
+            if (CastInterrupted || !TargetValid()) yield break;
+            yield return null;
+        }
+        if (CastInterrupted || !TargetValid()) yield break;
+        LockActions(false);
         while (!countered && Time.time < until)
         {
             if (!TargetValid()) yield break;

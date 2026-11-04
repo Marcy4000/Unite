@@ -126,7 +126,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         if (IsFeint) { yield return FeintChain(); yield break; }
         if (move == AvailableMoves.ZoroarkNightfallDaze) { yield return Unite(); yield break; }
         bool hit = false;
-        yield return Dash(Direction, ZoroarkMoveRules.Range(move), false, value => hit = value);
+        yield return Dash(Direction, ZoroarkMoveRules.DashDistance(move), false, value => hit = value);
         if (move != AvailableMoves.ZoroarkFurySwipes || !hit || CastInterrupted) yield break;
         expires = Time.time + ZoroarkMoveRules.FuryWindow;
         ShowWindow();
@@ -191,7 +191,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
             Vector3 origin = Actor.transform.position;
             Vector3 delta = mark - origin; delta.y = 0;
             // A return dash travels to the actual mark, including a mark moved by slot A.
-            yield return Dash(delta.sqrMagnitude > 0.001f ? delta.normalized : Actor.transform.forward, delta.magnitude, false, value => hit = value);
+            yield return Dash(delta.sqrMagnitude > 0.001f ? delta.normalized : Actor.transform.forward, delta.magnitude, true, value => hit = value);
             if (!hit || CastInterrupted) yield break;
             mark = origin;
             ValidHit(false);
@@ -200,7 +200,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         }
     }
 
-    private IEnumerator Dash(Vector3 direction, float distance, bool leap, Action<bool> report)
+    private IEnumerator Dash(Vector3 direction, float distance, bool returning, Action<bool> report)
     {
         busy = true; hitThisCast = false;
         Actor.Pokemon.NotifyOffensiveAction();
@@ -233,7 +233,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         {
             DashVisualRPC(true);
             var hit = new HashSet<Pokemon>();
-            var endpointHits = new HashSet<Pokemon>();
+            var damaged = new HashSet<Pokemon>();
             Vector3 previous = origin + Vector3.up * 0.8f;
             Drive(destination, ZoroarkMoveRules.DashDuration);
             float until = Time.time + ZoroarkMoveRules.DashDuration;
@@ -243,29 +243,31 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
                 if (CastInterrupted) break;
                 Physics.SyncTransforms();
                 Vector3 current = Actor.transform.position + Vector3.up * 0.8f;
-                foreach (var target in CombatTargeting.SweptSphereTargets(previous, current, ZoroarkMoveRules.DashRadius))
+                foreach (var target in ZoroarkMoveRules.DashTargets(move, previous, current, direction, returning))
                 {
                     if (!CanHit(target) || !hit.Add(target)) continue;
-                    if (target.ResolveDamage(ZoroarkMoveRules.Dash(Actor.NetworkObjectId, move)) <= 0) continue;
-                    hitThisCast = true;
+                    if (!DamageDashTarget(target)) continue;
+                    damaged.Add(target);
                     if (move == AvailableMoves.ZoroarkShadowClaw)
-                    {
-                        if (Vector3.Distance(target.transform.position, destination) <= ZoroarkMoveRules.ClawEndpointLength + ZoroarkMoveRules.DashRadius)
-                            endpointHits.Add(target);
-                        else target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.05f, true, ZoroarkMoveRules.ClawStatus).WithSource(Actor.NetworkObjectId));
-                    }
-                    if (move == AvailableMoves.ZoroarkCut)
-                        Actor.Pokemon.HealDamageRPC(ZoroarkMoveRules.CutHeal(Actor.Pokemon.GetAttack(), Actor.Pokemon.CurrentLevel, Upgraded), Actor.NetworkObjectId);
+                        target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.05f, true, ZoroarkMoveRules.ClawStatus).WithSource(Actor.NetworkObjectId));
                 }
                 previous = current;
             } while (Time.time < until);
-            foreach (var target in endpointHits)
-                if (target != null && target.CurrentHp > 0 && !target.HasStatusEffect(StatusType.Unstoppable))
+            // S11 has an independent forward box, not a distance-to-destination sphere.
+            if (move == AvailableMoves.ZoroarkShadowClaw && !CastInterrupted)
+            {
+                Physics.SyncTransforms();
+                Vector3 center = Actor.transform.position + Vector3.up * 0.8f + direction * ZoroarkMoveRules.ClawEndpointOffset;
+                foreach (var target in CombatTargeting.BoxTargets(center, ZoroarkMoveRules.ClawEndpointSize * 0.5f, Quaternion.LookRotation(direction)))
                 {
+                    if (!CanHit(target)) continue;
+                    if (hit.Add(target) && DamageDashTarget(target)) damaged.Add(target);
+                    if (!damaged.Contains(target) || target.CurrentHp <= 0 || target.HasStatusEffect(StatusType.Unstoppable)) continue;
                     float duration = Upgraded ? ZoroarkMoveRules.ClawThrowPlus : ZoroarkMoveRules.ClawThrow;
                     target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, duration, true, ZoroarkMoveRules.ClawStatus).WithSource(Actor.NetworkObjectId));
                     target.ApplyKnockupRPC(2, duration);
                 }
+            }
             DashVisualRPC(false);
         }
         yield return CastPause(ZoroarkMoveRules.Recovery);
@@ -274,6 +276,15 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
         if (!aerialReposition && !IsNight && !IsFeint && hitThisCast) Actor.MovesController.ZoroarkNormalMoveHit();
         if (!aerialReposition && !CastInterrupted) PlayAnimation(ZoroarkMoveRules.Animation(Actor, "idle"), blendDuration: 0.06f);
         report(hitThisCast && !CastInterrupted);
+    }
+
+    private bool DamageDashTarget(Pokemon target)
+    {
+        if (target.ResolveDamage(ZoroarkMoveRules.Dash(Actor.NetworkObjectId, move)) <= 0) return false;
+        hitThisCast = true;
+        if (move == AvailableMoves.ZoroarkCut)
+            Actor.Pokemon.HealDamageRPC(ZoroarkMoveRules.CutHeal(Actor.Pokemon.GetAttack(), Actor.Pokemon.CurrentLevel, Upgraded), Actor.NetworkObjectId);
+        return true;
     }
 
     private IEnumerator NightFinale()
@@ -303,7 +314,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
             bool contact = false;
             Quaternion rotation = Quaternion.Euler(0, Actor.transform.eulerAngles.y + (diagonal == 0 ? -45 : 45), 0);
             foreach (var target in CombatTargeting.BoxTargets(origin + Vector3.up * 0.8f,
-                new Vector3(ZoroarkMoveRules.CrossWidth / 2, 2, ZoroarkMoveRules.CrossLength / 2), rotation))
+                ZoroarkMoveRules.CrossBoxSize * 0.5f, rotation))
             {
                 if (!CanHit(target)) continue;
                 contact = true;

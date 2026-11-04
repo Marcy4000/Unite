@@ -68,6 +68,7 @@ public class AbsolBasicAtk : ChargedBasicAttackBase
             if (AttackInterrupted) yield break;
             if (pursuit)
             {
+                if (!AbsolMoveRules.CanHit(playerManager, primary)) yield break;
                 pursuitUntil = 0; charge = 0;
                 playerManager.Pokemon.RemoveAllStatChangeWithIDRPC(AbsolMoveRules.PursuitSpeedId);
                 Synchronize();
@@ -79,18 +80,13 @@ public class AbsolBasicAtk : ChargedBasicAttackBase
             if (AttackInterrupted) yield break;
             Physics.SyncTransforms();
             var hits = new List<Pokemon>();
-            if (pursuit)
-            {
-                if (AbsolMoveRules.CanHit(playerManager, primary)
-                    && CombatTargeting.WithinMeleeRange(playerManager.transform.position, primary.transform.position, AbsolMoveRules.BasicRange))
-                    foreach (var target in CombatTargeting.SphereTargets(primary.transform.position + Vector3.up * 0.8f, AbsolMoveRules.PursuitSplashRadius))
-                        if (AbsolMoveRules.CanHit(playerManager, target)) hits.Add(target);
-            }
-            else foreach (var target in CombatTargeting.SectorTargets(playerManager.transform.position, direction, AbsolMoveRules.BasicRange, AbsolMoveRules.BasicAngle))
+            foreach (var target in AbsolMoveRules.BoxTargets(playerManager.transform.position, direction,
+                boosted && !pursuit ? AbsolMoveRules.BoostedHitboxSize : AbsolMoveRules.BasicHitboxSize,
+                pursuit ? AbsolMoveRules.PursuitHitboxOffset : AbsolMoveRules.BasicHitboxOffset))
                 if (AbsolMoveRules.CanHit(playerManager, target)) hits.Add(target);
 
             bool backHit = false;
-            Pokemon isolated = null;
+            bool isolated = false;
             foreach (var target in hits)
             {
                 bool rear = pursuit && AbsolMoveRules.IsBackstab(playerManager.transform.position, target.transform.position, target.transform.forward);
@@ -99,7 +95,7 @@ public class AbsolBasicAtk : ChargedBasicAttackBase
                 if (dealt <= 0) continue;
                 if (rear) backHit = true;
                 if (!pursuit && boosted) AbsolMoveRules.Refresh(target, new StatChange(15, Stat.Defense, AbsolMoveRules.BoostedDefenseDuration, true, false, true, AbsolMoveRules.DefenseId));
-                if (!pursuit && boosted && hits.Count == 1) isolated = target;
+                if (!pursuit && boosted && hits.Count == 1) isolated = true;
             }
             if (backHit) playerManager.MovesController.ReduceMoveCooldownByFraction(MoveType.MoveA, AbsolMoveRules.PursuitCooldownReduction);
             playerManager.MovesController.ShowCombatVisualRPC(AbsolMoveRules.Visuals + (boosted && !pursuit ? "BoostedSlash" : "MeleeSlash"), playerManager.transform.position, direction,
@@ -111,11 +107,13 @@ public class AbsolBasicAtk : ChargedBasicAttackBase
                 yield return AttackPause(bonusDelay);
                 if (AttackInterrupted) yield break;
                 Physics.SyncTransforms();
-                // Isolation is decided on the main hit; the delayed bonus must
-                // still contact that same living target, never retarget globally.
-                if (AbsolMoveRules.CanHit(playerManager, isolated)
-                    && CombatTargeting.SectorTargets(playerManager.transform.position, direction, AbsolMoveRules.BasicRange, AbsolMoveRules.BasicAngle).Contains(isolated))
-                    isolated.ResolveDamage(AbsolMoveRules.BoostedBonusDamage(playerManager.NetworkObjectId));
+                // A3's isolation condition enables A3B1's independent, larger
+                // box. It is not a sure-hit repeat on the original victim.
+                if (isolated)
+                    foreach (var target in AbsolMoveRules.BoxTargets(playerManager.transform.position, direction,
+                        AbsolMoveRules.BoostedBonusHitboxSize, AbsolMoveRules.BoostedBonusHitboxOffset))
+                        if (AbsolMoveRules.CanHit(playerManager, target))
+                            target.ResolveDamage(AbsolMoveRules.BoostedBonusDamage(playerManager.NetworkObjectId));
             }
             yield return AttackPause(recovery);
         }

@@ -49,8 +49,7 @@ public class ZoroarkBasicAtk : ChargedBasicAttackBase
             if (Interrupted) yield break;
             Physics.SyncTransforms();
             bool hit = false;
-            foreach (var target in CombatTargeting.SectorTargets(playerManager.transform.position, direction,
-                unique ? ZoroarkMoveRules.UniqueRange : ZoroarkMoveRules.BasicRange, ZoroarkMoveRules.BasicAngle))
+            foreach (var target in ZoroarkMoveRules.BasicTargets(playerManager.transform.position, direction, unique))
                 if (ZoroarkMoveRules.CanHit(playerManager, target)
                     && target.ResolveDamage(ZoroarkMoveRules.Basic(playerManager.NetworkObjectId, boosted)) > 0) hit = true;
             charge = unique ? 0 : (charge + 1) % 3;

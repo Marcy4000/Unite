@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -11,6 +12,40 @@ public class NinetalesTests
     private static object E(string type, string name) => Enum.Parse(T(type), name);
     private static object Rule(string method, params object[] args) => T("NinetalesMoveRules").GetMethod(method).Invoke(null, args);
     private static V Field<V>(object target, string name) => (V)target.GetType().GetField(name).GetValue(target);
+    private static float Constant(string name) => (float)T("NinetalesMoveRules").GetField(name).GetRawConstantValue();
+    private static string Age(string script) => File.ReadAllText("Assets/Moves/Dumps/age-named-v2/3c44b23/age_new_037_" + script + "_pbb.bin.md");
+    private static float AgeDistance(string script, string field)
+    {
+        var match = Regex.Match(Age(script), @"(?m)^    " + field + @" \[f\d+\] = (\d+);");
+        Assert.That(match.Success, Is.True, "Missing AGE distance " + script + "/" + field);
+        return int.Parse(match.Groups[1].Value) / 1000f;
+    }
+    private static float AgeBoxSize(string script, string axis)
+    {
+        var match = Regex.Match(Age(script), @"(?ms)^    MSize \[f\d+\] = 15 bytes;.*?^        " + axis + @" \[f\d+\] = (\d+);");
+        Assert.That(match.Success, Is.True, "Missing decoded AGE box size " + script + "/" + axis);
+        return int.Parse(match.Groups[1].Value) / 1000f;
+    }
+
+    [TestCase("PassiveRadius", "P1B1")]
+    [TestCase("VeilRadius", "S22B1")]
+    [TestCase("FrostRadius", "S21B1")]
+    public void CollisionRadiiMatchMetadataBackedAgeFields(string rule, string script)
+        => Assert.That(Constant(rule), Is.EqualTo(AgeDistance(script, "MRadius")));
+
+    [Test]
+    public void RectangularGeometryUsesAgeCollisionSizesNotIndicatorWidths()
+    {
+        foreach (string script in new[] { "A1B2", "A1B4" })
+        {
+            Assert.That(Age(script), Does.Contain("MShapType [f35475] = 2; enum Cube"));
+            Assert.That(Constant("BoostedWidth"), Is.EqualTo(AgeBoxSize(script, "X")));
+            Assert.That(Constant("BoostedLength"), Is.EqualTo(AgeBoxSize(script, "Z")));
+        }
+        Assert.That(Constant("AvalancheWidth"), Is.EqualTo(AgeBoxSize("S11B1", "X")));
+        Assert.That(Constant("IcyCollisionWidth"), Is.EqualTo(AgeBoxSize("S2B1", "X")));
+        Assert.That(Constant("IcyWidth"), Is.EqualTo(2.5f), "Keep the databin aiming width separate from collision width.");
+    }
     [TestCase("NinetalesPowderSnow", 5, "Direction")]
     [TestCase("NinetalesIcyWind", 8, "Direction")]
     [TestCase("NinetalesAvalanche", 7, "Ground")]
@@ -136,7 +171,7 @@ public class NinetalesTests
         try
         {
             var view = root.GetComponent(T("NinetalesPassiveWarningView"));
-            CallWarning(view, 0f); Assert.That(root.transform.localScale, Is.EqualTo(new Vector3(1.5f, 1, 1.5f)));
+            CallWarning(view, 0f); Assert.That(root.transform.localScale, Is.EqualTo(new Vector3(2, 1, 2)));
             Assert.That(root.transform.Find("WarningBuildup").localScale.x, Is.EqualTo(0).Within(0.001f));
             CallWarning(view, 0.5f); Assert.That(root.transform.Find("WarningBuildup").localScale.x, Is.EqualTo(0.5f).Within(0.001f));
             Assert.That(root.transform.Find("WarningBoundary").localScale, Is.EqualTo(Vector3.one), "The outer boundary must remain fixed while its fill grows.");
@@ -144,5 +179,5 @@ public class NinetalesTests
         finally { UnityEngine.Object.DestroyImmediate(root); }
         Assert.That((float)T("NinetalesMoveRules").GetField("PassiveWarningDuration").GetRawConstantValue(), Is.EqualTo(1f));
     }
-    private static void CallWarning(Component view, float elapsed) => view.GetType().GetMethod("Initialize").Invoke(view, new object[] { elapsed, 1f, 1.5f });
+    private static void CallWarning(Component view, float elapsed) => view.GetType().GetMethod("Initialize").Invoke(view, new object[] { elapsed, 1f, Constant("PassiveRadius") });
 }

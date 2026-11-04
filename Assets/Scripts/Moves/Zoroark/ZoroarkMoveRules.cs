@@ -1,6 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>Project-unit tuning; formulas use zero-based CurrentLevel. Unite-DB detailed RSB, Oct 2026.</summary>
+/// <summary>AGE geometry uses 1000 dump units per project unit. Formulas retain Unite-DB tuning (zero-based CurrentLevel).</summary>
 public static class ZoroarkMoveRules
 {
     public const string Folder = "Assets/Prefabs/Objects/Moves/Zoroark/";
@@ -8,12 +9,18 @@ public static class ZoroarkMoveRules
     public const float BasicRange = 2.5f, BasicAngle = 120, UniqueRange = 4.5f;
     public const float BasicWindup = 0.14f, BasicRecovery = 0.16f, InputBuffer = 0.18f;
     public const float SlashRange = 4, FuryRange = 3.5f, ClawRange = 4.5f, CutRange = 4.5f;
+    // IndicatorRange is not the movement maximum: age_570_S11/S12 MMoveModeLineMax.
+    public const float ClawDashDistance = 4.4f, CutDashDistance = 5;
     public const float DashRadius = 0.75f, DashDuration = 0.2f, Windup = 0.035f, Recovery = 0.06f;
-    public const float ClawEndpointLength = 1, ClawThrow = 0.5f, ClawThrowPlus = 0.6f;
+    public const float ClawEndpointOffset = 2, ClawThrow = 0.5f, ClawThrowPlus = 0.6f;
     public const float NightDashRange = 4, NightWindow = 2.5f, NightAirTime = 1.2f, NightInvincible = 1.4f;
     public const float NightAirSteerSpeed = 1.5f, NightAirSteerDistance = 1.5f;
     public const int NightSteps = 6, FeintSteps = 4, UniteEnergy = 80000;
-    public const float CrossLength = 6, CrossWidth = 1.5f;
+    public const float CrossLength = 8, CrossWidth = 2.5f;
+    public static readonly Vector3 CrossBoxSize = new Vector3(CrossLength, 4, CrossWidth);
+    public static readonly Vector3 BasicBoxSize = new Vector3(3, 10, 4);
+    public const float BasicBoxOffset = 1.5f;
+    public static readonly Vector3 ClawEndpointSize = new Vector3(2.5f, 2.5f, 3);
     public const float FeintRange = 7, FeintReturnRange = 5, FeintWindow = 3, FeintTargetRange = 7, FeintBounce = 4;
     public const float FeintFinalWindup = 0.15f;
     public const float FuryWindow = 4, IllusionCooldown = 15, IllusionDuration = 15, IllusionUnstoppable = 0.33f;
@@ -57,4 +64,47 @@ public static class ZoroarkMoveRules
     public static float Range(AvailableMoves move) => move == AvailableMoves.ZoroarkSlash ? SlashRange : move == AvailableMoves.ZoroarkFurySwipes ? FuryRange
         : move == AvailableMoves.ZoroarkCut ? CutRange : move == AvailableMoves.ZoroarkShadowClaw ? ClawRange
         : move == AvailableMoves.ZoroarkFeintAttack ? FeintRange : NightDashRange;
+
+    public static float DashDistance(AvailableMoves move) => move == AvailableMoves.ZoroarkCut ? CutDashDistance
+        : move == AvailableMoves.ZoroarkShadowClaw ? ClawDashDistance : Range(move);
+    public static float FeintAimRange(bool active, bool finisher) => finisher ? FeintTargetRange : active ? FeintReturnRange : FeintRange;
+
+    // Full MSize dimensions from age_570_S1/S2/S11/S12/S22; not half extents.
+    public static Vector3 DashBoxSize(AvailableMoves move)
+    {
+        switch (move)
+        {
+            case AvailableMoves.ZoroarkSlash: return new Vector3(2.5f, 2.5f, 3);
+            case AvailableMoves.ZoroarkFurySwipes: return new Vector3(2, 10, 3.5f);
+            case AvailableMoves.ZoroarkShadowClaw: return new Vector3(2.5f, 10, 5.4f);
+            case AvailableMoves.ZoroarkCut: return new Vector3(2.5f, 10, 6);
+            case AvailableMoves.ZoroarkFeintAttack: return new Vector3(2.5f, 10, 5);
+            default: return Vector3.zero; // Missing Night Slash movement script: retain its existing collision.
+        }
+    }
+    public static float DashBoxOffset(AvailableMoves move) => move == AvailableMoves.ZoroarkSlash ? 0.5f
+        : move == AvailableMoves.ZoroarkShadowClaw ? 0.8f : move == AvailableMoves.ZoroarkFeintAttack ? -0.8f : 1;
+
+    public static HashSet<Pokemon> BasicTargets(Vector3 origin, Vector3 direction, bool unique)
+    {
+        // A4 (Night Slash's special basic) is absent; do not extrapolate A1/A2/A3 to it.
+        if (unique) return CombatTargeting.SectorTargets(origin, direction, UniqueRange, BasicAngle);
+        return CombatTargeting.BoxTargets(origin + Vector3.up * 0.8f + direction * BasicBoxOffset,
+            BasicBoxSize * 0.5f, Quaternion.LookRotation(direction));
+    }
+
+    public static HashSet<Pokemon> DashTargets(AvailableMoves move, Vector3 start, Vector3 end, Vector3 direction, bool returning)
+    {
+        Vector3 size = DashBoxSize(move);
+        if (size == Vector3.zero || returning)
+            return CombatTargeting.SweptSphereTargets(start, end, DashRadius);
+        Vector3 offset = direction * DashBoxOffset(move);
+        Quaternion rotation = Quaternion.LookRotation(direction);
+        // Sweep the entire actual frame segment, including its endpoint, to avoid tunnelling.
+        var result = new HashSet<Pokemon>();
+        int samples = Mathf.Clamp(Mathf.CeilToInt(Vector3.Distance(start, end) / (Mathf.Min(size.x, size.z) * 0.5f)), 1, 128);
+        for (int i = 0; i <= samples; i++)
+            result.UnionWith(CombatTargeting.BoxTargets(Vector3.Lerp(start, end, i / (float)samples) + offset, size * 0.5f, rotation));
+        return result;
+    }
 }

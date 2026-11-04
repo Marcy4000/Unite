@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -14,6 +16,78 @@ public class ZoroarkTests
     private static object Rule(string method, params object[] args) => T("ZoroarkMoveRules").GetMethod(method).Invoke(null, args);
     private static object Get(object target, string name) => target.GetType().GetProperty(name).GetValue(target);
     private static object Call(object target, string name, params object[] args) => target.GetType().GetMethod(name, args.Select(a => a.GetType()).ToArray()).Invoke(target, args);
+    private static V RuleField<V>(string name) => (V)T("ZoroarkMoveRules").GetField(name).GetValue(null);
+    private static string Age(string name) => File.ReadAllText("Assets/Moves/Dumps/age-named-v2/3c44bc3/age_570_" + name + "_pbb.bin.md");
+    private static Vector3 AgeBox(string name, int index = 0)
+    {
+        var boxes = Regex.Matches(Age(name), @"MSize \[f76984\].*?X \[f20120\] = (\d+).*?Y \[f20121\] = (\d+).*?Z \[f20122\] = (\d+)", RegexOptions.Singleline);
+        Assert.That(boxes.Count, Is.GreaterThan(index), name + " MSize");
+        var groups = boxes[index].Groups;
+        return new Vector3(int.Parse(groups[1].Value), int.Parse(groups[2].Value), int.Parse(groups[3].Value)) / 1000;
+    }
+    private static float AgeForwardOffset(string name, int index = 0)
+    {
+        var offsets = Regex.Matches(Age(name), @"ModifyTranslation \[f154126\] = (?:5|13) bytes;[^\n]*\n\s+nested message candidate \(unconfirmed\):\n\s+Z \[f20122\] = (\d+)");
+        Assert.That(offsets.Count, Is.GreaterThan(index), name + " forward translation");
+        return unchecked((int)ulong.Parse(offsets[index].Groups[1].Value)) / 1000f;
+    }
+
+    [Serializable]
+    private class DumpSkill
+    {
+        public int IndicatorRange, CDTime;
+    }
+    private static DumpSkill Dump(string id)
+    {
+        string text = File.ReadAllText("Assets/Moves/Dumps/zorua_skills.json");
+        int start = text.IndexOf("\"" + id + "\": {", StringComparison.Ordinal);
+        Assert.That(start, Is.GreaterThanOrEqualTo(0));
+        start = text.IndexOf('{', start);
+        int end = text.IndexOf("\n  }", start, StringComparison.Ordinal) + 4;
+        return JsonUtility.FromJson<DumpSkill>(text.Substring(start, end - start));
+    }
+
+    [TestCase("ZoroarkSlash", "S1", 0, "1057010")]
+    [TestCase("ZoroarkFurySwipes", "S2", 0, "1057020")]
+    [TestCase("ZoroarkShadowClaw", "S11", 1, "1057011")]
+    [TestCase("ZoroarkCut", "S12", 0, "1057012")]
+    [TestCase("ZoroarkFeintAttack", "S22", 0, "1057022")]
+    public void DashGeometryAndIndicatorsMatchSeparateDumpFields(string name, string script, int box, string skill)
+    {
+        object id = E("AvailableMoves", name);
+        Assert.That(Rule("DashBoxSize", id), Is.EqualTo(AgeBox(script, box)));
+        Assert.That(Rule("DashBoxOffset", id), Is.EqualTo(AgeForwardOffset(script, box)));
+        var maximum = Regex.Match(Age(script), @"MMoveModeLineMax \[f249250\] = (\d+)");
+        Assert.That(maximum.Success, Is.True);
+        Assert.That((float)Rule("DashDistance", id), Is.EqualTo(int.Parse(maximum.Groups[1].Value) / 1000f).Within(0.0001f));
+        var move = Activator.CreateInstance(T(name));
+        Assert.That(Get(move, "IndicatorRange"), Is.EqualTo(Dump(skill).IndicatorRange / 1000f));
+        Assert.That(move.GetType().GetField("Cooldown").GetValue(move), Is.EqualTo(Dump(skill).CDTime / 1000f));
+    }
+
+    [Test]
+    public void BasicAndCrossVolumesMatchAgeAndCrossArtworkIsResized()
+    {
+        foreach (string script in new[] { "A1", "A2", "A3" })
+            Assert.That(RuleField<Vector3>("BasicBoxSize"), Is.EqualTo(AgeBox(script)));
+        Assert.That(RuleField<Vector3>("ClawEndpointSize"), Is.EqualTo(AgeBox("S11")));
+        Assert.That(RuleField<float>("ClawEndpointOffset"), Is.EqualTo(AgeForwardOffset("S11")));
+        foreach (string script in new[] { "S21B2B", "S21B3B" })
+            Assert.That(RuleField<Vector3>("CrossBoxSize"), Is.EqualTo(AgeBox(script)));
+        var visual = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Effects/Zoroark/CrossSlash.prefab");
+        foreach (string diagonal in new[] { "Diagonal0", "Diagonal1" })
+        {
+            var slash = visual.transform.Find(diagonal + "/CrimsonSlash");
+            Assert.That(slash.localScale.x, Is.EqualTo(RuleField<float>("CrossWidth") / 2));
+            Assert.That(slash.localScale.z, Is.EqualTo(RuleField<float>("CrossLength") - 0.4f).Within(0.0001f));
+        }
+    }
+
+    [TestCase(false, false, "1057022")]
+    [TestCase(true, false, "10570221")]
+    [TestCase(true, true, "10570229")]
+    public void FeintAimRangeMatchesItsCurrentSkillPhase(bool active, bool finisher, string skill)
+        => Assert.That(Rule("FeintAimRange", active, finisher), Is.EqualTo(Dump(skill).IndicatorRange / 1000f));
 
     [TestCase("ZoroarkSlash", 5.5f, false)]
     [TestCase("ZoroarkFurySwipes", 7.5f, true)]

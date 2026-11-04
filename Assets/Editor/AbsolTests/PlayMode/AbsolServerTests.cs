@@ -48,7 +48,7 @@ public class AbsolServerTests
 #if UNITY_EDITOR
         fixture = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Editor/AbsolTests/Fixtures/CombatActor.prefab");
         Call(server, "AddNetworkPrefab", fixture);
-        foreach (var name in new[] { "AbsolFeint", "AbsolNightSlash", "AbsolPsychoCut", "AbsolSuckerPunch", "AbsolMidnightSlash" }) Call(server, "AddNetworkPrefab", AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Objects/Moves/Absol/" + name + ".prefab"));
+        foreach (var name in new[] { "AbsolFeint", "AbsolSlash", "AbsolNightSlash", "AbsolPursuit", "AbsolPsychoCut", "AbsolSuckerPunch", "AbsolMidnightSlash" }) Call(server, "AddNetworkPrefab", AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Objects/Moves/Absol/" + name + ".prefab"));
 #else
         Assert.Ignore("Editor fixtures required.");
 #endif
@@ -86,6 +86,22 @@ public class AbsolServerTests
     private static object Damage(Component source, int amount)
     {
         var damage = Activator.CreateInstance(T("DamageInfo"), Get(source, "NetworkObjectId"), 0f, (short)0, (short)amount, E("DamageType", "Physical"), E("DamageProprieties", "None")); return damage;
+    }
+
+    private object Equip(string kind)
+    {
+        // Item damage is dispatched through HeldItemManager, not standalone
+        // legacy OnDamageApplied subscriptions. Match the live combat path.
+        var manager = actor.GetComponent(T("HeldItemManager"));
+        Set(manager, "player", player); Set(manager, "initialized", true);
+        var equipment = manager.GetType().GetField("equipment", Private).GetValue(manager);
+        ulong bits = (ulong)Get(equipment, "Value");
+        object id = E("AvailableHeldItems", kind);
+        Variable(manager, "equipment", bits | (1ul << Convert.ToInt32(id)));
+        var item = T("HeldItemDatabase").GetMethod("GetHeldItem").Invoke(null, new[] { id });
+        Call(item, "Initialize", player);
+        ((IList)manager.GetType().GetField("items", Private).GetValue(manager)).Add(item);
+        return item;
     }
 
     [UnityTearDown]
@@ -202,18 +218,20 @@ public class AbsolServerTests
     [UnityTest]
     public IEnumerator PursuitReplacesBoostedAttackCleavesAndResetsCharge()
     {
-        var first = Pokemon(Vector3.forward * 3); var second = Pokemon(new Vector3(0.4f, 0, 3)); Physics.SyncTransforms();
+        var first = Pokemon(Vector3.forward * 3); var second = Pokemon(new Vector3(0.4f, 0, 5.1f));
+        var flank = Pokemon(new Vector3(2.2f, 0, 3)); Physics.SyncTransforms();
         var attack = Get(moves, "ServerBasicAttack"); Set(attack, "charge", 2);
         Call(attack, "EmpowerPursuit", true); Assert.That(Call(actor, "HasStatChangeWithID", (ushort)35903), Is.True);
         Call(attack, "PerformOnServer", first); yield return new WaitForSeconds(0.5f);
         Assert.That(Hp(first), Is.LessThan(5000)); Assert.That(Hp(second), Is.LessThan(5000));
+        Assert.That(Hp(flank), Is.EqualTo(5000), "Pursuit cleaves a forward box, not a target-centered sphere.");
         Assert.That(Get(attack, "Charge"), Is.EqualTo(0)); Assert.That(Get(attack, "PursuitReady"), Is.False);
         Assert.That(Call(actor, "HasStatChangeWithID", (ushort)35903), Is.False);
         Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
     }
 
     [UnityTest]
-    public IEnumerator BoostedAttackDealsIsolationBonusOnlyForOneVictimAndLowersDefense()
+    public IEnumerator BoostedAttackRequiresIsolatedMainHitForBonusAndLowersDefense()
     {
         var first = Pokemon(Vector3.forward * 1.5f); Physics.SyncTransforms(); var attack = Get(moves, "ServerBasicAttack"); Set(attack, "charge", 2);
         Call(attack, "PerformOnServer", first); yield return new WaitForSeconds(BoostedComplete); int isolated = 5000 - Hp(first);
@@ -376,7 +394,7 @@ public class AbsolServerTests
         try
         {
             Call(attack, "PerformOnServer", target); yield return new WaitForSeconds(BoostedComplete);
-            Assert.That(Hp(target), Is.EqualTo(4849), "The delayed bonus must not hit a target that left melee range.");
+            Assert.That(Hp(target), Is.EqualTo(4849), "The delayed bonus must not hit a target that left its own collision box.");
         }
         finally { actor.GetType().GetEvent("OnDamageApplied").RemoveEventHandler(actor, callback); }
     }
@@ -399,10 +417,8 @@ public class AbsolServerTests
     {
         Set(Get(actor, "BaseStats"), "atkSpeed", Enumerable.Repeat(200f, 15).ToArray());
         var target = Pokemon(Vector3.forward * 1.5f); Physics.SyncTransforms();
-        var muscle = Activator.CreateInstance(T("MuscleBand"));
-        muscle.GetType().GetMethod("Initialize").Invoke(muscle, new object[] { player });
-        var scarf = Activator.CreateInstance(T("RapidFireScarf"));
-        scarf.GetType().GetMethod("Initialize").Invoke(scarf, new object[] { player });
+        Equip("MuscleBand");
+        var scarf = Equip("RapidFireScarf");
         var times = new List<float>(); var basicHits = 0; var muscleHits = 0; var total = 0;
         var callback = ObserveDamage((victim, damage, amount) =>
         {
@@ -425,7 +441,7 @@ public class AbsolServerTests
             Assert.That(times[1] - times[0], Is.GreaterThanOrEqualTo(Rule("BoostedHitDelay") - 0.01f));
             Assert.That(muscleHits, Is.EqualTo(1), "MakeDamageAsOnce must suppress the second on-hit dispatch.");
             Assert.That(Hp(target), Is.EqualTo(5000 - total));
-            Assert.That(scarf.GetType().GetField("stacks", Private).GetValue(scarf), Is.EqualTo(1));
+            Assert.That(T("HeldItemRuntime").GetField("attacks", Private).GetValue(scarf), Is.EqualTo(1));
             Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
         }
         finally { actor.GetType().GetEvent("OnDamageApplied").RemoveEventHandler(actor, callback); }
@@ -510,7 +526,7 @@ public class AbsolServerTests
     [UnityTest]
     public IEnumerator UniteFlurrySplitsFiveTicksThenFinaleHitsByDistanceWithoutMovingCaster()
     {
-        var first = Pokemon(new Vector3(-0.3f, 0, 1.2f)); var second = Pokemon(new Vector3(0.3f, 0, 1.2f)); var far = Pokemon(Vector3.forward * 7.5f); Physics.SyncTransforms();
+        var first = Pokemon(new Vector3(-0.3f, 0, 1.2f)); var second = Pokemon(new Vector3(0.3f, 0, 1.2f)); var far = Pokemon(Vector3.forward * 9.2f); Physics.SyncTransforms();
         var records = new Dictionary<object, List<int>>();
         Action<object, object, int> record = (target, damage, amount) => { if (!records.ContainsKey(target)) records[target] = new List<int>(); records[target].Add(amount); };
         var changed = actor.GetType().GetEvent("OnDamageApplied"); var signature = changed.EventHandlerType.GetMethod("Invoke").GetParameters();
@@ -526,6 +542,133 @@ public class AbsolServerTests
             Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
         }
         finally { changed.RemoveEventHandler(actor, callback); }
+    }
+
+    [UnityTest]
+    public IEnumerator BasicAndSlashUseForwardBoxesRatherThanTheirAimSectors()
+    {
+        var primary = Pokemon(Vector3.forward * 1.5f);
+        var forwardEdge = Pokemon(Vector3.forward * 3.6f);
+        var flank = Pokemon(new Vector3(2.2f, 0, 1.5f));
+        var behind = Pokemon(Vector3.back * 1.2f); Physics.SyncTransforms();
+        Call(Get(moves, "ServerBasicAttack"), "PerformOnServer", primary);
+        yield return new WaitForSeconds(Rule("BasicWindup") + Rule("BasicRecovery") + 0.15f);
+        Assert.That(Hp(primary), Is.EqualTo(4900)); Assert.That(Hp(forwardEdge), Is.EqualTo(4900));
+        Assert.That(Hp(flank), Is.EqualTo(5000)); Assert.That(Hp(behind), Is.EqualTo(5000));
+        Effect("AbsolSlash"); yield return new WaitForSeconds(0.5f);
+        Assert.That(Hp(primary), Is.LessThan(4900)); Assert.That(Hp(forwardEdge), Is.LessThan(4900));
+        Assert.That(Hp(flank), Is.EqualTo(5000)); Assert.That(Hp(behind), Is.EqualTo(5000));
+    }
+
+    [UnityTest]
+    public IEnumerator BoostedBonusHasIndependentLongerContactInsteadOfRepeatingTheMeleeVictim()
+    {
+        var primary = Pokemon(Vector3.forward * 1.5f);
+        var outer = Pokemon(Vector3.forward * 5.5f);
+        var flank = Pokemon(new Vector3(3, 0, 5.5f));
+        var ally = Pokemon(Vector3.forward * 5.5f, "Blue"); Physics.SyncTransforms();
+        var attack = Get(moves, "ServerBasicAttack"); Set(attack, "charge", 2);
+        bool moved = false;
+        var callback = ObserveDamage((victim, damage, amount) =>
+        {
+            if (!moved && ReferenceEquals(victim, primary)) { moved = true; primary.transform.position = Vector3.forward * 5; }
+        });
+        try
+        {
+            Call(attack, "PerformOnServer", primary); yield return new WaitForSeconds(BoostedComplete);
+            Assert.That(Hp(primary), Is.EqualTo(4792), "The original victim can leave melee but remain inside A3B1.");
+            Assert.That(Hp(outer), Is.EqualTo(4943), "A3B1 can hit a different victim outside the main box.");
+            Assert.That(Hp(flank), Is.EqualTo(5000)); Assert.That(Hp(ally), Is.EqualTo(5000));
+        }
+        finally { actor.GetType().GetEvent("OnDamageApplied").RemoveEventHandler(actor, callback); }
+    }
+
+    [UnityTest]
+    public IEnumerator PursuitTravelsFiveUnitsAcrossWallsAndEmpowersAfterArrival()
+    {
+        var wall = Node("Pursuit wall"); wall.transform.position = new Vector3(0, 1, 2);
+        wall.AddComponent<BoxCollider>().size = new Vector3(5, 2, 0.4f); Physics.SyncTransforms();
+        Effect("AbsolPursuit"); yield return new WaitForSeconds(0.5f);
+        Assert.That(actor.transform.position.z, Is.EqualTo(5).Within(0.15f));
+        Assert.That(Get(Get(moves, "ServerBasicAttack"), "PursuitReady"), Is.True);
+        Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
+    }
+
+    [UnityTest]
+    public IEnumerator PsychoCutSweepsItsBoxThroughTheFinalTravelSegmentOnlyOncePerVictim()
+    {
+        var side = Pokemon(new Vector3(1.75f, 0, 5));
+        var end = Pokemon(Vector3.forward * 8.6f);
+        var outside = Pokemon(new Vector3(2.2f, 0, 5));
+        var beyond = Pokemon(Vector3.forward * 9.2f); Physics.SyncTransforms();
+        int sideHits = 0, endHits = 0;
+        var callback = ObserveDamage((victim, damage, amount) =>
+        {
+            if (ReferenceEquals(victim, side)) sideHits++;
+            if (ReferenceEquals(victim, end)) endHits++;
+        });
+        try
+        {
+            Effect("AbsolPsychoCut"); yield return new WaitForSeconds(0.8f);
+            Assert.That(sideHits, Is.EqualTo(1)); Assert.That(endHits, Is.EqualTo(1));
+            Assert.That(Hp(outside), Is.EqualTo(5000)); Assert.That(Hp(beyond), Is.EqualTo(5000));
+        }
+        finally { actor.GetType().GetEvent("OnDamageApplied").RemoveEventHandler(actor, callback); }
+    }
+
+    [UnityTest]
+    public IEnumerator SuckerPunchRetreatsBeforeItsCounterLungeAndCancelsMovementOnDeath()
+    {
+        var target = Pokemon(Vector3.forward * 2); Physics.SyncTransforms(); Effect("AbsolSuckerPunch", target);
+        yield return new WaitForSeconds(0.22f);
+        Assert.That(actor.transform.position.z, Is.EqualTo(-2).Within(0.15f)); Assert.That(Hp(target), Is.EqualTo(5000));
+        Call(target, "NotifyOffensiveAction"); yield return new WaitForSeconds(0.4f);
+        Assert.That(Hp(target), Is.LessThan(5000)); Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
+
+        actor.transform.position = Vector3.zero; target.transform.position = Vector3.forward * 2; Physics.SyncTransforms();
+        var effect = Effect("AbsolSuckerPunch", target); yield return null;
+        Variable(actor, "currentHp", 0);
+        Vector3 respawn = Vector3.right * 20; Variable(actor, "currentHp", 5000); actor.transform.position = respawn;
+        yield return new WaitForSeconds(0.5f);
+        Assert.That(actor.transform.position, Is.EqualTo(respawn)); Assert.That((bool)Get(effect, "IsSpawned"), Is.False);
+        Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
+    }
+
+    [UnityTest]
+    public IEnumerator UniteFlurryReachesItsWiderOffsetRectangle()
+    {
+        var edge = Pokemon(new Vector3(2.6f, 0, 7.8f)); Physics.SyncTransforms();
+        int hits = 0;
+        var callback = ObserveDamage((victim, damage, amount) => { if (ReferenceEquals(victim, edge)) hits++; });
+        try
+        {
+            Effect("AbsolMidnightSlash"); yield return new WaitForSeconds(1.45f);
+            Assert.That(hits, Is.EqualTo(5)); Assert.That(Hp(edge), Is.EqualTo(3665));
+        }
+        finally { actor.GetType().GetEvent("OnDamageApplied").RemoveEventHandler(actor, callback); }
+    }
+
+    [UnityTest]
+    public IEnumerator UniteFinaleRequeriesEachExpandingPulseForEnteringAndLeavingVictims()
+    {
+        var first = Pokemon(Vector3.forward * 1.2f); var entering = Pokemon(new Vector3(20, 0, 4.2f)); Physics.SyncTransforms();
+        int firstHits = 0, enteringHits = 0;
+        var callback = ObserveDamage((victim, damage, amount) =>
+        {
+            if (ReferenceEquals(victim, entering)) enteringHits++;
+            if (ReferenceEquals(victim, first) && ++firstHits == 6)
+            {
+                first.transform.position = Vector3.forward * 40;
+                entering.transform.position = Vector3.forward * 4.2f;
+            }
+        });
+        try
+        {
+            Effect("AbsolMidnightSlash"); yield return new WaitForSeconds(3.1f);
+            Assert.That(firstHits, Is.EqualTo(6), "Leaving the finale volume prevents later hits.");
+            Assert.That(enteringHits, Is.EqualTo(3), "Entering after the first pulse must not miss the whole finale.");
+        }
+        finally { actor.GetType().GetEvent("OnDamageApplied").RemoveEventHandler(actor, callback); }
     }
 }
 

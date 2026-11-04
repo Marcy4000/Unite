@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -107,7 +108,8 @@ public class AbsolTests
         Assert.That(Rule("CanConsumeMark", back), Is.False);
     }
 
-    [TestCase(1, 4)] [TestCase(3, 3)] [TestCase(5, 2)] [TestCase(8, 1)]
+    [TestCase(1, 4)] [TestCase(2.5f, 4)] [TestCase(4, 3)] [TestCase(5, 3)]
+    [TestCase(7, 2)] [TestCase(7.5f, 2)] [TestCase(9, 1)] [TestCase(10, 1)] [TestCase(10.01f, 0)]
     public void MidnightSlashRetainsDistanceDependentFinalHits(float distance, int count) => Assert.That(Rule("FinalHitCount", distance), Is.EqualTo(count));
 
     [Test]
@@ -396,6 +398,53 @@ public class AbsolTests
         Assert.That(valid.Invoke(move, new object[] { Vector3.zero, Vector3.forward * (range + 0.01f) }), Is.False);
         Assert.That(valid.Invoke(move, new object[] { Vector3.zero, new Vector3(float.NaN, 0, 0) }), Is.False);
         Assert.That(Activator.CreateInstance(T("AbsolFeint")).GetType().GetProperty("Range").GetValue(Activator.CreateInstance(T("AbsolFeint"))), Is.EqualTo(4f));
-        Assert.That(T("AbsolMoveRules").GetField("PursuitDistance").GetRawConstantValue(), Is.EqualTo(4f));
+        Assert.That(T("AbsolMoveRules").GetField("PursuitDistance").GetRawConstantValue(), Is.EqualTo(5f));
+    }
+
+    private static string Age(string name) => File.ReadAllText("Assets/Moves/Dumps/age-named-v2/3c44b23/" + name + "_pbb.bin.md");
+    private static int AgeInt(string text, string field)
+    {
+        var match = Regex.Match(text, @"(?m)^\s*" + Regex.Escape(field) + @" \[f\d+\] = (\d+)");
+        Assert.That(match.Success, Is.True, field);
+        return int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+    }
+    private static Vector3 AgeSize(string name)
+    {
+        string text = Age(name);
+        int start = text.IndexOf("    MSize [", StringComparison.Ordinal);
+        Assert.That(start, Is.GreaterThanOrEqualTo(0));
+        string size = text.Substring(start, text.IndexOf("    MHeight [", start, StringComparison.Ordinal) - start);
+        return new Vector3(AgeInt(size, "X"), AgeInt(size, "Y"), AgeInt(size, "Z")) / 1000f;
+    }
+
+    [TestCase("age_359_A1", "BasicHitboxSize")]
+    [TestCase("age_359_A2", "BasicHitboxSize")]
+    [TestCase("age_359_S2", "BasicHitboxSize")]
+    [TestCase("age_359_A4", "BasicHitboxSize")]
+    [TestCase("age_359_A3", "BoostedHitboxSize")]
+    [TestCase("age_new_359_A3B1", "BoostedBonusHitboxSize")]
+    [TestCase("age_test_359_S11B1", "PsychoHitboxSize")]
+    public void HitboxSizesComeFromAgeCollisionDeclarationsNotAimIndicators(string script, string field)
+    {
+        Assert.That(AgeInt(Age(script), "MShapType"), Is.EqualTo(2), "These declarations use Cube, not sector/sphere.");
+        Assert.That(T("AbsolMoveRules").GetField(field).GetValue(null), Is.EqualTo(AgeSize(script)));
+    }
+
+    [Test]
+    public void MovementAndUniteGeometryMatchAgeDeclarationsWithoutAssumingAgeTimeUnits()
+    {
+        object Constant(string name) => T("AbsolMoveRules").GetField(name).GetRawConstantValue();
+        Assert.That(Constant("PursuitDistance"), Is.EqualTo(AgeInt(Age("age_359_S12"), "MMoveModeLineMax") / 1000f));
+        Assert.That(Constant("PsychoSpeed"), Is.EqualTo(AgeInt(Age("age_test_359_S11B1"), "MMoveModeLineV") / 1000f));
+        Assert.That(Constant("SuckerRetreatDistance"), Is.EqualTo(AgeInt(Age("age_359_S22"), "MMoveModeLineMax") / 1000f));
+        Vector3 flurry = AgeSize("age_359_U0");
+        Assert.That(Constant("UniteWidth"), Is.EqualTo(flurry.x));
+        Assert.That(Constant("UniteLength"), Is.EqualTo(flurry.z));
+        string finale = Age("age_new_359_U1B1");
+        Assert.That(Constant("UniteFinalAngle"), Is.EqualTo((float)AgeInt(finale, "MDegree")));
+        var radii = Regex.Matches(finale, @"MRadius \[f\d+\] = (\d+)");
+        Assert.That(radii.Count, Is.EqualTo(4));
+        for (int i = 0; i < radii.Count; i++)
+            Assert.That(Rule("FinalPulseRadius", i), Is.EqualTo(int.Parse(radii[i].Groups[1].Value) / 1000f));
     }
 }

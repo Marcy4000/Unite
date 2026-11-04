@@ -199,10 +199,10 @@ public static class NinetalesAssetAuthoring
         string[] suffix = { "S1", "S2", "S11", "S12", "S21", "S22", "G1" }, previews = { "S1_", "S2_", "S1A_", "S1B_", "S21_", "S22_", "U_" };
         string[] descriptions = {
             "A cone of powder snow damages enemies and slows them by 50% for 1s. Applies one snow stack.",
-            "Two gusts of freezing air damage enemies, slow them by 20% for 1s and shove them a short distance. Each hit applies snow.",
-            "Send a gust of ice toward the selected area, dealing damage and creating a wall that blocks both teams. The wall collapses after 2s, damaging nearby enemies. Each hit applies snow. At level 11, hits also slow by 50% for 1s.",
+            "Freezing air strikes twice along a narrow line, slowing enemies by 20% for 1s and shoving them a short distance. Each hit applies snow.",
+            "Send a gust of ice toward the selected area, dealing damage and creating a wall that blocks both teams. The wall collapses after 2s in an expanding burst, damaging nearby enemies. Each hit applies snow. At level 11, hits also slow by 50% for 1s.",
             "A cone of blinding light damages enemies, stuns them for 0.8s and applies snow. At level 11, damage increases and the stun lasts 1s.",
-            "Blast twice in a line. The first blast passes through walls; the second deals double damage and shoves. Hitting a wall with the second blast creates a 4s frost field, damaging enemies every 0.5s. Hits slow by 35% for 1s and apply snow. At level 13, damage increases.",
+            "Strike a line through walls, then send a rounded wave that deals double damage and shoves. Hitting a wall with the second wave creates a 4s frost field, damaging enemies every 0.5s. Hits slow by 35% for 1s and apply snow. At level 13, damage increases.",
             "Dash and create a stationary aurora for 5s. Ninetales and allies inside receive 35% less damage. Inside its own veil, Ninetales gains 10% movement speed and all attacks are boosted. Independently gain 15% attack speed and healing once per boosted attack that hits for 5s. At level 13, damage reduction increases to 40% and cooldown falls to 10s.",
             "Become unstoppable and unleash a blast around Ninetales. Already-frozen enemies take increased damage. Damage is dealt before applying snow. Gain 30% movement speed, 30% cooldown reduction and a 20% max-HP shield for 6s." };
         var assets = new MoveAsset[Ids.Length];

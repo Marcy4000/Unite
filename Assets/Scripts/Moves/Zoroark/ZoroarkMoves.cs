@@ -51,6 +51,8 @@ public class ZoroarkFeintAttack : ZoroarkMove
 {
     public ZoroarkFeintAttack() { Name = "Feint Attack"; Cooldown = 6; }
     public override AvailableMoves MoveId => AvailableMoves.ZoroarkFeintAttack;
+    public override float Range => ZoroarkMoveRules.FeintAimRange(playerManager != null && playerManager.MovesController.ZoroarkFeintActive,
+        playerManager != null && playerManager.MovesController.ZoroarkFeintReady);
     public override MoveAimStyle AimStyle => playerManager != null && playerManager.MovesController.ZoroarkFeintReady ? MoveAimStyle.Target : MoveAimStyle.Dash;
     public override bool CooldownOnEffectEnd => true;
     public override float EffectiveCooldown(bool upgraded) => upgraded ? 5 : 6;

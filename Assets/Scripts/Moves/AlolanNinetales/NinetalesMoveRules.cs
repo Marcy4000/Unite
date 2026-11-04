@@ -2,27 +2,35 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>Agreed project-scale tuning. Damage sliders use zero-based CurrentLevel.</summary>
+/// <summary>
+/// AGE-backed horizontal geometry (dump distances / 1000). Durations, speeds and
+/// formulas remain project tuning: age-named-v2 does not establish runtime time units.
+/// Damage sliders use zero-based CurrentLevel.
+/// </summary>
 public static class NinetalesMoveRules
 {
     public const string Folder = "Assets/Prefabs/Objects/Moves/AlolanNinetales/";
     public const string Visuals = "Effects/AlolanNinetales/";
-    public const float BasicRange = 7, BasicSpeed = 20, BoostedRadius = 1.5f;
+    public const float BasicRange = 7, BasicSpeed = 20;
+    // A1B2/A1B4: forward-offset 3000 x 4000 cube, not a radial splash.
+    public const float BoostedWidth = 3, BoostedLength = 4, BoostedForwardOffset = 1.5f;
     public const float BasicWindup = 0.20f, BasicRecovery = 0.20f, BasicInputBuffer = 0.18f;
     public const float BasicReferenceCooldown = 1f, AnimationBlend = 0.06f;
     public const float PassiveRange = 7, PassiveCooldown = 4, SnowDuration = 4, FreezeDuration = 1;
-    public const float PassiveWarningDuration = 1, PassiveRadius = 1.5f;
+    public const float PassiveWarningDuration = 1, PassiveRadius = 2; // P1B1 MRadius=2000
     public const int FreezeStacks = 4;
     public const float ConeRange = 7, ConeAngle = 60, ConeWindup = 0.15f, ConeRecovery = 0.16f;
-    public const float AvalancheRange = 6.5f, AvalancheWidth = 3, WallWidth = 4, WallThickness = 0.6f;
+    public const float AvalancheRange = 6.5f, AvalancheWidth = 4, AvalancheGustLength = 5, WallWidth = 4, WallThickness = 0.6f;
     public const float WallHeight = 2.5f, WallLifetime = 2, CollapseRadius = 2.5f;
+    public const float CollapseStartRadius = 1, CollapseDuration = 0.25f;
     public const float AvalancheWindup = 0.15f, AvalancheRecovery = 0.16f;
     public const float IcyRange = 8, IcyWidth = 2.5f, BlizzardRange = 10, BlizzardWidth = 4;
+    public const float IcyCollisionWidth = 2; // S2B1; IcyWidth is the databin indicator width.
     public const float WindSpeed = 15, BlastSeparation = 0.25f, WindWindup = 0.15f, WindRecovery = 0.16f;
     public const float ShoveDistance = 1.5f, ShoveDuration = 0.2f;
-    public const float FrostRadius = 2, FrostDuration = 4, FrostInterval = 0.5f;
+    public const float FrostRadius = 2.75f, FrostDuration = 4, FrostInterval = 0.5f; // S21B1 MRadius=2750
     public const int FrostTicks = 8;
-    public const float VeilDash = 4, VeilDashDuration = 0.25f, VeilRadius = 3.5f, VeilDuration = 5;
+    public const float VeilDash = 4, VeilDashDuration = 0.25f, VeilRadius = 4, VeilDuration = 5; // S22B1 MRadius=4000
     public const float VeilWindup = 0.08f, VeilRecovery = 0.12f;
     public const float UniteRadius = 8, UniteWindup = 0.65f, UniteRecovery = 0.35f, UniteBuffDuration = 6;
     public const int UniteEnergy = 100000;

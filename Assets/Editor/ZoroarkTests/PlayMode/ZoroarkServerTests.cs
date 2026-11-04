@@ -116,6 +116,102 @@ public class ZoroarkServerTests
     }
 
     [UnityTest]
+    public IEnumerator DashDistancesAreIndependentOfTheirIndicators()
+    {
+        Effect("ZoroarkCut"); yield return new WaitForSeconds(0.6f);
+        Assert.That(actor.transform.position.z, Is.EqualTo(5).Within(0.05f));
+        actor.transform.position = Vector3.zero; Physics.SyncTransforms();
+        Effect("ZoroarkShadowClaw"); yield return new WaitForSeconds(0.6f);
+        Assert.That(actor.transform.position.z, Is.EqualTo(4.4f).Within(0.05f));
+    }
+
+    [UnityTest]
+    public IEnumerator CutSweepsItsBoxOnceAndDoesNotHitOutsideItsWidthOrAllies()
+    {
+        var side = Pokemon(new Vector3(1.5f, 0, 2));
+        var outside = Pokemon(new Vector3(2.1f, 0, 2));
+        var ally = Pokemon(new Vector3(-1.5f, 0, 2), "Blue");
+        // Two hurtboxes must still resolve as one enemy hit and one heal.
+        side.gameObject.AddComponent<SphereCollider>().radius = 0.4f;
+        Variable(actor, "currentHp", 3000); Physics.SyncTransforms();
+        Effect("ZoroarkCut"); yield return new WaitForSeconds(0.6f);
+        Assert.That(Hp(side), Is.EqualTo(4616)); Assert.That(Hp(outside), Is.EqualTo(5000));
+        Assert.That(Hp(ally), Is.EqualTo(5000)); Assert.That(Hp(actor), Is.EqualTo(3211));
+    }
+
+    [UnityTest]
+    public IEnumerator SweptCutBoxIncludesIntermediateAndFinalContactsInASingleFrame()
+    {
+        var middle = Pokemon(Vector3.forward * 2.5f);
+        var end = Pokemon(Vector3.forward * 8.7f);
+        var outside = Pokemon(new Vector3(2.1f, 0, 2.5f));
+        Physics.SyncTransforms();
+        var contacts = (IEnumerable)T("ZoroarkMoveRules").GetMethod("DashTargets").Invoke(null, new object[] {
+            E("AvailableMoves", "ZoroarkCut"), Vector3.up * 0.8f, Vector3.forward * 5 + Vector3.up * 0.8f, Vector3.forward, false });
+        var targets = contacts.Cast<Component>().ToArray();
+        CollectionAssert.Contains(targets, middle); CollectionAssert.Contains(targets, end);
+        CollectionAssert.DoesNotContain(targets, outside);
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator ShadowClawEndpointUsesAForwardBoxWithoutDoubleDamage()
+    {
+        var endpoint = Pokemon(new Vector3(1.4f, 0, 6.4f));
+        var outside = Pokemon(new Vector3(2.1f, 0, 6.4f));
+        Physics.SyncTransforms(); Effect("ZoroarkShadowClaw");
+        yield return new WaitForSeconds(0.35f);
+        Assert.That(Hp(endpoint), Is.EqualTo(4603), "Path and endpoint contacts share one damage gate.");
+        Assert.That(Call(endpoint, "HasStatusEffect", E("StatusType", "Incapacitated")), Is.True);
+        Assert.That(Hp(outside), Is.EqualTo(5000));
+        yield return new WaitForSeconds(0.5f);
+        Assert.That(Hp(endpoint), Is.EqualTo(4603));
+    }
+
+    [UnityTest]
+    public IEnumerator NormalBasicsCleaveABoxInsteadOfACone()
+    {
+        var primary = Pokemon(Vector3.forward * 1.5f);
+        var corner = Pokemon(new Vector3(1.7f, 0, 0.5f));
+        var outside = Pokemon(new Vector3(2.1f, 0, 0.5f));
+        Physics.SyncTransforms(); var attack = Get(moves, "ServerBasicAttack");
+        for (int i = 0; i < 3; i++) { Call(attack, "PerformOnServer", primary); yield return new WaitForSeconds(0.4f); }
+        Assert.That(Hp(primary), Is.EqualTo(4670)); Assert.That(Hp(corner), Is.EqualTo(4670));
+        Assert.That(Hp(outside), Is.EqualTo(5000));
+    }
+
+    [UnityTest]
+    public IEnumerator NightCrossReachesItsDumpBackedOuterArmsButNotOutsideTheCross()
+    {
+        var arm = Pokemon(new Vector3(2.6f, 0, 2.6f));
+        var outside = Pokemon(Vector3.forward * 4);
+        Variable(actor, "currentHp", 3000); Physics.SyncTransforms();
+        var effect = Effect("ZoroarkNightSlash");
+        for (int i = 0; i < 6; i++) Call(effect, "ValidHit", false);
+        yield return new WaitForSeconds(1.65f);
+        Assert.That(Hp(arm), Is.EqualTo(4214)); Assert.That(Hp(outside), Is.EqualTo(5000));
+        Assert.That(Hp(actor), Is.EqualTo(3300), "Only the contacted diagonal heals.");
+    }
+
+    [UnityTest]
+    public IEnumerator FeintIndicatorTracksInitialReturnAndTargetedFinisherPhases()
+    {
+        var definition = Activator.CreateInstance(T("ZoroarkFeintAttack"));
+        T("MoveBase").GetField("playerManager").SetValue(definition, player);
+        Assert.That(Get(definition, "IndicatorRange"), Is.EqualTo(7f));
+        Pokemon(Vector3.forward * 2); Physics.SyncTransforms();
+        var effect = Effect("ZoroarkFeintAttack"); yield return new WaitForSeconds(0.5f);
+        Assert.That(Get(moves, "ZoroarkFeintActive"), Is.True);
+        Assert.That(Get(definition, "IndicatorRange"), Is.EqualTo(5f));
+        for (int i = 0; i < 3; i++) Call(effect, "ValidHit", false);
+        Assert.That(Get(definition, "AimStyle").ToString(), Is.EqualTo("Target"));
+        Assert.That(Get(definition, "IndicatorRange"), Is.EqualTo(7f));
+        Call(effect, "Despawn");
+        Assert.That(Get(moves, "ZoroarkFeintActive"), Is.False);
+        Assert.That(Get(definition, "IndicatorRange"), Is.EqualTo(7f));
+    }
+
+    [UnityTest]
     public IEnumerator CutDamagesOnceAndHealsForEachEnemy()
     {
         var first = Pokemon(Vector3.forward * 2); var second = Pokemon(new Vector3(0.4f, 0, 2));
@@ -273,7 +369,8 @@ public class ZoroarkServerTests
     public IEnumerator SecondaryComboWindowsRefreshOnHitsAndClearForFinishersAndDeath()
     {
         var night = Effect("ZoroarkNightSlash");
-        Assert.That((float)Get(moves, "ZoroarkWindowRemaining"), Is.InRange(2.4f, 2.5f));
+        // The double network clock is exposed as float; allow its sub-millisecond rounding.
+        Assert.That((float)Get(moves, "ZoroarkWindowRemaining"), Is.InRange(2.4f, 2.5001f));
         yield return new WaitForSeconds(0.3f);
         float before = (float)Get(moves, "ZoroarkWindowRemaining");
         Call(night, "ValidHit", false);

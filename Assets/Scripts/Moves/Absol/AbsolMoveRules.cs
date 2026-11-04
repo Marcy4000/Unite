@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>All Absol tuning in project units. Formulas use zero-based CurrentLevel.</summary>
@@ -5,7 +6,13 @@ public static class AbsolMoveRules
 {
     public const string Folder = "Assets/Prefabs/Objects/Moves/Absol/";
     public const string Visuals = "Effects/Absol/";
-    public const float BasicRange = 2.5f, BasicAngle = 120f;
+    public const float BasicRange = 2.5f;
+    // AGE MSize is the full box size, not the aim indicator or half-extents.
+    // Distances use the same /1000 conversion as the active-skill dump.
+    public static readonly Vector3 BasicHitboxSize = new Vector3(3, 10, 4);
+    public static readonly Vector3 BoostedHitboxSize = new Vector3(3, 10, 4.5f);
+    public static readonly Vector3 BoostedBonusHitboxSize = new Vector3(3.5f, 10, 7);
+    public const float BasicHitboxOffset = 1.5f, BoostedBonusHitboxOffset = 3f, PursuitHitboxOffset = 1f;
     // Seconds at base attack speed. Recovery is AFTER the final damage tick.
     public const float BasicWindup = 0.20f, BasicRecovery = 0.26f;
     public const float BoostedWindup = 0.22f, BoostedHitDelay = 0.08f, BoostedRecovery = 0.26f;
@@ -21,24 +28,28 @@ public static class AbsolMoveRules
     public const float NightSecondWindup = 0.09f, NightSecondRecovery = 0.08f;
     public const float NightRecastWindow = 6f, NightRecastDelay = 0.15f;
     public const float SlashRange = 3f, SlashAngle = 120f, SlashWindup = 0.12f, SlashRecovery = 0.22f;
-    public const float PursuitDistance = 4f, PursuitDuration = 0.2f, PursuitEmpowerDuration = 3f;
+    public const float PursuitDistance = 5f, PursuitDuration = 0.2f, PursuitEmpowerDuration = 3f;
     public const float PursuitWindup = 0.035f, PursuitRecovery = 0.065f;
-    public const float PursuitRange = 5.5f, PursuitLeapDuration = 0.16f, PursuitSplashRadius = 1.2f, BackstabAngle = 120f;
+    public const float PursuitRange = 5.5f, PursuitLeapDuration = 0.16f, BackstabAngle = 120f;
     public const float PursuitSpeedDuration = 2f, PursuitCooldownReduction = 0.7f;
-    public const float PsychoRange = 7f, PsychoWidth = 1.5f, PsychoSpeed = 14f, MarkDuration = 5f;
+    public const float PsychoRange = 7f, PsychoSpeed = 18f, MarkDuration = 5f;
+    public static readonly Vector3 PsychoHitboxSize = new Vector3(3, 10, 3);
     public const float PsychoAnimationDuration = 0.35f;
     public const float PsychoWindup = 0.10f, PsychoRecovery = 0.08f;
     public const float PsychoCameraReturnDelay = 0.7f, UniteCameraReturnDelay = 2.2f;
     public const float SuckerRange = 5f, SuckerBreakRange = 10f, SuckerStance = 1f, SuckerDashDuration = 0.2f;
     public const float SuckerRadius = 1.5f, SuckerBehindDistance = 1f, SuckerShoveDistance = 1.5f, SuckerShoveDuration = 0.2f;
     public const float SuckerRecovery = 0.08f;
-    public const float UniteWidth = 4f, UniteLength = 6f, UniteWindup = 1f / 3f;
+    // S22 declares a backward line move capped at 2000, Length=150. Its
+    // /1000 time mapping remains provisional; existing stance timing is kept.
+    public const float SuckerRetreatDistance = 2f, SuckerRetreatDuration = 0.15f;
+    public const float UniteWidth = 5f, UniteLength = 8f, UniteHitboxOffset = 4.5f, UniteWindup = 1f / 3f;
     public const float UniteIndicatorRange = 8f;
-    public const float UniteFlurryDuration = 1.15f, UniteFinalRange = 8f, UniteFinalAngle = 60f;
+    public const float UniteFlurryDuration = 1.15f, UniteFinalRange = 10f, UniteFinalAngle = 70f, UniteFinalOffset = -0.5f;
     public const int UniteTicks = 5, UniteEnergy = 80000;
     public const float UniteFinalSpacing = 0.055f, UniteFinalDelay = 0.2f, UniteSecondAnimationDuration = 1.2f;
     public const float UniteRecovery = UniteSecondAnimationDuration - UniteFinalDelay - 3 * UniteFinalSpacing;
-    public const float UniteFourHitRange = 2f, UniteThreeHitRange = 4f, UniteTwoHitRange = 6f;
+    public const float UniteFourHitRange = 2.5f, UniteThreeHitRange = 5f, UniteTwoHitRange = 7.5f;
     public const float UniteShoveDistance = 1.5f, UniteShoveDuration = 0.2f;
 
     public const ushort LuckId = 35900, DefenseId = 35901, AttackSpeedId = 35902, PursuitSpeedId = 35903;
@@ -100,7 +111,26 @@ public static class AbsolMoveRules
         var damage = Damage(source, 0.83f, 4, 184);
         damage.proprieties |= DamageProprieties.IsUniteMove; return damage;
     }
-    public static int FinalHitCount(float distance) => distance <= UniteFourHitRange ? 4 : distance <= UniteThreeHitRange ? 3 : distance <= UniteTwoHitRange ? 2 : 1;
+    public static float FinalPulseRadius(int pulse) => UniteFourHitRange * (Mathf.Clamp(pulse, 0, 3) + 1);
+    // For stationary points measured from the finale's offset origin. Runtime
+    // contact is queried again for every expanding pulse, never snapshotted.
+    public static int FinalHitCount(float distance) => distance < 0 || distance > UniteFinalRange ? 0
+        : distance <= UniteFourHitRange ? 4 : distance <= UniteThreeHitRange ? 3 : distance <= UniteTwoHitRange ? 2 : 1;
+    public static HashSet<Pokemon> BoxTargets(Vector3 origin, Vector3 direction, Vector3 size, float forwardOffset)
+    {
+        direction.y = 0;
+        if (!CombatTargeting.Finite(direction) || direction.sqrMagnitude < 0.001f) return new HashSet<Pokemon>();
+        return CombatTargeting.BoxTargets(origin + Vector3.up * 0.8f + direction.normalized * forwardOffset,
+            size * 0.5f, Quaternion.LookRotation(direction));
+    }
+    public static HashSet<Pokemon> PsychoTargets(Vector3 previous, Vector3 current, Vector3 direction)
+    {
+        // The projectile travels along its local Z axis. One elongated box is
+        // the exact swept volume, including the final segment on a slow frame.
+        Vector3 size = PsychoHitboxSize;
+        size.z += Vector3.Distance(previous, current);
+        return BoxTargets((previous + current) * 0.5f, direction, size, 0);
+    }
     public static bool IsBackstab(Vector3 attacker, Vector3 victim, Vector3 forward)
     {
         Vector3 delta = attacker - victim; delta.y = 0; forward.y = 0;

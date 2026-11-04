@@ -216,7 +216,8 @@ public class NinetalesServerTests
     [UnityTest]
     public IEnumerator BlizzardFirstBlastCrossesAvalancheSecondCreatesFrostWithoutDestroyingWall()
     {
-        var near = Pokemon(Vector3.forward * 3.5f); var behind = Pokemon(Vector3.forward * 8); Physics.SyncTransforms();
+        // Keep this victim beyond Avalanche's travelling five-unit damage volume.
+        var near = Pokemon(Vector3.forward * 3.5f); var behind = Pokemon(Vector3.forward * 9); Physics.SyncTransforms();
         var wall = Effect("NinetalesAvalanche", Vector3.forward * 5); yield return new WaitForSeconds(0.4f);
         Assert.That(Get(wall, "WallActive"), Is.True);
         var wind = Effect("NinetalesBlizzard", Vector3.forward); yield return new WaitForSeconds(1.1f);
@@ -360,6 +361,112 @@ public class NinetalesServerTests
         Call(attack, "PerformOnServer", target); Assert.That((int)Get(moves, "ServerActionLocks"), Is.GreaterThan(0));
         Variable(actor, "currentHp", 0); yield return new WaitForSeconds(0.4f);
         Assert.That(Hp(target), Is.EqualTo(20000)); Assert.That(Get(attack, "Charge"), Is.EqualTo(0)); Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
+    }
+
+    [UnityTest]
+    public IEnumerator SnowWarningIncludesTheAgeRadiusOuterRingAndExcludesAllies()
+    {
+        var selected = Pokemon(Vector3.forward * 2);
+        var outer = Pokemon(new Vector3(2.2f, 0, 2));
+        var outside = Pokemon(new Vector3(2.8f, 0, 2));
+        var ally = Pokemon(new Vector3(-2.2f, 0, 2), "Blue");
+        Physics.SyncTransforms(); var combat = Combat; Call(combat, "Tick");
+        Assert.That(Get(combat, "PassiveCenter"), Is.EqualTo(selected.transform.position));
+        yield return new WaitForSeconds(1.05f); Call(combat, "Tick");
+        Assert.That(Hp(outer), Is.EqualTo(19840)); Assert.That(Call(combat, "SnowCount", outer), Is.EqualTo(1));
+        Assert.That(Hp(outside), Is.EqualTo(20000)); Assert.That(Hp(ally), Is.EqualTo(20000));
+    }
+
+    [UnityTest]
+    public IEnumerator VeilProtectsTheFourUnitOuterRingAndRemovesProtectionOnExit()
+    {
+        var edge = Pokemon(new Vector3(4.3f, 0, 4), "Blue");
+        var outside = Pokemon(new Vector3(4.8f, 0, 4), "Blue");
+        Effect("NinetalesAuroraVeil", Vector3.forward);
+        yield return new WaitForSeconds(0.6f);
+        Assert.That(Call(edge, "GetDamageReduction"), Is.EqualTo(0.35f).Within(0.001f));
+        Assert.That(Call(outside, "GetDamageReduction"), Is.EqualTo(0));
+        edge.transform.position = new Vector3(5, 0, 4); Physics.SyncTransforms(); yield return null; yield return null;
+        Assert.That(Call(edge, "GetDamageReduction"), Is.EqualTo(0));
+    }
+
+    private IEnumerator BoostedBoxHitsForwardInsteadOfRadially(Vector3 forward)
+    {
+        Vector3 side = Vector3.Cross(Vector3.up, forward);
+        var target = Pokemon(forward * 3);
+        var ahead = Pokemon(forward * 6);
+        var behind = Pokemon(forward * 1.4f);
+        var outside = Pokemon(forward * 4.5f + side * 2.2f);
+        var ally = Pokemon(forward * 5, "Blue");
+        Physics.SyncTransforms(); Effect("NinetalesBasicProjectile", forward, true, target);
+        yield return new WaitForSeconds(0.4f);
+        Assert.That(Hp(target), Is.EqualTo(19673)); Assert.That(Hp(ahead), Is.EqualTo(19673));
+        Assert.That(Hp(behind), Is.EqualTo(20000)); Assert.That(Hp(outside), Is.EqualTo(20000)); Assert.That(Hp(ally), Is.EqualTo(20000));
+        Assert.That(Call(Combat, "SnowCount", ahead), Is.EqualTo(1));
+    }
+    [UnityTest]
+    public IEnumerator BoostedBasicUsesAForwardOffsetBox() => BoostedBoxHitsForwardInsteadOfRadially(Vector3.forward);
+    [UnityTest]
+    public IEnumerator BoostedBasicRotatesItsBoxWithTheAttack() => BoostedBoxHitsForwardInsteadOfRadially(Vector3.right);
+
+    [UnityTest]
+    public IEnumerator IcyWindHitsItsFullStationaryLineButNotItsWiderIndicatorMargin()
+    {
+        var far = Pokemon(Vector3.forward * 7.5f);
+        var margin = Pokemon(new Vector3(1.65f, 0, 5));
+        Physics.SyncTransforms(); Effect("NinetalesIcyWind", Vector3.forward);
+        yield return new WaitForSeconds(0.25f);
+        Assert.That(Hp(far), Is.EqualTo(19699), "The first rectangular hit must not wait for a travelling projectile.");
+        Assert.That(Hp(margin), Is.EqualTo(20000), "The 2.5-wide indicator must not enlarge the 2-wide hitbox.");
+        yield return new WaitForSeconds(0.5f);
+        Assert.That(Hp(far), Is.EqualTo(19398)); Assert.That(Call(Combat, "SnowCount", far), Is.EqualTo(2));
+        Assert.That(Hp(margin), Is.EqualTo(20000));
+    }
+
+    [UnityTest]
+    public IEnumerator BlizzardFirstLineIsImmediateAndSecondWaveHasRoundedWiderCoverage()
+    {
+        var far = Pokemon(Vector3.forward * 9);
+        var secondOnly = Pokemon(new Vector3(3, 0, 4));
+        var outside = Pokemon(new Vector3(3.5f, 0, 4));
+        Physics.SyncTransforms(); Effect("NinetalesBlizzard", Vector3.forward);
+        yield return new WaitForSeconds(0.25f);
+        Assert.That(Hp(far), Is.EqualTo(19711)); Assert.That(Hp(secondOnly), Is.EqualTo(20000));
+        yield return new WaitForSeconds(1);
+        Assert.That(Hp(far), Is.EqualTo(19133)); Assert.That(Hp(secondOnly), Is.EqualTo(19422));
+        Assert.That(Call(Combat, "SnowCount", secondOnly), Is.EqualTo(1)); Assert.That(Hp(outside), Is.EqualTo(20000));
+    }
+
+    [UnityTest]
+    public IEnumerator BlizzardCreatesFrostWhenItsSecondWaveStartsOverlappingAWall()
+    {
+        var wall = Node("Initial Blizzard overlap"); wall.layer = LayerMask.NameToLayer("Wall");
+        wall.transform.position = new Vector3(0, 1, 2); wall.AddComponent<BoxCollider>().size = new Vector3(4, 2, 0.3f);
+        Physics.SyncTransforms(); var wind = Effect("NinetalesBlizzard", Vector3.forward);
+        yield return new WaitForSeconds(0.7f);
+        var frost = (GameObject)wind.GetType().GetField("frost", Private).GetValue(wind);
+        if (Host) Assert.That(frost.activeSelf, Is.True);
+        // Dedicated servers do not run presentation RPCs; authoritative impact state is shared.
+        Assert.That((bool)wind.GetType().GetField("impacted", Private).GetValue(wind), Is.True);
+        Assert.That((Vector3)wind.GetType().GetField("impactPoint", Private).GetValue(wind), Is.EqualTo(Vector3.zero));
+    }
+
+    [UnityTest]
+    public IEnumerator AvalancheGustSweepsItsWiderBoxAndCollapseHitsEachEntrantOnlyOnce()
+    {
+        var near = Pokemon(new Vector3(2.2f, 0, 1));
+        var far = Pokemon(new Vector3(2.2f, 0, 6));
+        var outside = Pokemon(new Vector3(2.8f, 0, 3));
+        Physics.SyncTransforms(); Effect("NinetalesAvalanche", Vector3.forward * 6);
+        yield return new WaitForSeconds(0.25f);
+        Assert.That(Hp(near), Is.EqualTo(19727)); Assert.That(Hp(far), Is.EqualTo(20000), "The gust must travel, not damage the whole corridor at once.");
+        yield return new WaitForSeconds(0.5f);
+        Assert.That(Hp(near), Is.EqualTo(19727)); Assert.That(Hp(far), Is.EqualTo(19727)); Assert.That(Hp(outside), Is.EqualTo(20000));
+        // Enter only after the gust has ended, near the growing collapse's final edge.
+        var entrant = Pokemon(new Vector3(2.7f, 0, 6)); Physics.SyncTransforms();
+        yield return new WaitForSeconds(1.8f);
+        Assert.That(Hp(entrant), Is.EqualTo(19727)); Assert.That(Call(Combat, "SnowCount", entrant), Is.EqualTo(1));
+        Assert.That(Hp(far), Is.EqualTo(19454), "One gust hit plus one collapse hit, never one hit per overlap sample.");
     }
     [UnityTest]
     public IEnumerator DeathDuringUniteAndVeilReleasesLocksAndAreaModifiers()

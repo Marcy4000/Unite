@@ -12,7 +12,12 @@ public class AbsolMidnightSlashEffect : PrefabMoveEffect
     protected override void BeginPresentation()
     {
         transform.SetPositionAndRotation(Actor.transform.position, Quaternion.LookRotation(Direction));
-        if (flurry != null) { flurry.SetActive(false); flurry.transform.localScale = new Vector3(AbsolMoveRules.UniteWidth, 1, AbsolMoveRules.UniteLength); }
+        if (flurry != null)
+        {
+            flurry.SetActive(false);
+            flurry.transform.localScale = new Vector3(AbsolMoveRules.UniteWidth, 1, AbsolMoveRules.UniteLength);
+            flurry.transform.localPosition = Vector3.forward * (AbsolMoveRules.UniteHitboxOffset - AbsolMoveRules.UniteLength * 0.5f);
+        }
         if (finalFan != null) { finalFan.SetActive(false); finalFan.transform.localScale = Vector3.one * AbsolMoveRules.UniteFinalRange; }
     }
 
@@ -32,8 +37,8 @@ public class AbsolMidnightSlashEffect : PrefabMoveEffect
             FlurryRPC(tick);
             Physics.SyncTransforms();
             var targets = new List<Pokemon>();
-            Vector3 center = origin + Direction * (AbsolMoveRules.UniteLength * 0.5f) + Vector3.up;
-            foreach (var target in CombatTargeting.BoxTargets(center, new Vector3(AbsolMoveRules.UniteWidth * 0.5f, 2, AbsolMoveRules.UniteLength * 0.5f), Quaternion.LookRotation(Direction)))
+            foreach (var target in AbsolMoveRules.BoxTargets(origin, Direction,
+                new Vector3(AbsolMoveRules.UniteWidth, 10, AbsolMoveRules.UniteLength), AbsolMoveRules.UniteHitboxOffset))
                 if (CanHit(target)) targets.Add(target);
             foreach (var target in targets)
             {
@@ -50,18 +55,20 @@ public class AbsolMidnightSlashEffect : PrefabMoveEffect
         EndFlurryRPC();
         yield return new WaitForSeconds(AbsolMoveRules.UniteFinalDelay);
         FinalRPC();
-        var finale = new Dictionary<Pokemon, int>();
-        foreach (var target in CombatTargeting.SectorTargets(origin, Direction, AbsolMoveRules.UniteFinalRange, AbsolMoveRules.UniteFinalAngle))
-            if (CanHit(target)) finale[target] = AbsolMoveRules.FinalHitCount(Vector3.Distance(origin, target.transform.position));
+        var finale = new HashSet<Pokemon>();
+        Vector3 finalOrigin = origin + Direction * AbsolMoveRules.UniteFinalOffset;
         for (int pulse = 0; pulse < 4; pulse++)
         {
-            foreach (var entry in finale)
+            Physics.SyncTransforms();
+            foreach (var target in CombatTargeting.SectorTargets(finalOrigin, Direction,
+                AbsolMoveRules.FinalPulseRadius(pulse), AbsolMoveRules.UniteFinalAngle))
             {
-                if (pulse >= entry.Value || !CanHit(entry.Key)) continue;
+                if (!CanHit(target)) continue;
+                bool first = !finale.Contains(target);
                 var damage = AbsolMoveRules.UniteDamage(Actor.NetworkObjectId);
-                damage.multiplier = pulse == 0 ? 1 : 0.3f;
-                if (entry.Key.ResolveDamage(damage) > 0 && pulse == 0)
-                    AbsolMoveRules.Shove(entry.Key, Direction, AbsolMoveRules.UniteShoveDistance, AbsolMoveRules.UniteShoveDuration);
+                damage.multiplier = first ? 1 : 0.3f;
+                if (target.ResolveDamage(damage) > 0 && finale.Add(target))
+                    AbsolMoveRules.Shove(target, Direction, AbsolMoveRules.UniteShoveDistance, AbsolMoveRules.UniteShoveDuration);
             }
             if (pulse < 3) yield return new WaitForSeconds(AbsolMoveRules.UniteFinalSpacing);
         }
@@ -81,10 +88,15 @@ public class AbsolMidnightSlashEffect : PrefabMoveEffect
     [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
     private void EndFlurryRPC() { if (flurry != null) flurry.SetActive(false); }
     [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
-    private void FinalRPC() { if (finalFan != null) finalFan.SetActive(true); }
+    private void FinalRPC()
+    {
+        if (finalFan == null) return;
+        finalFan.transform.localPosition = Vector3.forward * AbsolMoveRules.UniteFinalOffset;
+        finalFan.SetActive(true);
+    }
     protected override void Cleanup()
     {
-        if (!IsServer || Actor == null) return;
+        if (!IsServer || Actor == null || !Actor.Pokemon.IsSpawned) return;
         Actor.Pokemon.RemoveStatusEffectWithID(AbsolMoveRules.UniteStatusId);
         Actor.Pokemon.RemoveStatusEffectWithID(AbsolMoveRules.UniteUntargetableId);
     }

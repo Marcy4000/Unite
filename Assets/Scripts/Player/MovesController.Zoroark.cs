@@ -7,6 +7,7 @@ public partial class MovesController
     public ZoroarkMoveEffect ZoroarkNight { get; internal set; }
     public ZoroarkMoveEffect ZoroarkFeint { get; internal set; }
     public bool ZoroarkFeintReady { get; private set; }
+    public bool ZoroarkFeintActive { get; private set; }
     public bool ZoroarkUniqueReady { get; private set; }
     private bool zoroarkNightActive;
     private bool zoroarkAirborne, zoroarkAerialSpent;
@@ -124,6 +125,7 @@ public partial class MovesController
         zoroarkNightActive = night && active;
         ZoroarkUniqueReady = night && active && uniqueReady;
         ZoroarkFeintReady = feintReady;
+        ZoroarkFeintActive = !night && active;
         zoroarkAirborne = nextAirborne;
         if (!zoroarkAirborne)
         {
@@ -300,7 +302,7 @@ public partial class MovesController
         zoroarkWindowUntil = 0;
         if (ownedWindow && playerManager != null && playerManager.IsLocalHuman && BattleUIManager.instance != null)
             BattleUIManager.instance.ShowMoveSecondaryCooldown(1, 0);
-        ZoroarkUniqueReady = ZoroarkFeintReady = false;
+        ZoroarkUniqueReady = ZoroarkFeintReady = ZoroarkFeintActive = false;
         zoroarkAerialSpentLock?.Dispose(); zoroarkAerialSpentLock = null;
         illusionActive = false; ClearIllusionPresentation();
         if (zoroarkComboGauge != null) zoroarkComboGauge.SetVisibility(false);
