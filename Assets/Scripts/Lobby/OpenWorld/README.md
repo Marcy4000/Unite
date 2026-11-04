@@ -48,7 +48,12 @@ The city has no Pokémon/combat player coordinators.
 
 Desktop: use the normal movement bindings and right-drag to orbit the camera.
 Controller: left stick moves, right stick rotates the camera. Mobile adds an
-on-screen left stick wired into the same movement action. Settings/text entry
+on-screen left stick wired into the same movement action and single-finger
+camera orbit on the world outside UI. The orbit gesture owns its starting finger,
+so movement-stick touches cannot rotate the camera or interrupt another drag.
+Android/iOS Editor targets also show the stick; Device Simulator touch and
+left-mouse world dragging support testing camera orbit in the Editor.
+Settings/text entry
 block movement. Falling below the environment returns the owner to its spawn.
 The avatar prefab is registered in `DefaultNetworkPrefabs`; `ChineseLobby` is
 appended to build settings without changing existing scene indices.

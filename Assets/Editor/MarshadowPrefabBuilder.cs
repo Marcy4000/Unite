@@ -20,7 +20,7 @@ public static class MarshadowPrefabBuilder
     private static Mesh ring, arc;
     private static Material shadow, violet, green, white, particle;
 
-    [MenuItem("Tools/Marshadow/Create Missing Rework Prefabs")]
+    [MenuItem("Tools/Characters/Marshadow/Create Missing Rework Prefabs")]
     public static void Build()
     {
         ConfigureActionAnimationSpeed();

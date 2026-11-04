@@ -58,6 +58,47 @@ public sealed class OpenWorldNpcTests
         }
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void GenericSupportsDialogueWithoutAnAnimator(bool hasStaticVisual)
+    {
+        var root = new GameObject("Generic NPC");
+        root.SetActive(false);
+        try
+        {
+            var npc = root.AddComponent(GameType("OpenWorldNpc"));
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            npc.GetType().GetField("kind", flags).SetValue(npc, Enum.ToObject(GameType("OpenWorldNpcKind"), 2));
+            npc.GetType().GetField("interaction", flags).SetValue(npc, Enum.ToObject(GameType("OpenWorldNpcInteraction"), 1));
+            if (hasStaticVisual)
+            {
+                var visual = new GameObject("Static visual");
+                visual.transform.SetParent(root.transform, false);
+                npc.GetType().GetField("visual", flags).SetValue(npc, visual);
+            }
+            npc.GetType().GetMethod("Start", flags).Invoke(npc, null);
+            npc.GetType().GetMethod("Update", flags).Invoke(npc, null);
+            Assert.That(npc.GetType().GetProperty("IsReady").GetValue(npc), Is.True);
+            Assert.That(npc.GetType().GetProperty("Interaction").GetValue(npc).ToString(), Is.EqualTo("Dialogue"));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    [Test]
+    public void GenericPrefabHasDialogueAndPromptWithoutAModelOrPhysicalObstacle()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Lobby/OpenWorldGenericNpc.prefab");
+        Assert.That(prefab, Is.Not.Null);
+        var data = new SerializedObject(prefab.GetComponent(GameType("OpenWorldNpc")));
+        Assert.That(data.FindProperty("kind").enumValueIndex, Is.EqualTo(2));
+        Assert.That(data.FindProperty("visual").objectReferenceValue, Is.Null);
+        Assert.That(data.FindProperty("interaction").enumValueIndex, Is.EqualTo(1));
+        Assert.That(data.FindProperty("dialogues").arraySize, Is.GreaterThan(0));
+        Assert.That(data.FindProperty("prompt").objectReferenceValue, Is.Not.Null);
+        Assert.That(data.FindProperty("interactButton").objectReferenceValue, Is.Not.Null);
+        Assert.That(prefab.GetComponent<Collider>().enabled, Is.False);
+    }
+
     [Test]
     public void PokemonCannotEnterDialogueEvenWhenSerializedModeIsDialogue()
     {
@@ -95,7 +136,9 @@ public sealed class OpenWorldNpcTests
         {
             var group = scene.GetRootGameObjects().Single(root => root.name == "Lobby NPCs");
             var npcs = group.GetComponentsInChildren(GameType("OpenWorldNpc"));
-            Assert.That(npcs.Length, Is.EqualTo(2));
+            var kinds = npcs.Select(npc => new SerializedObject(npc).FindProperty("kind").enumValueIndex).ToArray();
+            Assert.That(kinds, Does.Contain(0), "The city should include a Trainer NPC.");
+            Assert.That(kinds, Does.Contain(1), "The city should include a Pokémon NPC.");
             foreach (var npc in npcs)
                 Assert.That(PrefabUtility.IsPartOfPrefabInstance(npc), Is.True);
         }

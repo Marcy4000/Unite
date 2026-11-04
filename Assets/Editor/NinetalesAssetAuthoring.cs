@@ -26,7 +26,7 @@ public static class NinetalesAssetAuthoring
         AvailableMoves.NinetalesAvalanche, AvailableMoves.NinetalesDazzlingGleam, AvailableMoves.NinetalesBlizzard,
         AvailableMoves.NinetalesAuroraVeil, AvailableMoves.NinetalesSnowGlobe };
 
-    [MenuItem("Tools/Alolan Ninetales/Create Missing Move Assets")]
+    [MenuItem("Tools/Characters/Alolan Ninetales/Create Missing Move Assets")]
     public static void Build()
     {
         foreach (string path in new[] { Art, Visuals, Materials, "Assets/Moves/AlolanNinetales/", "Assets/Resources/AimIndicators/" }) Folder(path.TrimEnd('/'));

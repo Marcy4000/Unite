@@ -12,7 +12,7 @@ using UnityEngine.UI;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(NetworkObject), typeof(CharacterController), typeof(ClientNetworkTransform))]
-public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
+public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
 {
     [SerializeField] private GameObject trainerModelPrefab;
     [SerializeField] private TMP_Text nameText;
@@ -81,11 +81,11 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
     public Camera LocalCamera => localCamera;
     public CinemachineCamera FollowCamera => followCamera;
     public Animator AnimationAnimator => trainerModel != null && trainerModel.IsInitialized ? trainerModel.ActiveAnimator : null;
-    public bool CanStartEmote => !IsInputBlocked() && (interactionAnimation == null || !interactionAnimation.IsPlaying);
+    public bool CanStartEmote => !IsSeated && !IsInputBlocked() && (interactionAnimation == null || !interactionAnimation.IsPlaying);
 
     public bool PlayNpcInteractionAnimation(AnimationClip maleAnimation, AnimationClip femaleAnimation, float blendDuration = 0.2f)
     {
-        if (!IsSpawned || !IsOwner || !IsClient || LocalAvatar != this || AnimationAnimator == null) return false;
+        if (!IsSpawned || !IsOwner || !IsClient || LocalAvatar != this || IsSeated || AnimationAnimator == null) return false;
         var clip = trainerModel.IsMale ? maleAnimation : femaleAnimation;
         if (clip == null) return false;
         if (emotes != null) emotes.CancelForMovement();
@@ -149,7 +149,9 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
 
     public void SetSpawnPosition(Vector3 position) => SetSpawnPosition(position, transform.eulerAngles.y);
 
-    public void SetSpawnPosition(Vector3 position, float yaw)
+    public void SetSpawnPosition(Vector3 position, float yaw) => SetPose(position, yaw, true);
+
+    private void SetPose(Vector3 position, float yaw, bool alignCamera)
     {
         if (!float.IsFinite(position.x) || !float.IsFinite(position.y) || !float.IsFinite(position.z) || !float.IsFinite(yaw))
             throw new ArgumentException("Spawn pose must be finite.", nameof(position));
@@ -163,8 +165,11 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
         if (restoreController) characterController.enabled = true;
         verticalSpeed = 0f;
         previousPosition = position;
-        cameraYaw = yaw;
-        cameraNeedsSnap = true;
+        if (alignCamera)
+        {
+            cameraYaw = yaw;
+            cameraNeedsSnap = true;
+        }
         if (IsSpawned && IsOwner) RememberLocalPose();
     }
 
@@ -210,6 +215,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         GetComponent<OpenWorldTrainerChatBubble>()?.Hide();
+        ClearSeat();
         ReleaseLocalControl();
         playerId.OnValueChanged -= OnIdentityChanged;
         playerName.OnValueChanged -= OnIdentityChanged;
@@ -222,9 +228,22 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
         if (IsSpawned) RefreshOwnership();
     }
 
-    private void OnDisable() => ReleaseLocalControl();
-    private void OnApplicationFocus(bool focused) => hasFocus = focused;
-    private void OnApplicationPause(bool paused) => isPaused = paused;
+    private void OnDisable()
+    {
+        ClearSeat();
+        ReleaseLocalControl();
+    }
+    private void OnApplicationFocus(bool focused)
+    {
+        hasFocus = focused;
+        if (!focused) ResetTouchLookInput();
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        isPaused = paused;
+        if (paused) ResetTouchLookInput();
+    }
 
     private void CreateVisual()
     {
@@ -286,6 +305,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
         if (LocalAvatar != null && LocalAvatar != this) LocalAvatar.ReleaseLocalControl();
         bool changed = LocalAvatar != this;
         LocalAvatar = this;
+        InitializeTouchLookInput();
         verticalSpeed = 0f;
         nextChatScan = 0f;
         if (localCamera == null)
@@ -345,6 +365,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
 
     private void ReleaseLocalControl()
     {
+        ReleaseTouchLookInput();
         if (interactionAnimation != null) interactionAnimation.StopPlayback();
         if (characterController != null) characterController.enabled = false;
         if (LocalAvatar == this)
@@ -418,6 +439,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
         var lobby = LobbyController.Instance;
         if (lobby == null || lobby.OpenWorldLobby == null || !lobby.OpenWorldLobby.IsConnected)
         {
+            ResetTouchLookInput();
             verticalSpeed = 0f;
             return;
         }
@@ -425,16 +447,19 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
         bool blocked = IsInputBlocked();
         if (!blocked)
             UpdateLookInput();
+        else
+            ResetTouchLookInput();
 
         Vector2 input = Vector2.zero;
         var manager = InputManager.Instance;
         if (!blocked && manager != null && manager.Controls != null)
             input = manager.Controls.Movement.Move.ReadValue<Vector2>();
-        Move(input);
+        if (!IsSeated) Move(input);
     }
 
     private void UpdateLookInput()
     {
+        UpdateTouchLookInput();
         var mouse = Mouse.current;
         if (mouse != null && mouse.rightButton.isPressed &&
             (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject()))
@@ -454,6 +479,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
 
     private void Move(Vector2 input)
     {
+        if (IsSeated) return;
         var movement = CalculatePlanarMovement(input, cameraYaw);
         if (movement.sqrMagnitude > 0.0001f)
         {
@@ -470,6 +496,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
     private void LateUpdate()
     {
         if (!IsSpawned) return;
+        UpdateSeatAnimation();
         float deltaTime = Time.deltaTime;
         var displacement = transform.position - previousPosition;
         displacement.y = 0f;
@@ -484,7 +511,7 @@ public sealed class OpenWorldTrainerAvatar : NetworkBehaviour
 
     private void UpdateAnimation(bool shouldRun)
     {
-        if ((emotes != null && emotes.IsPlaying) ||
+        if (IsSeated || (emotes != null && emotes.IsPlaying) ||
             (interactionAnimation != null && interactionAnimation.IsPlaying && !interactionAnimation.IsBlendingOut))
         {
             movementAnimator = null;

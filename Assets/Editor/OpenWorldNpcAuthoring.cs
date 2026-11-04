@@ -10,11 +10,16 @@ public static class OpenWorldNpcAuthoring
     public const string TrainerPath = "Assets/Prefabs/Lobby/OpenWorldTrainerNpc.prefab";
     public const string PokemonPath = "Assets/Prefabs/Lobby/OpenWorldPokemonNpc.prefab";
 
+    public const string SeatPath = "Assets/Prefabs/Lobby/OpenWorldSeat.prefab";
+    public const string GenericPath = "Assets/Prefabs/Lobby/OpenWorldGenericNpc.prefab";
+
     [MenuItem("Tools/Open World Lobby/Create NPC Prefabs")]
     public static void CreatePrefabs()
     {
-        Create(TrainerPath, false);
-        Create(PokemonPath, true);
+        Create(TrainerPath, OpenWorldNpcKind.Trainer);
+        Create(PokemonPath, OpenWorldNpcKind.Pokemon);
+        Create(GenericPath, OpenWorldNpcKind.Generic);
+        Create(SeatPath, OpenWorldNpcKind.Generic, true);
         AssetDatabase.SaveAssets();
     }
 
@@ -23,20 +28,27 @@ public static class OpenWorldNpcAuthoring
         return AssetDatabase.LoadAllAssetsAtPath(AssetDatabase.GUIDToAssetPath(guid)).OfType<AnimationClip>().First();
     }
 
-    private static void Create(string path, bool pokemon)
+    private static void Create(string path, OpenWorldNpcKind kind, bool seat = false)
     {
         if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null) return;
-        var root = new GameObject(pokemon ? "OpenWorldPokemonNpc" : "OpenWorldTrainerNpc");
+        bool pokemon = kind == OpenWorldNpcKind.Pokemon;
+        bool generic = kind == OpenWorldNpcKind.Generic;
+        var root = new GameObject(seat ? "OpenWorldSeat" : $"OpenWorld{kind}Npc");
         root.SetActive(false);
         try
         {
             string modelPath = pokemon ? "Assets/Prefabs/PokemoModels/Eevee/Eevee.prefab"
                 : "Assets/Prefabs/TrainerModels/TrainerModel.prefab";
-            var model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(modelPath), root.transform);
-            model.name = "Visual";
-            model.transform.localPosition = Vector3.zero;
-            model.transform.localRotation = Quaternion.identity;
+            GameObject model = null;
+            if (!generic)
+            {
+                model = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(modelPath), root.transform);
+                model.name = "Visual";
+                model.transform.localPosition = Vector3.zero;
+                model.transform.localRotation = Quaternion.identity;
+            }
             var collider = root.AddComponent<CapsuleCollider>();
+            collider.enabled = !generic;
             collider.height = pokemon ? 1f : 1.8f;
             collider.radius = pokemon ? 0.4f : 0.3f;
             collider.center = Vector3.up * collider.height * 0.5f;
@@ -66,16 +78,16 @@ public static class OpenWorldNpcAuthoring
             label.fontSize = 24f;
             label.alignment = TextAlignmentOptions.Center;
             label.raycastTarget = false;
-            label.text = pokemon ? "Pet  [E / A]" : "Talk  [E / A]";
+            label.text = seat ? "Sit  [E / A]" : pokemon ? "Pet  [E / A]" : "Talk  [E / A]";
 
             var data = new SerializedObject(root.AddComponent<OpenWorldNpc>());
-            data.FindProperty("kind").enumValueIndex = pokemon ? 1 : 0;
+            data.FindProperty("kind").enumValueIndex = (int)kind;
             data.FindProperty("visual").objectReferenceValue = model;
-            data.FindProperty("interaction").enumValueIndex = pokemon ? 0 : 1;
-            data.FindProperty("interactionLabel").stringValue = pokemon ? "Pet" : "Talk";
-            data.FindProperty("idleAnimation").objectReferenceValue = Clip(pokemon
+            data.FindProperty("interaction").enumValueIndex = seat ? 2 : pokemon ? 0 : 1;
+            data.FindProperty("interactionLabel").stringValue = seat ? "Sit" : pokemon ? "Pet" : "Talk";
+            data.FindProperty("idleAnimation").objectReferenceValue = generic ? null : Clip(pokemon
                 ? "7d0826a2d4b446d41b9f31ed6d5a65c0" : "98dfef30533ae0942a0a5bf389850c32");
-            data.FindProperty("interactAnimation").objectReferenceValue = Clip(pokemon
+            data.FindProperty("interactAnimation").objectReferenceValue = generic ? null : Clip(pokemon
                 ? "b3ea2b802efcb9944a9b8aa5889300ef" : "15afd52789516f041ac358bc1cbf44c6");
             data.FindProperty("maleTrainerAnimation").objectReferenceValue = Clip("15afd52789516f041ac358bc1cbf44c6");
             data.FindProperty("femaleTrainerAnimation").objectReferenceValue = Clip("90960248db95f474fa1d966a4c1a97a0");
@@ -92,7 +104,7 @@ public static class OpenWorldNpcAuthoring
             {
                 var dialogues = data.FindProperty("dialogues");
                 dialogues.arraySize = 1;
-                dialogues.GetArrayElementAtIndex(0).FindPropertyRelative("Title").stringValue = "Trainer";
+                dialogues.GetArrayElementAtIndex(0).FindPropertyRelative("Title").stringValue = generic ? "Generic" : "Trainer";
                 dialogues.GetArrayElementAtIndex(0).FindPropertyRelative("Body").stringValue = "Welcome to the city!";
             }
             data.ApplyModifiedPropertiesWithoutUndo();
@@ -119,7 +131,8 @@ public sealed class OpenWorldNpcEditor : Editor
         Field("kind");
         Field("visual");
         bool pokemon = serializedObject.FindProperty("kind").enumValueIndex == 1;
-        if (!pokemon) Field("clothes");
+        bool generic = serializedObject.FindProperty("kind").enumValueIndex == 2;
+        if (!pokemon && !generic) Field("clothes");
         Field("idleAnimation");
         Field("interactAnimation");
         Field("animationBlendDuration");
@@ -130,6 +143,12 @@ public sealed class OpenWorldNpcEditor : Editor
             Field("femaleTrainerAnimation");
         }
         if (!pokemon) Field("interaction");
+        if (!pokemon && serializedObject.FindProperty("interaction").enumValueIndex == 2)
+        {
+            Field("seatAnchor");
+            Field("seatFeetOffset");
+            EditorGUILayout.HelpBox("The yellow gizmo marks the trainer's feet, not the cushion. Position it on the floor in front of the seat; the hips sit behind it. Anchor forward sets the facing direction.", MessageType.Info);
+        }
         Field("interactionDistance");
         Field("interactionLabel");
         if (!pokemon && serializedObject.FindProperty("interaction").enumValueIndex == 1)
@@ -142,7 +161,8 @@ public sealed class OpenWorldNpcEditor : Editor
         Field("interactButton");
         Field("promptText");
         EditorGUILayout.HelpBox("Place in the city scene. Approach and press E / gamepad A, or tap the prompt. " +
-            "Animation clips must match this model's rig. Pokémon only support animation interactions.", MessageType.Info);
+            "Generic NPCs support dialogue and optional player animations with no model, a static model, or a custom animated model. " +
+            "Assign a child object as Visual to animate it. Animation clips must match its rig. Pokémon only support animation interactions.", MessageType.Info);
         serializedObject.ApplyModifiedProperties();
     }
 

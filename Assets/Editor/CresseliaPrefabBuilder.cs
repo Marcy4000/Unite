@@ -19,7 +19,7 @@ public static class CresseliaPrefabBuilder
     private static Mesh ring, crescent;
     private static Material pearl, lavender, pink, gold, particle;
 
-    [MenuItem("Tools/Cresselia/Create Missing Rework Prefabs")]
+    [MenuItem("Tools/Characters/Cresselia/Create Missing Rework Prefabs")]
     public static void Build()
     {
         EnsureFolder(Folder.TrimEnd('/')); EnsureFolder(Folder + "Art"); EnsureFolder(Materials.TrimEnd('/'));

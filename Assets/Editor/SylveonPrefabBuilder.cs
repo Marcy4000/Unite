@@ -22,7 +22,7 @@ public static class SylveonPrefabBuilder
     private static Mesh heart, flame, ring;
     private static Material pink, pale, blue, violet, particles;
 
-    [MenuItem("Tools/Sylveon/Create Missing Move Prefabs")]
+    [MenuItem("Tools/Characters/Sylveon/Create Missing Move Prefabs")]
     public static void Build()
     {
         EnsureFolder(Folder + "Art"); EnsureFolder(Materials.TrimEnd('/'));
@@ -172,7 +172,7 @@ public static class SylveonPrefabBuilder
     }
 
     // Upgrade an already-authored prefab without rebuilding its hand-edited art.
-    [MenuItem("Tools/Sylveon/Add Missing Unite Landing Warning")]
+    [MenuItem("Tools/Characters/Sylveon/Add Missing Unite Landing Warning")]
     public static void AddMissingLandingWarning()
     {
         string path = Folder + "SylvFairyFrolic.prefab";

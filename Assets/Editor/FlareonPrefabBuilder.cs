@@ -20,7 +20,7 @@ public static class FlareonPrefabBuilder
     private static Material orange, gold, cream, particles;
     private static AudioClip ignition, impact;
 
-    [MenuItem("Tools/Flareon/Create Missing Move Prefabs")]
+    [MenuItem("Tools/Characters/Flareon/Create Missing Move Prefabs")]
     public static void Build()
     {
         Folder(Art.TrimEnd('/')); Folder(Materials.TrimEnd('/'));
@@ -44,7 +44,7 @@ public static class FlareonPrefabBuilder
         Descriptions(); AssetDatabase.SaveAssets();
         Debug.Log("Flareon prefabs authored and registered. Existing layouts and unrelated license changes preserved.");
     }
-    [MenuItem("Tools/Flareon/Render Effect Previews")]
+    [MenuItem("Tools/Characters/Flareon/Render Effect Previews")]
     public static void RenderPreviews()
     {
         foreach (FlareonCast kind in new[] { FlareonCast.Unite, FlareonCast.Flamethrower, FlareonCast.HeatWave })

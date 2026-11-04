@@ -20,7 +20,7 @@ public static class MeowsticPrefabBuilder
     private static Mesh ring, arc, cone, square, eyeRing, panel, canopyRib;
     private static Material lavender, cyan, pink, indigo, white, particle;
 
-    [MenuItem("Tools/Meowstic/Create Missing Rework Prefabs")]
+    [MenuItem("Tools/Characters/Meowstic/Create Missing Rework Prefabs")]
     public static void Build()
     {
         EnsureFolder(Folder.TrimEnd('/')); EnsureFolder(Folder + "Art"); EnsureFolder(Materials.TrimEnd('/'));
@@ -54,7 +54,7 @@ public static class MeowsticPrefabBuilder
         Debug.Log("Meowstic authored effects registered. Existing layouts and legacy network prefabs preserved.");
     }
 
-    [MenuItem("Tools/Meowstic/Render Effect Previews")]
+    [MenuItem("Tools/Characters/Meowstic/Render Effect Previews")]
     public static void RenderPreviews()
     {
         Directory.CreateDirectory("/tmp/opencode");

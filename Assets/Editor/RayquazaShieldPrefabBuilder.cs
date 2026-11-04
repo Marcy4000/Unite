@@ -8,7 +8,7 @@ public static class RayquazaShieldPrefabBuilder
 {
     public const string PrefabPath = "Assets/Resources/Effects/RayquazaShield.prefab";
 
-    [MenuItem("Tools/Rayquaza/Create Missing Shield Visual")]
+    [MenuItem("Tools/Characters/Rayquaza/Create Missing Shield Visual")]
     public static void Build()
     {
         if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null) return;

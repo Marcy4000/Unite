@@ -21,7 +21,7 @@ public static class VaporeonPrefabBuilder
     private static Mesh ring, spiral, ribbon;
     private static Material water, deep, foam, particles;
 
-    [MenuItem("Tools/Vaporeon/Create Missing Rework Prefabs")]
+    [MenuItem("Tools/Characters/Vaporeon/Create Missing Rework Prefabs")]
     public static void Build()
     {
         EnsureFolder(Folder.TrimEnd('/')); EnsureFolder(Folder + "Art"); EnsureFolder(Materials.TrimEnd('/'));
@@ -155,7 +155,7 @@ public static class VaporeonPrefabBuilder
         }
         PrefabUtility.SaveAsPrefabAsset(root, path); Object.DestroyImmediate(root);
     }
-    [MenuItem("Tools/Vaporeon/Update Swift Star Visuals")]
+    [MenuItem("Tools/Characters/Vaporeon/Update Swift Star Visuals")]
     public static void UpdateSwiftStars()
     {
         // Explicit, Swift-only migration. Keep its GUID/Addressable key and all

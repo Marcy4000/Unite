@@ -21,7 +21,7 @@ public static class CinderacePrefabBuilder
     private static Mesh ring;
     private static Material orange, gold, white, red, smoke, particles;
 
-    [MenuItem("Tools/Cinderace/Create Missing Move Prefabs")]
+    [MenuItem("Tools/Characters/Cinderace/Create Missing Move Prefabs")]
     public static void Build()
     {
         Folder(CinderMoveRules.Folder.TrimEnd('/')); Folder(CinderMoveRules.Folder + "Art"); Folder(Materials.TrimEnd('/'));

@@ -24,7 +24,7 @@ public static class ZoroarkAssetAuthoring
     private static Material red, dark, white;
     private static Mesh crescent, edge, ring;
 
-    [MenuItem("Tools/Zoroark/Create Missing Move Assets")]
+    [MenuItem("Tools/Characters/Zoroark/Create Missing Move Assets")]
     public static void Build()
     {
         foreach (var path in new[] { ZoroarkMoveRules.Folder.TrimEnd('/'), Visuals.TrimEnd('/'), "Assets/Materials/Zoroark", "Assets/Moves/Zoroark", "Assets/Resources/HPBarModules", "Assets/Prefabs/UI" }) Folder(path);
@@ -157,7 +157,7 @@ public static class ZoroarkAssetAuthoring
         PrefabUtility.SaveAsPrefabAsset(root, path); Object.DestroyImmediate(root);
     }
 
-    [MenuItem("Tools/Zoroark/Update Auxiliary Action Style")]
+    [MenuItem("Tools/Characters/Zoroark/Update Auxiliary Action Style")]
     public static void UpdateAuxiliaryButtonStyle()
     {
         RestyleAuxiliaryButton(true);

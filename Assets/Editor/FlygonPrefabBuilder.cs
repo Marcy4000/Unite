@@ -18,7 +18,7 @@ public static class FlygonPrefabBuilder
     private static Mesh ring, spiral, shard;
     private static Material gold, green, earth, dust, particles;
 
-    [MenuItem("Tools/Flygon/Upgrade Move Prefabs")]
+    [MenuItem("Tools/Characters/Flygon/Upgrade Move Prefabs")]
     public static void Build()
     {
         Folder(Art.TrimEnd('/')); Folder(Materials.TrimEnd('/'));

@@ -20,7 +20,7 @@ public static class EmboarPrefabBuilder
     private static Material orange, gold, white, coal, particles;
     private static AudioClip rush, impact;
 
-    [MenuItem("Tools/Emboar/Create Missing Move Prefabs")]
+    [MenuItem("Tools/Characters/Emboar/Create Missing Move Prefabs")]
     public static void Build()
     {
         Folder(Art.TrimEnd('/')); Folder(Materials.TrimEnd('/'));
@@ -43,7 +43,7 @@ public static class EmboarPrefabBuilder
         AssetDatabase.SaveAssets();
         Debug.Log("Emboar move prefabs authored and registered; existing layouts preserved.");
     }
-    [MenuItem("Tools/Emboar/Render Ringbreaker Preview")]
+    [MenuItem("Tools/Characters/Emboar/Render Ringbreaker Preview")]
     public static void RenderPreview()
     {
         // A private preview scene: never replace or save the user's open scene.

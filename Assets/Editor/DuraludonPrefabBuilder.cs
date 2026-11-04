@@ -25,7 +25,7 @@ public static class DuraludonPrefabBuilder
     private static Material cyan, steel, bright, gold, fire, particles;
     private static Scene authoringScene;
 
-    [MenuItem("Tools/Duraludon/Create Missing Move Prefabs")]
+    [MenuItem("Tools/Characters/Duraludon/Create Missing Move Prefabs")]
     public static void Build()
     {
         Folder(DuraMovePrefabPaths.Folder.TrimEnd('/'));

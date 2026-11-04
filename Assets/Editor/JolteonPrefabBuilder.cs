@@ -20,7 +20,7 @@ public static class JolteonPrefabBuilder
     private static Mesh ring, bolt;
     private static Material gold, white, cyan, particle;
 
-    [MenuItem("Tools/Jolteon/Create Missing Rework Prefabs")]
+    [MenuItem("Tools/Characters/Jolteon/Create Missing Rework Prefabs")]
     public static void Build()
     {
         EnsureFolder(Folder.TrimEnd('/'));

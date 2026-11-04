@@ -50,8 +50,13 @@ public class OpenWorldLobbyUiLifecycleTests
         Assert.That(objects.Sum(instance => instance.GetComponentsInChildren<Component>(true).Length), Is.EqualTo(componentCount));
         var homeButton = objects[1].GetComponentInChildren<Button>(true);
         Assert.That(homeButton.gameObject.activeSelf, Is.False);
+#if UNITY_EDITOR && (UNITY_ANDROID || UNITY_IOS)
+        bool usesMobileControls = true;
+#else
+        bool usesMobileControls = Application.isMobilePlatform;
+#endif
         Assert.That(objects[0].GetComponentsInChildren<Transform>(true)
-            .Single(child => child.name == "City movement stick").gameObject.activeSelf, Is.EqualTo(Application.isMobilePlatform));
+            .Single(child => child.name == "City movement stick").gameObject.activeSelf, Is.EqualTo(usesMobileControls));
         LogAssert.NoUnexpectedReceived();
     }
 }

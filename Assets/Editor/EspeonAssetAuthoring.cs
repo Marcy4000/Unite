@@ -22,7 +22,7 @@ public static class EspeonAssetAuthoring
     private static Mesh ring, shard, star;
     private static Material lavender, pink, white, gold, particles;
 
-    [MenuItem("Tools/Espeon/Create Missing Move Assets")]
+    [MenuItem("Tools/Characters/Espeon/Create Missing Move Assets")]
     public static void Build()
     {
         foreach (string path in new[] { EspeonMoveRules.Folder + "Art", ResourcesFolder.TrimEnd('/'), "Assets/Materials/Espeon", "Assets/Moves/Espeon" }) Folder(path);

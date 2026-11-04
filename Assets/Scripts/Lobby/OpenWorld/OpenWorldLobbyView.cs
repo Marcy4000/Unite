@@ -11,10 +11,21 @@ public sealed class OpenWorldLobbyView : MonoBehaviour
     [SerializeField] private GameObject mobileControls;
     [SerializeField] private EventSystem lobbyEventSystem;
     public OpenWorldTrainerAvatar AvatarPrefab => avatarPrefab;
+    public static bool UsesMobileControls
+    {
+        get
+        {
+#if UNITY_EDITOR && (UNITY_ANDROID || UNITY_IOS)
+            return true;
+#else
+            return Application.isMobilePlatform;
+#endif
+        }
+    }
 
     private void Start()
     {
-        if (mobileControls != null) mobileControls.SetActive(Application.isMobilePlatform);
+        if (mobileControls != null) mobileControls.SetActive(UsesMobileControls);
         if (lobbyEventSystem != null && EventSystem.current != null && EventSystem.current != lobbyEventSystem)
             lobbyEventSystem.gameObject.SetActive(false);
         if (LobbyController.Instance == null)

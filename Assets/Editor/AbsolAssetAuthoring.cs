@@ -21,7 +21,7 @@ public static class AbsolAssetAuthoring
     private static Mesh crescent, edge, rear, ring;
     private static Material violet, blue, white, aim;
 
-    [MenuItem("Tools/Absol/Create Missing Move Assets")]
+    [MenuItem("Tools/Characters/Absol/Create Missing Move Assets")]
     public static void Build()
     {
         foreach (var path in new[] { Art.TrimEnd('/'), Visuals.TrimEnd('/'), "Assets/Materials/Absol", "Assets/Resources/AimIndicators", "Assets/Moves/Absol" }) Folder(path);

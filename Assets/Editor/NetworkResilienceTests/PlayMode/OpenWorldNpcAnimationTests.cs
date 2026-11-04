@@ -188,6 +188,27 @@ public sealed class OpenWorldNpcAnimationTests
     }
 
     [UnityTest]
+    public IEnumerator GenericCustomModelAnimatesAndReturnsToIdle()
+    {
+        Set("kind", Enum.ToObject(GameType("OpenWorldNpcKind"), 2));
+        yield return NearbyOwnerCanInteractButDistanceAndMenusBlockInteraction();
+    }
+
+    [UnityTest]
+    public IEnumerator InvisibleGenericSkipsNpcClipsAndStillAnimatesPlayer()
+    {
+        Set("kind", Enum.ToObject(GameType("OpenWorldNpcKind"), 2));
+        Set("visual", null);
+        yield return null;
+        Assert.That(npc.GetType().GetProperty("IsReady").GetValue(npc), Is.True);
+        Assert.That(Field("animator"), Is.Null);
+        yield return CheckOwnerAnimation(true);
+        Assert.That(npc.GetType().GetProperty("IsInteracting").GetValue(npc), Is.False,
+            "An NPC without an Animator must not wait forever for its configured clip.");
+        Assert.That(((PlayableGraph)Field("graph")).IsValid(), Is.False);
+    }
+
+    [UnityTest]
     public IEnumerator InteractionPlaysMaleOwnerClipAndCleansUp() => CheckOwnerAnimation(true);
 
     [UnityTest]
@@ -306,6 +327,48 @@ public sealed class OpenWorldNpcAnimationTests
         }
         Assert.That(playback.GetType().GetProperty("IsPlaying").GetValue(playback), Is.False);
         Assert.That(bone.localPosition.x, Is.EqualTo(3f).Within(0.02f));
+    }
+
+    [UnityTest]
+    public IEnumerator MaleSeatLocksPoseAndRestoresControlAfterStanding() => CheckSeat(true);
+
+    [UnityTest]
+    public IEnumerator FemaleSeatLocksPoseAndRestoresControlAfterStanding() => CheckSeat(false);
+
+    private IEnumerator CheckSeat(bool isMale)
+    {
+        yield return CreateOwner(isMale);
+        Set("kind", Enum.ToObject(GameType("OpenWorldNpcKind"), 2));
+        Set("interaction", Enum.ToObject(GameType("OpenWorldNpcInteraction"), 2));
+        root.transform.SetPositionAndRotation(new Vector3(1f, 0.3f, 1f), Quaternion.Euler(0f, 90f, 0f));
+        Set("seatFeetOffset", new Vector3(0f, 0f, 0.5f));
+        var avatar = trainerRoot.GetComponent(GameType("OpenWorldTrainerAvatar"));
+        var type = avatar.GetType();
+        Assert.That(type.GetMethod("TryUseSeat").Invoke(avatar, new object[] { npc }), Is.True);
+        Assert.That(trainerRoot.transform.position, Is.EqualTo(root.transform.TransformPoint(0f, 0f, 0.5f)));
+        Assert.That(trainerRoot.transform.eulerAngles.y, Is.EqualTo(90f).Within(0.1f));
+        Assert.That(type.GetProperty("CanStartEmote").GetValue(avatar), Is.False);
+        var position = trainerRoot.transform.position;
+        type.GetMethod("Move", Private).Invoke(avatar, new object[] { Vector2.up });
+        Assert.That(trainerRoot.transform.position, Is.EqualTo(position), "Sitting blocks both movement and gravity.");
+        var animator = (Animator)type.GetProperty("AnimationAnimator").GetValue(avatar);
+        string suffix = isMale ? "male" : "female";
+        yield return null;
+        Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName("ani_sitdown_lob_" + suffix), Is.True);
+        var sit = animator.runtimeAnimatorController.animationClips.First(clip => clip.name == "ani_sitdown_lob_" + suffix);
+        yield return new WaitForSeconds(sit.length + 0.4f);
+        Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName(isMale ? "ani_sit01_lob_male" : "ani_sit_lob_female"), Is.True);
+        type.GetMethod("SetInputBlocked").Invoke(avatar, new object[] { true });
+        Assert.That(type.GetMethod("TryLeaveSeat").Invoke(avatar, null), Is.False, "Menus/chat must block the stand-up input.");
+        type.GetMethod("SetInputBlocked").Invoke(avatar, new object[] { false });
+        Assert.That(type.GetMethod("TryLeaveSeat").Invoke(avatar, null), Is.True);
+        Assert.That(type.GetProperty("IsSeated").GetValue(avatar), Is.True);
+        yield return null;
+        Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName("ani_standup_lob_" + suffix), Is.True);
+        var stand = animator.runtimeAnimatorController.animationClips.First(clip => clip.name == "ani_standup_lob_" + suffix);
+        yield return new WaitForSeconds(stand.length + 0.5f);
+        Assert.That(type.GetProperty("IsSeated").GetValue(avatar), Is.False);
+        Assert.That(type.GetProperty("CanStartEmote").GetValue(avatar), Is.True);
     }
 
     private IEnumerator CreateOwner(bool isMale)

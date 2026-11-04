@@ -1,7 +1,8 @@
 ﻿// Author: Daniele Giardini - http://www.demigiant.com
 // Created: 2018/07/13
 
-#if true // MODULE_MARKER
+#if !DOTWEEN_NOSPRITES // MODULE_MARKER
+using System;
 using UnityEngine;
 using DG.Tweening.Core;
 using DG.Tweening.Plugins.Options;
@@ -9,7 +10,7 @@ using DG.Tweening.Plugins.Options;
 #pragma warning disable 1591
 namespace DG.Tweening
 {
-    public static class DOTweenModuleSprite
+	public static class DOTweenModuleSprite
     {
         #region Shortcuts
 

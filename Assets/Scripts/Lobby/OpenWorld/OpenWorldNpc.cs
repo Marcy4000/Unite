@@ -7,8 +7,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 using UnityEngine.UI;
 
-public enum OpenWorldNpcKind { Trainer, Pokemon }
-public enum OpenWorldNpcInteraction { Animation, Dialogue }
+public enum OpenWorldNpcKind { Trainer, Pokemon, Generic }
+public enum OpenWorldNpcInteraction { Animation, Dialogue, Seat }
 
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-100)]
@@ -16,6 +16,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
 {
     [Header("Appearance")]
     [SerializeField] private OpenWorldNpcKind kind;
+    [Tooltip("Model root. Optional for Generic NPCs; assign a child object for a custom model.")]
     [SerializeField] private GameObject visual;
     [SerializeField, TextArea] private string clothes;
 
@@ -34,6 +35,15 @@ public sealed class OpenWorldNpc : MonoBehaviour
     [SerializeField] private Dialogue[] dialogues = Array.Empty<Dialogue>();
     [SerializeField] private DialoguePortraitMode portraitMode = DialoguePortraitMode.Hidden;
     [SerializeField] private GameObject portraitPrefab;
+
+    [Header("Seat")]
+    [Tooltip("Optional feet anchor. Its forward direction is the direction the seated trainer faces.")]
+    [SerializeField] private Transform seatAnchor;
+    [Tooltip("Offset from the anchor to the trainer's feet, in anchor-local units. The hips sit behind the feet; place the feet in front of the cushion, at floor height.")]
+    [SerializeField] private Vector3 seatFeetOffset = new Vector3(0f, 0f, 0.45f);
+
+    public Vector3 SeatPosition => (seatAnchor != null ? seatAnchor : transform).TransformPoint(seatFeetOffset);
+    public float SeatYaw => (seatAnchor != null ? seatAnchor : transform).eulerAngles.y;
 
     [Header("Prompt")]
     [SerializeField] private Canvas prompt;
@@ -55,8 +65,8 @@ public sealed class OpenWorldNpc : MonoBehaviour
     public OpenWorldNpcInteraction Interaction => kind == OpenWorldNpcKind.Pokemon
         ? OpenWorldNpcInteraction.Animation : interaction;
     public bool IsInteracting { get; private set; }
-    public bool IsReady => initialized && animator != null && animator.isActiveAndEnabled &&
-        (trainer == null || trainer.IsInitialized);
+    public bool IsReady => initialized && (kind == OpenWorldNpcKind.Generic ||
+        (animator != null && animator.isActiveAndEnabled && (trainer == null || trainer.IsInitialized)));
 
     private void OnEnable()
     {
@@ -70,7 +80,8 @@ public sealed class OpenWorldNpc : MonoBehaviour
     {
         if (visual == null)
         {
-            Debug.LogWarning($"NPC {name} needs a visual model.", this);
+            if (kind == OpenWorldNpcKind.Generic) initialized = true;
+            else Debug.LogWarning($"NPC {name} needs a visual model.", this);
             return;
         }
         foreach (var collider in visual.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
@@ -104,7 +115,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
     {
         var activeAnimator = !initialized ? null : trainer != null
             ? (trainer.IsInitialized ? trainer.ActiveAnimator : null)
-            : visual.GetComponentInChildren<Animator>();
+            : visual != null ? visual.GetComponentInChildren<Animator>() : null;
         if (animator != activeAnimator)
         {
             StopAnimation();
@@ -147,6 +158,8 @@ public sealed class OpenWorldNpc : MonoBehaviour
 
     private bool CanInteract(OpenWorldTrainerAvatar avatar)
     {
+        if (Interaction == OpenWorldNpcInteraction.Seat && avatar != null && avatar.IsUsingSeat(this))
+            return isActiveAndEnabled && avatar.CanLeaveSeat;
         return isActiveAndEnabled && IsReady && !IsInteracting && avatar != null && avatar.IsSpawned &&
             avatar.CanStartEmote && (transform.position - avatar.Position).sqrMagnitude <= interactionDistance * interactionDistance;
     }
@@ -156,12 +169,19 @@ public sealed class OpenWorldNpc : MonoBehaviour
         UpdateSelection();
         var avatar = OpenWorldTrainerAvatar.LocalAvatar;
         if (nearest != this || !CanInteract(avatar)) return;
+        if (Interaction == OpenWorldNpcInteraction.Seat)
+        {
+            if (avatar.IsUsingSeat(this)) avatar.TryLeaveSeat();
+            else avatar.TryUseSeat(this);
+            SetPrompt(false);
+            return;
+        }
         if (Interaction == OpenWorldNpcInteraction.Dialogue)
         {
             if (DialogueSystem.Instance == null || dialogues == null || dialogues.Length == 0) return;
             DialogueSystem.Instance.SetDialogues(dialogues, portraitMode, portraitPrefab);
         }
-        if (interactAnimation != null)
+        if (interactAnimation != null && animator != null && animator.isActiveAndEnabled)
         {
             IsInteracting = true;
             PlayClip(interactAnimation);
@@ -216,7 +236,11 @@ public sealed class OpenWorldNpc : MonoBehaviour
     private void SetPrompt(bool visible)
     {
         if (prompt != null) prompt.gameObject.SetActive(visible);
-        if (promptText != null) promptText.text = $"{interactionLabel}  [E / A]";
+        if (promptText != null)
+        {
+            bool seatedHere = OpenWorldTrainerAvatar.LocalAvatar != null && OpenWorldTrainerAvatar.LocalAvatar.IsUsingSeat(this);
+            promptText.text = $"{(seatedHere ? "Stand up" : interactionLabel)}  [E / A]";
+        }
     }
 
     private void StopAnimation()
@@ -230,6 +254,8 @@ public sealed class OpenWorldNpc : MonoBehaviour
 
     private void OnDisable()
     {
+        var avatar = OpenWorldTrainerAvatar.LocalAvatar;
+        if (avatar != null && avatar.IsUsingSeat(this)) avatar.ClearSeat();
         ActiveNpcs.Remove(this);
         selectionFrame = -1;
         if (nearest == this) nearest = null;
@@ -249,5 +275,11 @@ public sealed class OpenWorldNpc : MonoBehaviour
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, interactionDistance);
+        if (Interaction == OpenWorldNpcInteraction.Seat)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(SeatPosition, 0.12f);
+            Gizmos.DrawRay(SeatPosition, Quaternion.Euler(0f, SeatYaw, 0f) * Vector3.forward * 0.6f);
+        }
     }
 }
