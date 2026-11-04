@@ -89,7 +89,7 @@ public class SpectatorSelectionOverlay : MonoBehaviour
                 x += width;
             }
             var members = group.OrderBy(p => NumberEncoder.FromBase64<short>(p.Data["PlayerPos"].Value)).ToArray();
-            int columns = groups.Length == 2 && members.Length > 3 ? 2 : 1;
+            int columns = race != null ? Mathf.Max(1, members.Length) : groups.Length == 2 && members.Length > 3 ? 2 : 1;
             int rows = Mathf.Max(1, Mathf.CeilToInt((float)members.Length / columns));
             for (int j = 0; j < members.Length; j++)
             {

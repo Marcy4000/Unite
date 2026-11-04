@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using Unite.Multiplayer;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,7 +17,10 @@ public class LobbyItemUI : MonoBehaviour
     public void Initialize(ISessionInfo lobby)
     {
         lobbyNameText.text = lobby.Properties.TryGetValue("HostDisplayName", out var hostName) ? $"{hostName.Value}'s lobby" : lobby.Name;
-        playerCountText.text = $"{lobby.MaxPlayers - lobby.AvailableSlots}/{lobby.MaxPlayers}";
+        int spectatorCapacity = lobby.Properties.TryGetValue("LobbyType", out var lobbyType) &&
+            lobbyType.Value == LobbyController.LobbyType.Custom.ToString() ? SpectatorSlotRules.Capacity : 0;
+        int playerCapacity = lobby.MaxPlayers - spectatorCapacity;
+        playerCountText.text = $"{lobby.MaxPlayers - lobby.AvailableSlots}/{playerCapacity}";
         MapInfo map = CharactersList.Instance.GetMapFromID(NumberEncoder.FromBase64<short>(lobby.Properties["SelectedMap"].Value));
 
         mapNameText.text = map.mapName;
