@@ -282,7 +282,21 @@ public partial class PlayerNetworkManager
             foreach (var pair in allocated)
             {
                 botPreferences[pair.Key] = pair.Value;
-                if (charactersPublished) SetParticipantCharacter(pair.Key, pair.Value);
+                if (charactersPublished)
+                {
+                    SetParticipantCharacter(pair.Key, pair.Value);
+                    // Publish the matching build with the visible pick. Keep it
+                    // stable on subsequent ticks and through final preparation.
+                    for (int i = 0; i < bots.Count; i++)
+                    {
+                        var bot = bots[i];
+                        if (bot.Id.ToString() != pair.Key || (bot.Character == pair.Value && bot.Loadout >= 0)) continue;
+                        bot.Character = pair.Value;
+                        bot.Loadout = BotRosterConfig.Instance != null ? BotRosterConfig.Instance.ChooseBuild(bot.Character, botRandom) : (short)-1;
+                        bots[i] = bot;
+                        break;
+                    }
+                }
             }
         }
     }
@@ -305,13 +319,6 @@ public partial class PlayerNetworkManager
         }
         ResolveBotCharacters(true);
         charactersFrozen = true;
-        for (int i = 0; i < bots.Count; i++)
-        {
-            var bot = bots[i];
-            bot.Character = GetSelectedCharacter(bot.Id.ToString());
-            bot.Loadout = BotRosterConfig.Instance != null ? BotRosterConfig.Instance.ChooseBuild(bot.Character, botRandom) : (short)-1;
-            bots[i] = bot;
-        }
         var snapshot = new List<ParticipantCharacter>();
         foreach (var choice in participantCharacters) snapshot.Add(choice);
         CommitCharactersRpc(snapshot.ToArray());

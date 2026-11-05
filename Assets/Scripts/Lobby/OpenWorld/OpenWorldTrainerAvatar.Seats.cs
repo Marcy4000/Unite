@@ -9,6 +9,10 @@ public sealed partial class OpenWorldTrainerAvatar
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private readonly NetworkVariable<double> seatStartedAt = new NetworkVariable<double>(0,
         NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private readonly NetworkVariable<bool> seatReserved = new NetworkVariable<bool>();
+    private readonly NetworkVariable<Vector3> reservedSeatPosition = new NetworkVariable<Vector3>();
+    private OpenWorldNpc pendingSeat;
+    private uint seatRequestId;
     private OpenWorldNpc activeSeat;
     private Animator seatAnimator;
     private byte appliedSeatPhase;
@@ -18,12 +22,62 @@ public sealed partial class OpenWorldTrainerAvatar
     public bool CanLeaveSeat => IsSeated && seatPhase.Value == 1 && !IsInputBlocked();
     public bool IsUsingSeat(OpenWorldNpc seat) => IsSeated && activeSeat == seat;
 
+    public bool IsSeatAvailable(OpenWorldNpc seat)
+    {
+        if (seat == null || !IsSpawned) return false;
+        foreach (var spawnedObject in NetworkManager.SpawnManager.SpawnedObjectsList)
+        {
+            var avatar = spawnedObject.GetComponent<OpenWorldTrainerAvatar>();
+            if (avatar != null && avatar.seatReserved.Value &&
+                (avatar.reservedSeatPosition.Value - seat.SeatPosition).sqrMagnitude < 0.0001f) return false;
+        }
+        return true;
+    }
+
     public bool TryUseSeat(OpenWorldNpc seat)
     {
         if (seat == null || !seat.isActiveAndEnabled || !IsSpawned || !IsOwner || !IsClient ||
-            LocalAvatar != this || !CanStartEmote || AnimationAnimator == null) return false;
+            LocalAvatar != this || pendingSeat != null || !CanStartEmote || AnimationAnimator == null ||
+            !IsSeatAvailable(seat)) return false;
         var animator = AnimationAnimator;
         if (!animator.HasState(0, SeatStateHash(false)) || !animator.HasState(0, SeatStateHash(true))) return false;
+        pendingSeat = seat;
+        RequestSeatRpc(seat.SeatPosition, ++seatRequestId);
+        return true;
+    }
+
+    private bool TryReserveSeat(Vector3 position)
+    {
+        if (!IsServer || seatReserved.Value) return false;
+        foreach (var seat in FindObjectsByType<OpenWorldNpc>(FindObjectsSortMode.None))
+        {
+            if (seat.Interaction != OpenWorldNpcInteraction.Seat ||
+                (seat.SeatPosition - position).sqrMagnitude >= 0.0001f || !IsSeatAvailable(seat)) continue;
+            reservedSeatPosition.Value = seat.SeatPosition;
+            seatReserved.Value = true;
+            return true;
+        }
+        return false;
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void RequestSeatRpc(Vector3 position, uint requestId)
+    {
+        SeatResultRpc(TryReserveSeat(position), requestId);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void SeatResultRpc(bool accepted, uint requestId)
+    {
+        if (requestId != seatRequestId) return;
+        var seat = pendingSeat;
+        pendingSeat = null;
+        if (!accepted) return;
+        if (seat == null || !seat.isActiveAndEnabled || !isActiveAndEnabled || !CanStartEmote || AnimationAnimator == null)
+        {
+            ReleaseSeatRpc();
+            return;
+        }
         emotes?.CancelForMovement();
         interactionAnimation?.StopPlayback();
         activeSeat = seat;
@@ -31,7 +85,12 @@ public sealed partial class OpenWorldTrainerAvatar
         seatStartedAt.Value = NetworkManager.ServerTime.Time;
         seatPhase.Value = 1;
         UpdateSeatAnimation();
-        return true;
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    private void ReleaseSeatRpc()
+    {
+        seatReserved.Value = false;
     }
 
     public bool TryLeaveSeat()
@@ -94,15 +153,20 @@ public sealed partial class OpenWorldTrainerAvatar
         // Wait for the controller's transition to finish before restoring movement/gravity.
         if (seatStateEntered && state.shortNameHash != stateHash && !animator.IsInTransition(0))
         {
-            seatPhase.Value = 0;
-            activeSeat = null;
-            verticalSpeed = 0f;
+            ClearSeat();
         }
     }
 
     public void ClearSeat()
     {
-        if (IsSpawned && IsOwner) seatPhase.Value = 0;
+        ++seatRequestId;
+        pendingSeat = null;
+        if (IsSpawned && IsOwner)
+        {
+            seatPhase.Value = 0;
+            ReleaseSeatRpc();
+        }
+        else if (IsSpawned && IsServer) seatReserved.Value = false;
         activeSeat = null;
         appliedSeatPhase = 0;
         if (seatAnimator != null && seatAnimator.isActiveAndEnabled) seatAnimator.SetTrigger(ResetAnim);

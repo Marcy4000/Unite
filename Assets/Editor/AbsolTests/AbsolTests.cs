@@ -364,8 +364,7 @@ public class AbsolTests
         var reference = Dump(id); var move = Activator.CreateInstance(T(name));
         Assert.That((float)move.GetType().GetProperty("IndicatorRange").GetValue(move), Is.EqualTo(reference.IndicatorRange / 1000f));
         Assert.That(Field<float>(move, "Cooldown"), Is.EqualTo(reference.CDTime / 1000f));
-        Assert.That((float)move.GetType().GetProperty("CameraReturnDelay").GetValue(move), Is.EqualTo(reference.CameraOffsetBySkillBtnLerpBackDelay / 1000f));
-        if (reference.CameraOffsetBySkillBtn != 0) Assert.That(reference.CameraOffsetBySkillBtnLerpBackDelay, Is.GreaterThan(0));
+        Assert.That((float)move.GetType().GetProperty("CameraReturnDelay").GetValue(move), Is.Zero, "Absol moves must not offset the aim camera.");
         var asset = new SerializedObject(AssetDatabase.LoadMainAssetAtPath("Assets/Moves/Absol/" + name + ".asset"));
         Assert.That(Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(asset.FindProperty("icon").objectReferenceValue)), Is.EqualTo(reference.IconPath));
         Assert.That(asset.FindProperty("uniteEnergyCost").intValue, Is.EqualTo(reference.EnergyCostVal));

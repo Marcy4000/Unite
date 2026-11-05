@@ -36,7 +36,6 @@ public static class AbsolMoveRules
     public static readonly Vector3 PsychoHitboxSize = new Vector3(3, 10, 3);
     public const float PsychoAnimationDuration = 0.35f;
     public const float PsychoWindup = 0.10f, PsychoRecovery = 0.08f;
-    public const float PsychoCameraReturnDelay = 0.7f, UniteCameraReturnDelay = 2.2f;
     public const float SuckerRange = 5f, SuckerBreakRange = 10f, SuckerStance = 1f, SuckerDashDuration = 0.2f;
     public const float SuckerRadius = 1.5f, SuckerBehindDistance = 1f, SuckerShoveDistance = 1.5f, SuckerShoveDuration = 0.2f;
     public const float SuckerRecovery = 0.08f;

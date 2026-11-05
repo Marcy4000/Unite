@@ -57,7 +57,8 @@ nested parameter interpretations have not been recovered. Consequently:
 
 `Assets/Editor/AbsolTests/AbsolTests.cs` compares collision sizes, movement
 parameters and finale radii directly with the AGE export, as well as checking
-active-skill cooldowns, indicators, energy, camera settings and icons.
+active-skill cooldowns, indicators, energy and icons. Camera checks enforce that
+all Absol moves leave aim camera offsets disabled rather than matching the export.
 
 `Assets/Editor/AbsolTests/PlayMode/AbsolServerTests.cs` exercises both server and
 host, including box-versus-sector boundaries, the boosted follow-up's independent

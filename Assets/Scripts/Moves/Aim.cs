@@ -52,7 +52,11 @@ public class Aim : NetworkBehaviour
 
     private Team teamToIgnore;
 
+#if UNITY_ANDROID
+    private string activeControlScheme = "Touch";
+#else
     private string activeControlScheme;
+#endif
     private GameObject customIndicator;
     private readonly Dictionary<string, GameObject> customIndicators = new Dictionary<string, GameObject>();
 
@@ -134,6 +138,10 @@ public class Aim : NetworkBehaviour
 
     private void DetectActiveDevice()
     {
+#if UNITY_ANDROID
+        SetActiveControlScheme(InputManager.Instance != null && InputManager.Instance.IsControllerMode
+            ? "Controller" : "Touch");
+#else
         if (InputManager.Instance != null)
         {
             SetActiveControlScheme(InputManager.Instance.IsControllerMode ? "Controller" : "Keyboard");
@@ -149,6 +157,7 @@ public class Aim : NetworkBehaviour
         {
             SetActiveControlScheme("Controller");
         }
+#endif
     }
 
     private void SetActiveControlScheme(string scheme)
@@ -449,10 +458,13 @@ public class Aim : NetworkBehaviour
         Vector3 aimDirection = Vector3.zero;
 
 #if UNITY_ANDROID
-    // Controller input (Android-specific behavior)
-    Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>();
-    aimDirection = new Vector3(input.x, 0, input.y) * maxCircleAimRadius;
-#else
+        if (activeControlScheme != "Controller")
+        {
+            Vector2 input = controls.Movement.AimMove.ReadValue<Vector2>();
+            aimDirection = new Vector3(input.x, 0, input.y) * maxCircleAimRadius;
+        }
+        else
+#endif
         if (activeControlScheme == "Keyboard")
         {
             // Mouse aiming
@@ -487,7 +499,6 @@ public class Aim : NetworkBehaviour
                 aimDirection = aimDirection.normalized * maxCircleAimRadius;
             }
         }
-#endif
 
         // Update the indicator position
         circleAreaIndicator.transform.localPosition = new Vector3(aimDirection.x, circleAreaIndicator.transform.localPosition.y, aimDirection.z);

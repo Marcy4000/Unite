@@ -68,6 +68,11 @@ public class SpectatorSelectionCard : MonoBehaviour
 
     public void Refresh(short character, string status, bool active, bool showItems)
     {
+        // Bot participants are recreated when the network roster is composed.
+        // Resolve the current snapshot so picks and their loadouts stay in sync.
+        var currentPlayer = LobbyController.Instance.GetPlayerByID(player.Id);
+        if (currentPlayer == null) return;
+        player = currentPlayer;
         if (previousCharacter != character)
         {
             previousCharacter = character;
@@ -87,9 +92,10 @@ public class SpectatorSelectionCard : MonoBehaviour
         if (items != lastItems) { heldItems.SetIcons(HeldItemDatabase.DeserializeHeldItems(items)); lastItems = items; }
         heldItems.gameObject.SetActive(showItems);
         battleItem.gameObject.SetActive(showItems);
-        if (showItems && int.TryParse(player.Data["BattleItem"].Value, out int item))
+        if (showItems)
         {
-            var asset = CharactersList.Instance.GetBattleItemByID(item);
+            var asset = int.TryParse(player.Data["BattleItem"].Value, out int item)
+                ? CharactersList.Instance.GetBattleItemByID(item) : null;
             battleItem.sprite = asset != null ? asset.icon : null;
             battleItem.enabled = battleItem.sprite != null;
         }

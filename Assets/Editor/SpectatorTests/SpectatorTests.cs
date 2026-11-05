@@ -247,6 +247,46 @@ public class SpectatorTests
     }
 
     [Test]
+    public void SelectionCardRefreshesBuildFromReplacementBotSnapshot()
+    {
+        var heldItem = AssetDatabase.LoadMainAssetAtPath("Assets/HeldItems/EmptyHeldItem.asset");
+        var items = Array.CreateInstance(T("HeldItemInfo"), 1);
+        items.SetValue(heldItem, 0);
+        Set(characters, "heldItems", items);
+        var battle = AssetDatabase.FindAssets("t:BattleItemAsset")
+            .Select(guid => AssetDatabase.LoadMainAssetAtPath(AssetDatabase.GUIDToAssetPath(guid)))
+            .First(asset => Get(asset, "icon") != null);
+        var battles = Array.CreateInstance(T("BattleItemAsset"), 1);
+        battles.SetValue(battle, 0);
+        Set(characters, "battleItems", battles);
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Spectator/SpectatorSelectionCard.prefab");
+        var card = Object.Instantiate(prefab, root.transform).GetComponent(T("SpectatorSelectionCard"));
+        var original = new GameSessionPlayer("bot-1", true);
+        original.Data["HeldItems"] = new PlayerProperty("");
+        original.Data["BattleItem"] = new PlayerProperty("-1");
+        Set(card, "player", original);
+        view.Players.Add(original);
+        Call(card, "Refresh", (short)-1, "Choosing…", false, true);
+        var image = (Component)Get(card, "battleItem");
+        Assert.That(image.GetType().GetProperty("enabled").GetValue(image), Is.False);
+
+        var updated = new GameSessionPlayer(original.Id, true);
+        updated.Data["HeldItems"] = new PlayerProperty(Convert.ToBase64String(new byte[] { 0, 0, 0 }));
+        updated.Data["BattleItem"] = new PlayerProperty("0");
+        view.Players.Clear();
+        view.Players.Add(updated);
+        Call(card, "Refresh", (short)-1, "", false, true);
+        Assert.That(Get(card, "lastItems"), Is.EqualTo(updated.Data["HeldItems"].Value));
+        Assert.That(image.GetType().GetProperty("sprite").GetValue(image), Is.SameAs(Get(battle, "icon")));
+        Assert.That(image.GetType().GetProperty("enabled").GetValue(image), Is.True);
+
+        updated.Data["BattleItem"] = new PlayerProperty("invalid");
+        Call(card, "Refresh", (short)-1, "", false, true);
+        Assert.That(image.GetType().GetProperty("sprite").GetValue(image), Is.Null);
+        Assert.That(image.GetType().GetProperty("enabled").GetValue(image), Is.False);
+    }
+
+    [Test]
     public void SelectionCardsKeepLoadingScreenProportionsInEveryGridSize()
     {
         var loading = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/LoadingScreen/LoadingScreenPlayer.prefab");

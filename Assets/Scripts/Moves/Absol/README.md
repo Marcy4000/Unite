@@ -63,11 +63,7 @@ All pauses are seconds and live in `AbsolMoveRules`:
   to idle and transitioning into/between Unite phases. Zero restores instant
   playback. Blends overlap the existing animations and never add cast time,
   delay damage or extend movement/action locks. Other characters opt out by default.
-- `PsychoCameraReturnDelay` / `UniteCameraReturnDelay`: 0.70 / 2.20 seconds.
-  The local aim camera follows the indicated direction/range and holds that
-  relative offset after release. Cancellation, death, disabling the camera or
-  manual touch/keyboard panning releases it immediately. A newer aim owns its
-  own release; old cleanup cannot clear or extend that newer aim.
+- Absol moves do not offset the camera while aiming or after release.
 
 Zero disables an individual windup/recovery. Your configured animation names
 and spatial tuning are not reset by these timing controls.

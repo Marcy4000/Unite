@@ -161,6 +161,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
         if (Interaction == OpenWorldNpcInteraction.Seat && avatar != null && avatar.IsUsingSeat(this))
             return isActiveAndEnabled && avatar.CanLeaveSeat;
         return isActiveAndEnabled && IsReady && !IsInteracting && avatar != null && avatar.IsSpawned &&
+            (Interaction != OpenWorldNpcInteraction.Seat || avatar.IsSeatAvailable(this)) &&
             avatar.CanStartEmote && (transform.position - avatar.Position).sqrMagnitude <= interactionDistance * interactionDistance;
     }
 
@@ -194,6 +195,18 @@ public sealed class OpenWorldNpc : MonoBehaviour
     {
         bool hasPose = poseBlend.IsInitialized;
         poseBlend.Initialize(animator);
+        if (hasPose && animationBlendDuration > 0f)
+        {
+            // Reconstruct the last displayed pose before replacing the graph. The
+            // Animator may have overwritten the transforms since our LateUpdate.
+            // This also preserves an interrupted blend without caching every frame.
+            if (graph.IsValid())
+            {
+                graph.Evaluate(0f);
+                poseBlend.Apply(0f);
+            }
+            poseBlend.RememberPose();
+        }
         poseBlend.Begin(hasPose ? animationBlendDuration : 0f);
         if (graph.IsValid()) graph.Destroy();
         currentClip = clip;
@@ -208,7 +221,6 @@ public sealed class OpenWorldNpc : MonoBehaviour
         graph.Play();
         graph.Evaluate(0f);
         poseBlend.Apply(0f);
-        poseBlend.RememberPose();
     }
 
     private void UpdateAnimation(float deltaTime)
@@ -216,7 +228,6 @@ public sealed class OpenWorldNpc : MonoBehaviour
         if (!graph.IsValid() || currentClip == null)
         {
             poseBlend.Apply(deltaTime);
-            poseBlend.RememberPose();
             return;
         }
         animationTime += deltaTime;
@@ -230,7 +241,6 @@ public sealed class OpenWorldNpc : MonoBehaviour
         playable.SetTime(sampleTime);
         graph.Evaluate(0f);
         poseBlend.Apply(deltaTime);
-        poseBlend.RememberPose();
     }
 
     private void SetPrompt(bool visible)

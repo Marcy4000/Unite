@@ -49,6 +49,9 @@ public class InputManager : MonoBehaviour
     {
         if (playerControls.Movement.AuxiliaryAction.WasPressedThisFrame() && (SettingsManager.Instance == null || !SettingsManager.Instance.IsMenuOpen))
             AuxiliaryActionUI.AuxiliaryAction?.TryActivate();
+#if UNITY_ANDROID
+        UpdateAndroidInputMode();
+#else
         var mouse = Mouse.current;
         var mouseActive = mouse != null && (mouse.delta.ReadValue().sqrMagnitude > 0.01f ||
             mouse.scroll.ReadValue().sqrMagnitude > 0f || mouse.leftButton.wasPressedThisFrame ||
@@ -66,6 +69,7 @@ public class InputManager : MonoBehaviour
         }
         UpdateInputMode(mouseActive, keyboardActive, controllerActive, Time.unscaledTime);
         if (Gamepad.all.Count == 0) IsControllerMode = false;
+#endif
         var game = GameManager.Instance;
         var inGame = game != null && (game.GameState == GameState.Playing || game.GameState == GameState.Starting);
         var menuOpen = (SettingsManager.Instance != null && SettingsManager.Instance.IsMenuOpen) ||
@@ -74,6 +78,33 @@ public class InputManager : MonoBehaviour
                 !string.IsNullOrEmpty(LobbyController.Instance.LastOperationError)));
         Cursor.visible = ShouldShowCursor(inGame, menuOpen, hasFocus, Time.unscaledTime);
     }
+
+#if UNITY_ANDROID
+    private void UpdateAndroidInputMode()
+    {
+        var controllerConnected = false;
+        var controllerActive = false;
+        foreach (var gamepad in Gamepad.all)
+        {
+            var onScreen = false;
+            foreach (var usage in gamepad.usages)
+                if (usage == "OnScreen") onScreen = true;
+            if (onScreen) continue;
+
+            controllerConnected = true;
+            if (gamepad.leftStick.ReadValue().sqrMagnitude > 0.09f ||
+                gamepad.rightStick.ReadValue().sqrMagnitude > 0.09f)
+                controllerActive = true;
+            foreach (var control in gamepad.allControls)
+                if (control is ButtonControl button && button.wasPressedThisFrame) controllerActive = true;
+        }
+
+        if (!controllerConnected || Touchscreen.current?.press.isPressed == true)
+            IsControllerMode = false;
+        else if (controllerActive)
+            IsControllerMode = true;
+    }
+#endif
 
     private void UpdateInputMode(bool mouseActive, bool keyboardActive, bool controllerActive, float now)
     {
@@ -96,6 +127,12 @@ public class InputManager : MonoBehaviour
 
     private void OnDisable() => Cursor.visible = true;
 
+    // InputActionReferences point at the imported asset; gameplay uses this runtime copy.
+    public InputAction GetRuntimeAction(InputAction action)
+    {
+        return action == null ? null : playerControls.asset.FindAction(action.id.ToString());
+    }
+
     public void StartRebinding(
         InputAction action,
         string controlScheme = null,
@@ -106,6 +143,13 @@ public class InputManager : MonoBehaviour
         if (action == null)
         {
             Debug.LogError("InputAction cannot be null.");
+            return;
+        }
+
+        action = GetRuntimeAction(action);
+        if (action == null)
+        {
+            Debug.LogError("InputAction was not found in the runtime controls.");
             return;
         }
 

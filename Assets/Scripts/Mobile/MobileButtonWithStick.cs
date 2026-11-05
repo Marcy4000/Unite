@@ -93,6 +93,9 @@ public class MobileButtonWithStick : OnScreenControl
     // Unity's new input system callback for button press
     public void OnButtonPress(InputAction.CallbackContext context)
     {
+#if UNITY_ANDROID
+        if (context.control?.device != control?.device) return;
+#endif
         if (context.phase == InputActionPhase.Performed)
         {
             isButtonPressed = true;
@@ -123,7 +126,11 @@ public class MobileButtonWithStick : OnScreenControl
     // Method to send input to the game
     private void SendInputToControl(Vector2 input)
     {
+#if UNITY_ANDROID
+        var gamepad = control?.device as Gamepad;
+#else
         var gamepad = InputSystem.GetDevice<Gamepad>();
+#endif
         if (gamepad != null)
         {
             InputSystem.QueueDeltaStateEvent(gamepad.rightStick, input);

@@ -60,7 +60,6 @@ public class AbsolPsychoCut : PrefabMove
     public override string PrefabPath => AbsolMoveRules.Folder + "AbsolPsychoCut.prefab";
     public override MoveAimStyle AimStyle => MoveAimStyle.Direction;
     public override float Range => AbsolMoveRules.PsychoRange;
-    public override float CameraReturnDelay => AbsolMoveRules.PsychoCameraReturnDelay;
 }
 
 public class AbsolSuckerPunch : PrefabMove
@@ -81,7 +80,6 @@ public class AbsolMidnightSlash : PrefabMove
     public override MoveAimStyle AimStyle => MoveAimStyle.Direction;
     public override float Range => AbsolMoveRules.UniteLength;
     public override float IndicatorRange => AbsolMoveRules.UniteIndicatorRange;
-    public override float CameraReturnDelay => AbsolMoveRules.UniteCameraReturnDelay;
     public override bool LockDuringLoad => true;
     public override string IndicatorPath => "AimIndicators/AbsolMidnightSlash";
     public override Vector3 IndicatorScale => new Vector3(AbsolMoveRules.UniteWidth, 1, IndicatorRange);

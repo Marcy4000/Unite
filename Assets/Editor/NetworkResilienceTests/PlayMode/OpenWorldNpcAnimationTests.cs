@@ -284,6 +284,28 @@ public sealed class OpenWorldNpcAnimationTests
     }
 
     [UnityTest]
+    public IEnumerator InterruptedNpcBlendStartsFromTheLastDisplayedBlendedPose()
+    {
+        Set("animationTime", 0f);
+        Call("UpdateAnimation", 0.5f);
+        Call("PlayClip", interact);
+        Call("UpdateAnimation", 0.1f);
+        var bone = root.transform.Find("Visual/Animated bone");
+        float displayed = bone.localPosition.x;
+        Assert.That(displayed, Is.EqualTo(5.3f).Within(0.02f));
+
+        // Simulate the normal Animator update overwriting the displayed blend.
+        bone.localPosition = Vector3.right * 999f;
+        Call("PlayClip", idle);
+        Assert.That(bone.localPosition.x, Is.EqualTo(displayed).Within(0.02f));
+        Call("UpdateAnimation", 0.1f);
+        Assert.That(bone.localPosition.x, Is.EqualTo((displayed + 0.1f) * 0.5f).Within(0.02f));
+        Call("UpdateAnimation", 0.1f);
+        Assert.That(bone.localPosition.x, Is.EqualTo(0.2f).Within(0.02f));
+        yield return null;
+    }
+
+    [UnityTest]
     public IEnumerator ZeroBlendDurationRetainsInstantTransitions()
     {
         Set("animationBlendDuration", 0f);
@@ -334,6 +356,67 @@ public sealed class OpenWorldNpcAnimationTests
 
     [UnityTest]
     public IEnumerator FemaleSeatLocksPoseAndRestoresControlAfterStanding() => CheckSeat(false);
+
+    [UnityTest]
+    public IEnumerator SeatReservationRejectsCompetingPlayersUntilReleased()
+    {
+        yield return CreateOwner(true);
+        Set("kind", Enum.ToObject(GameType("OpenWorldNpcKind"), 2));
+        Set("interaction", Enum.ToObject(GameType("OpenWorldNpcInteraction"), 2));
+        var avatarType = GameType("OpenWorldTrainerAvatar");
+        var avatar = trainerRoot.GetComponent(avatarType);
+        var reserve = avatarType.GetMethod("TryReserveSeat", Private);
+        var position = (Vector3)npc.GetType().GetProperty("SeatPosition").GetValue(npc);
+        GameObject contender = null;
+#if UNITY_EDITOR
+        contender = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Lobby/OpenWorldTrainer.prefab"));
+#endif
+        try
+        {
+            contender.GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.Singleton.LocalClientId);
+            var otherAvatar = contender.GetComponent(avatarType);
+            Assert.That(reserve.Invoke(avatar, new object[] { position }), Is.True);
+            Assert.That(avatarType.GetProperty("IsSeated").GetValue(avatar), Is.False,
+                "The reservation must lock the seat before the owner's sitting state arrives.");
+            Assert.That(reserve.Invoke(otherAvatar, new object[] { position }), Is.False);
+            Assert.That(avatarType.GetMethod("IsSeatAvailable").Invoke(otherAvatar, new object[] { npc }), Is.False);
+            avatarType.GetMethod("ClearSeat").Invoke(avatar, null);
+            Assert.That(reserve.Invoke(otherAvatar, new object[] { position }), Is.True);
+            contender.GetComponent<NetworkObject>().Despawn();
+            Assert.That(reserve.Invoke(avatar, new object[] { position }), Is.True,
+                "Despawning the occupant must make the seat available again.");
+        }
+        finally
+        {
+            if (contender != null) Object.Destroy(contender);
+        }
+    }
+
+    [UnityTest]
+    public IEnumerator SeatReservationDoesNotBlockOtherSeats()
+    {
+        yield return CreateOwner(true);
+        Set("kind", Enum.ToObject(GameType("OpenWorldNpcKind"), 2));
+        Set("interaction", Enum.ToObject(GameType("OpenWorldNpcInteraction"), 2));
+        var avatarType = GameType("OpenWorldTrainerAvatar");
+        var avatar = trainerRoot.GetComponent(avatarType);
+        var reserve = avatarType.GetMethod("TryReserveSeat", Private);
+        var position = (Vector3)npc.GetType().GetProperty("SeatPosition").GetValue(npc);
+        Assert.That(reserve.Invoke(avatar, new object[] { position + Vector3.right * 100f }), Is.False,
+            "The server must reject positions that do not identify a real seat.");
+        Assert.That(reserve.Invoke(avatar, new object[] { position }), Is.True);
+        var otherSeat = Object.Instantiate(root);
+        try
+        {
+            otherSeat.transform.position += Vector3.right * 2f;
+            Assert.That(avatarType.GetMethod("IsSeatAvailable").Invoke(avatar,
+                new object[] { otherSeat.GetComponent(npc.GetType()) }), Is.True);
+        }
+        finally
+        {
+            Object.Destroy(otherSeat);
+        }
+    }
 
     private IEnumerator CheckSeat(bool isMale)
     {
