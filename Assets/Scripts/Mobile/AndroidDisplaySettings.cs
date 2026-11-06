@@ -19,25 +19,29 @@ public sealed class AndroidDisplaySettings : MonoBehaviour
     public static bool IsMobileDisplay => Application.platform == RuntimePlatform.Android ||
         Application.platform == RuntimePlatform.IPhonePlayer;
 
-    public static int SelectTargetFrameRate(double refreshRate)
+    public const string FrameRateKey = "Display.TargetFrameRate";
+    public const string RefreshRateKey = "Display.RefreshRate";
+    public static int PreferredFrameRate => SelectTargetFrameRate(PlayerPrefs.GetInt(FrameRateKey, 60));
+    // Zero lets Android choose its display mode. FPS and physical refresh are separate.
+    public static int PreferredRefreshRate => Mathf.Clamp(PlayerPrefs.GetInt(RefreshRateKey, 0), 0, 360);
+
+    public static int SelectTargetFrameRate(double requestedFrameRate)
     {
-        return double.IsNaN(refreshRate) || double.IsInfinity(refreshRate) || refreshRate < 1d
-            ? 60 : Mathf.Max(1, Mathf.RoundToInt((float)refreshRate));
+        return double.IsNaN(requestedFrameRate) || double.IsInfinity(requestedFrameRate) || requestedFrameRate < 15d
+            ? 60 : Mathf.RoundToInt((float)System.Math.Min(360d, requestedFrameRate));
     }
 
     public static bool ApplyMobileFrameRatePolicy()
     {
         if (!IsMobileDisplay) return false;
 
-        double refreshRate = Screen.currentResolution.refreshRateRatio.value;
 #if UNITY_ANDROID && !UNITY_EDITOR
         try
         {
             using (var display = new AndroidJavaClass("com.nottimistudios.unite.UniteAndroidDisplay"))
             {
                 var activity = UnityEngine.Android.AndroidApplication.currentActivity;
-                refreshRate = display.CallStatic<float>("getHighestRefreshRate", activity);
-                display.CallStatic("apply", activity);
+                display.CallStatic("apply", activity, PreferredRefreshRate);
             }
         }
         catch (AndroidJavaException exception)
@@ -46,7 +50,7 @@ public sealed class AndroidDisplaySettings : MonoBehaviour
         }
 #endif
         QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = SelectTargetFrameRate(refreshRate);
+        Application.targetFrameRate = PreferredFrameRate;
         return true;
     }
 

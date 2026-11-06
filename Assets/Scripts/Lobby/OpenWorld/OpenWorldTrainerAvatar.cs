@@ -39,6 +39,7 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
     private static readonly int StopRun = Animator.StringToHash("stopRun");
     private static readonly int UseAltIdle = Animator.StringToHash("useAltIdle");
     private static readonly int ResetAnim = Animator.StringToHash("ResetAnim");
+    private const float RemoteRunStopDelay = 0.3f;
     private static Vector3 lastLocalPosition;
     private static string lastLocalPlayerId;
     private static float lastLocalYaw;
@@ -60,6 +61,7 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
     private float verticalSpeed;
     private float cameraYaw;
     private float nextChatScan;
+    private float remoteRunTimeRemaining;
     private bool isRunning;
     private bool explicitInputBlocked;
     private bool hasFocus = true;
@@ -165,6 +167,7 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
         if (restoreController) characterController.enabled = true;
         verticalSpeed = 0f;
         previousPosition = position;
+        remoteRunTimeRemaining = 0f;
         if (alignCamera)
         {
             cameraYaw = yaw;
@@ -193,6 +196,9 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
         playerName.OnValueChanged += OnIdentityChanged;
         clothing.OnValueChanged += OnClothingChanged;
         previousPosition = transform.position;
+        remoteRunTimeRemaining = 0f;
+        nextIdleVariationAt = 0d;
+        appliedIdleVariation = 0;
         safeSpawnPosition = transform.position;
         CreateVisual();
         RefreshNameplate();
@@ -322,10 +328,6 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
             localCamera.nearClipPlane = 0.1f;
             localCamera.farClipPlane = 1000f;
             localCamera.fieldOfView = 55f;
-            var cameraData = localCamera.GetUniversalAdditionalCameraData();
-            if (cameraData != null) cameraData.renderPostProcessing = true;
-            cameraData.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
-            cameraData.antialiasingQuality = AntialiasingQuality.Medium;
             cameraBrain = cameraObject.AddComponent<CinemachineBrain>();
             cameraBrain.ChannelMask = OutputChannels.Channel15;
             cameraBrain.UpdateMethod = CinemachineBrain.UpdateMethods.ManualUpdate;
@@ -501,7 +503,17 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
         var displacement = transform.position - previousPosition;
         displacement.y = 0f;
         previousPosition = transform.position;
-        UpdateAnimation(deltaTime > 0f && displacement.sqrMagnitude > 0.01f * deltaTime * deltaTime);
+        bool moving = deltaTime > 0f && displacement.sqrMagnitude > 0.01f * deltaTime * deltaTime;
+        // Network interpolation can briefly stop between position updates. Keep the
+        // remote run cycle alive through those gaps, without delaying local stops.
+        if (IsOwner)
+            remoteRunTimeRemaining = 0f;
+        else if (moving)
+            remoteRunTimeRemaining = RemoteRunStopDelay;
+        else
+            remoteRunTimeRemaining = Mathf.Max(0f, remoteRunTimeRemaining - deltaTime);
+        UpdateAnimation(moving || remoteRunTimeRemaining > 0f);
+        UpdateIdleVariation();
         if (IsOwner && LocalAvatar == this)
         {
             RememberLocalPose();
@@ -516,6 +528,7 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
         {
             movementAnimator = null;
             isRunning = false;
+            remoteRunTimeRemaining = 0f;
             return;
         }
         var animator = trainerModel != null && trainerModel.IsInitialized ? trainerModel.ActiveAnimator : null;

@@ -133,6 +133,9 @@ public class DisplayPerformanceTests
         finally { Object.DestroyImmediate(root); }
     }
 
+    [TestCase(-1d, 60)]
+    [TestCase(15d, 15)]
+    [TestCase(1000d, 360)]
     [TestCase(0d, 60)]
     [TestCase(double.NaN, 60)]
     [TestCase(double.PositiveInfinity, 60)]
@@ -141,7 +144,7 @@ public class DisplayPerformanceTests
     [TestCase(119.88d, 120)]
     [TestCase(144d, 144)]
     [TestCase(165d, 165)]
-    public void MobileTargetUsesAdvertisedRefreshWithSafeFallback(double refresh, int expected)
+    public void MobileTargetValidatesSavedCapWithSafeFallback(double refresh, int expected)
     {
         Assert.That(RuntimeType("AndroidDisplaySettings").GetMethod("SelectTargetFrameRate")
             .Invoke(null, new object[] { refresh }), Is.EqualTo(expected));

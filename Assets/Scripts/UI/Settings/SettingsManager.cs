@@ -20,6 +20,12 @@ public class SettingsManager : MonoBehaviour
 
     [SerializeField] private TMP_Dropdown resolutionDropdown;
     [SerializeField] private TMP_Dropdown frameRateDropdown;
+    [SerializeField] private TMP_Dropdown refreshRateDropdown;
+    [SerializeField] private TMP_Dropdown renderScaleDropdown;
+    [UnityEngine.Serialization.FormerlySerializedAs("cityAntiAliasingDropdown")]
+    [SerializeField] private TMP_Dropdown antiAliasingDropdown;
+    [UnityEngine.Serialization.FormerlySerializedAs("cityPostProcessingDropdown")]
+    [SerializeField] private TMP_Dropdown postProcessingDropdown;
     [SerializeField] private Toggle fullscreenToggle;
     [SerializeField] private Toggle vsyncToggle;
     [SerializeField] private Toggle openWorldLobbyToggle;
@@ -37,6 +43,7 @@ public class SettingsManager : MonoBehaviour
     private readonly List<Vector2Int> resolutions = new List<Vector2Int>();
     private readonly List<int> frameRates = new List<int>();
     private int selectedFrameRate = -1;
+    private readonly List<int> refreshRates = new List<int> { 0, 60, 90, 120, 144, 165, 240 };
     public bool IsMenuOpen => (settingsPanel != null && settingsPanel.activeInHierarchy) ||
         (creditsPanel != null && creditsPanel.activeInHierarchy) ||
         (keybindsPanel != null && keybindsPanel.activeInHierarchy);
@@ -46,6 +53,14 @@ public class SettingsManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        int savedQuality = PlayerPrefs.GetInt(GraphicsPreferences.QualityKey, QualitySettings.GetQualityLevel());
+        if (savedQuality >= 0 && savedQuality < QualitySettings.names.Length)
+            QualitySettings.SetQualityLevel(savedQuality);
+        if (!AndroidDisplaySettings.IsMobileDisplay && PlayerPrefs.HasKey("Display.VSync"))
+            QualitySettings.vSyncCount = PlayerPrefs.GetInt("Display.VSync") != 0 ? 1 : 0;
+        GraphicsPreferences.MigrateLegacyPreferences();
+        CameraGraphicsSettings.Enable();
+        GraphicsPreferences.Apply();
         AndroidDisplaySettings.ApplyMobileFrameRatePolicy();
     }
 
@@ -53,9 +68,12 @@ public class SettingsManager : MonoBehaviour
     {
         InitializeOpenWorldLobbyToggle();
 
-        selectedFrameRate = Application.targetFrameRate > 0 ? Application.targetFrameRate : -1;
+        selectedFrameRate = AndroidDisplaySettings.IsMobileDisplay ? AndroidDisplaySettings.PreferredFrameRate
+            : PlayerPrefs.GetInt(AndroidDisplaySettings.FrameRateKey, Application.targetFrameRate > 0 ? Application.targetFrameRate : -1);
+        InitializeGraphicsOptions();
         InitializeResolutionOptions(Screen.resolutions, new Vector2Int(Screen.width, Screen.height));
         InitializeFrameRateOptions();
+        ApplyFrameRate();
         RefreshDisplayControls();
 
         masterVolumeSlider.onValueChanged.AddListener(SetMasterVolume);
@@ -112,7 +130,11 @@ public class SettingsManager : MonoBehaviour
             openWorldLobbyToggle.onValueChanged.RemoveListener(SetOpenWorldLobby);
 
         if (Instance == this)
+        {
+            CameraGraphicsSettings.Disable();
+            GraphicsPreferences.ReleasePipeline();
             Instance = null;
+        }
     }
 
     private void UpdateOptions()
@@ -121,6 +143,7 @@ public class SettingsManager : MonoBehaviour
             openWorldLobbyToggle.SetIsOnWithoutNotify(AutoJoinOpenWorldLobby);
 
         InitializeResolutionOptions(Screen.resolutions, new Vector2Int(Screen.width, Screen.height));
+        RefreshGraphicsControls();
         RefreshDisplayControls();
         for (int i = 0; i < qualityToggles.Length; i++)
         {
@@ -168,7 +191,7 @@ public class SettingsManager : MonoBehaviour
 
     public void SetResolution(int resolutionIndex)
     {
-        if (AndroidDisplaySettings.ApplyMobileFrameRatePolicy()) return;
+        if (AndroidDisplaySettings.IsMobileDisplay) return;
         if (Application.platform == RuntimePlatform.WebGLPlayer ||
             resolutionIndex < 0 || resolutionIndex >= resolutions.Count) return;
         Vector2Int resolution = resolutions[resolutionIndex];
@@ -191,12 +214,16 @@ public class SettingsManager : MonoBehaviour
 
     public void SetQuality(int qualityIndex)
     {
+        if (qualityIndex < 0 || qualityIndex >= QualitySettings.names.Length) return;
         int vSyncCount = QualitySettings.vSyncCount;
+        GraphicsPreferences.ReleasePipeline();
         QualitySettings.SetQualityLevel(qualityIndex);
         QualitySettings.vSyncCount = vSyncCount;
-        if (!AndroidDisplaySettings.ApplyMobileFrameRatePolicy() &&
-            Application.platform != RuntimePlatform.WebGLPlayer)
-            ApplyFrameRate();
+        PlayerPrefs.SetInt(GraphicsPreferences.QualityKey, qualityIndex);
+        PlayerPrefs.Save();
+        GraphicsPreferences.Apply();
+        ApplyFrameRate();
+        RefreshGraphicsControls();
         RefreshDisplayControls();
     }
 
@@ -206,6 +233,8 @@ public class SettingsManager : MonoBehaviour
         {
             if (Application.platform == RuntimePlatform.WebGLPlayer) return;
             QualitySettings.vSyncCount = enabled ? 1 : 0;
+            PlayerPrefs.SetInt("Display.VSync", enabled ? 1 : 0);
+            PlayerPrefs.Save();
             ApplyFrameRate();
         }
         RefreshDisplayControls();
@@ -244,7 +273,7 @@ public class SettingsManager : MonoBehaviour
         if (selectedFrameRate > 0 && !frameRates.Contains(selectedFrameRate))
             frameRates.Add(selectedFrameRate);
         frameRates.Sort();
-        frameRates.Insert(0, -1);
+        if (!AndroidDisplaySettings.IsMobileDisplay) frameRates.Insert(0, -1);
         var options = new List<string>();
         foreach (int frameRate in frameRates)
             options.Add(frameRate < 0 ? "Unlimited" : $"{frameRate} FPS");
@@ -255,16 +284,20 @@ public class SettingsManager : MonoBehaviour
 
     public void SetFrameRate(int frameRateIndex)
     {
-        if (AndroidDisplaySettings.ApplyMobileFrameRatePolicy() ||
-            Application.platform == RuntimePlatform.WebGLPlayer || QualitySettings.vSyncCount > 0 ||
+        if (Application.platform == RuntimePlatform.WebGLPlayer ||
+            (!AndroidDisplaySettings.IsMobileDisplay && QualitySettings.vSyncCount > 0) ||
             frameRateIndex < 0 || frameRateIndex >= frameRates.Count) return;
         selectedFrameRate = frameRates[frameRateIndex];
+        PlayerPrefs.SetInt(AndroidDisplaySettings.FrameRateKey, selectedFrameRate);
+        PlayerPrefs.Save();
         ApplyFrameRate();
         RefreshDisplayControls();
     }
 
     private void ApplyFrameRate()
     {
+        if (Application.platform == RuntimePlatform.WebGLPlayer) return;
+        if (AndroidDisplaySettings.ApplyMobileFrameRatePolicy()) return;
         Application.targetFrameRate = QualitySettings.vSyncCount > 0 ? -1 : selectedFrameRate;
     }
 
@@ -286,15 +319,72 @@ public class SettingsManager : MonoBehaviour
         if (resolutionDropdown != null)
             resolutionDropdown.interactable = !mobile && !browser;
         if (frameRateDropdown == null) return;
-        frameRateDropdown.interactable = !mobile && !browser && !synced;
+        frameRateDropdown.interactable = !browser && (mobile || !synced);
         frameRateDropdown.SetValueWithoutNotify(Mathf.Max(0, frameRates.IndexOf(selectedFrameRate)));
         frameRateDropdown.RefreshShownValue();
         if (frameRateDropdown.captionText == null) return;
-        if (mobile || browser)
+        if (browser)
             frameRateDropdown.captionText.text = "Automatic";
-        else if (synced)
+        else if (!mobile && synced)
             frameRateDropdown.captionText.text = "VSync (" +
                 (Screen.currentResolution.refreshRateRatio.value / QualitySettings.vSyncCount).ToString("0.#") + " FPS)";
+    }
+
+    private void InitializeGraphicsOptions()
+    {
+        ConfigureDropdown(renderScaleDropdown, new[] { "Use preset", "50%", "67%", "75%", "85%", "100% (Native)" }, SetRenderScale);
+        ConfigureDropdown(antiAliasingDropdown, new[] { "Use preset", "Off", "FXAA (Fast)", "SMAA (Sharper)" }, SetAntiAliasing);
+        ConfigureDropdown(postProcessingDropdown, new[] { "Use preset", "Off", "On" }, SetPostProcessing);
+        if (refreshRateDropdown != null)
+        {
+            int saved = AndroidDisplaySettings.PreferredRefreshRate;
+            if (!refreshRates.Contains(saved)) { refreshRates.Add(saved); refreshRates.Sort(); }
+            var options = new List<string>();
+            foreach (int rate in refreshRates) options.Add(rate == 0 ? "System default" : rate + " Hz (Requested)");
+            ConfigureDropdown(refreshRateDropdown, options.ToArray(), SetRefreshRate);
+            // Physical display mode selection is exposed only where our native bridge supports it.
+            refreshRateDropdown.transform.parent.gameObject.SetActive(Application.platform == RuntimePlatform.Android);
+        }
+        RefreshGraphicsControls();
+    }
+
+    private static void ConfigureDropdown(TMP_Dropdown dropdown, string[] options, UnityEngine.Events.UnityAction<int> callback)
+    {
+        if (dropdown == null) return;
+        dropdown.ClearOptions();
+        dropdown.AddOptions(new List<string>(options));
+        dropdown.onValueChanged.RemoveListener(callback);
+        dropdown.onValueChanged.AddListener(callback);
+    }
+
+    private void RefreshGraphicsControls()
+    {
+        if (renderScaleDropdown != null) renderScaleDropdown.SetValueWithoutNotify(GraphicsPreferences.ScaleOption);
+        if (antiAliasingDropdown != null) antiAliasingDropdown.SetValueWithoutNotify(GraphicsPreferences.AntiAliasingOption);
+        if (postProcessingDropdown != null) postProcessingDropdown.SetValueWithoutNotify(GraphicsPreferences.PostProcessingOption);
+        if (refreshRateDropdown != null) refreshRateDropdown.SetValueWithoutNotify(Mathf.Max(0, refreshRates.IndexOf(AndroidDisplaySettings.PreferredRefreshRate)));
+    }
+
+    private void SaveGraphicsOption(string key, int value, int count)
+    {
+        if (value < 0 || value >= count) return;
+        PlayerPrefs.SetInt(key, value);
+        PlayerPrefs.Save();
+        GraphicsPreferences.Apply();
+        RefreshGraphicsControls();
+    }
+
+    public void SetRenderScale(int option) => SaveGraphicsOption(GraphicsPreferences.ScaleKey, option, GraphicsPreferences.Scales.Length);
+    public void SetAntiAliasing(int option) => SaveGraphicsOption(GraphicsPreferences.AntiAliasingKey, option, 4);
+    public void SetPostProcessing(int option) => SaveGraphicsOption(GraphicsPreferences.PostProcessingKey, option, 3);
+
+    public void SetRefreshRate(int option)
+    {
+        if (Application.platform != RuntimePlatform.Android || option < 0 || option >= refreshRates.Count) return;
+        PlayerPrefs.SetInt(AndroidDisplaySettings.RefreshRateKey, refreshRates[option]);
+        PlayerPrefs.Save();
+        ApplyFrameRate();
+        RefreshGraphicsControls();
     }
 
     public void SetOpenWorldLobby(bool enabled)

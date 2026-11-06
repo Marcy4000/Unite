@@ -311,6 +311,7 @@ public partial class MovesController
     {
         DisposeBattleItemRuntime();
         DisposeEspeonRuntime();
+        DisposeGlaceonRuntime();
         DisposeZoroarkRuntime();
         DisposeNinetalesRuntime();
         basicAttack?.Dispose();

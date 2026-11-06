@@ -3,6 +3,10 @@
 `MoveBase` defaults to `MoveUseType.SingleUse`. Existing normal moves retain
 their cooldown and `Finish`/`onMoveOver` flow without any changes.
 Unite moves retain their existing, separate energy-based charging system.
+Passive, KO and scoring energy accumulate before a Unite move is learned.
+The server resolves the energy cap from the base learnset independently of
+learned-slot and level checks; those checks still gate casting, not charging.
+Glaceon mirrors its server energy pool even while its Unite slot is locked.
 
 To define a stored-use move, inherit directly from `MoveBase` and declare:
 

@@ -8,6 +8,40 @@ The city remains available through **Enter city** regardless of this setting.
 Changing the toggle does not leave, cancel, or join a city session, affect trainer
 movement, or change subsequent home navigation after a party/match.
 
+## Graphics and mobile display settings
+
+Settings retains the three quality presets and adds saved overrides:
+
+- **Render scale**: Use preset, 50%, 67%, 75%, 85%, or native 100%. This scales
+  the 3D render resolution across scenes; the screen-space settings UI stays sharp.
+  Preset defaults are 75% for Performant, 90% for Balanced, and 100% for High Fidelity.
+- **Anti-aliasing**: Use preset, Off, FXAA, or SMAA. Presets use Off, FXAA,
+  and SMAA respectively. Game cameras disable MSAA to avoid stacking AA methods.
+- **Post-processing**: Use preset, Off, or On for volume post-processing across scenes. Performant
+  defaults to Off; the other presets default to On. AA can remain enabled with
+  effects off: URP still runs its AA passes but game cameras exclude effect volumes.
+
+Overrides apply immediately across screen-rendering game cameras, including cameras
+created on scene changes. UI-only, URP overlay, and render-texture preview cameras
+retain their authored presentation. Existing city-specific preferences migrate to
+the global options. Overrides persist across quality changes and restarts.
+Choose **Use preset** on a control to restore that preset's behavior. Runtime render
+scale changes use a cloned pipeline asset; authored URP assets remain unchanged.
+The existing gameplay zoom policy can further reduce the chosen render scale.
+
+Mobile **Target framerate** is editable and defaults to 60 FPS. Android also has
+**Refresh rate**, defaulting to **System default**, independent of the FPS target.
+Explicit refresh requests select the lowest supported same-resolution display mode
+at or above the requested rate, or the highest supported mode if none reaches it.
+Android's OS, battery policy, and hardware retain final control; Unity may round FPS
+caps down to a supported display divisor. There is no mobile Unlimited option.
+Focus/resume and quality changes reapply the saved preferences rather than forcing
+the maximum display rate. Desktop retains its VSync/Unlimited controls; WebGL frame
+pacing remains browser-controlled.
+
+The editable rows live in BootScene. **Tools > Settings > Wire Graphics Controls**
+repairs their bindings using the existing dropdown style without duplicating rows.
+
 ## Session boundary
 
 `LobbyController` retains its existing match/party session. Its open-world partial

@@ -1,104 +1,78 @@
-using System;
-using Unity.Netcode;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-public class FreezeDryProjectile : NetworkBehaviour
+// Server-owned swept projectile, single explosion, then a three-second ice zone.
+public class FreezeDryProjectile : PrefabMoveEffect
 {
-    public float speed = 30f;
-    private float maxDistance; // Set the maximum distance the projectile should travel
-
-    private DamageInfo damageInfo;
-    private Vector3 direction;
-    private float distanceTraveled = 0f;
-    private Team orangeTeam;
-
-    private bool canMove = false;
-    private bool gaveDamage = false;
-
-    public event Action<int> OnMoveHit;
-
-    public void SetDirection(Vector3 startingPosition, Vector2 direction, DamageInfo info, float maxDistance)
+    public float speed = 30;
+    private readonly Dictionary<Pokemon, float> entered = new Dictionary<Pokemon, float>();
+    private readonly HashSet<Pokemon> frozen = new HashSet<Pokemon>();
+    private ushort slow, freeze;
+    private readonly Unity.Netcode.NetworkVariable<bool> zoneActive = new Unity.Netcode.NetworkVariable<bool>();
+    private bool exploded;
+    private const float Radius = 1;
+    protected override IEnumerator Execute()
     {
-        transform.position = startingPosition;
-        this.direction = new Vector3(direction.x, 0, direction.y);
-        damageInfo = info;
-        this.maxDistance = maxDistance;
-        orangeTeam = NetworkManager.Singleton.SpawnManager.SpawnedObjects[info.attackerId].GetComponent<PlayerManager>().CurrentTeam.Team;
-        canMove = true;
-    }
-
-    void Update()
-    {
-        if (!IsOwner || !canMove)
+        slow = GlaceonEffectIds.Acquire(); freeze = GlaceonEffectIds.Acquire();
+        LockActions(); FaceRPC(Direction); PlayAnimation("ani_spell1b_bat_0471", 0.35f);
+        Vector3 start = Actor.transform.position + Vector3.up * 0.8f;
+        transform.position = start;
+        float travelled = 0, recovery = 0;
+        while (!exploded && travelled < 6)
         {
-            return;
+            float step = Mathf.Min(speed * Time.deltaTime, 6 - travelled);
+            Vector3 next = transform.position + Direction * step;
+            foreach (var target in CombatTargeting.SweptSphereTargets(transform.position, next, 0.3f))
+                if (CanHit(target)) { exploded = true; break; }
+            transform.position = next; travelled += step;
+            recovery += Time.deltaTime;
+            if (recovery >= 0.35f) UnlockActions();
+            if (!exploded && travelled < 6) yield return null;
         }
-
-        // Move the projectile forward
-        Vector3 moveVector = new Vector3(direction.x * speed * Time.deltaTime, direction.y * speed * Time.deltaTime, direction.z * speed * Time.deltaTime);
-        transform.Translate(moveVector);
-
-        // Update the distance traveled
-        distanceTraveled += speed * Time.deltaTime;
-
-        // Check if the projectile has traveled the maximum distance
-        if (distanceTraveled >= maxDistance && !gaveDamage)
+        // No collision callback can resolve the same explosion twice.
+        exploded = true;
+        int hits = 0;
+        foreach (var target in GlaceonMoveRules.Targets(Physics.OverlapSphere(transform.position, Radius)))
+            if (CanHit(target) && target.ResolveDamage(GlaceonMoveRules.Damage(Actor.NetworkObjectId, AvailableMoves.GlaceFreezeDry)) > 0) hits++;
+        if (hits > 0)
         {
-            GiveDamage();
-            gaveDamage = true;
+            RefreshStat(Actor.Pokemon, new StatChange(50, Stat.SpAttack, 4, true, true, true, GlaceonMoveRules.FreezeAttack));
+            Actor.MovesController.GlaceCombat?.AddCrystals(hits * (Upgraded ? 3 : 2));
         }
-    }
-
-    [Rpc(SendTo.Server)]
-    private void DespawnObjectRPC()
-    {
-        NetworkObject.Despawn(true);
-    }
-
-    private void GiveDamage()
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position, 1f);
-        int pokemonCount = 0;
-
-        foreach (var hit in hits)
+        zoneActive.Value = true;
+        float until = Time.time + 3;
+        while (Time.time < until)
         {
-            if (hit.TryGetComponent(out PlayerManager playerManager))
+            if (recovery < 0.35f) { recovery += Time.deltaTime; if (recovery >= 0.35f) UnlockActions(); }
+            var inside = GlaceonMoveRules.Targets(Physics.OverlapSphere(transform.position, Radius));
+            foreach (var target in new List<Pokemon>(entered.Keys)) if (!inside.Contains(target) || !CanHit(target)) entered.Remove(target);
+            foreach (var target in inside)
             {
-                if (playerManager.CurrentTeam.IsOnSameTeam(orangeTeam))
+                if (!CanHit(target)) continue;
+                if (!entered.ContainsKey(target))
                 {
-                    return;
+                    entered[target] = Time.time;
+                    if (!target.HasStatusEffect(StatusType.Unstoppable)) RefreshStat(target, new StatChange(30, Stat.Speed, 3, true, false, true, slow));
                 }
+                if (Time.time - entered[target] >= 2.5f && frozen.Add(target))
+                    target.AddStatusEffect(new StatusEffect(StatusType.Frozen, 0.6f, true, freeze).WithSource(Actor.NetworkObjectId));
             }
-
-            Pokemon pokemon;
-            if (hit.TryGetComponent(out pokemon))
-            {
-                pokemonCount++;
-                pokemon.TakeDamageRPC(damageInfo);
-            }
+            yield return null;
         }
-
-        OnMoveHit?.Invoke(pokemonCount);
-        canMove = false;
-
-        DespawnObjectRPC();
     }
-
-    private void OnTriggerEnter(Collider other)
+    protected override void Update()
     {
-        if (!IsOwner)
-        {
-            return;
-        }
-
-        if (!CombatTargeting.CanPokemonBeTargeted(other.gameObject, AimTarget.NonAlly, orangeTeam))
-        {
-            return;
-        }
-
-        if (other.TryGetComponent(out Pokemon pokemon))
-        {
-            GiveDamage();
-        }
+        base.Update();
+        var projectile = transform.Find("ProjectileGraphics");
+        var zone = transform.Find("IceZone");
+        if (projectile != null) projectile.gameObject.SetActive(!zoneActive.Value);
+        if (zone != null) zone.gameObject.SetActive(zoneActive.Value);
+    }
+    protected override void Cleanup()
+    {
+        entered.Clear(); frozen.Clear();
+        if (slow != 0) GlaceonEffectIds.ReleaseAfter(slow, 3);
+        if (freeze != 0) GlaceonEffectIds.ReleaseAfter(freeze, 0.6f);
     }
 }

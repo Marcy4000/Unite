@@ -21,10 +21,16 @@ public class DisplaySettingsTests
     private int previousVSync;
     private int previousFrameRate;
     private int previousQuality;
+    private readonly Dictionary<string, int?> savedPreferences = new Dictionary<string, int?>();
 
     [SetUp]
     public void SetUp()
     {
+        foreach (string key in new[] { "Graphics.Quality", "Display.TargetFrameRate", "Display.VSync", "Display.RefreshRate", "Graphics.RenderScale", "Graphics.CityAntiAliasing", "Graphics.CityPostProcessing", "Graphics.AntiAliasing", "Graphics.PostProcessing" })
+        {
+            savedPreferences[key] = PlayerPrefs.HasKey(key) ? PlayerPrefs.GetInt(key) : (int?)null;
+            PlayerPrefs.DeleteKey(key);
+        }
         settingsType = AppDomain.CurrentDomain.GetAssemblies()
             .Select(assembly => assembly.GetType("SettingsManager")).First(type => type != null);
         previousVSync = QualitySettings.vSyncCount;
@@ -50,6 +56,14 @@ public class DisplaySettingsTests
     public void TearDown()
     {
         Object.DestroyImmediate(root);
+        var graphics = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("GraphicsPreferences")).First(t => t != null);
+        graphics.GetMethod("ReleasePipeline").Invoke(null, null);
+        foreach (var entry in savedPreferences)
+        {
+            if (entry.Value.HasValue) PlayerPrefs.SetInt(entry.Key, entry.Value.Value);
+            else PlayerPrefs.DeleteKey(entry.Key);
+        }
+        PlayerPrefs.Save();
         QualitySettings.SetQualityLevel(previousQuality);
         QualitySettings.vSyncCount = previousVSync;
         Application.targetFrameRate = previousFrameRate;
@@ -174,6 +188,130 @@ public class DisplaySettingsTests
     }
 
     [Test]
+    public void FrameRateSelectionIsPersisted()
+    {
+        QualitySettings.vSyncCount = 0;
+        Invoke("SetFrameRate", FrameRates.IndexOf(30));
+        Assert.That(PlayerPrefs.GetInt("Display.TargetFrameRate"), Is.EqualTo(30));
+        Invoke("SetQuality", (previousQuality + 1) % QualitySettings.names.Length);
+        Assert.That(PlayerPrefs.GetInt("Display.TargetFrameRate"), Is.EqualTo(30));
+        Assert.That(Application.targetFrameRate, Is.EqualTo(30));
+    }
+
+    [Test]
+    public void GraphicsOverridesSurvivePresetChangesAndInvalidOptions()
+    {
+        Invoke("SetRenderScale", 2);
+        Invoke("SetAntiAliasing", 1);
+        Invoke("SetPostProcessing", 1);
+        Invoke("SetQuality", (previousQuality + 1) % QualitySettings.names.Length);
+        Invoke("SetRenderScale", -1);
+        Invoke("SetAntiAliasing", 99);
+        Assert.That(PlayerPrefs.GetInt("Graphics.RenderScale"), Is.EqualTo(2));
+        Assert.That(PlayerPrefs.GetInt("Graphics.AntiAliasing"), Is.EqualTo(1));
+        Assert.That(PlayerPrefs.GetInt("Graphics.PostProcessing"), Is.EqualTo(1));
+        var pipeline = QualitySettings.renderPipeline;
+        Assert.That(pipeline.name, Does.EndWith("(Player settings)"));
+        Assert.That((float)pipeline.GetType().GetProperty("renderScale").GetValue(pipeline), Is.EqualTo(0.67f).Within(0.001f));
+        Assert.That(UnityEditor.AssetDatabase.Contains(pipeline), Is.False);
+    }
+
+    [Test]
+    public void GameCamerasUpdateImmediatelyAndDisableEffectsOnPerformantPreset()
+    {
+        var cameraObject = new GameObject("Game camera settings test", typeof(Camera));
+        try
+        {
+            var policyType = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("CameraGraphicsSettings")).First(t => t != null);
+            var dataType = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData")).First(t => t != null);
+            Invoke("SetQuality", 0);
+            policyType.GetMethod("Enable").Invoke(null, null);
+            var data = cameraObject.GetComponent(dataType);
+            Assert.That(dataType.GetProperty("renderPostProcessing").GetValue(data), Is.False);
+            Assert.That(dataType.GetProperty("antialiasing").GetValue(data).ToString(), Is.EqualTo("None"));
+            Assert.That(cameraObject.GetComponent<Camera>().allowMSAA, Is.False);
+            Invoke("SetPostProcessing", 1);
+            Invoke("SetAntiAliasing", 3);
+            Assert.That(dataType.GetProperty("renderPostProcessing").GetValue(data), Is.True, "AA needs URP post passes even with volume effects off");
+            Assert.That(((LayerMask)dataType.GetProperty("volumeLayerMask").GetValue(data)).value, Is.Zero);
+            Invoke("SetPostProcessing", 2);
+            Assert.That(dataType.GetProperty("renderPostProcessing").GetValue(data), Is.True);
+            Assert.That(dataType.GetProperty("antialiasing").GetValue(data).ToString(), Is.EqualTo("SubpixelMorphologicalAntiAliasing"));
+            Invoke("SetQuality", 1);
+            Assert.That(dataType.GetProperty("antialiasing").GetValue(data).ToString(), Is.EqualTo("SubpixelMorphologicalAntiAliasing"));
+            Invoke("SetAntiAliasing", 0);
+            Assert.That(dataType.GetProperty("antialiasing").GetValue(data).ToString(), Is.EqualTo("FastApproximateAntialiasing"));
+        }
+        finally
+        {
+            var policyType = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("CameraGraphicsSettings")).First(t => t != null);
+            policyType.GetMethod("Disable").Invoke(null, null);
+            Object.DestroyImmediate(cameraObject);
+        }
+    }
+
+    [Test]
+    public void NewSceneCamerasReceivePreferencesWhileUiAndTextureCamerasKeepTheirSettings()
+    {
+        var service = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("CameraGraphicsSettings")).First(t => t != null);
+        var dataType = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("UnityEngine.Rendering.Universal.UniversalAdditionalCameraData")).First(t => t != null);
+        var scene = EditorSceneManager.NewPreviewScene();
+        var game = new GameObject("New scene game camera");
+        var preview = new GameObject("Preview camera");
+        var ui = new GameObject("UI camera");
+        var overlay = new GameObject("Overlay camera");
+        var texture = new RenderTexture(16, 16, 0);
+        try
+        {
+            Invoke("SetAntiAliasing", 3);
+            Invoke("SetPostProcessing", 1);
+            service.GetMethod("Enable").Invoke(null, null);
+            foreach (var owner in new[] { game, preview, ui, overlay })
+            {
+                owner.AddComponent<Camera>();
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(owner, scene);
+            }
+            preview.GetComponent<Camera>().targetTexture = texture;
+            ui.GetComponent<Camera>().cullingMask = 1 << 5;
+            var overlayData = overlay.AddComponent(dataType);
+            var renderType = dataType.GetProperty("renderType");
+            renderType.SetValue(overlayData, Enum.Parse(renderType.PropertyType, "Overlay"));
+            // Simulate the pre-render context for cameras from the newly loaded scene.
+            service.GetMethod("OnBeginContextRendering", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null,
+                new object[] { default(UnityEngine.Rendering.ScriptableRenderContext), new List<Camera> { game.GetComponent<Camera>(), preview.GetComponent<Camera>(), ui.GetComponent<Camera>(), overlay.GetComponent<Camera>() } });
+            var data = game.GetComponent(dataType);
+            Assert.That(dataType.GetProperty("antialiasing").GetValue(data).ToString(), Is.EqualTo("SubpixelMorphologicalAntiAliasing"));
+            Assert.That(preview.GetComponent<Camera>().allowMSAA, Is.True);
+            Assert.That(ui.GetComponent<Camera>().allowMSAA, Is.True);
+            Assert.That(dataType.GetProperty("antialiasing").GetValue(overlayData).ToString(), Is.EqualTo("None"));
+            service.GetMethod("Disable").Invoke(null, null);
+            Assert.That(game.GetComponent<Camera>().allowMSAA, Is.True);
+            Assert.That(dataType.GetProperty("antialiasing").GetValue(data).ToString(), Is.EqualTo("None"));
+        }
+        finally
+        {
+            service.GetMethod("Disable").Invoke(null, null);
+            foreach (var owner in new[] { game, preview, ui, overlay }) Object.DestroyImmediate(owner);
+            Object.DestroyImmediate(texture);
+            EditorSceneManager.ClosePreviewScene(scene);
+        }
+    }
+
+    [Test]
+    public void GlobalPreferencesMigrateCitySelectionsWithoutOverwritingNewSelections()
+    {
+        var graphics = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("GraphicsPreferences")).First(t => t != null);
+        PlayerPrefs.SetInt("Graphics.CityAntiAliasing", 3);
+        PlayerPrefs.SetInt("Graphics.CityPostProcessing", 1);
+        graphics.GetMethod("MigrateLegacyPreferences").Invoke(null, null);
+        Assert.That(PlayerPrefs.GetInt("Graphics.AntiAliasing"), Is.EqualTo(3));
+        Assert.That(PlayerPrefs.GetInt("Graphics.PostProcessing"), Is.EqualTo(1));
+        Invoke("SetAntiAliasing", 2);
+        graphics.GetMethod("MigrateLegacyPreferences").Invoke(null, null);
+        Assert.That(PlayerPrefs.GetInt("Graphics.AntiAliasing"), Is.EqualTo(2));
+    }
+
+    [Test]
     public void BootSceneAuthorsSeparateAdjacentDisplayControls()
     {
         var scene = EditorSceneManager.OpenPreviewScene("Assets/Scenes/BootScene.unity");
@@ -185,6 +323,12 @@ public class DisplaySettingsTests
             var frameRate = (TMP_Dropdown)settingsType.GetField("frameRateDropdown", Private).GetValue(authored);
             var fullscreen = (Toggle)settingsType.GetField("fullscreenToggle", Private).GetValue(authored);
             var vsync = (Toggle)settingsType.GetField("vsyncToggle", Private).GetValue(authored);
+            foreach (string field in new[] { "refreshRateDropdown", "renderScaleDropdown", "antiAliasingDropdown", "postProcessingDropdown" })
+            {
+                var control = (TMP_Dropdown)settingsType.GetField(field, Private).GetValue(authored);
+                Assert.That(control, Is.Not.Null, field);
+                Assert.That(control.transform.parent.parent, Is.SameAs(resolution.transform.parent.parent));
+            }
             Assert.That(frameRate, Is.Not.Null);
             Assert.That(frameRate, Is.Not.SameAs(resolution));
             Assert.That(frameRate.transform.parent.parent, Is.SameAs(resolution.transform.parent.parent));

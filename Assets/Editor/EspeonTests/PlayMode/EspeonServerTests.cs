@@ -48,6 +48,7 @@ public class EspeonServerTests
         config.GetType().GetField("NetworkTransport").SetValue(config, transport); config.GetType().GetField("EnableSceneManagement").SetValue(config, false);
 #if UNITY_EDITOR
         fixture = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Editor/AbsolTests/Fixtures/CombatActor.prefab"); Call(server, "AddNetworkPrefab", fixture);
+        Call(server, "AddNetworkPrefab", AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Editor/FlareonTests/Fixtures/PeriodicPokemon.prefab"));
         foreach (string name in new[] { "EspeonSwift", "EspeonGrowl", "EspeonPsyshock", "EspeonStoredPower", "EspeonPsybeam", "EspeonFutureSight", "EspeonPsychicSolare", "EspeonBasicProjectile" })
             Call(server, "AddNetworkPrefab", AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Objects/Moves/Espeon/" + name + ".prefab"));
 #else
@@ -116,6 +117,46 @@ public class EspeonServerTests
         Call(actor, "ClearStatusEffectsRPC");
         Call(actor, "AddStatusEffect", Status("Poisoned", 2, (ulong)Get(source, "NetworkObjectId")));
         Assert.That(Has(actor, "Poisoned"), Is.True, "The 35s passive cooldown must not be reset by another condition.");
+    }
+    [UnityTest]
+    public IEnumerator FluxZoneSlowReturnsAfterMagicBounceWithoutReentry()
+    {
+        GameObject zoneRoot;
+#if UNITY_EDITOR
+        var zonePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Editor/FlareonTests/Fixtures/PeriodicPokemon.prefab");
+        zoneRoot = UnityEngine.Object.Instantiate(zonePrefab);
+#else
+        Assert.Ignore("Editor fixtures required.");
+        yield break;
+#endif
+        objects.Add(zoneRoot);
+        zoneRoot.transform.position = Vector3.forward * 30;
+        var network = zoneRoot.GetComponent(T("Unity.Netcode.NetworkObject"));
+        var zone = zoneRoot.AddComponent(T("FluxZone"));
+        Set(zone, "team", E("Team", "Orange"));
+        Call(network, "Spawn", true);
+        var collider = actor.GetComponent<Collider>();
+        var enter = zone.GetType().GetMethod("OnTriggerEnter", Private);
+        var exit = zone.GetType().GetMethod("OnTriggerExit", Private);
+        var tick = zone.GetType().GetMethod("LateUpdate", Private);
+        int speed = (int)Call(actor, "GetSpeed");
+
+        enter.Invoke(zone, new object[] { collider });
+        Assert.That(Has(actor, "Unstoppable"), Is.True);
+        Assert.That(Call(actor, "GetSpeed"), Is.EqualTo(speed));
+        tick.Invoke(zone, null);
+        Assert.That(Call(actor, "GetSpeed"), Is.EqualTo(speed));
+
+        yield return new WaitForSeconds(0.5f);
+        Call(actor, "ClearStatusEffectsRPC");
+        tick.Invoke(zone, null);
+        int slowed = (int)Call(actor, "GetSpeed");
+        Assert.That(slowed, Is.LessThan(speed));
+        tick.Invoke(zone, null);
+        Assert.That(Call(actor, "GetSpeed"), Is.EqualTo(slowed));
+        Assert.That(Has(actor, "Unstoppable"), Is.False);
+        exit.Invoke(zone, new object[] { collider });
+        Assert.That(Call(actor, "GetSpeed"), Is.EqualTo(speed));
     }
     [UnityTest]
     public IEnumerator StoredPowerPlayerPoolExcludesWildButFutureSightWildOverridesPlayers()
@@ -325,12 +366,12 @@ public class EspeonServerTests
         var clocks = (double[])moves.GetType().GetField("prefabNextCast", Private).GetValue(moves);
         Physics.SyncTransforms();
         Assert.That(Call(Combat, "CanCast", E("AvailableMoves", "EspeonStoredPower")), Is.False);
-        Call(moves, "SpawnMoveEffectRPC", E("AvailableMoves", "EspeonStoredPower"), Vector3.forward, 0ul);
+        Call(moves, "SpawnMoveEffectRPC", E("AvailableMoves", "EspeonStoredPower"), Vector3.forward, 0ul, 0);
         Assert.That(Get(Combat, "BlastCount"), Is.EqualTo(3)); Assert.That(clocks[0], Is.Zero);
         Set(Combat, "bonusUntil", 9999d); Call(Combat, "Tick");
         object[] spend = { E("AvailableMoves", "EspeonStoredPower"), false, 0 };
         Assert.That(Combat.GetType().GetMethod("Spend").Invoke(Combat, spend), Is.False);
-        Call(moves, "SpawnMoveEffectRPC", E("AvailableMoves", "EspeonStoredPower"), Vector3.forward, 0ul);
+        Call(moves, "SpawnMoveEffectRPC", E("AvailableMoves", "EspeonStoredPower"), Vector3.forward, 0ul, 0);
         Assert.That(Get(Combat, "BlastCount"), Is.EqualTo(3)); Assert.That(Get(Combat, "BonusReady"), Is.True); Assert.That(clocks[0], Is.Zero);
         var move = Activator.CreateInstance(T("EspeonStoredPower"));
         move.GetType().GetField("playerManager").SetValue(move, player); move.GetType().GetField("IsActive").SetValue(move, true);

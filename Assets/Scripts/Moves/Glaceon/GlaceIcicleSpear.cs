@@ -1,181 +1,54 @@
-using Unity.Netcode;
 using UnityEngine;
 
-public class GlaceIcicleSpear : MoveBase
+// Custom held cone attack. Release ends the hitbox; remaining crystals continue
+// to drain before its original five-second cooldown begins.
+public class GlaceIcicleSpear : GlaceonMove
 {
-    private DamageInfo damageInfo;
-    private StatChange selfSlow;
-    private float distance;
-    private Vector3 direction;
-
-    private float timer = 0f;
-
-    private string resourcePath = "Assets/Prefabs/Objects/Moves/Glaceon/IcicleSpear.prefab";
-    private IcicleSpearHitbox icicleSpearHitbox;
-
-    private GlaceonPassive glaceonPassive;
-
-    private bool activated = false;
-
-    public GlaceIcicleSpear()
-    {
-        Name = "Icicle Spear";
-        Cooldown = 5.0f;
-        distance = 9f;
-        damageInfo = new DamageInfo(0, 0.64f, 6, 130, DamageType.Special);
-        selfSlow = new StatChange(80, Stat.Speed, 0, false, false, true, 3);
-    }
-
+    public override AvailableMoves MoveId => AvailableMoves.GlaceIcycleSpear;
+    public override string PrefabPath => GlaceonMoveRules.Folder + "IcicleSpear.prefab";
+    public override MoveAimStyle AimStyle => MoveAimStyle.Direction;
+    public override float Range => 9;
+    public override bool CooldownOnEffectEnd => true;
+    protected override bool ReusesExecutionRequest(PlayerManager controller) => draining;
+    private bool aiming, draining;
+    private float report;
+    public bool IsChannelAiming => aiming;
+    public GlaceIcicleSpear() { Name = "Icicle Spear"; Cooldown = 5; }
     public override void Start(PlayerManager controller)
     {
+        if (aiming || IsActive) return;
         base.Start(controller);
-
-        damageInfo.attackerId = controller.Pokemon.NetworkObjectId;
-        ActorAim.InitializeSkillshotAim(distance);
-        playerManager.MovesController.onObjectSpawned -= OnHitboxSpawned;
-        playerManager.MovesController.onObjectSpawned += OnHitboxSpawned;
-
-        playerManager.MovesController.SpawnNetworkObjectFromStringRPC(resourcePath, playerManager.OwnerClientId);
-
-        playerManager.AnimationManager.PlayAnimation("ani_spell1a1_bat_0471");
-        playerManager.Pokemon.AddStatChange(selfSlow);
-
-        playerManager.MovesController.AddMoveStatus(1, ActionStatusType.Disabled);
-        playerManager.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
-        playerManager.MovesController.BasicAttackStatus.AddStatus(ActionStatusType.Disabled);
-        playerManager.ScoreStatus.AddStatus(ActionStatusType.Busy);
-
-        glaceonPassive = playerManager.PassiveController.Passive as GlaceonPassive;
-
-        if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, timer);
-        glaceonPassive.ResetTimer();
-
-        if (!activated && glaceonPassive.IciclesCount < 1)
-        {
-            glaceonPassive.UpdateIciclesCount(2);
-            timer = 1f;
-        }
-
-        activated = true;
+        if (!IsActive) return;
+        aiming = true;
+        base.Finish();
+        IsActive = aiming;
+        if (!aiming) return; // Host rejection can arrive synchronously.
+        ActorAim.InitializeSkillshotAim(Range);
+        report = 0;
     }
-
-    private void OnHitboxSpawned(GameObject spawned)
-    {
-        if (!spawned.TryGetComponent(out IcicleSpearHitbox hitbox)) return;
-        playerManager.MovesController.onObjectSpawned -= OnHitboxSpawned;
-        if (!IsActive)
-        {
-            playerManager.MovesController.DespawnNetworkObjectRPC(spawned.GetComponent<NetworkObject>().NetworkObjectId);
-            return;
-        }
-        icicleSpearHitbox = hitbox;
-        hitbox.InitializeRPC(damageInfo, playerManager.CurrentTeam.Team, IsUpgraded);
-    }
-
     public override void Update()
     {
-        if (!activated)
-        {
-            return;
-        }
-
-        if (timer > 0)
-        {
-            timer -= Time.deltaTime;
-        }
-
-        if (timer <= 0)
-        {
-            if (glaceonPassive.IciclesCount > 1)
-            {
-                glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount - 1, 0, 8));
-                glaceonPassive.ResetTimer();
-                timer = 1f;
-                if (playerManager.IsLocalHuman) BattleUIManager.instance.ShowMoveSecondaryCooldown(0, timer);
-            }
-            else
-            {
-                glaceonPassive.UpdateIciclesCount((byte)Mathf.Clamp(glaceonPassive.IciclesCount - 1, 0, 8));
-                activated = false;
-                Finish();
-            }
-        }
-
-        if (!IsActive)
-        {
-            return;
-        }
-
+        if (!aiming) return;
+        if (playerManager.Pokemon.CurrentHp <= 0 || playerManager.Pokemon.HasAnyStatusEffect(GlaceonMoveRules.Interrupts)) { ResetMove(); return; }
         direction = ActorAim.SkillshotAim();
-
-        if (icicleSpearHitbox == null)
+        if (direction.sqrMagnitude > 0.001f) playerManager.transform.rotation = Quaternion.LookRotation(direction);
+        report -= Time.deltaTime;
+        if (report <= 0)
         {
-            Debug.Log("Icicle Spear Hitbox is null!");
-            return;
-        }
-
-        icicleSpearHitbox.transform.position = playerManager.transform.position;
-
-        if (direction.magnitude != 0)
-        {
-            icicleSpearHitbox.transform.rotation = Quaternion.LookRotation(direction);
-            playerManager.transform.rotation = Quaternion.LookRotation(direction);
+            playerManager.MovesController.GlaceSpearInputRPC(direction, false, ExecutionRequest);
+            report = 0.05f;
         }
     }
-
     public override void Finish()
     {
-        if (!activated)
-        {
-            wasMoveSuccessful = true;
-        }
-
-        if (IsActive)
-        {
-            if (icicleSpearHitbox != null) playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
-            ActorAim.HideSkillshotAim();
-            icicleSpearHitbox = null;
-            playerManager.Pokemon.RemoveStatChangeWithIDRPC(3);
-            playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
-            playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
-            playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
-            playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-        }
-        Debug.Log($"Finished {Name}!");
-        base.Finish();
+        if (!aiming) return;
+        aiming = false; IsActive = false; ActorAim.HideSkillshotAim();
+        if (playerManager.MovesController.IsSpawned) playerManager.MovesController.GlaceSpearInputRPC(direction, true, ExecutionRequest);
     }
-
-    public override void Cancel()
-    {
-        if (!IsActive)
-        {
-            return;
-        }
-        if (icicleSpearHitbox != null) playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
-        ActorAim.HideSkillshotAim();
-        icicleSpearHitbox = null;
-        playerManager.Pokemon.RemoveStatChangeWithIDRPC(3);
-        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
-        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
-        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-
-        base.Cancel();
-    }
-
-    public override void ResetMove()
-    {
-        IsActive = false;
-        activated = false;
-        if (icicleSpearHitbox != null)
-        {
-            playerManager.MovesController.DespawnNetworkObjectRPC(icicleSpearHitbox.GetComponent<NetworkObject>().NetworkObjectId);
-            icicleSpearHitbox = null;
-        }
-        playerManager.Pokemon.RemoveStatChangeWithIDRPC(3);
-        playerManager.MovesController.RemoveMoveStatus(1, ActionStatusType.Disabled);
-        playerManager.MovesController.RemoveMoveStatus(2, ActionStatusType.Disabled);
-        playerManager.MovesController.BasicAttackStatus.RemoveStatus(ActionStatusType.Disabled);
-        playerManager.ScoreStatus.RemoveStatus(ActionStatusType.Busy);
-    }
+    public override void Cancel() { Finish(); base.Cancel(); }
+    // Bots use IsActive to distinguish a held action from a finished cast.
+    internal override void AcceptExecution() { draining = true; base.AcceptExecution(); IsActive = aiming; }
+    protected override void OnExecutionRejected() { Finish(); }
+    protected override void OnExecutionState(bool finished) { draining = !finished; if (finished) Finish(); }
+    public override void ResetMove() { Finish(); base.ResetMove(); draining = false; }
 }

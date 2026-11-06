@@ -1,171 +1,62 @@
 using System.Collections;
-using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
 
-public class GlaceUniteArea : NetworkBehaviour
+public class GlaceUniteArea : PrefabMoveEffect
 {
-    private DamageInfo damageInfo;
-    private Team orangeTeam;
-    private NetworkVariable<ulong> glaceonID = new NetworkVariable<ulong>();
-
-    private NetworkVariable<bool> zoneActive = new NetworkVariable<bool>(false);
-
-    private float activeTimer = 0f;
-    private float glaceonSpearsTimer = 1f;
-
-    private StatChange glaceonBuff = new StatChange(50, Stat.Speed, 6f, true, true, true, 0);
-    private StatChange enemiesDebuff = new StatChange(50, Stat.Speed, 1f, true, false, true, 0);
-
-    private List<Pokemon> pokemonInZone = new List<Pokemon>();
-
-    public event System.Action onGiveGlaceonSpears;
-
-    [Rpc(SendTo.Server)]
-    public void InitializeRPC(Vector3 position, Quaternion rotation, DamageInfo info, Team orangeTeam, ulong glaceonID)
+    private ushort slow;
+    private Collider volume;
+    protected override IEnumerator Execute()
     {
-        transform.position = position;
-        transform.rotation = rotation;
-        damageInfo = info;
-        this.orangeTeam = orangeTeam;
-        this.glaceonID.Value = glaceonID;
-        activeTimer = 8.5f;
-        StopAllCoroutines();
-        zoneActive.Value = true;
-        StartCoroutine(ApplyBuff());
-        StartCoroutine(ApplyDebuff());
-        StartCoroutine(DamageEnemies());
-    }
-
-    private void Update()
-    {
-        if (!IsSpawned || !zoneActive.Value)
-        {
-            return;
-        }
-
-        if (IsOwner)
-        {
-            glaceonSpearsTimer -= Time.deltaTime;
-
-            if (glaceonSpearsTimer <= 0)
-            {
-                foreach (Pokemon pokemon in GetLivePokemonInZone())
-                {
-                    if (pokemon.NetworkObjectId == glaceonID.Value)
-                    {
-                        onGiveGlaceonSpears?.Invoke();
-                        break;
-                    }
-                }
-                glaceonSpearsTimer = 1f;
-            }
-        }
-
-        if (!IsServer)
-        {
-            return;
-        }
-
-        activeTimer -= Time.deltaTime;
-
-        if (activeTimer <= 0)
-        {
-            zoneActive.Value = false;
-            NetworkObject.Despawn(true);
-        }
-    }
-
-    private IEnumerator DamageEnemies()
-    {
+        slow = GlaceonEffectIds.Acquire();
+        volume = GetComponent<Collider>();
+        transform.SetPositionAndRotation(Actor.transform.position, Quaternion.LookRotation(Direction));
+        FaceRPC(Direction); PlayAnimation("ani_spellu_bat_0471", 0.3f);
+        RefreshStat(Actor.Pokemon, new StatChange(40, Stat.Speed, 1, true, true, true, GlaceonMoveRules.UniteLeap));
+        RefreshStat(Actor.Pokemon, new StatChange(30, Stat.Speed, 6, true, true, true, GlaceonMoveRules.UniteSpeed));
+        RefreshStat(Actor.Pokemon, new StatChange(35, Stat.AtkSpeed, 6, true, true, true, GlaceonMoveRules.UniteAttackSpeed));
+        Actor.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.RoundToInt(Actor.Pokemon.GetMaxHp() * 0.2f), GlaceonMoveRules.UniteShield, 0, 6, true, 1));
+        Physics.SyncTransforms();
         yield return new WaitForSeconds(0.2f);
-
-        if (!IsSpawned || !zoneActive.Value)
+        foreach (var target in InZone()) if (CanHit(target)) target.ResolveDamage(GlaceonMoveRules.Damage(Actor.NetworkObjectId, AvailableMoves.GlaceonUnite));
+        float end = Time.time + 5.8f, nextCrystal = Time.time + 0.8f, nextSlow = 0;
+        while (true)
         {
-            yield break;
-        }
-
-        foreach (Pokemon pokemon in GetLivePokemonInZone())
-        {
-            if (CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
+            bool inside = false;
+            foreach (var target in InZone())
             {
-                pokemon.TakeDamageRPC(damageInfo);
+                if (target == Actor.Pokemon) inside = true;
+                else if (Time.time >= nextSlow && CanHit(target) && !target.HasStatusEffect(StatusType.Unstoppable))
+                    RefreshStat(target, new StatChange(50, Stat.Speed, 2, true, false, true, slow));
             }
-        }
-    }
-
-    private IEnumerator ApplyBuff()
-    {
-        while (IsSpawned && zoneActive.Value)
-        {
-            foreach (Pokemon pokemon in GetLivePokemonInZone())
+            if (inside)
             {
-                if (pokemon.NetworkObjectId == glaceonID.Value)
-                {
-                    pokemon.AddStatChange(glaceonBuff);
-                    break;
-                }
+                if (!Actor.Pokemon.HasStatChangeWithID(GlaceonMoveRules.ZoneSpeed))
+                    RefreshStat(Actor.Pokemon, new StatChange(50, Stat.Speed, 0, false, true, true, GlaceonMoveRules.ZoneSpeed));
+                if (Time.time >= nextCrystal) Actor.MovesController.GlaceCombat?.AddCrystals(1);
             }
-
-            yield return new WaitForSeconds(6f);
+            else Actor.Pokemon.RemoveAllStatChangeWithIDRPC(GlaceonMoveRules.ZoneSpeed);
+            if (Time.time >= nextCrystal) nextCrystal = Time.time + 1;
+            if (Time.time >= nextSlow) nextSlow = Time.time + 1;
+            if (Time.time >= end) break;
+            yield return null;
         }
     }
-
-    private IEnumerator ApplyDebuff()
+    private System.Collections.Generic.HashSet<Pokemon> InZone()
     {
-        while (IsSpawned && zoneActive.Value)
+        var result = new System.Collections.Generic.HashSet<Pokemon>();
+        if (volume == null) return result;
+        foreach (var collider in Physics.OverlapBox(volume.bounds.center, volume.bounds.extents, Quaternion.identity))
         {
-            foreach (Pokemon pokemon in GetLivePokemonInZone())
-            {
-                if (pokemon.NetworkObjectId == glaceonID.Value)
-                {
-                    continue;
-                }
-
-                if (CombatTargeting.CanPokemonBeTargeted(pokemon.gameObject, AimTarget.NonAlly, orangeTeam))
-                {
-                    pokemon.AddStatChange(enemiesDebuff.WithSource(glaceonID.Value));
-                }
-            }
-
-            yield return new WaitForSeconds(1f);
+            var target = collider.GetComponentInParent<Pokemon>();
+            if (target != null && Physics.ComputePenetration(volume, volume.transform.position, volume.transform.rotation,
+                collider, collider.transform.position, collider.transform.rotation, out _, out _)) result.Add(target);
         }
+        return result;
     }
-
-    private IEnumerable<Pokemon> GetLivePokemonInZone()
+    protected override void Cleanup()
     {
-        pokemonInZone.RemoveAll(pokemon => pokemon == null || !pokemon.IsSpawned);
-        foreach (Pokemon pokemon in pokemonInZone.ToArray())
-        {
-            if (pokemon != null && pokemon.IsSpawned)
-            {
-                yield return pokemon;
-            }
-        }
-    }
-
-    public override void OnNetworkDespawn()
-    {
-        StopAllCoroutines();
-        pokemonInZone.Clear();
-        base.OnNetworkDespawn();
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        Pokemon pokemon = other.GetComponent<Pokemon>();
-        if (pokemon != null && !pokemonInZone.Contains(pokemon))
-        {
-            pokemonInZone.Add(pokemon);
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        Pokemon pokemon = other.GetComponent<Pokemon>();
-        if (pokemon != null && pokemonInZone.Contains(pokemon))
-        {
-            pokemonInZone.Remove(pokemon);
-        }
+        if (IsServer && Actor != null && Actor.Pokemon != null && Actor.Pokemon.IsSpawned)
+            Actor.Pokemon.RemoveAllStatChangeWithIDRPC(GlaceonMoveRules.ZoneSpeed);
+        if (slow != 0) GlaceonEffectIds.ReleaseAfter(slow, 2);
     }
 }

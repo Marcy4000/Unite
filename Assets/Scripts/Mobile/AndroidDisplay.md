@@ -2,25 +2,27 @@
 
 ## Refresh-rate policy
 
-Phone startup selects the highest advertised refresh rate, not a fixed 75 FPS.
-On Android, the native plugin compares `Display.getSupportedModes()` with the
-current mode's physical width and height and requests the fastest matching mode
-using `preferredDisplayModeId` and `preferredRefreshRate`. It never changes native
-resolution or Unity surface dimensions to obtain a higher rate. Unity's target
-frame rate is the rounded selected refresh rate (including fractional rates such
-as 119.88 Hz), with VSync disabled. If native discovery fails, the current Unity
-display rate is used; invalid/missing rates fall back to 60 FPS.
+Mobile starts with a saved target FPS cap, defaulting to 60 FPS, and VSync disabled.
+Players can change **Target framerate** in Settings on Android and iOS. The cap is
+stored in `Display.TargetFrameRate`; invalid caps fall back to 60. Mobile does not
+expose Unlimited, because Unity's mobile `-1` has different semantics from desktop.
 
-The persistent display component reapplies this on startup, focus regain, and
-resume, after Unity's deferred layout. Resolution, VSync, and quality callbacks
-in SettingsManager cannot replace this mobile policy. Desktop settings are unchanged.
-On iOS the target uses Unity's reported display refresh rate; ProMotion is enabled
-in Player Settings. There is no Android JNI or window manipulation on iOS.
+Android separately exposes **Refresh rate**, saved in `Display.RefreshRate`. Zero
+means **System default** and clears the native display-mode preference. A positive
+request selects the lowest supported same-resolution mode at or above the requested
+rate, or the highest supported mode if none reaches it. The native plugin never
+changes physical resolution to obtain a refresh rate. FPS and refresh rate are
+independent: for example, a 120 Hz display can run a 30 FPS game cap.
+
+Startup, focus regain, resume, and quality changes reapply the saved choices rather
+than forcing the fastest display mode. On iOS, Unity owns physical display refresh;
+there is no Android JNI or window manipulation. Desktop retains VSync/Unlimited
+controls, and WebGL frame pacing remains browser-controlled.
 
 These are requests, not guaranteed delivered FPS: Android OEM settings, battery
 saver, thermal limits, OS arbitration and iOS Low Power Mode can cap the device.
-Switching refresh in system settings while continuously focused is picked up on
-the next focus/resume or game quality change; this is not a per-frame display poll.
+Unity may round mobile FPS down to a display divisor (for example, a 25 FPS request
+on a fixed 60 Hz display can run at 20 FPS). There is no per-frame display poll.
 
 ## Zoom rendering policy
 
@@ -72,6 +74,8 @@ safe-area inset on top of this surface.
 - Background/resume, lock/unlock, and open/close the keyboard or a native dialog:
   immersive mode returns and touch targets remain aligned.
 - Open/close game settings: it must not switch Android to desktop windowed mode.
+- Choose 30 and 60 FPS, restart, background/resume, and change quality: the saved
+  cap must remain selected. Test System default and explicit refresh requests.
 - On 60/90/120/144+ Hz phones, verify the requested same-resolution mode and actual
   display refresh using Android developer overlay/ADB, including after background,
   lock/unlock and quality/VSync/resolution callbacks. Repeat with battery saver on.
@@ -87,5 +91,5 @@ If Android minification is enabled in the future, preserve the JNI entry point i
 the project's custom ProGuard rules:
 
 ```proguard
--keep class com.nottimistudios.unite.UniteAndroidDisplay { public static void apply(android.app.Activity); public static float getHighestRefreshRate(android.app.Activity); }
+-keep class com.nottimistudios.unite.UniteAndroidDisplay { public static void apply(android.app.Activity, int); }
 ```

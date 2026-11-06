@@ -18,6 +18,9 @@ public abstract class PrefabMove : MoveBase
     public override bool CooldownOnFinish => !CooldownOnEffectEnd;
     public virtual bool IsOffensive => true;
     public virtual bool LockDuringLoad => false;
+    public virtual bool RequiresServerAcceptance => false;
+    public virtual int ExecutionRequest => 0;
+    internal bool MatchesExecutionRequest(int request) => !RequiresServerAcceptance || request == ExecutionRequest;
     public virtual string IndicatorPath => null;
     public virtual Vector3 IndicatorScale => Vector3.one;
     public virtual bool MirrorsIndicator => false;
@@ -76,9 +79,9 @@ public abstract class PrefabMove : MoveBase
                 pending?.Dispose();
                 pending = playerManager.MovesController.AcquireMoveStatus((int)playerManager.MovesController.GetMoveSlot(this), ActionStatusType.Busy);
             }
-            playerManager.MovesController.SpawnMoveEffectRPC(MoveId, direction, target != null ? target.NetworkObjectId : 0);
+            playerManager.MovesController.SpawnMoveEffectRPC(MoveId, direction, target != null ? target.NetworkObjectId : 0, ExecutionRequest);
             OnCommitted();
-            wasMoveSuccessful = true;
+            wasMoveSuccessful = !RequiresServerAcceptance;
         }
         base.Finish();
     }
@@ -117,12 +120,14 @@ public abstract class PrefabMove : MoveBase
     }
     protected virtual void OnExecutionState(bool finished) { }
     internal void ReleaseLoadLock() { loadLock?.Dispose(); loadLock = null; }
-    internal void RejectExecution() { pending?.Dispose(); pending = null; ReleaseLoadLock(); }
+    internal virtual void AcceptExecution() { wasMoveSuccessful = true; base.Finish(); }
+    protected virtual void OnExecutionRejected() { }
+    internal void RejectExecution() { pending?.Dispose(); pending = null; ReleaseLoadLock(); OnExecutionRejected(); }
 
     public override void ResetMove()
     {
         Cancel(); target = null; pending?.Dispose(); pending = null; ReleaseLoadLock();
-        if (playerManager != null && playerManager.IsSpawned && playerManager.IsOwner)
-            playerManager.MovesController.CancelPrefabMoveRPC(MoveId);
+        if (playerManager != null && playerManager.IsSpawned && playerManager.IsOwner && playerManager.MovesController.IsSpawned)
+            playerManager.MovesController.CancelPrefabMoveRPC(MoveId, ExecutionRequest);
     }
 }

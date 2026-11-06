@@ -21,35 +21,32 @@ public final class UniteAndroidDisplay {
         return display != null ? display : activity.getWindowManager().getDefaultDisplay();
     }
 
-    private static Display.Mode highestMode(Display display) {
+    // Prefer the lowest supported mode at or above the request, at the same resolution.
+    // If the request exceeds hardware support, use the highest supported mode.
+    private static Display.Mode requestedMode(Display display, int requestedHz) {
         Display.Mode current = display.getMode();
-        Display.Mode best = current;
+        Display.Mode best = null;
+        Display.Mode highest = current;
         for (Display.Mode mode : display.getSupportedModes()) {
-            if (mode.getPhysicalWidth() == current.getPhysicalWidth()
-                    && mode.getPhysicalHeight() == current.getPhysicalHeight()
-                    && mode.getRefreshRate() > best.getRefreshRate()) {
-                best = mode;
-            }
+            if (mode.getPhysicalWidth() != current.getPhysicalWidth()
+                    || mode.getPhysicalHeight() != current.getPhysicalHeight()) continue;
+            if (mode.getRefreshRate() > highest.getRefreshRate()) highest = mode;
+            if (mode.getRefreshRate() + 0.5f >= requestedHz
+                    && (best == null || mode.getRefreshRate() < best.getRefreshRate())) best = mode;
         }
-        return best;
-    }
-
-    public static float getHighestRefreshRate(Activity activity) {
-        Display display = activityDisplay(activity);
-        return Build.VERSION.SDK_INT >= 23
-                ? highestMode(display).getRefreshRate() : display.getRefreshRate();
+        return best != null ? best : highest;
     }
 
     // Called through JNI. All Android view operations must run on the UI thread.
-    public static void apply(final Activity activity) {
+    public static void apply(final Activity activity, final int requestedHz) {
         activity.runOnUiThread(() -> {
             try {
                 final Window window = activity.getWindow();
                 if (Build.VERSION.SDK_INT >= 23) {
-                    Display.Mode mode = highestMode(activityDisplay(activity));
+                    Display.Mode mode = requestedHz > 0 ? requestedMode(activityDisplay(activity), requestedHz) : null;
                     WindowManager.LayoutParams refreshAttributes = window.getAttributes();
-                    refreshAttributes.preferredDisplayModeId = mode.getModeId();
-                    refreshAttributes.preferredRefreshRate = mode.getRefreshRate();
+                    refreshAttributes.preferredDisplayModeId = mode == null ? 0 : mode.getModeId();
+                    refreshAttributes.preferredRefreshRate = mode == null ? 0f : mode.getRefreshRate();
                     window.setAttributes(refreshAttributes);
                 }
                 final View content = activity.findViewById(android.R.id.content);

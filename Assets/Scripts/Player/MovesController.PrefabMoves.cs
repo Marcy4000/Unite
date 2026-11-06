@@ -11,6 +11,7 @@ public partial class MovesController
     private readonly PrefabMoveEffect[] activePrefabMoves = new PrefabMoveEffect[3];
     private readonly int[] prefabGenerations = new int[3];
     private readonly int[] prefabCastSequences = new int[3];
+    private readonly int[] prefabOwnerRequests = new int[3];
     private readonly System.Collections.Generic.HashSet<PrefabMoveEffect> prefabEffects = new System.Collections.Generic.HashSet<PrefabMoveEffect>();
     public System.Collections.Generic.IEnumerable<PrefabMoveEffect> ActivePrefabEffects => prefabEffects;
 
@@ -25,12 +26,12 @@ public partial class MovesController
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    public void SpawnMoveEffectRPC(AvailableMoves move, Vector3 direction, ulong targetId)
+    public void SpawnMoveEffectRPC(AvailableMoves move, Vector3 direction, ulong targetId, int ownerRequest = 0)
     {
         if (pokemon == null || pokemon.BaseStats == null || pokemon.CurrentHp <= 0
-            || !float.IsFinite(direction.x) || !float.IsFinite(direction.y) || !float.IsFinite(direction.z)) { RejectPrefabExecutionRPC(move); return; }
+            || !float.IsFinite(direction.x) || !float.IsFinite(direction.y) || !float.IsFinite(direction.z)) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         if (pokemon.HasStatusEffect(StatusType.Incapacitated) || pokemon.HasStatusEffect(StatusType.Frozen)
-            || pokemon.HasStatusEffect(StatusType.Asleep) || pokemon.HasStatusEffect(StatusType.Bound)) { RejectPrefabExecutionRPC(move); return; }
+            || pokemon.HasStatusEffect(StatusType.Asleep) || pokemon.HasStatusEffect(StatusType.Bound)) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         var definition = MoveDatabase.GetMove(move) as PrefabMove;
         if (definition == null) return;
         MoveAsset learned = null;
@@ -44,28 +45,36 @@ public partial class MovesController
                 }
         if (learned == null || learned.moveType == MoveType.All) return;
         int slot = (int)learned.moveType;
-        if (ZoroarkNight != null && ZoroarkNight.Finishing && slot != 0) { RejectPrefabExecutionRPC(move); return; }
+        if (ZoroarkNight != null && ZoroarkNight.Finishing && slot != 0) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         double now = NetworkManager.ServerTime.Time;
-        if (prefabLearnedMoves[slot] != move) { RejectPrefabExecutionRPC(move); return; }
+        if (prefabLearnedMoves[slot] != move) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
+        if (definition is GlaceonMove && slot == 2)
+        {
+            TickLegacyItemResources();
+            if (learned.uniteEnergyCost <= 0 || legacyItemEnergy < learned.uniteEnergyCost) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
+        }
         direction.y = 0;
         direction = definition.AimStyle == MoveAimStyle.Ground ? Vector3.ClampMagnitude(direction, definition.Range)
             : direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
         if (definition.CooldownOnEffectEnd && activePrefabMoves[slot] != null)
         {
+            if (definition is GlaceonMove && ownerRequest != prefabOwnerRequests[slot])
+            { RejectPrefabExecutionRPC(move, ownerRequest); return; }
             if (ServerActionLocks == 0 && activePrefabMoves[slot].TryRecast(direction, targetId))
             {
                 if (definition.IsOffensive) pokemon.NotifyOffensiveAction();
-                PrefabLoadFinishedRPC(move);
+                PrefabLoadFinishedRPC(move, ownerRequest);
+                if (definition is GlaceIcicleSpear) PrefabExecutionStateRPC(move, false, ownerRequest);
             }
-            else RejectPrefabExecutionRPC(move);
+            else RejectPrefabExecutionRPC(move, ownerRequest);
             return;
         }
         bool aerial = slot == 0 && ZoroarkNight != null && ZoroarkNight.AerialWindow;
         var espeon = definition is EspeonMove ? EspeonCombat : null;
         bool espeonBonus = espeon != null && EspeonMoveRules.MoveOne(move) && espeon.BonusReady;
-        if (definition is EspeonMove && (espeon == null || !espeon.CanCast(move))) { RejectPrefabExecutionRPC(move); return; }
-        if (ServerActionLocks > 0 || (!aerial && !espeonBonus && now + 0.15 < prefabNextCast[slot])) { RejectPrefabExecutionRPC(move); return; }
-        if (aerial && !ZoroarkNight.TrySpendAerialReposition()) { RejectPrefabExecutionRPC(move); return; }
+        if (definition is EspeonMove && (espeon == null || !espeon.CanCast(move))) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
+        if (ServerActionLocks > 0 || (!aerial && !espeonBonus && now + 0.15 < prefabNextCast[slot])) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
+        if (aerial && !ZoroarkNight.TrySpendAerialReposition()) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         Pokemon target = null;
         if (definition.AimStyle == MoveAimStyle.Target)
         {
@@ -74,20 +83,23 @@ public partial class MovesController
                 || target.TeamMember.IsOnSameTeam(playerManager.CurrentTeam)
                 || target.HasStatusEffect(StatusType.Invincible) || target.HasStatusEffect(StatusType.Untargetable)
                 || target.HasStatusEffect(StatusType.Invisible)
-                || !definition.IsTargetInCastRange(transform.position, target.transform.position)) { RejectPrefabExecutionRPC(move); return; }
+                || !definition.IsTargetInCastRange(transform.position, target.transform.position)) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         }
         direction.y = 0;
         direction = definition.AimStyle == MoveAimStyle.Ground ? Vector3.ClampMagnitude(direction, definition.Range)
             : direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
         int espeonBlastCount = 0;
         double previousNextCast = prefabNextCast[slot];
+        if (definition is GlaceonMove) glaceReservedCooldown[slot] = previousNextCast;
         double espeonBonusExpiry = espeon != null ? espeon.BonusExpiresAt : 0;
-        if (espeon != null && !espeon.Spend(move, out espeonBonus, out espeonBlastCount)) { RejectPrefabExecutionRPC(move); return; }
+        if (espeon != null && !espeon.Spend(move, out espeonBonus, out espeonBlastCount)) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         if (!aerial && !espeonBonus) prefabNextCast[slot] = now + Mathf.Max(0.25f, definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
         if (espeon != null && !espeonBonus && slot < 2) EspeonCooldownRPC(slot, (float)(prefabNextCast[slot] - now));
-        if (definition.CooldownOnEffectEnd) prefabNextCast[slot] = double.PositiveInfinity;
+        if (definition.CooldownOnEffectEnd || definition is GlaceonMove) prefabNextCast[slot] = double.PositiveInfinity;
         int generation = ++prefabGenerations[slot];
         int sequence = ++prefabCastSequences[slot];
+        prefabOwnerRequests[slot] = ownerRequest;
+        if (definition is GlaceIcicleSpear) GlaceCombat?.BeginSpear(direction);
         if (definition.IsOffensive) pokemon.NotifyOffensiveAction();
         // Capture each cast independently. Death invalidates a pending load even
         // if the actor respawns before Addressables completes.
@@ -101,12 +113,25 @@ public partial class MovesController
             if (pokemon != null) pokemon.OnDeath -= onDeath;
             if (target != null) target.OnDeath -= onDeath;
             if (asset.Status != AsyncOperationStatus.Succeeded || cancelled || this == null || !IsSpawned || generation != prefabGenerations[slot]
-                || pokemon == null || pokemon.CurrentHp <= 0 || (aerial && (ZoroarkNight == null || !ZoroarkNight.AerialWindow)))
+                || pokemon == null || pokemon.CurrentHp <= 0
+                || (definition is GlaceonMove && (prefabLearnedMoves[slot] != move || pokemon.HasAnyStatusEffect(GlaceonMoveRules.Interrupts)
+                    || (definition.AimStyle == MoveAimStyle.Dash && pokemon.HasStatusEffect(StatusType.Immobilized))
+                    || (target != null && (!GlaceonMoveRules.CanHit(playerManager, target) || !definition.IsTargetInCastRange(transform.position, target.transform.position)))))
+                || (aerial && (ZoroarkNight == null || !ZoroarkNight.AerialWindow)))
             {
                 if (asset.Status != AsyncOperationStatus.Succeeded) Debug.LogError($"Failed to load move {move}: {asset.OperationException}");
                 Addressables.Release(asset);
                 if (!cancelled && this != null && IsSpawned && espeon != null) espeon.Refund(move, espeonBonus, espeonBlastCount, espeonBonusExpiry);
-                if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition);
+                if (this != null && IsSpawned && generation == prefabGenerations[slot])
+                {
+                    if (definition is GlaceonMove)
+                    {
+                        prefabNextCast[slot] = previousNextCast;
+                        if (definition is GlaceIcicleSpear) glaceonRuntime?.EndSpear();
+                        RejectPrefabExecutionRPC(move, ownerRequest);
+                    }
+                    else FinishPrefabExecution(slot, move, definition, ownerRequest);
+                }
                 return;
             }
             if (move == AvailableMoves.EspeonStoredPower && !EspeonStoredPowerEffect.HasTargets(playerManager))
@@ -118,13 +143,24 @@ public partial class MovesController
                     prefabNextCast[slot] = previousNextCast;
                     EspeonCooldownRPC(slot, (float)Math.Max(0, previousNextCast - NetworkManager.ServerTime.Time));
                 }
-                RejectPrefabExecutionRPC(move);
+                RejectPrefabExecutionRPC(move, ownerRequest);
                 return;
             }
             GameObject instance = Instantiate(asset.Result, transform.position + Vector3.up * 0.8f,
                 Quaternion.LookRotation(castDirection.sqrMagnitude > 0.001f ? castDirection : transform.forward));
             var effect = instance.GetComponent<PrefabMoveEffect>();
-            if (effect == null) { Destroy(instance); Addressables.Release(asset); FinishPrefabExecution(slot, move, definition); return; }
+            if (effect == null)
+            {
+                Destroy(instance); Addressables.Release(asset);
+                if (definition is GlaceonMove)
+                {
+                    prefabNextCast[slot] = previousNextCast;
+                    if (definition is GlaceIcicleSpear) glaceonRuntime?.EndSpear();
+                    RejectPrefabExecutionRPC(move, ownerRequest);
+                }
+                else FinishPrefabExecution(slot, move, definition, ownerRequest);
+                return;
+            }
             effect.HoldAsset(asset);
             effect.MoveId = move;
             effect.CastSequence = sequence;
@@ -136,60 +172,76 @@ public partial class MovesController
             if (definition.CooldownOnEffectEnd)
             {
                 activePrefabMoves[slot] = effect;
-                effect.RecastReady += () => { if (generation == prefabGenerations[slot]) PrefabExecutionStateRPC(move, false); };
-                effect.Completed += _ => { if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition); };
+                effect.RecastReady += () => { if (generation == prefabGenerations[slot]) PrefabExecutionStateRPC(move, false, ownerRequest); };
+                effect.Completed += _ => { if (this != null && IsSpawned && generation == prefabGenerations[slot]) FinishPrefabExecution(slot, move, definition, ownerRequest); };
+            }
+            if (definition is GlaceonMove)
+            {
+                if (slot == 2) { legacyItemEnergy = 0; SyncGlaceUniteEnergy(); }
+                if (!definition.CooldownOnEffectEnd && slot != 2)
+                    prefabNextCast[slot] = NetworkManager.ServerTime.Time + definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
+                if (slot == 2) prefabNextCast[slot] = 0;
+                GlaceCastAcceptedRPC(move, definition.CooldownOnEffectEnd || slot == 2 ? 0 : (float)(prefabNextCast[slot] - NetworkManager.ServerTime.Time), ownerRequest);
             }
             playerManager.HeldItemManager?.OnMove((MoveType)slot);
             effect.Initialize(playerManager, castDirection, target, upgraded);
-            PrefabLoadFinishedRPC(move);
+            PrefabLoadFinishedRPC(move, ownerRequest);
         };
     }
 
-    private void FinishPrefabExecution(int slot, AvailableMoves move, PrefabMove definition)
+    private void FinishPrefabExecution(int slot, AvailableMoves move, PrefabMove definition, int ownerRequest = 0)
     {
         activePrefabMoves[slot] = null;
-        PrefabLoadFinishedRPC(move);
+        PrefabLoadFinishedRPC(move, ownerRequest);
         if (!definition.CooldownOnEffectEnd) return;
         bool upgraded = false;
         foreach (var row in pokemon.BaseStats.LearnableMoves)
             if (row.isUpgraded && row.level <= pokemon.CurrentLevel)
                 foreach (var asset in row.moves) if (asset != null && asset.move == move) upgraded = true;
         prefabNextCast[slot] = NetworkManager.ServerTime.Time + definition.EffectiveCooldown(upgraded) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
-        PrefabExecutionStateRPC(move, true);
+        PrefabExecutionStateRPC(move, true, ownerRequest);
     }
 
     [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
-    private void PrefabLoadFinishedRPC(AvailableMoves move)
+    private void PrefabLoadFinishedRPC(AvailableMoves move, int ownerRequest = 0)
     {
-        if (uniteMove is PrefabMove unite && unite.MoveId == move) unite.ReleaseLoadLock();
-        foreach (var runtime in moves) if (runtime is PrefabMove prefab && prefab.MoveId == move) prefab.ReleaseLoadLock();
+        if (uniteMove is PrefabMove unite && unite.MoveId == move && unite.MatchesExecutionRequest(ownerRequest)) unite.ReleaseLoadLock();
+        foreach (var runtime in moves) if (runtime is PrefabMove prefab && prefab.MoveId == move && prefab.MatchesExecutionRequest(ownerRequest)) prefab.ReleaseLoadLock();
     }
 
     [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
-    private void RejectPrefabExecutionRPC(AvailableMoves move)
+    private void RejectPrefabExecutionRPC(AvailableMoves move, int ownerRequest = 0)
     {
-        if (uniteMove is PrefabMove unite && unite.MoveId == move) unite.RejectExecution();
-        foreach (var runtime in moves) if (runtime is PrefabMove prefab && prefab.MoveId == move) prefab.RejectExecution();
+        if (uniteMove is PrefabMove unite && unite.MoveId == move && unite.MatchesExecutionRequest(ownerRequest)) unite.RejectExecution();
+        foreach (var runtime in moves) if (runtime is PrefabMove prefab && prefab.MoveId == move && prefab.MatchesExecutionRequest(ownerRequest)) prefab.RejectExecution();
     }
 
     [Rpc(SendTo.Owner, InvokePermission = RpcInvokePermission.Server)]
-    private void PrefabExecutionStateRPC(AvailableMoves move, bool finished)
+    private void PrefabExecutionStateRPC(AvailableMoves move, bool finished, int ownerRequest = 0)
     {
         foreach (var runtime in moves)
-            if (runtime is PrefabMove prefab && prefab.MoveId == move) prefab.ReceiveExecutionState(finished);
+            if (runtime is PrefabMove prefab && prefab.MoveId == move && prefab.MatchesExecutionRequest(ownerRequest)) prefab.ReceiveExecutionState(finished);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-    public void CancelPrefabMoveRPC(AvailableMoves move)
+    public void CancelPrefabMoveRPC(AvailableMoves move, int ownerRequest = 0)
     {
         var definition = MoveDatabase.GetMove(move) as PrefabMove;
         if (definition == null) return;
         for (int slot = 0; slot < prefabLearnedMoves.Length; slot++)
         {
-            if (prefabLearnedMoves[slot] != move) continue;
+            if (prefabLearnedMoves[slot] != move || (definition is GlaceonMove && ownerRequest != prefabOwnerRequests[slot])) continue;
             foreach (var effect in new System.Collections.Generic.List<PrefabMoveEffect>(prefabEffects))
                 if (effect != null && effect.MoveId == move) effect.Despawn();
-            if (double.IsPositiveInfinity(prefabNextCast[slot])) FinishPrefabExecution(slot, move, definition);
+            if (double.IsPositiveInfinity(prefabNextCast[slot]))
+            {
+                if (definition is GlaceonMove && activePrefabMoves[slot] == null)
+                {
+                    prefabNextCast[slot] = glaceReservedCooldown[slot];
+                    if (definition is GlaceIcicleSpear) glaceonRuntime?.EndSpear();
+                }
+                else FinishPrefabExecution(slot, move, definition, ownerRequest);
+            }
             prefabGenerations[slot]++;
         }
     }

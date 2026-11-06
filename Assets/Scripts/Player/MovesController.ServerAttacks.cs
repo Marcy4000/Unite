@@ -148,11 +148,15 @@ public partial class MovesController
     private int LegacyItemUniteCost()
     {
         if (pokemon == null || pokemon.BaseStats == null) return 0;
+        int unlearnedCost = 0;
         foreach (var learn in pokemon.BaseStats.LearnableMoves)
             foreach (var asset in learn.moves)
-                if (asset != null && asset.moveType == MoveType.UniteMove && asset.move == prefabLearnedMoves[2]
-                    && learn.level <= pokemon.CurrentLevel) return asset.uniteEnergyCost;
-        return 0;
+                if (asset != null && asset.moveType == MoveType.UniteMove && !learn.isUpgraded)
+                {
+                    if (asset.move == prefabLearnedMoves[2]) return asset.uniteEnergyCost;
+                    if (unlearnedCost == 0) unlearnedCost = asset.uniteEnergyCost;
+                }
+        return unlearnedCost;
     }
 
     private void TickLegacyItemResources()
@@ -161,10 +165,11 @@ public partial class MovesController
         double now = NetworkManager.ServerTime.Time;
         if (legacyItemEnergyTime == 0) legacyItemEnergyTime = now;
         int ticks = Mathf.Max(0, (int)(now - legacyItemEnergyTime));
-        if (ticks == 0) return;
+        if (ticks == 0) { SyncGlaceUniteEnergy(); return; }
         legacyItemEnergyTime += ticks;
         int cost = LegacyItemUniteCost();
         legacyItemEnergy = Mathf.Min(cost, legacyItemEnergy + ticks * Mathf.FloorToInt(900 * (1 + pokemon.GetPreciseStatChange(Stat.EnergyRate) / 100f)));
+        SyncGlaceUniteEnergy();
     }
 
     public void GrantLegacyItemEnergy(int amount)
@@ -173,6 +178,7 @@ public partial class MovesController
         TickLegacyItemResources();
         legacyItemEnergy = Mathf.Min(LegacyItemUniteCost(), legacyItemEnergy
             + Mathf.FloorToInt(amount * (1 + pokemon.GetPreciseStatChange(Stat.EnergyRate) / 100f)));
+        SyncGlaceUniteEnergy();
     }
 
     public void ReduceLegacyItemCooldown(MoveType slot, float seconds)

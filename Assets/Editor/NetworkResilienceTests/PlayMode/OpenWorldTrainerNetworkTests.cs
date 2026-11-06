@@ -268,6 +268,51 @@ public class OpenWorldTrainerNetworkTests
 #endif
     }
 
+    [UnityTest]
+    public IEnumerator HostIdleVariationReplicatesAndExitsNaturally() => CheckIdleVariation(false);
+
+    [UnityTest]
+    public IEnumerator VisitingFemaleIdleVariationReplicatesAndExitsNaturally() => CheckIdleVariation(true);
+
+    private IEnumerator CheckIdleVariation(bool visitingOwner)
+    {
+        var instance = Object.Instantiate(prefab, new Vector3(1f, 0.3f, 2f), Quaternion.identity);
+        objects.Add(instance);
+        string clothing = visitingOwner ? (string)Call(Activator.CreateInstance(GameType("PlayerClothesInfo")), "Serialize") : "";
+        Call(instance.GetComponent(avatarType), "Initialize", "idle-trainer", "Idle Trainer", clothing);
+        trainer = instance.GetComponent<NetworkObject>();
+        trainer.SpawnWithOwnership(visitingOwner ? client.LocalClientId : host.LocalClientId);
+        yield return Until(() => client.SpawnManager.SpawnedObjects.ContainsKey(trainer.NetworkObjectId));
+        var remote = client.SpawnManager.SpawnedObjects[trainer.NetworkObjectId];
+        var owner = (visitingOwner ? remote.gameObject : instance).GetComponent(avatarType);
+        var observer = (visitingOwner ? instance : remote.gameObject).GetComponent(avatarType);
+        yield return Until(() => Get(owner, "AnimationAnimator") != null && Get(observer, "AnimationAnimator") != null);
+        var ownerAnimator = (Animator)Get(owner, "AnimationAnimator");
+        var observerAnimator = (Animator)Get(observer, "AnimationAnimator");
+        ownerAnimator.cullingMode = observerAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        yield return new WaitForSeconds(0.4f);
+        int idleHash = ownerAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash;
+        var timer = avatarType.GetField("nextIdleVariationAt", BindingFlags.Instance | BindingFlags.NonPublic);
+        timer.SetValue(owner, 0d);
+        CallPrivate(owner, "UpdateIdleVariation");
+        double wait = (double)timer.GetValue(owner) - ((NetworkBehaviour)owner).NetworkManager.ServerTime.Time;
+        Assert.That(wait, Is.InRange(7.9d, 20.1d));
+        timer.SetValue(owner, 0.0001d);
+        CallPrivate(owner, "UpdateIdleVariation");
+        yield return Until(() => (uint)Field(owner, "appliedIdleVariation") != 0 &&
+            (uint)Field(observer, "appliedIdleVariation") == (uint)Field(owner, "appliedIdleVariation"));
+        yield return new WaitForSeconds(0.2f);
+        Assert.That(ownerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash,
+            Is.EqualTo(observerAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash));
+        Assert.That(ownerAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash, Is.Not.EqualTo(idleHash));
+        Assert.That(ownerAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime,
+            Is.EqualTo(observerAnimator.GetCurrentAnimatorStateInfo(0).normalizedTime).Within(0.15f));
+        yield return Until(() => !ownerAnimator.IsInTransition(0) && !observerAnimator.IsInTransition(0) &&
+            ownerAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash == idleHash &&
+            observerAnimator.GetCurrentAnimatorStateInfo(0).fullPathHash == idleHash);
+        LogAssert.NoUnexpectedReceived();
+    }
+
     private IEnumerator CheckEmote(bool visitingOwner, float speed = 1f, bool looping = false)
     {
         var instance = Object.Instantiate(prefab, new Vector3(1f, 0.3f, 2f), Quaternion.identity);

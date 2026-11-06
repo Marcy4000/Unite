@@ -132,6 +132,11 @@ public class FluxZone : NetworkBehaviour
         if (isActive.Value)
         {
             pokemonInZone.RemoveWhere(pokemon => pokemon == null);
+            foreach (var entry in appliedChanges)
+            {
+                if (entry.Key != null && entry.Key.IsSpawned && !entry.Key.StatChanges.Contains(entry.Value))
+                    entry.Key.AddStatChange(entry.Value);
+            }
         }
     }
 }
