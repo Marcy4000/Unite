@@ -21,8 +21,70 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private TrainerModel trainerModel;
     [SerializeField] private MatchmakingBarUI matchmakingBarUI;
 
+    [SerializeField] private Transform favouritePokemonSpawnPoint;
+    private GameObject favouriteModel;
+    private Coroutine favouriteLoading;
+    private UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle<PokemonBase> favouriteHandle;
+
+    private void OnEnable()
+    {
+        if (CharactersList.Instance != null)
+        {
+            CharactersList.Instance.FavouritePokemonChanged += RefreshFavouriteModel;
+            RefreshFavouriteModel();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (CharactersList.Instance != null) CharactersList.Instance.FavouritePokemonChanged -= RefreshFavouriteModel;
+        ClearFavouriteModel();
+    }
+
+    private void ClearFavouriteModel()
+    {
+        if (favouriteLoading != null) StopCoroutine(favouriteLoading);
+        favouriteLoading = null;
+        if (favouriteModel != null)
+        {
+            favouriteModel.SetActive(false);
+            Destroy(favouriteModel);
+        }
+        favouriteModel = null;
+        if (favouriteHandle.IsValid()) UnityEngine.AddressableAssets.Addressables.Release(favouriteHandle);
+        favouriteHandle = default;
+    }
+
+    private void RefreshFavouriteModel()
+    {
+        ClearFavouriteModel();
+        if (favouritePokemonSpawnPoint != null) favouriteLoading = StartCoroutine(LoadFavouriteModel());
+    }
+
+    private IEnumerator LoadFavouriteModel()
+    {
+        var roster = CharactersList.Instance;
+        favouriteHandle = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<PokemonBase>(
+            roster.Characters[roster.FavouritePokemonIndex].pokemon);
+        yield return favouriteHandle;
+        if (favouriteHandle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+        {
+            var evolutions = favouriteHandle.Result.Evolutions;
+            var model = evolutions != null && evolutions.Length > 0 ? evolutions[evolutions.Length - 1]?.newModel : null;
+            if (model != null) favouriteModel = Instantiate(model, favouritePokemonSpawnPoint, false);
+        }
+        else Debug.LogWarning("Could not load the favourite Pokemon model.", this);
+        favouriteLoading = null;
+    }
+
     private void Start()
     {
+        if (!favouriteHandle.IsValid() && CharactersList.Instance != null)
+        {
+            CharactersList.Instance.FavouritePokemonChanged -= RefreshFavouriteModel;
+            CharactersList.Instance.FavouritePokemonChanged += RefreshFavouriteModel;
+            RefreshFavouriteModel();
+        }
         startLobbyButton.onClick.AddListener(() =>
         {
             AudioManager.PlaySound(DefaultAudioSounds.Home_ui_start_04);

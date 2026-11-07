@@ -176,7 +176,7 @@ public class PsyduckRacePassive : PassiveBase
         Vector3 inputDirection = new Vector3(input.x, 0, input.y).normalized;
 
         float modifiedMaxSpeed = maxSpeed * speedModifier;
-        if (playerManager.IsBot) modifiedMaxSpeed *= Mathf.Clamp(input.magnitude, .2f, 1);
+        if (playerManager.IsBot) modifiedMaxSpeed *= Mathf.Clamp01(input.magnitude);
 
         if (inputDirection.magnitude > 0.1f)
         {

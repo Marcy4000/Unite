@@ -11,12 +11,14 @@ public class RacePositionsHolderUI : MonoBehaviour
     private void Start()
     {
         RaceManager.Instance.OnInitializedPlayers += InitializePlayers;
+        InitializePlayers();
     }
 
     private void InitializePlayers()
     {
         foreach (var raceUI in racePositionUIs)
         {
+            if (raceUI.RaceLapCounter != null) raceUI.RaceLapCounter.OnPlaceChanged -= OnPlaceChanged;
             Destroy(raceUI.gameObject);
         }
 
@@ -28,12 +30,21 @@ public class RacePositionsHolderUI : MonoBehaviour
             RacePositionUI racePositionUI = spawnedObject.GetComponent<RacePositionUI>();
 
             racePositionUI.AssignPlayer(player.Value);
-            racePositionUI.RaceLapCounter.OnPlaceChanged += (pos) => ReorderRacePositions();
+            racePositionUI.RaceLapCounter.OnPlaceChanged += OnPlaceChanged;
 
             racePositionUIs.Add(racePositionUI);
         }
 
         ReorderRacePositions();
+    }
+
+    private void OnPlaceChanged(short position) => ReorderRacePositions();
+
+    private void OnDestroy()
+    {
+        if (RaceManager.Instance != null) RaceManager.Instance.OnInitializedPlayers -= InitializePlayers;
+        foreach (var ui in racePositionUIs)
+            if (ui != null && ui.RaceLapCounter != null) ui.RaceLapCounter.OnPlaceChanged -= OnPlaceChanged;
     }
 
     private void ReorderRacePositions()

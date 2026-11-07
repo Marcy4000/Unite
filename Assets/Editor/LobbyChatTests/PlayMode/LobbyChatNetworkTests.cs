@@ -332,6 +332,29 @@ public class LobbyChatNetworkTests
     }
 
     [UnityTest]
+    public IEnumerator CityRosterAndCounterExcludeDisconnectedSessionMembers()
+    {
+        var social = UseCity();
+        var property = controller.GetType().GetProperty("ChatLobby");
+        var view = property.GetValue(controller);
+        var players = (IList)view.GetType().GetProperty("Players").GetValue(view);
+        Assert.That(players.Count, Is.EqualTo(4));
+        var departingId = managers[3].LocalClientId;
+        managers[3].Shutdown();
+        yield return Until(() => !managers[0].ConnectedClients.ContainsKey(departingId));
+        // The mock service still contains all four members and the local mapping
+        // still contains the departed client. Neither may keep them in the UI.
+        Assert.That(property.GetValue(controller), Is.SameAs(view));
+        Assert.That(players.Count, Is.EqualTo(3));
+        social.GetType().GetMethod("UpdateStatus", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(social, null);
+        StringAssert.Contains("3/16", (string)social.GetType().GetProperty("Status").GetValue(social));
+        Send(1);
+        yield return Until(() => received.Take(3).All(messages => messages.Count == 1));
+        Assert.That(received[3], Is.Empty);
+        LogAssert.NoUnexpectedReceived();
+    }
+
+    [UnityTest]
     public IEnumerator SocialCityReusesGlobalAndPrivateRoutingWithoutChangingParty()
     {
         var party = Field(controller, "partyLobby");

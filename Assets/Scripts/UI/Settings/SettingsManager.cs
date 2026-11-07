@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using JSAM;
 
-public class SettingsManager : MonoBehaviour
+public partial class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance { get; private set; }
     public static bool AutoJoinOpenWorldLobby => PlayerPrefs.GetInt("OpenWorldLobbyEnabled", 1) != 0;
@@ -52,6 +52,7 @@ public class SettingsManager : MonoBehaviour
     {
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        InitializeOpenWorldSafety();
 
         int savedQuality = PlayerPrefs.GetInt(GraphicsPreferences.QualityKey, QualitySettings.GetQualityLevel());
         if (savedQuality >= 0 && savedQuality < QualitySettings.names.Length)
@@ -126,6 +127,8 @@ public class SettingsManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        Application.lowMemory -= OnOpenWorldLowMemory;
+        UnityEngine.SceneManagement.SceneManager.activeSceneChanged -= OnOpenWorldSceneChanged;
         if (openWorldLobbyToggle != null)
             openWorldLobbyToggle.onValueChanged.RemoveListener(SetOpenWorldLobby);
 
@@ -389,12 +392,19 @@ public class SettingsManager : MonoBehaviour
 
     public void SetOpenWorldLobby(bool enabled)
     {
+        if (openWorldLobbyToggle != null)
+            openWorldLobbyToggle.SetIsOnWithoutNotify(enabled);
+        SetAutoJoinOpenWorldLobby(enabled);
+    }
+
+    public static void SetAutoJoinOpenWorldLobby(bool enabled)
+    {
         bool changed = AutoJoinOpenWorldLobby != enabled;
         PlayerPrefs.SetInt("OpenWorldLobbyEnabled", enabled ? 1 : 0);
         PlayerPrefs.Save();
 
-        if (openWorldLobbyToggle != null)
-            openWorldLobbyToggle.SetIsOnWithoutNotify(enabled);
+        if (Instance != null && Instance.openWorldLobbyToggle != null)
+            Instance.openWorldLobbyToggle.SetIsOnWithoutNotify(enabled);
 
         if (changed)
             OpenWorldLobbyChanged?.Invoke(enabled);

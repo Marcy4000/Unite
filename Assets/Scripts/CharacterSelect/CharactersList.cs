@@ -60,6 +60,43 @@ public class CharactersList : MonoBehaviour
     public HeldItemInfo[] HeldItems => heldItems;
     public MapInfo[] Maps => maps;
 
+    public const string FavouritePokemonPreferenceKey = "FavouritePokemonIndex";
+    public event System.Action FavouritePokemonChanged;
+
+    public static bool IsPlayable(CharacterInfo character) => character != null && !character.Hidden &&
+        character.pokemon != null && character.pokemon.RuntimeKeyIsValid();
+
+    public int FavouritePokemonIndex
+    {
+        get
+        {
+            int index = PlayerPrefs.GetInt(FavouritePokemonPreferenceKey, -1);
+            if (index >= 0 && index < characters.Length && IsPlayable(characters[index])) return index;
+            // Preserve the old companion preference when upgrading to a shared favourite.
+            string previous = PlayerPrefs.GetString("OpenWorldLobby.Companion", "");
+            int first = -1;
+            for (int i = 0; i < characters.Length; i++)
+            {
+                if (!IsPlayable(characters[i])) continue;
+                if (first < 0) first = i;
+                if (characters[i].pokemonName == previous) { first = i; break; }
+            }
+            if (first < 0) throw new System.InvalidOperationException("The playable Pokémon roster is empty.");
+            PlayerPrefs.SetInt(FavouritePokemonPreferenceKey, first);
+            PlayerPrefs.Save();
+            return first;
+        }
+    }
+
+    public void SetFavouritePokemon(int index)
+    {
+        if (index < 0 || index >= characters.Length || !IsPlayable(characters[index])) return;
+        int previous = FavouritePokemonIndex;
+        PlayerPrefs.SetInt(FavouritePokemonPreferenceKey, index);
+        PlayerPrefs.Save();
+        if (previous != index) FavouritePokemonChanged?.Invoke();
+    }
+
     private void Awake()
     {
         if (Instance != null)

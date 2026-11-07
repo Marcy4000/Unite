@@ -108,6 +108,70 @@ public class OpenWorldLobbySettingsTests
     private void InitializeToggle() => settingsType.GetMethod("InitializeOpenWorldLobbyToggle", Private).Invoke(manager, null);
     private void SetEnabled(bool enabled) => settingsType.GetMethod("SetOpenWorldLobby").Invoke(manager, new object[] { enabled });
 
+    [TestCase(true, 3072, 8, 0, true)]
+    [TestCase(true, 8192, 4, 0, true)]
+    [TestCase(true, 8192, 8, 512, false)]
+    [TestCase(false, 16384, 8, 512, true)]
+    [TestCase(false, 16384, 2, 4096, true)]
+    [TestCase(false, 16384, 8, 4096, false)]
+    [TestCase(true, 0, 0, 0, false)]
+    public void CapabilityCheckUsesKnownMemoryAndCpuLimits(bool mobile, int memory, int processors,
+        int graphicsMemory, bool expected)
+    {
+        var method = settingsType.GetMethod("IsLowEndOpenWorldDevice", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.That(method.Invoke(null, new object[] { mobile, memory, processors, graphicsMemory }), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void LowMemoryDisablesAutoJoinOnlyDuringCityVisit()
+    {
+        CreateAuthoredToggle();
+        InitializeToggle();
+        var lowMemory = settingsType.GetMethod("OnOpenWorldLowMemory", Private);
+        lowMemory.Invoke(manager, null);
+        Assert.That(Enabled, Is.True);
+        settingsType.GetField("openWorldVisit", Private).SetValue(manager, true);
+        lowMemory.Invoke(manager, null);
+        Assert.That(Enabled, Is.False);
+        CollectionAssert.AreEqual(new[] { false }, changes);
+    }
+
+    [Test]
+    public void SustainedSlowFramesDisableAutoJoinButTransientSlowdownDoesNot()
+    {
+        CreateAuthoredToggle();
+        InitializeToggle();
+        var observe = settingsType.GetMethod("ObserveOpenWorldFrame", Private);
+        for (int frame = 0; frame < 101; frame++) observe.Invoke(manager, new object[] { 0.1f });
+        Assert.That(Enabled, Is.True);
+        for (int frame = 0; frame < 601; frame++) observe.Invoke(manager, new object[] { 1f / 60f });
+        Assert.That(settingsType.GetField("openWorldSlowSamples", Private).GetValue(manager), Is.EqualTo(0));
+        for (int frame = 0; frame < 303; frame++) observe.Invoke(manager, new object[] { 0.1f });
+        Assert.That(Enabled, Is.False);
+        CollectionAssert.AreEqual(new[] { false }, changes);
+    }
+
+    [Test]
+    public void InterruptedCityVisitDisablesAutoJoinOnNextStartup()
+    {
+        const string visitKey = "OpenWorldLobby.VisitInProgress";
+        bool hadVisit = PlayerPrefs.HasKey(visitKey);
+        int previousVisit = PlayerPrefs.GetInt(visitKey);
+        try
+        {
+            CreateAuthoredToggle();
+            PlayerPrefs.SetInt(visitKey, 1);
+            settingsType.GetMethod("InitializeOpenWorldSafety", Private).Invoke(manager, null);
+            Assert.That(Enabled, Is.False);
+            Assert.That(PlayerPrefs.HasKey(visitKey), Is.False);
+        }
+        finally
+        {
+            if (hadVisit) PlayerPrefs.SetInt(visitKey, previousVisit);
+            else PlayerPrefs.DeleteKey(visitKey);
+        }
+    }
+
     [Test]
     public void MissingPreferenceDefaultsOnWithoutSettingsInstanceOrStart()
     {

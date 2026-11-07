@@ -23,6 +23,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
     private sealed class MigrationSnapshot
     {
         public int version = 1;
+        public string worldVersion;
         public string cityId;
         public TrainerPosition[] trainers;
         public OpenWorldStageJukebox.Snapshot stage;
@@ -35,6 +36,10 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
         new Dictionary<ulong, NetworkManager.ConnectionApprovalResponse>();
     private readonly Dictionary<ulong, OpenWorldTrainerAvatar> avatars = new Dictionary<ulong, OpenWorldTrainerAvatar>();
     private readonly Dictionary<string, TrainerPosition> positions = new Dictionary<string, TrainerPosition>();
+    private const float MemberConnectionGrace = 60f;
+    private const float MemberCleanupRetry = 15f;
+    private readonly Dictionary<string, float> absentMembers = new Dictionary<string, float>();
+    private string removingMember;
     private ISession session;
     private Task leaveTask;
     private CancellationTokenSource connectionCancellation;
@@ -91,8 +96,14 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
                     SetChatOwner(trainer.PlayerId, trainer.OwnerClientId);
                 }
             }
+            FilterConnectedChatPlayers(chatLobby);
             return chatLobby;
         }
+    }
+
+    private static void FilterConnectedChatPlayers(GameSessionView lobby)
+    {
+        lobby.Players.RemoveAll(member => !member.Data.ContainsKey("OwnerID"));
     }
 
     private void SetChatOwner(string playerId, ulong clientId)
@@ -212,7 +223,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
     private void ApproveConnection(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
         var playerId = request.Payload == null ? "" : Encoding.UTF8.GetString(request.Payload);
-        var valid = !leaving && request.Payload != null && request.Payload.Length <= 128 && playerId.Length > 0 &&
+        var valid = !leaving && request.Payload != null && request.Payload.Length <= 128 && playerId.Length > 0 && playerId != removingMember &&
             !connections.Any(pair => pair.Key != request.ClientNetworkId && pair.Value == playerId);
         response.CreatePlayerObject = false;
         response.Pending = false;
@@ -233,6 +244,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
     private void OnServerStarted()
     {
         if (view == null) view = FindFirstObjectByType<OpenWorldLobbyView>();
+        absentMembers.Clear();
         avatars.Clear();
         connections.Clear();
         connectionDeadlines.Clear();
@@ -274,6 +286,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
             if (session != activeSession) return;
             if (state == NetworkState.Migrating)
             {
+                absentMembers.Clear();
                 migrationInProgress = true;
                 restoreLocalPose = true;
             }
@@ -304,15 +317,71 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
         else if (disconnectedAt < 0f) disconnectedAt = Time.unscaledTime;
         if (disconnectedAt >= 0f && Time.unscaledTime - disconnectedAt > 90f)
             RequestRecovery(session);
+        if (!IsConnected || migrationInProgress)
+            absentMembers.Clear();
         if (Time.unscaledTime < nextRosterUpdate) return;
         nextRosterUpdate = Time.unscaledTime + 0.25f;
         SpawnTrainers();
+        ReconcileMembers();
         if (IsConnected) UpdateStatus();
     }
 
     private void UpdateStatus()
     {
-        Status = $"Trainer City  ·  {session.PlayerCount}/{session.MaxPlayers}" + (session.IsHost ? "  ·  Hosting" : "");
+        Status = $"Trainer City  ·  {ChatLobby.Players.Count}/{session.MaxPlayers}" + (session.IsHost ? "  ·  Hosting" : "");
+    }
+
+    // Observe membership only while this host's network is stable. A member can
+    // legitimately precede its transport connection, especially after migration.
+    private void ReconcileMembers()
+    {
+        if (!IsConnected || !session.IsHost || !network.IsServer || migrationInProgress || leaving) return;
+        var memberIds = new HashSet<string>(session.Players.Select(member => member.Id));
+        foreach (var id in absentMembers.Keys.ToArray())
+            if (!memberIds.Contains(id)) absentMembers.Remove(id);
+        foreach (var id in memberIds)
+        {
+            var connected = id == localPlayer.Id || connections.Any(pair => pair.Value == id &&
+                (network.ConnectedClients.ContainsKey(pair.Key) || pendingApprovals.ContainsKey(pair.Key)));
+            if (!ObserveAbsentMember(id, connected, Time.unscaledTime) || removingMember != null) continue;
+            RemoveAbsentMemberAsync(session, id);
+            break;
+        }
+    }
+
+    private bool ObserveAbsentMember(string id, bool connected, float now)
+    {
+        if (connected)
+        {
+            absentMembers.Remove(id);
+            return false;
+        }
+        if (!absentMembers.TryGetValue(id, out var since))
+        {
+            absentMembers[id] = now;
+            return false;
+        }
+        return now - since >= MemberConnectionGrace;
+    }
+
+    private async void RemoveAbsentMemberAsync(ISession observedSession, string id)
+    {
+        removingMember = id;
+        try
+        {
+            await observedSession.AsHost().RemovePlayerAsync(id);
+            Debug.Log("Removed a city member whose network connection did not return.");
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"City member cleanup will retry: {exception.Message}");
+        }
+        finally
+        {
+            if (session == observedSession && absentMembers.ContainsKey(id))
+                absentMembers[id] = Time.unscaledTime - MemberConnectionGrace + MemberCleanupRetry;
+            removingMember = null;
+        }
     }
 
     private void SpawnTrainers()
@@ -386,6 +455,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
                 RememberPosition(playerId, entry.Value.transform);
         return Encoding.UTF8.GetBytes(JsonUtility.ToJson(new MigrationSnapshot
         {
+            worldVersion = OpenWorldLobbyRules.Version,
             stage = OpenWorldStageJukebox.Instance != null ? OpenWorldStageJukebox.Instance.CaptureSnapshot() : null,
             cityId = session != null && session.Properties.TryGetValue("CityId", out var cityId) ? cityId.Value : null,
             trainers = positions.Values.Where(trainer => session == null || session.Players.Any(member => member.Id == trainer.playerId))
@@ -400,6 +470,12 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
         {
             var snapshot = JsonUtility.FromJson<MigrationSnapshot>(Encoding.UTF8.GetString(migrationData));
             if (snapshot == null || snapshot.version != 1 || snapshot.trainers == null) return;
+            if (snapshot.worldVersion != OpenWorldLobbyRules.Version)
+            {
+                positions.Clear();
+                restoreLocalPose = false;
+                return;
+            }
             if (session != null && session.Properties.TryGetValue("CityId", out var cityId) && snapshot.cityId != cityId.Value) return;
             if (OpenWorldStageJukebox.Instance != null) OpenWorldStageJukebox.Instance.RestoreSnapshot(snapshot.stage);
             positions.Clear();
@@ -499,6 +575,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
             network.NetworkConfig.ConnectionApproval = originalApproval;
             configured = false;
         }
+        absentMembers.Clear();
         avatars.Clear();
         connections.Clear();
         connectionDeadlines.Clear();

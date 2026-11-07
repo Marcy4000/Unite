@@ -30,7 +30,13 @@ public class BotRacingBrain : BotModeBrain
         if (segment == null) { player.SetBotMovement(Vector2.zero); return; }
         if (previousCheckpoint != counter.CheckpointCount || previousLap != counter.LapCount)
         { guide = 0; previousCheckpoint = counter.CheckpointCount; previousLap = counter.LapCount; }
-        while (guide < segment.guides.Length && Distance(transform.position, segment.guides[guide]) < 1) guide++;
+        while (guide < segment.guides.Length)
+        {
+            var previous = guide > 0 ? segment.guides[guide - 1] :
+                route.Next(counter.CheckpointCount).checkpoint.transform.position;
+            if (!HasReachedGuide(transform.position, previous, segment.guides[guide])) break;
+            guide++;
+        }
         bool stalled = false;
         if (Time.time >= progressAt)
         {
@@ -44,7 +50,8 @@ public class BotRacingBrain : BotModeBrain
         approach.y = 0;
         destination = guide < segment.guides.Length ? segment.guides[guide] : center;
         if (guide >= segment.guides.Length && Distance(transform.position, center) < 3) destination = center + approach.normalized * 4;
-        Vector3 side = Vector3.Cross(Vector3.up, destination - transform.position).normalized;
+        Vector3 legStart = guide > 0 ? segment.guides[guide - 1] : route.Next(counter.CheckpointCount).checkpoint.transform.position;
+        Vector3 side = Vector3.Cross(Vector3.up, destination - legStart).normalized;
         if (Distance(transform.position, center) > 4) destination += side * routeOffset;
         // The track's rotating physical obstacles are not represented by its
         // baked NavMesh. Steer around a snag instead of pushing forever or
@@ -74,11 +81,31 @@ public class BotRacingBrain : BotModeBrain
         if (player != null && counter == null && RaceManager.Instance != null)
             RaceManager.Instance.PlayerLapCounters.TryGetValue(player.NetworkObjectId, out counter);
     }
+    internal static bool HasReachedGuide(Vector3 position, Vector3 previous, Vector3 goal)
+    {
+        Vector3 leg = goal - previous; leg.y = 0;
+        Vector3 offset = position - goal; offset.y = 0;
+        if (offset.sqrMagnitude < 1.5f * 1.5f) return true;
+        // Accept a small overshoot along the authored leg. Never skip a guide
+        // from across the track or advance a checkpoint without its trigger.
+        return leg.sqrMagnitude > .01f && Vector3.Dot(offset, leg) >= 0 &&
+            offset.magnitude < 4 && Vector3.Cross(offset, leg.normalized).magnitude < 2;
+    }
+
+    internal static Vector2 SteeringInput(Vector3 forward, Vector3 direction)
+    {
+        direction.y = 0; forward.y = 0;
+        if (direction.sqrMagnitude < .01f) return Vector2.zero;
+        float alignment = Mathf.Clamp01(Vector3.Dot(forward.normalized, direction.normalized));
+        // Slow before reaching the target as well as while turning. Otherwise
+        // momentum carries the bot past a guide and it orbits the missed point.
+        float throttle = Mathf.Min(Mathf.Lerp(.15f, 1, alignment * alignment),
+            Mathf.Lerp(.15f, 1, Mathf.Clamp01(direction.magnitude / 6)));
+        return new Vector2(direction.x, direction.z).normalized * throttle;
+    }
+
     protected override void Drive()
     {
-        Vector3 direction = destination - transform.position; direction.y = 0;
-        float alignment = Vector3.Dot(transform.forward, direction.normalized);
-        // Brake through tight bends without changing the human racing physics.
-        player.SetBotMovement(new Vector2(direction.x, direction.z).normalized * Mathf.Lerp(.25f, 1, Mathf.Clamp01(alignment)));
+        player.SetBotMovement(SteeringInput(transform.forward, destination - transform.position));
     }
 }

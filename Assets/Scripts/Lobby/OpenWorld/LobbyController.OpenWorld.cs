@@ -65,6 +65,7 @@ public partial class LobbyController
         await OpenWorldLobby.LeaveAsync();
         var useOpenWorld = ShouldUseOpenWorldLobby(staticMenu, session != null);
         var targetScene = useOpenWorld ? "ChineseLobby" : "LobbyScene";
+        if (useOpenWorld) SettingsManager.BeginOpenWorldVisit();
         if (ShouldReloadHomeScene(SceneManager.GetActiveScene().name, targetScene, SceneManager.sceneCount))
             await SceneManager.LoadSceneAsync(targetScene, LoadSceneMode.Single);
         if (!useOpenWorld)

@@ -48,19 +48,15 @@ public class RaceLapCounter : NetworkBehaviour
         assignedPlayerID.Value = targetID;
         currentPlace.Value = 0;
 
-        SetTargetRPC(targetID);
-    }
-
-    [Rpc(SendTo.Owner)]
-    private void SetTargetRPC(ulong targetID)
-    {
-        target = NetworkManager.Singleton.SpawnManager.SpawnedObjects[targetID].transform;
+        // The assigned ID is replicated; resolve the avatar when it arrives.
     }
 
     private void Update()
     {
-        if (target != null)
-            transform.position = target.position;
+        if (!IsSpawned || LapCount == 0) return;
+        if (target == null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(AssignedPlayerID, out var avatar))
+            target = avatar.transform;
+        if (target != null) transform.position = target.position;
     }
 
     [Rpc(SendTo.Server)]

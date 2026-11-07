@@ -12,12 +12,12 @@ public sealed class OpenWorldPokemonCompanion : NetworkBehaviour
 {
     [SerializeField] private OpenWorldPokemonFollower followerPrefab;
 
-    private const string PreferenceKey = "OpenWorldLobby.Companion";
     private readonly NetworkVariable<short> selectedPokemon = new NetworkVariable<short>(-1);
     private AsyncOperationHandle<PokemonBase> pokemonHandle;
     private Coroutine loading;
     private OpenWorldPokemonFollower follower;
     private bool requestedInitialSelection;
+    private int requestedFavouriteIndex = -1;
 
     public event Action SelectionChanged;
     public short SelectedPokemonId => selectedPokemon.Value;
@@ -54,23 +54,18 @@ public sealed class OpenWorldPokemonCompanion : NetworkBehaviour
     private void Update()
     {
         if (!requestedInitialSelection) RequestPreferredSelection();
+        else if (CanSelect && requestedFavouriteIndex != CharactersList.Instance.FavouritePokemonIndex)
+        {
+            requestedFavouriteIndex = CharactersList.Instance.FavouritePokemonIndex;
+            SelectPokemonRpc((short)requestedFavouriteIndex);
+        }
     }
 
     private void RequestPreferredSelection()
     {
         if (requestedInitialSelection || !CanSelect) return;
-        string preferred = PlayerPrefs.GetString(PreferenceKey, "");
-        short first = -1;
-        var characters = CharactersList.Instance.Characters;
-        for (int index = 0; index < characters.Length && index <= short.MaxValue; index++)
-        {
-            if (!IsSelectable(characters[index])) continue;
-            if (first < 0) first = (short)index;
-            if (characters[index].pokemonName != preferred) continue;
-            first = (short)index;
-            break;
-        }
-        if (first < 0) return;
+        short first = (short)CharactersList.Instance.FavouritePokemonIndex;
+        requestedFavouriteIndex = first;
         requestedInitialSelection = true;
         SelectPokemonRpc(first);
     }
@@ -81,8 +76,8 @@ public sealed class OpenWorldPokemonCompanion : NetworkBehaviour
     public bool TrySelect(short characterId)
     {
         if (!CanSelect || !IsSelectable(CharactersList.Instance.GetCharacterFromID(characterId))) return false;
-        PlayerPrefs.SetString(PreferenceKey, CharactersList.Instance.GetCharacterFromID(characterId).pokemonName);
-        PlayerPrefs.Save();
+        CharactersList.Instance.SetFavouritePokemon(characterId);
+        requestedFavouriteIndex = characterId;
         if (selectedPokemon.Value == characterId && follower == null && loading == null) RefreshFollower();
         SelectPokemonRpc(characterId);
         return true;

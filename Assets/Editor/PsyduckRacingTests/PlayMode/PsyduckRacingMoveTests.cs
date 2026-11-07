@@ -86,6 +86,51 @@ public class PsyduckRacingMoveTests
     private static int StatusCount(Component player) => (int)Get(Get(Get(player, "Pokemon"), "StatusEffects"), "Count");
 
     [UnityTest]
+    public IEnumerator RaceRosterRetriesUntilAvatarBindingCompletesAndRemovesDepartedCounters()
+    {
+        var gameRoot = new GameObject("Delayed race roster"); objects.Add(gameRoot);
+        var game = gameRoot.AddComponent(GameType("GameManager")); ((Behaviour)game).enabled = false;
+        var managerRoot = new GameObject("Race roster reconciliation"); objects.Add(managerRoot);
+        var manager = managerRoot.AddComponent(GameType("RaceManager")); ((Behaviour)manager).enabled = false;
+        Set(manager, "subscribedGame", game);
+        var player = Racer(Vector3.up * 100);
+        var counterRoot = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PsyduckRacing/RaceLapCounter.prefab"));
+        objects.Add(counterRoot);
+        var counter = counterRoot.GetComponent(GameType("RaceLapCounter"));
+        var network = counterRoot.GetComponent(GameType("Unity.Netcode.NetworkObject"));
+        Call(network, "Spawn", true);
+        Call(counter, "InitializeRPC", (ulong)Get(player, "NetworkObjectId"));
+        Assert.That(Call(manager, "SynchronizeLapCounters"), Is.False, "Avatar is not bound into the match yet.");
+        Call(game, "AddPlayer", player);
+        Assert.That(Call(manager, "SynchronizeLapCounters"), Is.True, "Late binding must add the racer without another notification.");
+        var counters = (IDictionary)Get(manager, "PlayerLapCounters");
+        Assert.That(counters.Count, Is.EqualTo(1));
+        Assert.That(Call(manager, "SynchronizeLapCounters"), Is.False, "Reconciliation is idempotent.");
+        Call(network, "Despawn", true);
+        Assert.That(Call(manager, "SynchronizeLapCounters"), Is.True);
+        Assert.That(counters.Count, Is.Zero);
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator LapCounterResolvesItsAvatarAfterAssignmentWithoutAnOwnerRpc()
+    {
+        var player = Racer(new Vector3(50, 100, 20));
+        var counterRoot = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PsyduckRacing/RaceLapCounter.prefab"));
+        objects.Add(counterRoot);
+        var counter = counterRoot.GetComponent(GameType("RaceLapCounter"));
+        Call(counterRoot.GetComponent(GameType("Unity.Netcode.NetworkObject")), "Spawn", true);
+        // Simulate the state becoming available after the counter's spawn.
+        yield return null;
+        Call(counter, "InitializeRPC", (ulong)Get(player, "NetworkObjectId"));
+        yield return null;
+        Assert.That(Vector3.Distance(counter.transform.position, player.transform.position), Is.LessThan(.01f));
+        player.transform.position += Vector3.right * 3;
+        yield return null;
+        Assert.That(Vector3.Distance(counter.transform.position, player.transform.position), Is.LessThan(.01f));
+    }
+
+    [UnityTest]
     public IEnumerator BarrierUsesRealTriggerPhysicsAndIgnoresItsCaster()
     {
         var caster = Racer(Vector3.up * 100);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unite.Multiplayer;
 using TMPro;
 using Unity.Cinemachine;
 using Unity.Collections;
@@ -42,6 +43,7 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
     private const float RemoteRunStopDelay = 0.3f;
     private static Vector3 lastLocalPosition;
     private static string lastLocalPlayerId;
+    private static string lastLocalPoseVersion;
     private static float lastLocalYaw;
     private static bool hasLocalPosition;
 
@@ -178,15 +180,26 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
 
     public static bool TryGetLocalPosition(out Vector3 position)
     {
+        InvalidateOutdatedLocalPose();
         position = LocalAvatar != null ? LocalAvatar.transform.position : lastLocalPosition;
         return LocalAvatar != null || hasLocalPosition;
     }
 
     public static bool TryGetLocalPose(string playerId, out Vector3 position, out float yaw)
     {
+        InvalidateOutdatedLocalPose();
         position = lastLocalPosition;
         yaw = lastLocalYaw;
         return hasLocalPosition && string.Equals(lastLocalPlayerId, playerId, StringComparison.Ordinal);
+    }
+
+    private static void InvalidateOutdatedLocalPose()
+    {
+        if (lastLocalPoseVersion == OpenWorldLobbyRules.Version) return;
+        hasLocalPosition = false;
+        lastLocalPlayerId = null;
+        lastLocalPosition = default;
+        lastLocalYaw = 0f;
     }
 
     public override void OnNetworkSpawn()
@@ -399,6 +412,7 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
         lastLocalPosition = transform.position;
         lastLocalPlayerId = authId;
         lastLocalYaw = transform.eulerAngles.y;
+        lastLocalPoseVersion = OpenWorldLobbyRules.Version;
         hasLocalPosition = true;
         LocalPoseSaved?.Invoke(authId, lastLocalPosition, lastLocalYaw);
     }

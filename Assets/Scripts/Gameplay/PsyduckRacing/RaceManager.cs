@@ -21,6 +21,8 @@ public class RaceManager : NetworkBehaviour
     private bool raceEnded;
     private GameManager subscribedGame;
     private NetworkManager subscribedNetwork;
+    private Coroutine counterSyncRoutine;
+    private readonly HashSet<ulong> configuredPlayers = new HashSet<ulong>();
 
     public Dictionary<ulong, RaceLapCounter> PlayerLapCounters => playerLapCounters;
     public event System.Action OnInitializedPlayers;
@@ -36,10 +38,16 @@ public class RaceManager : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         if (subscribedNetwork != null) subscribedNetwork.OnClientDisconnectCallback -= OnClientDisconnect;
-        if (subscribedGame != null) subscribedGame.onGameStateChanged -= OnGameStateChanged;
+        if (subscribedGame != null)
+        {
+            subscribedGame.onGameStateChanged -= OnGameStateChanged;
+            subscribedGame.OnPlayerAdded -= OnPlayerAdded;
+        }
         subscribedNetwork = null; subscribedGame = null;
         StopAllCoroutines();
         playerLapCounters.Clear();
+        configuredPlayers.Clear();
+        counterSyncRoutine = null;
         base.OnNetworkDespawn();
     }
 
@@ -47,15 +55,19 @@ public class RaceManager : NetworkBehaviour
     {
         subscribedGame = GameManager.Instance;
         subscribedGame.onGameStateChanged += OnGameStateChanged;
+        subscribedGame.OnPlayerAdded += OnPlayerAdded;
         if (IsServer)
         {
             subscribedNetwork = NetworkManager;
             subscribedNetwork.OnClientDisconnectCallback += OnClientDisconnect;
         }
 
+        checkpointList.Clear();
         checkpointList.AddRange(Object.FindObjectsByType<RaceCheckpoint>(FindObjectsSortMode.None));
 
         checkpointList.Sort((a, b) => a.CheckpointIndex.CompareTo(b.CheckpointIndex));
+        if (!IsServer) counterSyncRoutine = StartCoroutine(SynchronizeLapCountersRoutine());
+        OnGameStateChanged(subscribedGame.GameState);
     }
 
     private void OnClientDisconnect(ulong clientId)
@@ -93,27 +105,10 @@ public class RaceManager : NetworkBehaviour
             case GameState.Initialising:
                 break;
             case GameState.Starting:
-                foreach (var player in GameManager.Instance.Players)
-                {
-                    player.Pokemon.GainExperienceRPC(100000);
-                    GameObject spawnedObject = Instantiate(raceLapCounterPrefab, Vector3.zero, Quaternion.identity);
-                    spawnedObject.GetComponent<NetworkObject>().SpawnWithOwnership(player.OwnerClientId, true);
-
-                    RaceLapCounter lapCounter = spawnedObject.GetComponent<RaceLapCounter>();
-                    lapCounter.InitializeRPC(player.NetworkObjectId);
-
-                    lapCounter.OnLapChanged += (lap) => OnPlayerLapCompleted(lapCounter);
-
-                    playerLapCounters.Add(player.NetworkObjectId, lapCounter);
-                }
-
-                NotifyPlayersInitializedRPC();
+                foreach (var player in subscribedGame.Players) RegisterRacer(player);
                 break;
             case GameState.Playing:
-                foreach (var player in GameManager.Instance.Players)
-                {
-                    UpdateLocalPlayerRPC(player.NetworkObjectId, RpcTarget.Single(player.OwnerClientId, RpcTargetUse.Temp));
-                }
+                foreach (var player in subscribedGame.Players) OnPlayerAdded(player);
 
                 StartCoroutine(UpdatePlayerPositionsCoroutine());
                 break;
@@ -124,54 +119,65 @@ public class RaceManager : NetworkBehaviour
         }
     }
 
+    private void OnPlayerAdded(PlayerManager player)
+    {
+        if (!IsServer || raceEnded || (subscribedGame.GameState != GameState.Starting &&
+            subscribedGame.GameState != GameState.Playing)) return;
+        RegisterRacer(player);
+        if (subscribedGame.GameState == GameState.Playing && player != null &&
+            configuredPlayers.Add(player.NetworkObjectId))
+            UpdateLocalPlayerRPC(player.NetworkObjectId, RpcTarget.Single(player.OwnerClientId, RpcTargetUse.Temp));
+    }
+
+    private void RegisterRacer(PlayerManager player)
+    {
+        if (player == null || !player.IsSpawned || playerLapCounters.ContainsKey(player.NetworkObjectId)) return;
+        player.Pokemon.GainExperienceRPC(100000);
+        var spawnedObject = Instantiate(raceLapCounterPrefab, player.transform.position, Quaternion.identity);
+        spawnedObject.GetComponent<NetworkObject>().SpawnWithOwnership(player.OwnerClientId, true);
+        var lapCounter = spawnedObject.GetComponent<RaceLapCounter>();
+        lapCounter.InitializeRPC(player.NetworkObjectId);
+        lapCounter.OnLapChanged += lap => OnPlayerLapCompleted(lapCounter);
+        playerLapCounters.Add(player.NetworkObjectId, lapCounter);
+        NotifyPlayersInitializedRPC();
+    }
+
     [Rpc(SendTo.Everyone)]
     private void NotifyPlayersInitializedRPC()
     {
-        if (!IsServer)
-        {
-            StartCoroutine(WaitForLapCounters());
-        }
-        else
-        {
-            OnInitializedPlayers?.Invoke();
-        }
+        if (IsServer) OnInitializedPlayers?.Invoke();
+        else if (counterSyncRoutine == null) counterSyncRoutine = StartCoroutine(SynchronizeLapCountersRoutine());
     }
 
-    private IEnumerator WaitForLapCounters()
+    private IEnumerator SynchronizeLapCountersRoutine()
     {
-        while (!AreAllLapCountersInitialized())
+        // Replication of avatars, counter spawns, and their variables can arrive
+        // in different frames. Reconcile ready entries without blocking the roster
+        // on a single slow peer, and keep watching for later arrivals/removals.
+        while (IsSpawned)
         {
-            yield return null; // Wait for the next frame
+            if (SynchronizeLapCounters()) OnInitializedPlayers?.Invoke();
+            yield return new WaitForSeconds(.1f);
         }
-
-        OnInitializedPlayers?.Invoke();
+        counterSyncRoutine = null;
     }
 
-    private bool AreAllLapCountersInitialized()
+    private bool SynchronizeLapCounters()
     {
-        RaceLapCounter[] raceLapCounters = Object.FindObjectsByType<RaceLapCounter>(FindObjectsSortMode.None);
-
-        if (raceLapCounters.Length != GameManager.Instance.Players.Count)
+        var ready = new Dictionary<ulong, RaceLapCounter>();
+        foreach (var counter in Object.FindObjectsByType<RaceLapCounter>(FindObjectsSortMode.None))
         {
-            return false;
+            if (!counter.IsSpawned || counter.LapCount == 0) continue;
+            if (!NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(counter.AssignedPlayerID, out var avatar) ||
+                !avatar.TryGetComponent<PlayerManager>(out var player) || !subscribedGame.Players.Contains(player)) continue;
+            ready[counter.AssignedPlayerID] = counter;
         }
-
-        foreach (var lapCounter in raceLapCounters)
-        {
-            if (lapCounter.AssignedPlayerID == 0)
-            {
-                return false;
-            }
-        }
-
-        foreach (var lapCounter in raceLapCounters)
-        {
-            if (!playerLapCounters.ContainsKey(lapCounter.AssignedPlayerID))
-            {
-                playerLapCounters.Add(lapCounter.AssignedPlayerID, lapCounter);
-            }
-        }
-
+        bool changed = ready.Count != playerLapCounters.Count;
+        foreach (var entry in ready)
+            if (!playerLapCounters.TryGetValue(entry.Key, out var current) || current != entry.Value) changed = true;
+        if (!changed) return false;
+        playerLapCounters.Clear();
+        foreach (var entry in ready) playerLapCounters.Add(entry.Key, entry.Value);
         return true;
     }
 
@@ -254,14 +260,22 @@ public class RaceManager : NetworkBehaviour
     [Rpc(SendTo.SpecifiedInParams)]
     private void UpdateLocalPlayerRPC(ulong playerID, RpcParams rpcParams = default)
     {
-        PlayerManager player = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerID].GetComponent<PlayerManager>();
-
-        StartCoroutine(UpdateLocalPlayerDelayed(player));
+        StartCoroutine(UpdateLocalPlayerDelayed(playerID));
     }
 
-    private IEnumerator UpdateLocalPlayerDelayed(PlayerManager player)
+    private IEnumerator UpdateLocalPlayerDelayed(ulong playerID)
     {
+        PlayerManager player = null;
+        while (IsSpawned)
+        {
+            if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(playerID, out var avatar) &&
+                avatar.TryGetComponent(out player) && player.PassiveController.Passive is PsyduckRacePassive &&
+                subscribedGame.Players.Contains(player)) break;
+            yield return null;
+        }
+        if (player == null || !IsSpawned) yield break;
         yield return null;
+        if (player == null || !player.IsSpawned) yield break;
 
         player.MovesController.AddMoveStatus(2, ActionStatusType.Disabled);
         player.MovesController.BattleItemStatus.AddStatus(ActionStatusType.Disabled);

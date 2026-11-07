@@ -2,11 +2,31 @@
 
 Start from `BootScene`. **Settings > Auto-join open world lobby on Start** is
 persisted in `PlayerPrefs` under the existing `OpenWorldLobbyEnabled` key and
-defaults to enabled. It only chooses where pressing **Start** in `BootScene`
+defaults to enabled on capable devices. It only chooses where pressing **Start** in `BootScene`
 lands: the open-world city when on, or the static `LobbyScene` when off.
 The city remains available through **Enter city** regardless of this setting.
 Changing the toggle does not leave, cancel, or join a city session, affect trainer
 movement, or change subsequent home navigation after a party/match.
+
+Auto-join is disabled at startup for devices reporting less than 4096 MB RAM,
+fewer than six mobile CPU cores (three on desktop), or less than 1024 MB desktop
+graphics memory. Unknown hardware values are ignored, and mobile shared graphics
+memory is not used as a capability limit. These are conservative heuristics, not
+a guarantee that a device can run the city. Manual city entry remains available.
+While visiting the city, a low-memory warning or three consecutive ten-second
+samples below 20 FPS disables future auto-join without interrupting the session.
+Sampling skips the first 20 seconds and restarts after focus/resume.
+A persisted visit marker is written before loading the city: an interrupted
+foreground visit disables auto-join on the next startup, including native crashes
+that cannot be caught in C#. Leaving the city, normal quit, or mobile suspension
+clears the marker so ordinary background termination is not treated as a crash.
+Users can re-enable the toggle; capability checks run again on the next startup.
+
+Cached local coordinates and migration coordinates are tagged with
+`OpenWorldLobbyRules.Version` (application version plus open-world code suffix).
+An absent or mismatched version invalidates the coordinates, retaining the authored
+default spawn rather than restoring a pose from a different map version. Local
+pose caching remains in-memory; coordinates are not persisted across app restarts.
 
 ## Graphics and mobile display settings
 

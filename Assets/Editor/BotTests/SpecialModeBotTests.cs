@@ -87,6 +87,30 @@ public class SpecialModeBotTests
         Assert.That(result.y, Is.EqualTo(position.y));
     }
 
+    [TestCase(0f, 0f, true)]
+    [TestCase(0f, 2f, true)]
+    [TestCase(1.5f, 2f, true)]
+    [TestCase(3f, 2f, false)]
+    [TestCase(0f, -2f, false)]
+    [TestCase(0f, 10f, false)]
+    public void RacingGuidesAcceptNearbyOvershootsButKeepDistantAndUnreachedGuides(float lateral, float along, bool expected)
+    {
+        var method = T("BotRacingBrain").GetMethod("HasReachedGuide", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Assert.That(method.Invoke(null, new object[] { new Vector3(lateral, 9, along), Vector3.back * 10, Vector3.zero }), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void RacingSteeringBrakesBeforeWaypointsAndThroughTightTurns()
+    {
+        var method = T("BotRacingBrain").GetMethod("SteeringInput", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+        Vector2 Input(Vector3 direction) => (Vector2)method.Invoke(null, new object[] { Vector3.forward, direction });
+        Assert.That(Input(Vector3.forward * 20).magnitude, Is.EqualTo(1).Within(.001));
+        Assert.That(Input(Vector3.forward).magnitude, Is.LessThan(.3f));
+        Assert.That(Input(Vector3.right * 20).magnitude, Is.LessThan(.2f));
+        Assert.That(Input(Vector3.back * 20).magnitude, Is.LessThan(.2f));
+        Assert.That(Input(Vector3.zero), Is.EqualTo(Vector2.zero));
+    }
+
     [TestCase(0, 0, 0, false)]
     [TestCase(3, 2, 3, false)]
     [TestCase(2, 2, 3, true)]

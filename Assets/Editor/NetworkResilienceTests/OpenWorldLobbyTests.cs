@@ -88,7 +88,7 @@ public class OpenWorldLobbyTests
         {
             var type = GameType("OpenWorldLobbyController");
             var controller = root.AddComponent(type);
-            var json = "{\"version\":1,\"trainers\":[{\"playerId\":\"trainer-a\",\"position\":{\"x\":2,\"y\":0.3,\"z\":5},\"yaw\":90}," +
+            var json = "{\"version\":1,\"worldVersion\":\"" + OpenWorldLobbyRules.Version + "\",\"trainers\":[{\"playerId\":\"trainer-a\",\"position\":{\"x\":2,\"y\":0.3,\"z\":5},\"yaw\":90}," +
                 "{\"playerId\":\"\",\"position\":{\"x\":1,\"y\":0,\"z\":1},\"yaw\":0}," +
                 "{\"playerId\":\"fallen\",\"position\":{\"x\":0,\"y\":-99,\"z\":0},\"yaw\":0}]}";
             type.GetMethod("Apply").Invoke(controller, new object[] { Encoding.UTF8.GetBytes(json) });
@@ -100,8 +100,38 @@ public class OpenWorldLobbyTests
             Assert.That((byte[])type.GetMethod("Generate").Invoke(controller, null), Is.EqualTo(bytes));
             type.GetMethod("Apply").Invoke(controller, new object[] { new byte[65537] });
             Assert.That((byte[])type.GetMethod("Generate").Invoke(controller, null), Is.EqualTo(bytes));
+            type.GetMethod("Apply").Invoke(controller, new object[] { Encoding.UTF8.GetBytes(json.Replace(OpenWorldLobbyRules.Version, "old-world-version")) });
+            StringAssert.DoesNotContain("trainer-a", Encoding.UTF8.GetString((byte[])type.GetMethod("Generate").Invoke(controller, null)));
         }
         finally { UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    [TestCase(null, false)]
+    [TestCase("old-world-version", false)]
+    [TestCase("current", true)]
+    public void CachedLocalPoseRequiresCurrentOpenWorldVersion(string version, bool expected)
+    {
+        var type = GameType("OpenWorldTrainerAvatar");
+        var flags = BindingFlags.Static | BindingFlags.NonPublic;
+        var names = new[] { "lastLocalPosition", "lastLocalYaw", "lastLocalPlayerId", "hasLocalPosition", "lastLocalPoseVersion" };
+        var fields = names.Select(name => type.GetField(name, flags)).ToArray();
+        var previous = fields.Select(field => field.GetValue(null)).ToArray();
+        try
+        {
+            fields[0].SetValue(null, new Vector3(2f, 0.3f, 5f));
+            fields[1].SetValue(null, 90f);
+            fields[2].SetValue(null, "trainer-a");
+            fields[3].SetValue(null, true);
+            fields[4].SetValue(null, version == "current" ? OpenWorldLobbyRules.Version : version);
+            var pose = new object[] { "trainer-a", Vector3.zero, 0f };
+            Assert.That(type.GetMethod("TryGetLocalPose").Invoke(null, pose), Is.EqualTo(expected));
+            Assert.That(pose[1], Is.EqualTo(expected ? new Vector3(2f, 0.3f, 5f) : Vector3.zero));
+            Assert.That(pose[2], Is.EqualTo(expected ? 90f : 0f));
+        }
+        finally
+        {
+            for (int index = 0; index < fields.Length; index++) fields[index].SetValue(null, previous[index]);
+        }
     }
 
     [TestCase(float.NaN, 0f, 0f, 0f, false)]
@@ -197,6 +227,52 @@ public class OpenWorldLobbyTests
             entries.GetArrayElementAtIndex(index).FindPropertyRelative("Prefab").objectReferenceValue == prefab), Is.True);
         Assert.That(EditorBuildSettings.scenes[0].path, Is.EqualTo("Assets/Scenes/BootScene.unity"));
         Assert.That(EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == "Assets/Scenes/ChineseLobby.unity"), Is.True);
+    }
+
+    [Test]
+    public void MissingMembersGetGraceAndReconnectResetsTheirDeadline()
+    {
+        WithAdmissionController((controller, _) =>
+        {
+            var observe = controller.GetType().GetMethod("ObserveAbsentMember", BindingFlags.Instance | BindingFlags.NonPublic);
+            bool Missing(string id, bool connected, float now) =>
+                (bool)observe.Invoke(controller, new object[] { id, connected, now });
+            Assert.That(Missing("joining", false, 10f), Is.False);
+            Assert.That(Missing("joining", false, 69f), Is.False);
+            Assert.That(Missing("joining", false, 70f), Is.True);
+            Assert.That(Missing("joining", true, 71f), Is.False);
+            Assert.That(Missing("joining", false, 100f), Is.False);
+            Assert.That(Missing("joining", false, 159f), Is.False);
+            Assert.That(Missing("joining", false, 160f), Is.True);
+            Assert.That(Missing("another", false, 160f), Is.False);
+        });
+    }
+
+    [Test]
+    public void CityChatExcludesSessionMembersWithoutLiveOwners()
+    {
+        var lobby = new GameSessionView();
+        var local = new GameSessionPlayer("local");
+        local.Data["OwnerID"] = new PlayerProperty("0");
+        var remote = new GameSessionPlayer("remote");
+        remote.Data["OwnerID"] = new PlayerProperty("4");
+        lobby.Players.AddRange(new[] { local, remote, new GameSessionPlayer("ghost") });
+        GameType("OpenWorldLobbyController").GetMethod("FilterConnectedChatPlayers",
+            BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { lobby });
+        Assert.That(lobby.Players.Select(player => player.Id), Is.EqualTo(new[] { "local", "remote" }));
+    }
+
+    [Test]
+    public void MemberBeingRemovedCannotReconnectIntoTheRemovalRequest()
+    {
+        WithAdmissionController((controller, approve) =>
+        {
+            controller.GetType().GetField("removingMember", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(controller, "departed");
+            var response = Approve(controller, approve, 5, "departed");
+            Assert.That(response.GetType().GetField("Pending").GetValue(response), Is.False);
+            Assert.That(response.GetType().GetField("Approved").GetValue(response), Is.False);
+        });
     }
 
     private static void WithAdmissionController(Action<Component, MethodInfo> test)

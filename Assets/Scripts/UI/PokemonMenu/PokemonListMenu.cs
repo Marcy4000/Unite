@@ -16,10 +16,30 @@ public class PokemonListMenu : MonoBehaviour
     private List<PokemonBase> pokemons = new List<PokemonBase>();
     private List<AsyncOperationHandle<PokemonBase>> pokemonBaseHandles = new List<AsyncOperationHandle<PokemonBase>>();
 
+    [SerializeField] private UnityEngine.UI.Button favouriteButton;
+    private int selectedIndex = -1;
     private GameObject modelInstance;
+
+    private void SetFavourite()
+    {
+        CharactersList.Instance.SetFavouritePokemon(selectedIndex);
+        RefreshFavouriteButton();
+    }
+
+    private void RefreshFavouriteButton()
+    {
+        if (favouriteButton != null)
+            favouriteButton.interactable = selectedIndex >= 0 &&
+                CharactersList.IsPlayable(CharactersList.Instance.Characters[selectedIndex]) &&
+                selectedIndex != CharactersList.Instance.FavouritePokemonIndex;
+    }
 
     private void OnEnable()
     {
+        selectedIndex = -1;
+        if (favouriteButton != null) favouriteButton.onClick.AddListener(SetFavourite);
+        CharactersList.Instance.FavouritePokemonChanged += RefreshFavouriteButton;
+        RefreshFavouriteButton();
         StartCoroutine(LoadPokemonBases());
 
         progressionMenu.gameObject.SetActive(false);
@@ -27,6 +47,9 @@ public class PokemonListMenu : MonoBehaviour
 
     private void OnDisable()
     {
+        if (favouriteButton != null) favouriteButton.onClick.RemoveListener(SetFavourite);
+        if (CharactersList.Instance != null) CharactersList.Instance.FavouritePokemonChanged -= RefreshFavouriteButton;
+        StopAllCoroutines();
         // Release the model asset
         if (modelInstance != null)
         {
@@ -80,6 +103,8 @@ public class PokemonListMenu : MonoBehaviour
 
     private void OnPokemonSelected(CharacterInfo characterInfo)
     {
+        selectedIndex = GetCharacterIndex(characterInfo);
+        RefreshFavouriteButton();
         pkmnListSideInfo.SetPokemonInfo(characterInfo);
 
         if (pokemons.Count == CharactersList.Instance.Characters.Length)

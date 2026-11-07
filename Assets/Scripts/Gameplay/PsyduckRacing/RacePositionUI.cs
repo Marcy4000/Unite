@@ -38,6 +38,11 @@ public class RacePositionUI : MonoBehaviour
         UpdateShownPosition(raceLapCounter.CurrentPlace);
     }
 
+    private void OnDestroy()
+    {
+        if (raceLapCounter != null) raceLapCounter.OnPlaceChanged -= UpdateShownPosition;
+    }
+
     private void DoAnimation()
     {
         holder.anchoredPosition = new Vector2(-40, 0);
