@@ -64,6 +64,9 @@ public class OpenWorldTrainerNetworkTests
         transport.SetConnectionData("127.0.0.1", port, "127.0.0.1");
         manager.NetworkConfig = new NetworkConfig { NetworkTransport = transport, EnableSceneManagement = false };
         manager.AddNetworkPrefab(prefab);
+#if UNITY_EDITOR
+        manager.AddNetworkPrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Lobby/OpenWorldStageJukebox.prefab"));
+#endif
         return manager;
     }
 
@@ -270,6 +273,129 @@ public class OpenWorldTrainerNetworkTests
 
     [UnityTest]
     public IEnumerator HostIdleVariationReplicatesAndExitsNaturally() => CheckIdleVariation(false);
+
+    [UnityTest]
+    public IEnumerator StageJukeboxValidatesRequestsReplicatesCooldownAndSynchronizesLateJoiners()
+    {
+#if UNITY_EDITOR
+        var stagePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Lobby/OpenWorldStageJukebox.prefab");
+        var stageType = GameType("OpenWorldStageJukebox");
+        var stageObject = Object.Instantiate(stagePrefab);
+        objects.Add(stageObject);
+        var stage = (Behaviour)stageObject.GetComponent(stageType);
+        stage.enabled = false;
+        var stageNetwork = stageObject.GetComponent<NetworkObject>();
+        stageNetwork.Spawn();
+        yield return Until(() => client.SpawnManager.SpawnedObjects.ContainsKey(stageNetwork.NetworkObjectId));
+        var remoteStage = (Behaviour)client.SpawnManager.SpawnedObjects[stageNetwork.NetworkObjectId].GetComponent(stageType);
+        remoteStage.enabled = false;
+
+        var trainerObject = Object.Instantiate(prefab, new Vector3(0f, 0.3f, 2f), Quaternion.identity);
+        objects.Add(trainerObject);
+        Call(trainerObject.GetComponent(avatarType), "Initialize", "dj-trainer", "DJ Trainer", "");
+        trainer = trainerObject.GetComponent<NetworkObject>();
+        trainer.SpawnWithOwnership(client.LocalClientId);
+        yield return Until(() => client.SpawnManager.SpawnedObjects.ContainsKey(trainer.NetworkObjectId));
+        var owner = client.SpawnManager.SpawnedObjects[trainer.NetworkObjectId].GetComponent(avatarType);
+        CallPrivate(remoteStage, "SelectTrackRpc", 1, default(RpcParams));
+        yield return new WaitForSeconds(0.2f);
+        Assert.That(Get(stage, "SelectedTrack"), Is.EqualTo(0), "Out-of-range requests must be rejected on the server.");
+
+        Call(owner, "SetSpawnPosition", new Vector3(0f, 0.55f, -32f), 180f);
+        yield return Until(() => trainer.transform.position.z < -31f);
+        CallPrivate(remoteStage, "SelectTrackRpc", -1, default(RpcParams));
+        CallPrivate(remoteStage, "SelectTrackRpc", 999, default(RpcParams));
+        CallPrivate(remoteStage, "SelectTrackRpc", 0, default(RpcParams));
+        yield return new WaitForSeconds(0.2f);
+        Assert.That(Get(stage, "SelectedTrack"), Is.EqualTo(0));
+        Assert.That((float)Get(stage, "CooldownRemaining"), Is.Zero);
+
+        CallPrivate(remoteStage, "SelectTrackRpc", 1, default(RpcParams));
+        yield return Until(() => (int)Get(stage, "SelectedTrack") == 1 && (int)Get(remoteStage, "SelectedTrack") == 1);
+        Assert.That((float)Get(remoteStage, "CooldownRemaining"), Is.GreaterThan(4f));
+        CallPrivate(remoteStage, "SelectTrackRpc", 2, default(RpcParams));
+        yield return new WaitForSeconds(0.2f);
+        Assert.That(Get(stage, "SelectedTrack"), Is.EqualTo(1), "RPC spam cannot bypass the shared cooldown.");
+
+        var lateClient = Manager("Late stage listener", host.GetComponent<UnityTransport>().GetLocalEndpoint().Port);
+        Assert.That(lateClient.StartClient(), Is.True);
+        yield return Until(() => lateClient.IsConnectedClient && lateClient.SpawnManager.SpawnedObjects.ContainsKey(stageNetwork.NetworkObjectId));
+        var lateStage = (Behaviour)lateClient.SpawnManager.SpawnedObjects[stageNetwork.NetworkObjectId].GetComponent(stageType);
+        lateStage.enabled = false;
+        Assert.That(Get(lateStage, "SelectedTrack"), Is.EqualTo(1));
+        var snapshot = Call(stage, "CaptureSnapshot");
+        Assert.That(snapshot.GetType().GetField("track").GetValue(snapshot), Is.EqualTo(1));
+        Assert.That((float)snapshot.GetType().GetField("cooldown").GetValue(snapshot), Is.GreaterThan(0f));
+        lateClient.Shutdown();
+
+        yield return Until(() => (float)Get(stage, "CooldownRemaining") <= 0f);
+        CallPrivate(remoteStage, "SelectTrackRpc", 2, default(RpcParams));
+        yield return Until(() => (int)Get(stage, "SelectedTrack") == 2 && (int)Get(remoteStage, "SelectedTrack") == 2);
+
+        var audioRoot = Node("Jukebox test audio");
+        audioRoot.SetActive(false);
+        audioRoot.AddComponent<AudioListener>();
+        var audioType = GameType("JSAM.AudioManager");
+        var audio = audioRoot.AddComponent(audioType);
+        var libraries = Array.CreateInstance(GameType("JSAM.AudioLibrary"), 1);
+        libraries.SetValue(AssetDatabase.LoadAssetAtPath<ScriptableObject>("Assets/Audio/DefaultAudio.asset"), 0);
+        audioType.GetField("preloadedLibraries", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(audio, libraries);
+        audioRoot.SetActive(true);
+        remoteStage.enabled = true;
+        yield return Until(() => (bool)Field(remoteStage, "hearingStage"));
+        var helper = audioType.GetProperty("MainMusicHelper").GetValue(null);
+        Assert.That(Get(helper, "AudioFile"), Is.EqualTo(AssetDatabase.LoadAssetAtPath<ScriptableObject>("Assets/Audio/Music/RemoatStadium.asset")));
+
+        LogAssert.Expect(LogType.Warning, "Start from BootScene to connect to the open world lobby.");
+        var hud = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Lobby/OpenWorldLobbyHUD.prefab"));
+        objects.Add(hud);
+        var menuType = GameType("OpenWorldStageMenu");
+        var menu = hud.GetComponent(menuType);
+        int authoredCount = hud.GetComponentsInChildren<Transform>(true).Length;
+        Call(remoteStage, "OpenMenu");
+        Assert.That(menuType.GetProperty("IsMenuOpen").GetValue(null), Is.True);
+        Assert.That(Get(owner, "CanStartEmote"), Is.False);
+        Assert.That(hud.GetComponentsInChildren<Transform>(true).Length, Is.GreaterThan(authoredCount));
+        var scroll = (ScrollRect)new SerializedObject(menu).FindProperty("scroll").objectReferenceValue;
+        Assert.That(scroll.content.childCount, Is.EqualTo(7));
+        Assert.That(scroll.content.GetComponentsInChildren<Button>().All(button => ((RectTransform)button.transform).rect.width > 0f), Is.True);
+        var originalRows = scroll.content.Cast<Transform>().Select(row => row.GetInstanceID()).ToArray();
+        Call(menu, "Close");
+        Assert.That(Get(owner, "CanStartEmote"), Is.True);
+        Call(remoteStage, "OpenMenu");
+        Assert.That(scroll.content.Cast<Transform>().Select(row => row.GetInstanceID()).ToArray(), Is.EqualTo(originalRows), "Reopening must reuse the existing rows.");
+        var playlistData = new SerializedObject(remoteStage);
+        var sourceTracks = playlistData.FindProperty("tracks");
+        sourceTracks.GetArrayElementAtIndex(1).FindPropertyRelative("title").stringValue = "Race night";
+        sourceTracks.arraySize++;
+        sourceTracks.GetArrayElementAtIndex(7).FindPropertyRelative("music").objectReferenceValue = null;
+        playlistData.ApplyModifiedPropertiesWithoutUndo();
+        CallPrivate(menu, "Refresh");
+        yield return null;
+        Assert.That(scroll.content.childCount, Is.EqualTo(7), "Missing music must not create a selectable row.");
+        Assert.That(scroll.content.GetComponentsInChildren<TMP_Text>().Any(label => label.text == "Race night"), Is.True);
+        Call(owner, "SetSpawnPosition", new Vector3(0f, 0.3f, 2f), 0f);
+        yield return Until(() => !(bool)Field(remoteStage, "hearingStage") && !(bool)menuType.GetProperty("IsMenuOpen").GetValue(null));
+        Assert.That(Get(helper, "AudioFile"), Is.EqualTo(AssetDatabase.LoadAssetAtPath<ScriptableObject>("Assets/Audio/Music/Main-Lobby-City-Theme.asset")));
+        yield return new WaitForSeconds(0.4f);
+        Call(owner, "SetSpawnPosition", new Vector3(0f, 0.55f, -32f), 180f);
+        yield return Until(() => (bool)Field(remoteStage, "hearingStage"));
+        Assert.That(Get(helper, "AudioFile"), Is.EqualTo(AssetDatabase.LoadAssetAtPath<ScriptableObject>("Assets/Audio/Music/RemoatStadium.asset")));
+        Assert.That(((AudioSource)Get(helper, "AudioSource")).time, Is.GreaterThan(0.3f), "Re-entering must seek to the shared timeline rather than restart the intro.");
+        Call(remoteStage, "OpenMenu");
+        var raceButton = scroll.content.GetComponentsInChildren<Button>().Single(button => button.name == "Race night");
+        yield return Until(() => raceButton.interactable);
+        raceButton.onClick.Invoke();
+        yield return Until(() => (int)Get(stage, "SelectedTrack") == 1 && (int)Get(remoteStage, "SelectedTrack") == 1 && !raceButton.interactable);
+        Call(menu, "Close");
+        stageNetwork.Despawn();
+        audioType.GetMethod("StopAllMusic").Invoke(null, new object[] { true });
+        LogAssert.NoUnexpectedReceived();
+#else
+        Assert.Ignore("Requires Editor-authored jukebox assets.");
+        yield break;
+#endif
+    }
 
     [UnityTest]
     public IEnumerator VisitingFemaleIdleVariationReplicatesAndExitsNaturally() => CheckIdleVariation(true);

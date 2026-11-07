@@ -9,7 +9,7 @@ namespace Unite.Multiplayer
         public const string StyleProperty = "LobbyStyle";
         public const string Style = "OpenWorld";
         public const int Capacity = 16;
-        public static string Version => SessionCompatibility.Current + ":open-world-v5";
+        public static string Version => SessionCompatibility.Current + ":open-world-v6";
 
         public static List<FilterOption> BrowserFilters() => new List<FilterOption>
         {

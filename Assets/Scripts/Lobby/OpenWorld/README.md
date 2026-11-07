@@ -369,3 +369,55 @@ Dialogue tests cover keyboard/gamepad paging and reveal, duplicate-submit
 prevention, opening/closing input isolation, paused typing, and navigation restore.
 
 Proximity-based chat, invitations, and social party formation are not included.
+
+### Stage jukebox
+
+The city stage has an editable `OpenWorldStageJukebox` prefab with a purple placeholder
+DJ console at `(0, 0.55, -33.5)`. Its child **Stage Area** defines the music zone using
+an editable collider volume; box and sphere shapes are supported directly. Player position, not camera
+position or physics trigger callbacks, determines whether stage music is audible.
+Entering crossfades from the city theme to the shared stage track; leaving restores
+the city theme. Playback uses the server clock and existing track loop points so
+entering players and late joiners hear the current position, not a fresh intro.
+
+The console uses the existing nearest-NPC prompt (E / controller A / touch).
+Its scroll view, status label, and Close button are authored inside
+`OpenWorldLobbyHUD.prefab`. The jukebox initializes the menu from its own playlist;
+the menu lazily instantiates a row per playable entry from
+`OpenWorldStageTrackButton.prefab`, reuses rows on reopen, and rebuilds them when
+the source playlist changes. The HUD does not own or duplicate the playlist. Movement is
+blocked while the menu is open. Close, Escape, controller B, moving out of range,
+and losing the local avatar dismiss it. The server validates ownership identity,
+stage membership, console distance, track index, and a global five-second cooldown.
+Selecting the current track does not restart it or consume the cooldown. Track and
+playback/cooldown timing are included in city host-migration snapshots.
+
+Select **Stage Jukebox** in `ChineseLobby` or edit `OpenWorldStageJukebox.prefab`:
+the Inspector's **Playable Tracks / Menu Order** list lets you add, remove, and
+drag entries, each with a **Display Name** and **Music Track** (JSAM Music File).
+Blank display names fall back to the music asset name. **Default Track** chooses
+the initial song and follows its entry when reordered; the fallback is the first
+playable entry. Missing or multi-clip music assets are skipped, with Inspector
+warnings; an empty playlist keeps normal city music. Single-clip assets ensure
+every listener uses the same recording. Non-looping music repeats in the jukebox;
+the asset's starting pitch is shared without per-listener random pitch variation.
+Ship the same playlist to all clients.
+
+Customize row visuals, label, selected prefix, and layout height in
+`OpenWorldStageTrackButton.prefab`. Assign a different row prefab and Scroll Rect
+on the HUD's **Open World Stage Menu** component without touching the jukebox.
+Mouse/touch scrolling and gamepad focus use the existing scroll view. The optional
+**Tools > Open World Lobby > Configure Dynamic Stage Menu** command converts the
+legacy static rows while retaining the existing panel, scroll view, viewport,
+scrollbar, and layout settings; it does not rebuild the city stage. The stage
+theme uses the existing lobby-stage MP3 and the standard music volume track.
+
+### Trainer interactions
+
+Remote trainers use the same nearest-target selection and world-space interaction
+prompt as NPCs (E, controller A, or the prompt button within 2.5 units). The local
+trainer is excluded. The city HUD contains an authored trainer profile panel displaying the selected trainer's synchronized name, outfit,
+and card customization. Private chat opens the existing city conversation by
+player ID. The match-history area currently reads "Match history is coming soon!".
+The profile blocks world movement, closes with Close/Escape/controller B, and
+closes automatically if the selected trainer despawns or the local trainer leaves.

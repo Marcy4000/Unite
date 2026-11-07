@@ -57,6 +57,7 @@ public sealed class OpenWorldPokemonMenu : MonoBehaviour
         if (companion == null || !companion.CanSelect) return;
         if (activeMenu != null && activeMenu != this) activeMenu.Close();
         GetComponent<OpenWorldEmoteMenu>()?.Close();
+        GetComponent<OpenWorldStageMenu>()?.Close();
         EnsureButtons();
         RefreshSelection();
         activeMenu = this;

@@ -8,7 +8,7 @@ using UnityEngine.Playables;
 using UnityEngine.UI;
 
 public enum OpenWorldNpcKind { Trainer, Pokemon, Generic }
-public enum OpenWorldNpcInteraction { Animation, Dialogue, Seat }
+public enum OpenWorldNpcInteraction { Animation, Dialogue, Seat, Player, Jukebox }
 
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-100)]
@@ -156,8 +156,19 @@ public sealed class OpenWorldNpc : MonoBehaviour
         }
     }
 
+    public bool IsWithinInteractionDistance(Vector3 position) =>
+        (transform.position - position).sqrMagnitude <= interactionDistance * interactionDistance;
+
     private bool CanInteract(OpenWorldTrainerAvatar avatar)
     {
+        if (Interaction == OpenWorldNpcInteraction.Jukebox && (OpenWorldStageMenu.Instance == null ||
+            OpenWorldStageJukebox.Instance == null || !OpenWorldStageJukebox.Instance.CanUseConsole(avatar))) return false;
+        if (Interaction == OpenWorldNpcInteraction.Player)
+        {
+            var target = GetComponent<OpenWorldTrainerAvatar>();
+            if (target == null || !target.IsSpawned || target == avatar || string.IsNullOrEmpty(target.PlayerId) ||
+                OpenWorldTrainerMenu.Instance == null) return false;
+        }
         if (Interaction == OpenWorldNpcInteraction.Seat && avatar != null && avatar.IsUsingSeat(this))
             return isActiveAndEnabled && avatar.CanLeaveSeat;
         return isActiveAndEnabled && IsReady && !IsInteracting && avatar != null && avatar.IsSpawned &&
@@ -170,6 +181,18 @@ public sealed class OpenWorldNpc : MonoBehaviour
         UpdateSelection();
         var avatar = OpenWorldTrainerAvatar.LocalAvatar;
         if (nearest != this || !CanInteract(avatar)) return;
+        if (Interaction == OpenWorldNpcInteraction.Jukebox)
+        {
+            OpenWorldStageJukebox.Instance.OpenMenu();
+            SetPrompt(false);
+            return;
+        }
+        if (Interaction == OpenWorldNpcInteraction.Player)
+        {
+            OpenWorldTrainerMenu.Instance.Open(GetComponent<OpenWorldTrainerAvatar>());
+            SetPrompt(false);
+            return;
+        }
         if (Interaction == OpenWorldNpcInteraction.Seat)
         {
             if (avatar.IsUsingSeat(this)) avatar.TryLeaveSeat();

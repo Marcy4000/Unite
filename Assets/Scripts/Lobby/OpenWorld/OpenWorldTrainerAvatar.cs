@@ -406,7 +406,7 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
     private bool IsInputBlocked()
     {
         if (DialogueSystem.Instance != null && DialogueSystem.Instance.BlocksWorldInput) return true;
-        if (!hasFocus || isPaused || explicitInputBlocked || OpenWorldEmoteMenu.IsMenuOpen || OpenWorldPokemonMenu.IsMenuOpen || (inputBlocked != null && inputBlocked()) ||
+        if (!hasFocus || isPaused || explicitInputBlocked || OpenWorldStageMenu.IsMenuOpen || OpenWorldTrainerMenu.IsMenuOpen || OpenWorldEmoteMenu.IsMenuOpen || OpenWorldPokemonMenu.IsMenuOpen || (inputBlocked != null && inputBlocked()) ||
             (SettingsManager.Instance != null && SettingsManager.Instance.IsMenuOpen)) return true;
         if (movementBlockingPanels != null)
             foreach (var panel in movementBlockingPanels)

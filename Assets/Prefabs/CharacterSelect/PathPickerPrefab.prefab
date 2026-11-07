@@ -298,6 +298,7 @@ GameObject:
   - component: {fileID: 343124584202511555}
   - component: {fileID: 487589377815609466}
   - component: {fileID: 673376056743972093}
+  - component: {fileID: 4199768721969655976}
   m_Layer: 5
   m_Name: PathToggle
   m_TagString: Untagged
@@ -320,9 +321,9 @@ RectTransform:
   - {fileID: 2220045207363394345}
   m_Father: {fileID: 9009300981168215712}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 255.5371, y: -87.5}
   m_SizeDelta: {x: 480, y: 175}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &487589377815609466
@@ -388,6 +389,20 @@ MonoBehaviour:
   toggle: {fileID: 487589377815609466}
   icon: {fileID: 8272358962748857612}
   label: {fileID: 342609502159391978}
+--- !u!114 &4199768721969655976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3182980316156571935}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09010d45efb7b5d4981dcce9c3efdec7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sounds: 40000000
+  PlayOnClick: 1
 --- !u!1 &3495942249935540251
 GameObject:
   m_ObjectHideFlags: 0

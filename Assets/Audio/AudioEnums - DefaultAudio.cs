@@ -251,5 +251,6 @@
         PhotoMakerTheme,
         ElectrodeVolleyballTheme,
         ElectrodeVolleyballThemeFinalStretch,
-        MainLobbyCityTheme
+        MainLobbyCityTheme,
+        LobbyStageTheme
     }

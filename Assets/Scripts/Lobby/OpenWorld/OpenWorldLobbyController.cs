@@ -25,6 +25,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
         public int version = 1;
         public string cityId;
         public TrainerPosition[] trainers;
+        public OpenWorldStageJukebox.Snapshot stage;
     }
 
     private readonly SemaphoreSlim operationGate = new SemaphoreSlim(1, 1);
@@ -385,6 +386,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
                 RememberPosition(playerId, entry.Value.transform);
         return Encoding.UTF8.GetBytes(JsonUtility.ToJson(new MigrationSnapshot
         {
+            stage = OpenWorldStageJukebox.Instance != null ? OpenWorldStageJukebox.Instance.CaptureSnapshot() : null,
             cityId = session != null && session.Properties.TryGetValue("CityId", out var cityId) ? cityId.Value : null,
             trainers = positions.Values.Where(trainer => session == null || session.Players.Any(member => member.Id == trainer.playerId))
                 .Take(OpenWorldLobbyRules.Capacity).ToArray()
@@ -399,6 +401,7 @@ public sealed class OpenWorldLobbyController : MonoBehaviour, IMigrationDataHand
             var snapshot = JsonUtility.FromJson<MigrationSnapshot>(Encoding.UTF8.GetString(migrationData));
             if (snapshot == null || snapshot.version != 1 || snapshot.trainers == null) return;
             if (session != null && session.Properties.TryGetValue("CityId", out var cityId) && snapshot.cityId != cityId.Value) return;
+            if (OpenWorldStageJukebox.Instance != null) OpenWorldStageJukebox.Instance.RestoreSnapshot(snapshot.stage);
             positions.Clear();
             foreach (var trainer in snapshot.trainers.Take(OpenWorldLobbyRules.Capacity))
                 if (IsValidPosition(trainer)) positions[trainer.playerId] = trainer;
