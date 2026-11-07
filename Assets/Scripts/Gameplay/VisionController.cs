@@ -46,11 +46,42 @@ public class VisionController : MonoBehaviour
     // for a teleport. Never let a stale overlap reveal a respawned enemy forever.
     public bool ContainsVision(Vision vision)
     {
-        if (vision == null || !isActiveAndEnabled || !IsEnabled || IsBlinded ||
+        return vision != null && TryGetVisibilitySnapshot(out var snapshot)
+            && snapshot.Contains(vision.transform.position);
+    }
+
+    // Scoped to one manager pass. Direct queries always capture fresh geometry,
+    // including moves/teleports or collider changes within the same frame.
+    internal bool TryGetVisibilitySnapshot(out VisibilitySnapshot snapshot)
+    {
+        snapshot = default;
+        if (!isActiveAndEnabled || !IsEnabled || IsBlinded ||
             (owner != null && owner.CurrentHp <= 0) || visionCollider == null || !visionCollider.enabled) return false;
-        Vector3 scale = transform.lossyScale;
+        Transform controllerTransform = transform;
+        Vector3 scale = controllerTransform.lossyScale;
         float radius = visionCollider.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Max(Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
-        return (vision.transform.position - transform.TransformPoint(visionCollider.center)).sqrMagnitude <= radius * radius;
+        snapshot = new VisibilitySnapshot(this, controllerTransform.TransformPoint(visionCollider.center), radius * radius);
+        return true;
+    }
+
+    internal readonly struct VisibilitySnapshot
+    {
+        private readonly VisionController controller;
+        private readonly Vector3 center;
+        private readonly float radiusSquared;
+
+        internal VisibilitySnapshot(VisionController controller, Vector3 center, float radiusSquared)
+        {
+            this.controller = controller;
+            this.center = center;
+            this.radiusSquared = radiusSquared;
+        }
+
+        internal bool Contains(Vector3 position) => (position - center).sqrMagnitude <= radiusSquared;
+
+        // Target eligibility is checked once by the manager before scanning controllers.
+        internal bool CanSeeEligible(Vision vision, Vector3 position) => controller != null
+            && Contains(position) && controller.CanSeeBush(vision);
     }
 
     private bool SharesBush(Vision vision) => ownerVision != null
@@ -58,7 +89,9 @@ public class VisionController : MonoBehaviour
 
     public bool CanSee(Vision vision) => ContainsVision(vision)
         && vision.isActiveAndEnabled && vision.IsVisiblyEligible
-        && (!vision.IsInBush || vision.IsRevealedByBushCombat || SharesBush(vision));
+        && CanSeeBush(vision);
+
+    private bool CanSeeBush(Vision vision) => !vision.IsInBush || vision.IsRevealedByBushCombat || SharesBush(vision);
 
     public void ClearTrackedVisions()
     {

@@ -16,7 +16,33 @@ public class BoneSync : MonoBehaviour
         public Transform target;
     }
 
-    private TransformPair[] bonePairs = new TransformPair[0];
+    private TransformPair[] bonePairs = System.Array.Empty<TransformPair>();
+    private Dictionary<string, Transform> skeletonLookup;
+    private Transform lookupRoot;
+
+    public int SyncPairCount => bonePairs.Length;
+
+    internal IReadOnlyDictionary<string, Transform> GetSkeletonLookup()
+    {
+        if (skeletonLookup != null && lookupRoot == baseSkeletonRoot) return skeletonLookup;
+        skeletonLookup = new Dictionary<string, Transform>();
+        lookupRoot = baseSkeletonRoot;
+        var excluded = new HashSet<Transform>();
+        if (clothingRoots != null)
+            foreach (var root in clothingRoots)
+                if (root != null && root != baseSkeletonRoot) excluded.Add(root.parent);
+        if (baseSkeletonRoot != null) AddSkeletonTransform(baseSkeletonRoot, "", excluded);
+        return skeletonLookup;
+    }
+
+    private void AddSkeletonTransform(Transform bone, string path, HashSet<Transform> excluded)
+    {
+        if (excluded.Contains(bone) || bone.GetComponent<TrainerClothingInstance>() != null ||
+            bone.GetComponent<TrainerClothingAttachment>() != null) return;
+        skeletonLookup[path] = bone;
+        foreach (Transform child in bone)
+            AddSkeletonTransform(child, path.Length == 0 ? child.name : path + "/" + child.name, excluded);
+    }
 
     private void OnEnable()
     {
@@ -29,7 +55,8 @@ public class BoneSync : MonoBehaviour
     {
         if (baseSkeletonRoot == null || clothingRoots == null || clothingRoots.Length == 0)
         {
-            bonePairs = new TransformPair[0];
+            bonePairs = System.Array.Empty<TransformPair>();
+            if (Application.isPlaying) enabled = false;
             return;
         }
 
@@ -39,15 +66,25 @@ public class BoneSync : MonoBehaviour
         {
             if (clothingRoot != null)
             {
-                MapBones(baseSkeletonRoot, clothingRoot, pairsList);
+                var owner = clothingRoot.GetComponentInParent<TrainerClothingInstance>(true);
+                if (owner != null && owner.UsesSharedSkeleton) continue;
+                HashSet<Transform> required = null;
+                if (owner != null)
+                {
+                    required = new HashSet<Transform>();
+                    owner.AddRequiredSyncTransforms(required, clothingRoot);
+                }
+                MapBones(baseSkeletonRoot, clothingRoot, pairsList, required);
             }
         }
 
         bonePairs = pairsList.ToArray();
+        if (Application.isPlaying) enabled = bonePairs.Length > 0;
     }
 
-    private void MapBones(Transform baseBone, Transform clothingBone, List<TransformPair> pairsList)
+    private void MapBones(Transform baseBone, Transform clothingBone, List<TransformPair> pairsList, HashSet<Transform> required)
     {
+        if (required != null && !required.Contains(clothingBone)) return;
         pairsList.Add(new TransformPair { source = baseBone, target = clothingBone });
 
         for (int i = 0; i < baseBone.childCount; i++)
@@ -57,7 +94,7 @@ public class BoneSync : MonoBehaviour
 
             if (clothingChild != null)
             {
-                MapBones(baseChild, clothingChild, pairsList);
+                MapBones(baseChild, clothingChild, pairsList, required);
             }
         }
     }
@@ -74,21 +111,21 @@ public class BoneSync : MonoBehaviour
                 continue;
             }
 
-            if (!float.IsNaN(source.localPosition.x) && !float.IsNaN(source.localPosition.y) && !float.IsNaN(source.localPosition.z))
-            {
-                target.localPosition = source.localPosition;
-            }
-
-            if (!float.IsNaN(source.localRotation.w) && !float.IsNaN(source.localRotation.x) && !float.IsNaN(source.localRotation.y) && !float.IsNaN(source.localRotation.z))
-            {
-                target.localRotation = source.localRotation;
-            }
-
-            if (!float.IsNaN(source.localScale.x) && !float.IsNaN(source.localScale.y) && !float.IsNaN(source.localScale.z))
-            {
-                target.localScale = source.localScale;
-            }
+            CopyLocalPose(source, target);
         }
+    }
+
+    internal static void CopyLocalPose(Transform source, Transform target)
+    {
+        Vector3 position = source.localPosition;
+        Quaternion rotation = source.localRotation;
+        Vector3 scale = source.localScale;
+        if (!float.IsNaN(position.x) && !float.IsNaN(position.y) && !float.IsNaN(position.z))
+            target.localPosition = position;
+        if (!float.IsNaN(rotation.w) && !float.IsNaN(rotation.x) && !float.IsNaN(rotation.y) && !float.IsNaN(rotation.z))
+            target.localRotation = rotation;
+        if (!float.IsNaN(scale.x) && !float.IsNaN(scale.y) && !float.IsNaN(scale.z))
+            target.localScale = scale;
     }
 
     private void LateUpdate()

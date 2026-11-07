@@ -8,6 +8,8 @@ public class VisionManager : MonoBehaviour
     private List<Vision> allVisions = new();
     private List<VisionController> allControllers = new();
 
+    private readonly List<VisionController.VisibilitySnapshot> localControllerSnapshots = new();
+
     public Team LocalPlayerTeam { get; set; }
 
     private void Awake()
@@ -69,16 +71,35 @@ public class VisionManager : MonoBehaviour
     {
         for (int i = allControllers.Count - 1; i >= 0; i--)
             if (allControllers[i] == null) allControllers.RemoveAt(i);
+        bool isSpectating = SpectatorUIAssets.IsSpectating;
+        localControllerSnapshots.Clear();
+        if (!isSpectating)
+        {
+            foreach (var controller in allControllers)
+                if (controller.CurrentTeam == LocalPlayerTeam && controller.TryGetVisibilitySnapshot(out var snapshot))
+                    localControllerSnapshots.Add(snapshot);
+        }
         for (int i = allVisions.Count - 1; i >= 0; i--)
         {
             var vision = allVisions[i];
             if (vision == null) { allVisions.RemoveAt(i); continue; }
             // Observer rendering must never flow into IsVisibleToTeam: server
             // bot perception still uses the combat team's actual vision.
-            vision.SetVisibility(SpectatorUIAssets.IsSpectating
-                ? vision.IsAliveForSpectator : IsVisibleToTeam(vision, LocalPlayerTeam));
+            vision.SetVisibility(isSpectating
+                ? vision.IsAliveForSpectator : IsVisibleToLocalTeam(vision));
         }
     }
+
+    private bool IsVisibleToLocalTeam(Vision vision)
+    {
+        if (!vision.isActiveAndEnabled || !vision.IsVisiblyEligible) return false;
+        if (vision.CurrentTeam == LocalPlayerTeam || vision.TemporarilyRevealed) return true;
+        Vector3 position = vision.transform.position;
+        foreach (var snapshot in localControllerSnapshots)
+            if (snapshot.CanSeeEligible(vision, position)) return true;
+        return false;
+    }
+
 
 
     public void ForceUpdate()

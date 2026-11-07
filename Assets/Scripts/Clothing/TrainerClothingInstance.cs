@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -11,6 +12,11 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 public sealed class TrainerClothingInstance : MonoBehaviour
 {
     [SerializeField, HideInInspector] private string runtimeKey;
+    [SerializeField, HideInInspector] private Transform boundSkeleton;
+    [SerializeField, HideInInspector] private bool usesSharedSkeleton;
+    [SerializeField, HideInInspector] private Renderer[] ownedRenderers;
+    [SerializeField, HideInInspector] private SkinnedMeshRenderer[] skinRenderers;
+    [SerializeField, HideInInspector] private TrainerClothingAttachment[] attachments = Array.Empty<TrainerClothingAttachment>();
     private AsyncOperationHandle<GameObject> prefabHandle;
     private readonly List<Material> ownedMaterials = new List<Material>();
     private readonly List<(Material material, int kind)> colorMaterials = new List<(Material, int)>();
@@ -29,6 +35,79 @@ public sealed class TrainerClothingInstance : MonoBehaviour
     private static readonly int OutlineWidth = Shader.PropertyToID("_OutlineWidth");
 
     public string RuntimeKey => runtimeKey;
+    public bool UsesSharedSkeleton => usesSharedSkeleton;
+
+    internal TrainerClothingBinding PrepareBinding(BoneSync sync, Transform holder)
+    {
+        if (sync == null || sync.baseSkeletonRoot == null) return null;
+        if (boundSkeleton != null)
+        {
+            if (boundSkeleton != sync.baseSkeletonRoot)
+                throw new InvalidOperationException("A bound garment must be cloned with its trainer or loaded again before changing skeletons.");
+            return null;
+        }
+        return new TrainerClothingBinding(this, sync, holder);
+    }
+
+    public void BindToSkeleton(BoneSync sync)
+    {
+        PrepareBinding(sync, transform.parent)?.Apply();
+    }
+
+    internal void CacheRenderers(Renderer[] renderers, SkinnedMeshRenderer[] skins)
+    {
+        ownedRenderers = renderers;
+        skinRenderers = skins;
+    }
+
+    internal void AddAttachment(TrainerClothingAttachment attachment)
+    {
+        int count = attachments.Length;
+        Array.Resize(ref attachments, count + 1);
+        attachments[count] = attachment;
+    }
+
+    internal void SetSkeletonBinding(Transform skeleton, bool shared, TrainerClothingAttachment[] nodes)
+    {
+        boundSkeleton = skeleton;
+        usesSharedSkeleton = shared;
+        attachments = nodes;
+        SetAttachmentsActive(isActiveAndEnabled);
+    }
+
+    internal void AddRequiredSyncTransforms(HashSet<Transform> required, Transform root)
+    {
+        if (ownedRenderers == null) ownedRenderers = GetComponentsInChildren<Renderer>(true);
+        if (skinRenderers == null) skinRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+        foreach (var renderer in ownedRenderers)
+            if (renderer != null) AddAncestors(renderer.transform, root, required);
+        foreach (var skin in skinRenderers)
+        {
+            if (skin == null) continue;
+            foreach (var bone in skin.bones) AddAncestors(bone, root, required);
+            AddAncestors(skin.rootBone, root, required);
+        }
+    }
+
+    private static void AddAncestors(Transform bone, Transform root, HashSet<Transform> required)
+    {
+        if (bone == null || !bone.IsChildOf(root)) return;
+        while (bone != null)
+        {
+            required.Add(bone);
+            if (bone == root) break;
+            bone = bone.parent;
+        }
+    }
+
+    private void OnEnable() => SetAttachmentsActive(true);
+    private void OnDisable() => SetAttachmentsActive(false);
+
+    private void SetAttachmentsActive(bool active)
+    {
+        foreach (var attachment in attachments)
+            if (attachment != null && attachment.Owner == this) attachment.gameObject.SetActive(active);
+    }
 
     private void Awake()
     {
@@ -52,8 +131,10 @@ public sealed class TrainerClothingInstance : MonoBehaviour
     {
         if (materialsCached) return;
         materialsCached = true;
-        foreach (var renderer in GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        if (skinRenderers == null) skinRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
+        foreach (var renderer in skinRenderers)
         {
+            if (renderer == null) continue;
             var materials = renderer.sharedMaterials;
             bool changed = false;
             for (int i = 0; i < materials.Length; i++)
@@ -111,6 +192,14 @@ public sealed class TrainerClothingInstance : MonoBehaviour
 
     public void ReleaseResources()
     {
+        foreach (var attachment in attachments)
+        {
+            if (attachment == null || attachment.Owner != this) continue;
+            attachment.gameObject.SetActive(false);
+            if (Application.isPlaying) Destroy(attachment.gameObject);
+            else DestroyImmediate(attachment.gameObject);
+        }
+        attachments = Array.Empty<TrainerClothingAttachment>();
         foreach (var material in ownedMaterials)
         {
             if (Application.isPlaying) Destroy(material);

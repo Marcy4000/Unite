@@ -15,6 +15,7 @@ using UnityEditor;
 
 public sealed class OpenWorldNpcAnimationTests
 {
+    private int previousQuality;
     private GameObject root;
     private Component npc;
     private AnimationClip idle;
@@ -35,6 +36,8 @@ public sealed class OpenWorldNpcAnimationTests
     [UnitySetUp]
     public IEnumerator SetUp()
     {
+        previousQuality = QualitySettings.GetQualityLevel();
+        QualitySettings.SetQualityLevel(0, false);
         root = new GameObject("Animation NPC test");
         root.SetActive(false);
         npc = root.AddComponent(GameType("OpenWorldNpc"));
@@ -72,6 +75,162 @@ public sealed class OpenWorldNpcAnimationTests
         Object.Destroy(interact);
         yield return null;
         if (clothesType != null) clothesType.GetField("Instance").SetValue(null, previousClothes);
+        QualitySettings.SetQualityLevel(previousQuality, false);
+    }
+
+    private Camera SamplingCamera(Vector3 position)
+    {
+        var cameraObject = new GameObject("NPC sampling camera", typeof(Camera));
+        cameraObject.transform.SetParent(root.transform, false);
+        cameraObject.transform.position = position;
+        var camera = cameraObject.GetComponent<Camera>();
+        cameraObject.tag = "MainCamera";
+        camera.cullingMask = 0;
+        var flags = BindingFlags.Static | BindingFlags.NonPublic;
+        npc.GetType().GetField("samplingCamera", flags).SetValue(null, camera);
+        npc.GetType().GetField("samplingCameraFrame", flags).SetValue(null, Time.frameCount);
+        return camera;
+    }
+
+    [UnityTest]
+    public IEnumerator QualityChangesApplySamplingDistancesImmediately()
+    {
+        var camera = SamplingCamera(Vector3.back * 15f);
+        for (int quality = 0; quality < 3; quality++)
+        {
+            QualitySettings.SetQualityLevel(quality, false);
+            camera.transform.position = Vector3.back * 15f;
+            Set("samplingBand", -1);
+            Call("UpdateAnimation", 0.001f);
+            Assert.That((int)Field("samplingBand"), Is.EqualTo(quality == 0 ? 1 : 0));
+            camera.transform.position = Vector3.back * 35f;
+            Call("UpdateAnimation", 0.001f);
+            Assert.That((int)Field("samplingBand"), Is.EqualTo(quality == 0 ? 2 : 1));
+            camera.transform.position = Vector3.back * 55f;
+            Call("UpdateAnimation", 0.001f);
+            Assert.That((int)Field("samplingBand"), Is.EqualTo(quality == 2 ? 1 : 2));
+        }
+        // Both tiers are already in reduced-rate playback here. Switching quality
+        // must invalidate the old deadline and sample the new profile immediately.
+        Set("nextAnimationSample", 1000f);
+        QualitySettings.SetQualityLevel(0, false);
+        Call("UpdateAnimation", 0.1f);
+        Assert.That((int)Field("samplingBand"), Is.EqualTo(2));
+        var bone = root.transform.Find("Visual/Animated bone");
+        Assert.That(bone.localPosition.x, Is.EqualTo((float)Field("animationTime") % idle.length).Within(0.002f));
+        QualitySettings.SetQualityLevel(2, false);
+        camera.transform.position = Vector3.back * 29f;
+        Call("UpdateAnimation", 0.001f);
+        Assert.That((int)Field("samplingBand"), Is.Zero, "High quality must skip the old 12–30 unit reduced-rate band.");
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator DistantSamplingHoldsPoseAndCatchesUpWithoutSlowingAnimation()
+    {
+        SamplingCamera(Vector3.back * 100f);
+        Set("animationTime", 0f);
+        Set("samplingBand", -1);
+        Call("UpdateAnimation", 0.1f);
+        var bone = root.transform.Find("Visual/Animated bone");
+        Assert.That(bone.localPosition.x, Is.EqualTo(0.1f).Within(0.002f));
+        Call("UpdateAnimation", 0.001f);
+        Assert.That(bone.localPosition.x, Is.EqualTo(0.1f).Within(0.002f), "Skipped sample must hold its pose.");
+        Call("UpdateAnimation", 0.2f);
+        Assert.That(bone.localPosition.x, Is.EqualTo(0.301f).Within(0.002f), "Sampling must retain real animation time.");
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator OffscreenSamplingKeepsTimeAndRefreshesImmediatelyWhenNearby()
+    {
+        var camera = SamplingCamera(Vector3.back * 100f);
+        var visual = (GameObject)Field("visual");
+        var mesh = new GameObject("Invisible renderer", typeof(MeshRenderer));
+        mesh.transform.SetParent(visual.transform, false);
+        Set("animationRenderers", new Renderer[] { mesh.GetComponent<Renderer>() });
+        Set("animationTime", 0f);
+        Set("samplingBand", -1);
+        var bone = root.transform.Find("Visual/Animated bone");
+        float held = bone.localPosition.x;
+        Call("UpdateAnimation", 0.4f);
+        Assert.That((int)Field("samplingBand"), Is.EqualTo(3));
+        Assert.That(bone.localPosition.x, Is.EqualTo(held));
+        camera.transform.position = Vector3.back;
+        Call("UpdateAnimation", 0.1f);
+        Assert.That(bone.localPosition.x, Is.EqualTo(0.5f).Within(0.002f));
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator DistantInteractionAndBlendRemainFullRate()
+    {
+        SamplingCamera(Vector3.back * 100f);
+        Call("PlayClip", interact);
+        Call("UpdateAnimation", 0.1f);
+        var bone = root.transform.Find("Visual/Animated bone");
+        float first = bone.localPosition.x;
+        Call("UpdateAnimation", 0.001f);
+        Assert.That(bone.localPosition.x, Is.Not.EqualTo(first), "Blends must sample every frame.");
+        npc.GetType().GetProperty("IsInteracting").GetSetMethod(true).Invoke(npc, new object[] { true });
+        Call("UpdateAnimation", 0.2f);
+        Call("UpdateAnimation", 0.001f);
+        Assert.That(bone.localPosition.x, Is.EqualTo(10.302f).Within(0.002f));
+        Call("UpdateAnimation", 0.8f);
+        Assert.That(npc.GetType().GetProperty("IsInteracting").GetValue(npc), Is.False);
+        Assert.That(Field("currentClip"), Is.SameAs(idle));
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator DistanceHysteresisAvoidsSwitchingRatesAtTheNearBoundary()
+    {
+        var camera = SamplingCamera(Vector3.back * 11f);
+        Set("samplingBand", -1);
+        Call("UpdateAnimation", 0.01f);
+        Assert.That((int)Field("samplingBand"), Is.Zero);
+        camera.transform.position = Vector3.back * 13f;
+        Call("UpdateAnimation", 0.01f);
+        Assert.That((int)Field("samplingBand"), Is.Zero, "Small movements outside the boundary must retain full rate.");
+        camera.transform.position = Vector3.back * 15f;
+        Call("UpdateAnimation", 0.01f);
+        Assert.That((int)Field("samplingBand"), Is.EqualTo(1));
+        camera.transform.position = Vector3.back * 13f;
+        Call("UpdateAnimation", 0.01f);
+        Assert.That((int)Field("samplingBand"), Is.EqualTo(1));
+        camera.transform.position = Vector3.back * 11f;
+        Call("UpdateAnimation", 0.01f);
+        Assert.That((int)Field("samplingBand"), Is.Zero);
+        yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator ControllerIsDetachedDuringPlaybackAndRestoredOnDisable()
+    {
+#if UNITY_EDITOR
+        var animator = (Animator)Field("animator");
+        Call("StopAnimation");
+        var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>("Assets/Model/Pokemons/Eevee/Eevee.controller");
+        animator.runtimeAnimatorController = controller;
+        animator.cullingMode = AnimatorCullingMode.CullCompletely;
+        Set("animator", animator);
+        Call("PlayClip", idle);
+        Assert.That(animator.runtimeAnimatorController, Is.Null);
+        SamplingCamera(Vector3.back * 100f);
+        Set("animationTime", 0f);
+        Call("UpdateAnimation", 0.4f);
+        Set("nextAnimationSample", 1000f);
+        var bone = root.transform.Find("Visual/Animated bone");
+        float displayed = bone.localPosition.x;
+        yield return null;
+        yield return new WaitForEndOfFrame();
+        Assert.That(bone.localPosition.x, Is.EqualTo(displayed).Within(0.002f), "Normal animation update must preserve a skipped manual pose.");
+        root.SetActive(false);
+        Assert.That(animator.runtimeAnimatorController, Is.SameAs(controller));
+        Assert.That(animator.cullingMode, Is.EqualTo(AnimatorCullingMode.CullCompletely));
+#else
+        yield break;
+#endif
     }
 
     [UnityTest]
@@ -113,6 +272,42 @@ public sealed class OpenWorldNpcAnimationTests
         Assert.That(npc.GetType().GetProperty("IsInteracting").GetValue(npc), Is.False);
         Assert.That(Field("currentClip"), Is.SameAs(idle));
         yield return null;
+    }
+
+    [UnityTest]
+    public IEnumerator ReplacingVisualRestartsAnimationOnTheNewAnimator()
+    {
+        var replacement = new GameObject("Replacement visual", typeof(Animator));
+        replacement.transform.SetParent(root.transform, false);
+        new GameObject("Animated bone").transform.SetParent(replacement.transform, false);
+        Set("visual", replacement);
+        yield return null;
+        Assert.That(Field("animator"), Is.SameAs(replacement.GetComponent<Animator>()));
+        Assert.That(Field("currentClip"), Is.SameAs(idle));
+        Assert.That(((PlayableGraph)Field("graph")).IsValid(), Is.True);
+    }
+
+    [UnityTest]
+    public IEnumerator CachedVisualFollowsActiveChildAnimatorChanges()
+    {
+        var container = new GameObject("Animator alternatives");
+        container.transform.SetParent(root.transform, false);
+        var first = new GameObject("First", typeof(Animator));
+        first.transform.SetParent(container.transform, false);
+        new GameObject("Animated bone").transform.SetParent(first.transform, false);
+        var second = new GameObject("Second", typeof(Animator));
+        second.transform.SetParent(container.transform, false);
+        new GameObject("Animated bone").transform.SetParent(second.transform, false);
+        second.SetActive(false);
+        Set("visual", container);
+        yield return null;
+        Assert.That(Field("animator"), Is.SameAs(first.GetComponent<Animator>()));
+
+        first.SetActive(false);
+        second.SetActive(true);
+        yield return null;
+        Assert.That(Field("animator"), Is.SameAs(second.GetComponent<Animator>()));
+        Assert.That(((PlayableGraph)Field("graph")).IsValid(), Is.True);
     }
 
     [UnityTest]
@@ -441,7 +636,14 @@ public sealed class OpenWorldNpcAnimationTests
         var sit = animator.runtimeAnimatorController.animationClips.First(clip => clip.name == "ani_sitdown_lob_" + suffix);
         yield return new WaitForSeconds(sit.length + 0.4f);
         Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName(isMale ? "ani_sit01_lob_male" : "ani_sit_lob_female"), Is.True);
+        Vector3 seatPosition = root.transform.position;
+        root.transform.position += Vector3.right * 100f;
+        Assert.That(npc.GetType().GetMethod("CanInteract", Private).Invoke(npc, new object[] { avatar }), Is.True,
+            "Standing up must remain available outside the normal interaction radius.");
+        root.transform.position = seatPosition;
         type.GetMethod("SetInputBlocked").Invoke(avatar, new object[] { true });
+        Assert.That(npc.GetType().GetMethod("CanInteract", Private).Invoke(npc, new object[] { avatar }), Is.False,
+            "The stand-up prompt must respect menus/chat.");
         Assert.That(type.GetMethod("TryLeaveSeat").Invoke(avatar, null), Is.False, "Menus/chat must block the stand-up input.");
         type.GetMethod("SetInputBlocked").Invoke(avatar, new object[] { false });
         Assert.That(type.GetMethod("TryLeaveSeat").Invoke(avatar, null), Is.True);

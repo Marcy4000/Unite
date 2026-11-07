@@ -230,6 +230,10 @@ public class TrainerModel : MonoBehaviour
 
         try
         {
+            var skeleton = info.IsMale ? maleBoneSync : femaleBoneSync;
+            // Freeze the canonical lookup before any garment-owned branches exist.
+            skeleton?.GetSkeletonLookup();
+            var bindings = new List<TrainerClothingBinding>();
             using (InstantiateMarker.Auto())
             {
                 if (pendingLoads.Count > 0)
@@ -261,6 +265,16 @@ public class TrainerModel : MonoBehaviour
                 }
                 foreach (var load in pendingLoads) instances[load.Slot] = load.Instance;
 
+                // Validate every new binding before retiring the visible outfit.
+                // Reused garments and complete trainer clones are already bound.
+                for (int i = 0; i < instances.Length; i++)
+                {
+                    var instance = instances[i];
+                    if (instance == null) continue;
+                    var binding = instance.PrepareBinding(skeleton, holders[i]);
+                    if (binding != null) bindings.Add(binding);
+                }
+
                 ReleaseObsoleteInstances(clothingHoldersMale, info.IsMale ? instances : null);
                 ReleaseObsoleteInstances(clothingHoldersFemale, info.IsMale ? null : instances);
                 SetGender(info.IsMale);
@@ -273,6 +287,7 @@ public class TrainerModel : MonoBehaviour
                     instance.transform.SetParent(holders[i], false);
                     bones.Add(GetChildToSync(instance.transform));
                 }
+                foreach (var binding in bindings) binding.Apply();
                 UpdateMaterialColors(info);
                 if (activeBoneSync != null)
                 {
@@ -380,7 +395,9 @@ public class TrainerModel : MonoBehaviour
         }
     }
 
-    public Transform GetChildToSync(Transform parent)
+    public Transform GetChildToSync(Transform parent) => FindClothingSkeleton(parent);
+
+    internal static Transform FindClothingSkeleton(Transform parent)
     {
         foreach (Transform child in parent)
         {

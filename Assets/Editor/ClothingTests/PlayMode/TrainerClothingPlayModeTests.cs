@@ -318,6 +318,63 @@ public class TrainerClothingPlayModeTests
         Assert.That(Holder(1).GetChild(0), Is.SameAs(hair));
         Assert.That(handle.IsValid(), Is.True);
         Assert.That(Holder(4).childCount, Is.EqualTo(1));
+        var sync = (Behaviour)Get(model, "maleBoneSync");
+        Assert.That(sync.enabled, Is.False, "An outfit without offset garments must not run a BoneSync callback.");
+        Assert.That(Property(sync, "SyncPairCount"), Is.EqualTo(0));
+    }
+
+    [UnityTest]
+    public IEnumerator DetachedBranchesFollowGarmentVisibilityAndAreReleased()
+    {
+#if UNITY_EDITOR
+        const string path = "Assets/Model/Clothing/Female/Outwear/Lv3/pref_lob_50073outerwear_lv3/pref_lob_50073outerwear_lv3.fbx";
+        var garment = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path), Holder(5, false), false);
+        var owned = garment.AddComponent(GameType("TrainerClothingInstance"));
+        owned.GetType().GetMethod("BindToSkeleton").Invoke(owned, new[] { Get(model, "femaleBoneSync") });
+        var nodes = (Component[])Get(owned, "attachments");
+        Assert.That(nodes.Length, Is.GreaterThan(0));
+        Assert.That(nodes.All(node => node.gameObject.activeSelf), Is.True);
+        garment.SetActive(false);
+        Assert.That(nodes.All(node => !node.gameObject.activeSelf), Is.True);
+        garment.SetActive(true);
+        Assert.That(nodes.All(node => node.gameObject.activeSelf), Is.True);
+        owned.GetType().GetMethod("ReleaseResources").Invoke(owned, null);
+        Assert.That(nodes.All(node => !node.gameObject.activeSelf), Is.True);
+        yield return null;
+        Assert.That(nodes.All(node => node == null), Is.True);
+        Object.Destroy(garment);
+#else
+        yield break;
+#endif
+    }
+
+    [UnityTest]
+    public IEnumerator OffsetGarmentReenablesSyncAndRemovingItDisablesSyncAgain()
+    {
+        Initialize();
+        yield return WaitForInitialization();
+#if UNITY_EDITOR
+        var sync = (Behaviour)Get(model, "maleBoneSync");
+        Assert.That(sync.enabled, Is.False);
+        var roots = (Transform[])Get(sync, "clothingRoots");
+        const string path = "Assets/Model/Clothing/Male/Foot/Lv3/pref_lob_40361foot_lv3/pref_lob_40361foot_lv3.fbx";
+        var garment = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path), Holder(9), false);
+        var owned = garment.AddComponent(GameType("TrainerClothingInstance"));
+        owned.GetType().GetMethod("BindToSkeleton").Invoke(owned, new object[] { sync });
+        Assert.That(Property(owned, "UsesSharedSkeleton"), Is.False);
+        Set(sync, "clothingRoots", roots.Concat(new[] { garment.transform.Find("reference") }).ToArray());
+        sync.GetType().GetMethod("RebuildSyncData").Invoke(sync, null);
+        Assert.That(sync.enabled, Is.True);
+        Assert.That((int)Property(sync, "SyncPairCount"), Is.GreaterThan(0));
+        garment.SetActive(false);
+        owned.GetType().GetMethod("ReleaseResources").Invoke(owned, null);
+        Object.Destroy(garment);
+        Set(sync, "clothingRoots", roots);
+        sync.GetType().GetMethod("RebuildSyncData").Invoke(sync, null);
+        Assert.That(sync.enabled, Is.False);
+        Assert.That(Property(sync, "SyncPairCount"), Is.EqualTo(0));
+        yield return null;
+#endif
     }
 
     [UnityTest]
@@ -408,6 +465,9 @@ public class TrainerClothingPlayModeTests
         var sourceMaterial = (Material)sourceMaterials[0];
         var cloneMaterial = (Material)cloneMaterials[0];
         Assert.That(cloneMaterial, Is.Not.SameAs(sourceMaterial));
+        foreach (var renderer in owned.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            Assert.That(renderer.bones.All(bone => bone != null && bone.IsChildOf(clone.transform)), Is.True,
+                "Cloned clothing must reference the clone's rig and branches.");
         Object.Destroy(model.gameObject);
         yield return null;
         yield return null;

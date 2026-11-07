@@ -28,6 +28,19 @@ public sealed class OpenWorldNpc : MonoBehaviour
     [SerializeField] private AnimationClip maleTrainerAnimation;
     [SerializeField] private AnimationClip femaleTrainerAnimation;
 
+    [Header("Animation sampling")]
+    [SerializeField] private bool optimizeAnimationSampling = true;
+    [SerializeField, Min(0f)] private float fullRateDistance = 12f;
+    [SerializeField, Min(0f)] private float reducedRateDistance = 30f;
+    [SerializeField, Min(1f)] private float mediumAnimationRate = 30f;
+    [SerializeField, Min(1f)] private float distantAnimationRate = 15f;
+    [SerializeField, Min(0f)] private float samplingDistanceHysteresis = 2f;
+    [Tooltip("Balanced quality: full-rate and 30 Hz distance limits.")]
+    [SerializeField, Min(0f)] private float balancedFullRateDistance = 18f;
+    [SerializeField, Min(0f)] private float balancedReducedRateDistance = 50f;
+    [Tooltip("High Fidelity quality: full rate through this distance, then 30 Hz without a 15 Hz tier.")]
+    [SerializeField, Min(0f)] private float highFullRateDistance = 30f;
+
     [Header("Interaction")]
     [SerializeField] private OpenWorldNpcInteraction interaction;
     [SerializeField, Min(0.1f)] private float interactionDistance = 2.5f;
@@ -55,10 +68,25 @@ public sealed class OpenWorldNpc : MonoBehaviour
     private static OpenWorldNpc nearest;
     private TrainerModel trainer;
     private Animator animator;
+    private GameObject cachedVisual;
+    private Animator[] visualAnimators = Array.Empty<Animator>();
+    private bool animatorCacheDirty = true;
+    private string cachedInteractionLabel;
+    private string cachedPromptLabel;
     private PlayableGraph graph;
     private AnimationClipPlayable playable;
     private AnimationClip currentClip;
     private float animationTime;
+    private RuntimeAnimatorController savedController;
+    private AnimatorCullingMode savedCullingMode;
+    private bool ownsAnimator;
+    private bool clipHasEvents;
+    private Renderer[] animationRenderers = Array.Empty<Renderer>();
+    private int samplingBand = -1;
+    private int samplingQuality = -1;
+    private float nextAnimationSample;
+    private static Camera samplingCamera;
+    private static int samplingCameraFrame = -1;
     private bool initialized;
     private readonly OpenWorldAnimationPoseBlend poseBlend = new OpenWorldAnimationPoseBlend();
 
@@ -72,6 +100,8 @@ public sealed class OpenWorldNpc : MonoBehaviour
     {
         ActiveNpcs.Add(this);
         selectionFrame = -1;
+        animatorCacheDirty = true;
+        if (trainer != null) trainer.onClothesInitialized += RefreshAnimationRenderers;
         if (interactButton != null) interactButton.onClick.AddListener(Interact);
         SetPrompt(false);
     }
@@ -88,6 +118,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
         foreach (var modelAnimator in visual.GetComponentsInChildren<Animator>(true)) modelAnimator.applyRootMotion = false;
         foreach (var canvas in visual.GetComponentsInChildren<Canvas>(true)) canvas.enabled = false;
         trainer = kind == OpenWorldNpcKind.Trainer ? visual.GetComponent<TrainerModel>() : null;
+        if (trainer != null) trainer.onClothesInitialized += RefreshAnimationRenderers;
         if (kind == OpenWorldNpcKind.Trainer)
         {
             if (trainer == null)
@@ -115,7 +146,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
     {
         var activeAnimator = !initialized ? null : trainer != null
             ? (trainer.IsInitialized ? trainer.ActiveAnimator : null)
-            : visual != null ? visual.GetComponentInChildren<Animator>() : null;
+            : FindVisualAnimator();
         if (animator != activeAnimator)
         {
             StopAnimation();
@@ -138,6 +169,24 @@ public sealed class OpenWorldNpc : MonoBehaviour
 
     private void LateUpdate() => UpdateAnimation(Time.deltaTime);
 
+    private void OnTransformChildrenChanged() => animatorCacheDirty = true;
+
+    private Animator FindVisualAnimator()
+    {
+        if (animatorCacheDirty || cachedVisual != visual)
+        {
+            cachedVisual = visual;
+            visualAnimators = visual != null
+                ? visual.GetComponentsInChildren<Animator>(true) : Array.Empty<Animator>();
+            animatorCacheDirty = false;
+        }
+        // Preserve active-child selection without searching the hierarchy every frame.
+        foreach (var candidate in visualAnimators)
+            if (candidate != null && (candidate.gameObject == visual || candidate.gameObject.activeInHierarchy))
+                return candidate;
+        return null;
+    }
+
     private static void UpdateSelection()
     {
         if (selectionFrame == Time.frameCount) return;
@@ -145,12 +194,14 @@ public sealed class OpenWorldNpc : MonoBehaviour
         nearest = null;
         var avatar = OpenWorldTrainerAvatar.LocalAvatar;
         if (avatar == null) return;
+        Vector3 avatarPosition = avatar.Position;
+        bool? canStartEmote = null;
         float closest = float.PositiveInfinity;
         foreach (var npc in ActiveNpcs)
         {
-            if (!npc.CanInteract(avatar)) continue;
-            float distance = (npc.transform.position - avatar.Position).sqrMagnitude;
+            float distance = (npc.transform.position - avatarPosition).sqrMagnitude;
             if (distance >= closest) continue;
+            if (!npc.CanInteractAtDistance(avatar, distance, ref canStartEmote)) continue;
             closest = distance;
             nearest = npc;
         }
@@ -161,6 +212,19 @@ public sealed class OpenWorldNpc : MonoBehaviour
 
     private bool CanInteract(OpenWorldTrainerAvatar avatar)
     {
+        if (avatar == null) return false;
+        bool? canStartEmote = null;
+        return CanInteractAtDistance(avatar, (transform.position - avatar.Position).sqrMagnitude, ref canStartEmote);
+    }
+
+    private bool CanInteractAtDistance(OpenWorldTrainerAvatar avatar, float distance, ref bool? canStartEmote)
+    {
+        // Standing up remains available even if the avatar has moved outside the seat's radius.
+        if (Interaction == OpenWorldNpcInteraction.Seat && avatar.IsUsingSeat(this))
+            return isActiveAndEnabled && avatar.CanLeaveSeat;
+        if (!isActiveAndEnabled || !IsReady || IsInteracting || !avatar.IsSpawned ||
+            !(distance <= interactionDistance * interactionDistance)) return false;
+
         if (Interaction == OpenWorldNpcInteraction.Jukebox && (OpenWorldStageMenu.Instance == null ||
             OpenWorldStageJukebox.Instance == null || !OpenWorldStageJukebox.Instance.CanUseConsole(avatar))) return false;
         if (Interaction == OpenWorldNpcInteraction.Player)
@@ -169,11 +233,9 @@ public sealed class OpenWorldNpc : MonoBehaviour
             if (target == null || !target.IsSpawned || target == avatar || string.IsNullOrEmpty(target.PlayerId) ||
                 OpenWorldTrainerMenu.Instance == null) return false;
         }
-        if (Interaction == OpenWorldNpcInteraction.Seat && avatar != null && avatar.IsUsingSeat(this))
-            return isActiveAndEnabled && avatar.CanLeaveSeat;
-        return isActiveAndEnabled && IsReady && !IsInteracting && avatar != null && avatar.IsSpawned &&
-            (Interaction != OpenWorldNpcInteraction.Seat || avatar.IsSeatAvailable(this)) &&
-            avatar.CanStartEmote && (transform.position - avatar.Position).sqrMagnitude <= interactionDistance * interactionDistance;
+        if (!canStartEmote.HasValue) canStartEmote = avatar.CanStartEmote;
+        return canStartEmote.Value &&
+            (Interaction != OpenWorldNpcInteraction.Seat || avatar.IsSeatAvailable(this));
     }
 
     public void Interact()
@@ -216,6 +278,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
 
     private void PlayClip(AnimationClip clip)
     {
+        if (clip != null) AcquireAnimator();
         bool hasPose = poseBlend.IsInitialized;
         poseBlend.Initialize(animator);
         if (hasPose && animationBlendDuration > 0f)
@@ -233,8 +296,14 @@ public sealed class OpenWorldNpc : MonoBehaviour
         poseBlend.Begin(hasPose ? animationBlendDuration : 0f);
         if (graph.IsValid()) graph.Destroy();
         currentClip = clip;
+        clipHasEvents = clip != null && clip.events.Length != 0;
         animationTime = 0f;
-        if (animator == null || clip == null) return;
+        samplingBand = -1;
+        if (animator == null || clip == null)
+        {
+            ReleaseAnimator();
+            return;
+        }
         graph = PlayableGraph.Create($"NPC {name}");
         graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
         playable = AnimationClipPlayable.Create(graph, clip);
@@ -260,25 +329,134 @@ public sealed class OpenWorldNpc : MonoBehaviour
             PlayClip(idleAnimation);
             return;
         }
+        if (!ShouldSampleAnimation()) return;
         float sampleTime = currentClip.length > 0f ? animationTime % currentClip.length : 0f;
         playable.SetTime(sampleTime);
         graph.Evaluate(0f);
         poseBlend.Apply(deltaTime);
     }
 
+    private void AcquireAnimator()
+    {
+        if (ownsAnimator || animator == null) return;
+        // This graph owns the pose. Leaving a controller attached allows its
+        // normal update to replace the held pose between manual samples.
+        savedController = animator.runtimeAnimatorController;
+        savedCullingMode = animator.cullingMode;
+        animator.runtimeAnimatorController = null;
+        animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        ownsAnimator = true;
+        RefreshAnimationRenderers();
+    }
+
+    private void RefreshAnimationRenderers()
+    {
+        animationRenderers = animator != null
+            ? animator.GetComponentsInChildren<Renderer>(true) : Array.Empty<Renderer>();
+        samplingBand = -1;
+    }
+
+    private void ReleaseAnimator()
+    {
+        if (ownsAnimator && animator != null)
+        {
+            if (animator.runtimeAnimatorController == null)
+                animator.runtimeAnimatorController = savedController;
+            animator.cullingMode = savedCullingMode;
+        }
+        savedController = null;
+        ownsAnimator = false;
+    }
+
+    private bool ShouldSampleAnimation()
+    {
+        var avatar = OpenWorldTrainerAvatar.LocalAvatar;
+        if (!optimizeAnimationSampling || IsInteracting || poseBlend.IsBlending ||
+            clipHasEvents)
+        {
+            samplingBand = -1;
+            return true;
+        }
+        if (samplingCameraFrame != Time.frameCount)
+        {
+            samplingCameraFrame = Time.frameCount;
+            samplingCamera = avatar != null ? avatar.LocalCamera : Camera.main;
+        }
+        if (samplingCamera == null) return true;
+        // Follow the same Performant/Balanced/High Fidelity quality indices as
+        // the graphics settings, including changes made while the lobby is open.
+        int quality = QualitySettings.GetQualityLevel();
+        if (quality != samplingQuality)
+        {
+            samplingQuality = quality;
+            samplingBand = -1;
+        }
+        float fullDistance = quality >= 2 ? highFullRateDistance :
+            quality == 1 ? balancedFullRateDistance : fullRateDistance;
+        float reducedDistance = quality >= 2 ? float.PositiveInfinity :
+            quality == 1 ? balancedReducedRateDistance : reducedRateDistance;
+        float distanceSquared = (animator.transform.position - samplingCamera.transform.position).sqrMagnitude;
+        bool nearPlayer = avatar != null && (transform.position - avatar.Position).sqrMagnitude <=
+            Mathf.Max(fullDistance, interactionDistance) * Mathf.Max(fullDistance, interactionDistance);
+        float nearBoundary = fullDistance + (samplingBand == 0 ? samplingDistanceHysteresis : 0f);
+        float farBoundary = Mathf.Max(fullDistance, reducedDistance) +
+            (samplingBand == 1 ? samplingDistanceHysteresis : 0f);
+        int band = nearPlayer || distanceSquared <= nearBoundary * nearBoundary ? 0 :
+            distanceSquared <= farBoundary * farBoundary ? 1 : 2;
+        if (band != 0)
+        {
+            // isVisible is conservative: shadow and other-camera visibility also
+            // keep sampling alive. Do not freeze an offscreen visible shadow.
+            bool hasRenderer = false;
+            bool visible = false;
+            foreach (var renderer in animationRenderers)
+            {
+                if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
+                hasRenderer = true;
+                if (renderer.isVisible) { visible = true; break; }
+            }
+            if (hasRenderer && !visible) band = 3;
+        }
+        if (band != samplingBand)
+        {
+            samplingBand = band;
+            float interval = 1f / Mathf.Max(1f, band == 1 ? mediumAnimationRate : distantAnimationRate);
+            // Sample immediately on promotion/visibility changes, then distribute
+            // future work across NPCs instead of aligning every sampling deadline.
+            nextAnimationSample = animationTime + interval *
+                (0.5f + (unchecked((uint)GetInstanceID()) % 997) / 997f);
+            return band != 3;
+        }
+        if (band == 3) return false;
+        if (band == 0) return true;
+        if (animationTime < nextAnimationSample) return false;
+        float period = 1f / Mathf.Max(1f, band == 1 ? mediumAnimationRate : distantAnimationRate);
+        nextAnimationSample += (Mathf.Floor((animationTime - nextAnimationSample) / period) + 1f) * period;
+        return true;
+    }
+
     private void SetPrompt(bool visible)
     {
-        if (prompt != null) prompt.gameObject.SetActive(visible);
-        if (promptText != null)
+        if (prompt != null && prompt.gameObject.activeSelf != visible) prompt.gameObject.SetActive(visible);
+        if (visible && promptText != null)
         {
-            bool seatedHere = OpenWorldTrainerAvatar.LocalAvatar != null && OpenWorldTrainerAvatar.LocalAvatar.IsUsingSeat(this);
-            promptText.text = $"{(seatedHere ? "Stand up" : interactionLabel)}  [E / A]";
+            if (cachedPromptLabel == null || cachedInteractionLabel != interactionLabel)
+            {
+                cachedInteractionLabel = interactionLabel;
+                cachedPromptLabel = $"{interactionLabel}  [E / A]";
+            }
+            var avatar = OpenWorldTrainerAvatar.LocalAvatar;
+            string label = avatar != null && avatar.IsUsingSeat(this) ? "Stand up  [E / A]" : cachedPromptLabel;
+            if (promptText.text != label) promptText.text = label;
         }
     }
 
     private void StopAnimation()
     {
         if (graph.IsValid()) graph.Destroy();
+        ReleaseAnimator();
+        animationRenderers = Array.Empty<Renderer>();
+        samplingBand = -1;
         poseBlend.Clear();
         IsInteracting = false;
         currentClip = null;
@@ -295,6 +473,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
         if (interactButton != null) interactButton.onClick.RemoveListener(Interact);
         SetPrompt(false);
         StopAnimation();
+        if (trainer != null) trainer.onClothesInitialized -= RefreshAnimationRenderers;
     }
 
     private void OnValidate()

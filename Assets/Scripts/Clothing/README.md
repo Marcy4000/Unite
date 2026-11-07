@@ -73,3 +73,33 @@ for asynchronous asset/bundle loading; these markers do not span asynchronous wa
 Check the new Addressables Build Report for model dependency closures, largest
 bundles, source JSON inclusion, and duplicated dependencies. Test UIObject3D clones
 after destroying their source trainer to verify independent asset lifetime.
+
+## Skeleton binding
+
+On outfit commit, `TrainerClothingBinding` maps each renderer's bone references to
+that gender's animated rig, preserving the shared mesh, bind poses, bone ordering,
+and renderer bounds. Matching uses paths relative to `reference`. Redundant garment
+skeletons are removed; skinned geometry remains under its original slot root.
+The rig lookup excludes authored garment instances and garment-owned attachments.
+
+Bones absent from the base rig are retained beneath private `TrainerClothingAttachment`
+nodes. These nodes deliberately interrupt animation paths: placing extra bones
+directly under the rig can make existing clips animate previously unbound paths.
+`TrainerClothingInstance` serializes and owns those attachments and renderer references,
+so full-trainer clones remap them to their own rig. Disabling or releasing a garment
+also disables/removes its attachments. Clone a complete trainer, or load a fresh
+unbound garment before binding it to another skeleton.
+
+Models with a nonidentity parent space (including imported root translations) keep
+their original skeleton. `BoneSync` limits these compatibility garments to the
+renderer bones, root bones, rigid geometry, and ancestor paths they need. Compatible
+shared garments contribute no sync pairs; the component disables itself during play
+when its sync list is empty. `SyncPairCount` exposes the remaining work for inspection.
+Editor placement previews keep their authored sync behavior.
+
+`TrainerSkeletonBindingTests` compares baked positions/normals against the previous
+recursive pose-copy behavior for both genders, extra-branch animation collisions,
+rigid geometry, root offsets, and nonuniformly scaled trainer placement. The clothing
+PlayMode suite also checks branch visibility/release, cloned bone references, and
+that a compatible outfit disables its BoneSync callback. Continue to verify preview
+framing, culling, shadows, and the same lobby profiler capture on target devices.

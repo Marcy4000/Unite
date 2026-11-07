@@ -421,3 +421,43 @@ and card customization. Private chat opens the existing city conversation by
 player ID. The match-history area currently reads "Match history is coming soon!".
 The profile blocks world movement, closes with Close/Escape/controller B, and
 closes automatically if the selected trainer despawns or the local trainer leaves.
+
+### NPC animation sampling
+
+`OpenWorldNpc` owns its visual Animator through a manual clip graph. While that
+ownership is active, the runtime controller is detached so its normal update
+cannot overwrite a pose held between samples. Disabling the NPC or switching
+visuals restores the original controller and culling mode. Clips remain evaluated
+in LateUpdate to preserve ordering with clothing and other animation consumers.
+
+The **Animation sampling** Inspector settings follow the active graphics quality:
+
+| Quality | Full frame rate | 30 Hz | 15 Hz |
+| --- | --- | --- | --- |
+| Performant (Low) | Through 12 units | 12–30 units | Beyond 30 units |
+| Balanced (Medium) | Through 18 units | 18–50 units | Beyond 50 units |
+| High Fidelity (High) | Through 30 units | Beyond 30 units | Never |
+
+Distances use the gameplay camera. Quality changes apply during gameplay and
+immediately invalidate the previous sampling deadline. The low-tier distances,
+balanced-tier distances, high-tier full-rate distance, and sampling rates are
+configurable in the Inspector.
+A 2-unit hysteresis margin prevents repeated rate changes at distance boundaries.
+NPCs near the local player, interaction clips, transition blends, and clips with
+Animation Events always sample at full rate. No gameplay camera also defaults to
+full rate. Uncheck **Optimize Animation Sampling** to compare full-rate playback.
+
+Outside the nearby safety radius, a visual with no visible enabled renderers
+suspends pose evaluation while its animation clock continues. Renderer visibility
+includes shadow rendering and other cameras; an Editor Scene view can therefore
+keep sampling active. This is deliberately conservative rather than occlusion
+raycasting. Renderer references refresh when trainer clothing finishes loading.
+Becoming visible or entering a faster distance band samples the current animation
+time immediately, without replaying missed frames. Sampling deadlines are staggered
+across NPCs. Dialogue, prompts, interaction eligibility, and interaction completion
+continue independently of the idle sampling rate.
+
+For playtesting, compare near/far idle motion, camera turns and teleports, visible
+shadows, interaction start/end blends, disabling/re-enabling visuals, and outfit or
+gender changes. Assess cost in a player build as well as the Editor, where Scene
+view visibility can keep otherwise hidden characters active.
