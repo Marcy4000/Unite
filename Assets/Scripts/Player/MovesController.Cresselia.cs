@@ -66,7 +66,7 @@ public partial class MovesController
         if (!starter && pokemon.CurrentLevel < (CresseliaMoveRules.Slot(move) == 0 ? 4 : 6)) return;
         int slot = CresseliaMoveRules.Slot(move);
         if (Time.time + 0.12f < cresseliaNextCast[slot]) return;
-        cresseliaNextCast[slot] = Time.time + CresseliaMoveRules.Cooldown(move) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
+        cresseliaNextCast[slot] = Time.time + PatchedMoveCooldown((AvailableMoves)Enum.Parse(typeof(AvailableMoves), "Cresselia" + move), CresseliaMoveRules.Cooldown(move)) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
         playerManager.HeldItemManager?.OnMove((MoveType)slot);
         direction = CresseliaMoveRules.Direction(direction, transform.forward);
         bool upgraded = CresseliaMoveRules.Upgraded(move, pokemon.CurrentLevel);
@@ -311,6 +311,7 @@ public partial class MovesController
     {
         DisposeBattleItemRuntime();
         DisposeEspeonRuntime();
+        DisposeUmbreonRuntime();
         DisposeGlaceonRuntime();
         DisposeZoroarkRuntime();
         DisposeNinetalesRuntime();

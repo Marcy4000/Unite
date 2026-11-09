@@ -351,6 +351,11 @@ public partial class LobbyController : MonoBehaviour
 
     public async void StartGame(string playerName)
     {
+        if (!Unite.Updates.GameRelease.Ready)
+        {
+            LastOperationError = "Finish checking/downloading updates on the boot screen before playing.";
+            return;
+        }
         try
         {
             await authenticationTask;

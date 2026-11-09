@@ -157,7 +157,7 @@ public partial class MovesController
         if (!allowed || !learned || CinderNow + 0.1 < cinderNextCast[slot]) { AcceptCinderaceRPC(kind, cast, false); return; }
         foreach (var existing in cinderRequests.Values)
             if (!existing.Started && !existing.Cancelled) { AcceptCinderaceRPC(kind, cast, false); return; }
-        cinderNextCast[slot] = CinderNow + Math.Max(0.25, CinderMoveRules.Cooldown(kind) * (1 - pokemon.GetCDR() / 100f));
+        cinderNextCast[slot] = CinderNow + Math.Max(0.25, PatchedMoveCooldown(CinderMoveRules.Move(kind), CinderMoveRules.Cooldown(kind)) * (1 - pokemon.GetCDR() / 100f));
         SpawnCinderObject(kind, cast, CinderMoveRules.Direction(direction, transform.forward), target, CinderMoveRules.Upgraded(kind, pokemon.CurrentLevel), false, false);
     }
 
@@ -198,7 +198,7 @@ public partial class MovesController
             {
                 cinderAttackCharge.Value = 2;
                 cinderActionUntil = CinderNow + (kind == CinderCast.BlazeKick ? 0.5 : CinderMoveRules.Dash(kind) ? 0.2 : CinderMoveRules.Recovery(kind));
-                cinderNextCast[CinderMoveRules.Slot(kind)] = CinderNow + Math.Max(0.25, CinderMoveRules.Cooldown(kind) * (1 - pokemon.GetCDR() / 100f));
+                cinderNextCast[CinderMoveRules.Slot(kind)] = CinderNow + Math.Max(0.25, PatchedMoveCooldown(CinderMoveRules.Move(kind), CinderMoveRules.Cooldown(kind)) * (1 - pokemon.GetCDR() / 100f));
                 AcceptCinderaceRPC(kind, cast, true);
                 playerManager.HeldItemManager?.OnMove((MoveType)CinderMoveRules.Slot(kind));
             }

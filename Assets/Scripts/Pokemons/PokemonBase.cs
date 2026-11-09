@@ -1,8 +1,13 @@
 using UnityEngine;
+using Unite.Updates;
 
 [CreateAssetMenu(fileName = "Pokemon", menuName = "Pokemon/Create New Pokemon")]
 public class PokemonBase : ScriptableObject
 {
+    [SerializeField, HideInInspector] private string balanceId;
+    public string BalanceId => balanceId;
+    private PokemonBalance Patch => BalanceRuntime.Pokemon(balanceId);
+
     [SerializeField] string pokemonName;
 
     [SerializeField] int[] maxHp = new int[15];
@@ -24,17 +29,17 @@ public class PokemonBase : ScriptableObject
     [SerializeField] PokemonEvolution[] evolutions;
 
     public string PokemonName { get { return pokemonName; } }
-    public int[] MaxHp { get { return maxHp; } }
-    public int[] Attack { get { return attack; } }
-    public int[] Defense { get { return defense; } }
-    public int[] SpAttack { get { return spAttack; } }
-    public int[] SpDefense { get { return spDefense; } }
-    public int[] CritRate { get { return critRate; } }
-    public int[] Cdr { get { return cdr; } }
-    public int[] LifeSteal { get { return lifeSteal; } }
-    public float[] AtkSpeed { get { return atkSpeed; } }
-    public int[] Speed { get { return speed; } }
-    public float[] SpellVamp { get { return spellVamp; } }
+    public int[] MaxHp { get { return Patch?.maxHp ?? maxHp; } }
+    public int[] Attack { get { return Patch?.attack ?? attack; } }
+    public int[] Defense { get { return Patch?.defense ?? defense; } }
+    public int[] SpAttack { get { return Patch?.spAttack ?? spAttack; } }
+    public int[] SpDefense { get { return Patch?.spDefense ?? spDefense; } }
+    public int[] CritRate { get { return Patch?.critRate ?? critRate; } }
+    public int[] Cdr { get { return Patch?.cdr ?? cdr; } }
+    public int[] LifeSteal { get { return Patch?.lifeSteal ?? lifeSteal; } }
+    public float[] AtkSpeed { get { return Patch?.atkSpeed ?? atkSpeed; } }
+    public int[] Speed { get { return Patch?.speed ?? speed; } }
+    public float[] SpellVamp { get { return Patch?.spellVamp ?? spellVamp; } }
 
     public AvailablePassives Passive { get { return passive; } }
 
@@ -44,6 +49,8 @@ public class PokemonBase : ScriptableObject
 
     public int GetExpForNextLevel(int level)
     {
+        float configured = BalanceRuntime.Number("experience.level." + level, -1);
+        if (configured >= 0) return Mathf.RoundToInt(configured);
         switch (level)
         {
             case 0:

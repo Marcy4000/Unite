@@ -130,12 +130,12 @@ public partial class MovesController
         if (slot == 2)
         {
             TickLegacyItemResources();
-            if (asset.uniteEnergyCost <= 0 || legacyItemEnergy < asset.uniteEnergyCost) return false;
+            if (asset.EffectiveUniteEnergyCost <= 0 || legacyItemEnergy < asset.EffectiveUniteEnergyCost) return false;
             legacyItemEnergy = 0;
             return true;
         }
         if (now < legacyItemNextCast[slot]) return false;
-        float cooldown = definition.Cooldown * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
+        float cooldown = PatchedMoveCooldown(asset.move, definition.Cooldown) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
         if (definition.IsStoredMove)
         {
             legacyItemUses[slot].Tick((float)now, definition.MaxStoredUses, cooldown);
@@ -153,8 +153,8 @@ public partial class MovesController
             foreach (var asset in learn.moves)
                 if (asset != null && asset.moveType == MoveType.UniteMove && !learn.isUpgraded)
                 {
-                    if (asset.move == prefabLearnedMoves[2]) return asset.uniteEnergyCost;
-                    if (unlearnedCost == 0) unlearnedCost = asset.uniteEnergyCost;
+                    if (asset.move == prefabLearnedMoves[2]) return asset.EffectiveUniteEnergyCost;
+                    if (unlearnedCost == 0) unlearnedCost = asset.EffectiveUniteEnergyCost;
                 }
         return unlearnedCost;
     }

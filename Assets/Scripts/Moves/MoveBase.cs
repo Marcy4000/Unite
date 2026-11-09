@@ -6,6 +6,13 @@ public abstract class MoveBase
 {
     public string Name;
     public float Cooldown;
+    public string BalanceId { get; set; }
+    public float PatchedCooldown => ResolveCooldown(Cooldown);
+    public float ResolveCooldown(float fallback)
+    {
+        var patch = Unite.Updates.BalanceRuntime.Move(BalanceId);
+        return patch == null || !patch.overrideCooldown ? fallback : IsUpgraded ? patch.upgradedCooldown : patch.cooldown;
+    }
     public PlayerManager playerManager;
     protected Aim ActorAim => playerManager != null ? playerManager.Aim : null;
     public bool IsActive = false;
@@ -71,7 +78,7 @@ public abstract class MoveBase
     public void UpdateStoredUses(float now, float cooldownReduction = 0f)
     {
         if (IsStoredMove)
-            useState.Tick(now, MaxStoredUses, Cooldown * Mathf.Max(0.01f, 1f - cooldownReduction / 100f));
+            useState.Tick(now, MaxStoredUses, PatchedCooldown * Mathf.Max(0.01f, 1f - cooldownReduction / 100f));
     }
 
     public void ReduceStoredRecharge(float amount, float now, float cooldownReduction = 0f)
@@ -87,6 +94,13 @@ public static class MoveDatabase
     {
         switch (move)
         {
+            case AvailableMoves.UmbreonSwift: return new UmbreonSwift();
+            case AvailableMoves.UmbreonFakeTears: return new UmbreonFakeTears();
+            case AvailableMoves.UmbreonMeanLook: return new UmbreonMeanLook();
+            case AvailableMoves.UmbreonFoulPlay: return new UmbreonFoulPlay();
+            case AvailableMoves.UmbreonWish: return new UmbreonWish();
+            case AvailableMoves.UmbreonSnarl: return new UmbreonSnarl();
+            case AvailableMoves.UmbreonMoonlightPrance: return new UmbreonMoonlightPrance();
             case AvailableMoves.EspeonSwift: return new EspeonSwift();
             case AvailableMoves.EspeonGrowl: return new EspeonGrowl();
             case AvailableMoves.EspeonPsyshock: return new EspeonPsyshock();
@@ -467,5 +481,12 @@ public enum AvailableMoves : uint
     EspeonStoredPower,
     EspeonPsybeam,
     EspeonFutureSight,
-    EspeonPsychicSolare
+    EspeonPsychicSolare,
+    UmbreonSwift,
+    UmbreonFakeTears,
+    UmbreonMeanLook,
+    UmbreonFoulPlay,
+    UmbreonWish,
+    UmbreonSnarl,
+    UmbreonMoonlightPrance
 }

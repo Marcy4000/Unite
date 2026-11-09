@@ -1,0 +1,104 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ca7b5041289b28418bd1831c17e0128, type: 3}
+  m_Name: Umbreon
+  m_EditorClassIdentifier: Assembly-CSharp::PokemonBase
+  balanceId: 
+  pokemonName: Umbreon
+  maxHp: e40c00006f0d00000e0e0000371100000a120000fd1200001414000055150000c61600006f180000581a00008a1c0000111f0000f82100004e250000
+  attack: aa000000ae000000b3000000ca000000d0000000d7000000df000000e8000000f3000000ff0000000d0100001d01000030010000450100005e010000
+  defense: 55000000600000006c000000aa000000ba000000cc000000e1000000f900000015010000350100005a01000085010000b6010000ef01000030020000
+  spAttack: 14000000160000001800000024000000270000002b0000002f000000340000003a0000004000000047000000500000005a0000006500000072000000
+  spDefense: 3c000000450000004f000000820000008f0000009e000000af000000c3000000da000000f500000014010000370100005f0100008d010000c2010000
+  critRate: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  cdr: 00000000000000000000000000000000050000000500000005000000050000000a0000000a0000000a0000000a0000000a0000000a0000000a000000
+  lifeSteal: 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  atkSpeed:
+  - 10
+  - 10.44
+  - 10.95
+  - 13.54
+  - 14.22
+  - 15
+  - 15.89
+  - 16.92
+  - 18.1
+  - 19.46
+  - 21.02
+  - 22.82
+  - 24.89
+  - 27.27
+  - 30
+  speed: 740e0000740e0000740e0000740e00000a0f00000a0f0000a00f0000a00f00003610000036100000cc100000cc100000cc100000cc100000cc100000
+  spellVamp:
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  - 0
+  passive: 18
+  learnableMoves:
+  - moves:
+    - {fileID: 11400000, guid: d4228fe7632fee54687633491d9ad565, type: 2}
+    - {fileID: 11400000, guid: 676080a6f0f43b9488029c3424f5a0b4, type: 2}
+    level: 0
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: d4228fe7632fee54687633491d9ad565, type: 2}
+    - {fileID: 11400000, guid: 676080a6f0f43b9488029c3424f5a0b4, type: 2}
+    level: 1
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 75122bee824bd5e91bf8fc13457c8d48, type: 2}
+    - {fileID: 11400000, guid: e2c5bf1c52a632a0fa7a959c86afebc8, type: 2}
+    level: 3
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: fa4e2da00034e12698625d06d117237a, type: 2}
+    - {fileID: 11400000, guid: 589eb249ae4c6354c84c7a8b65116018, type: 2}
+    level: 5
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 7d441588b76ebb2c59e75b96415c53af, type: 2}
+    level: 7
+    isUpgraded: 0
+  - moves:
+    - {fileID: 11400000, guid: 75122bee824bd5e91bf8fc13457c8d48, type: 2}
+    - {fileID: 11400000, guid: e2c5bf1c52a632a0fa7a959c86afebc8, type: 2}
+    level: 9
+    isUpgraded: 1
+  - moves:
+    - {fileID: 11400000, guid: fa4e2da00034e12698625d06d117237a, type: 2}
+    - {fileID: 11400000, guid: 589eb249ae4c6354c84c7a8b65116018, type: 2}
+    level: 11
+    isUpgraded: 1
+  evolutions:
+  - EvolutionName: Eevee
+    level: 0
+    newModel: {fileID: 6021120288529842924, guid: 35fb9d37d94c96f40926b5817c04418a,
+      type: 3}
+    newSprite: {fileID: 21300000, guid: 21c8bbf93fe5ed34ea551528efd0e606, type: 3}
+  - EvolutionName: Umbreon
+    level: 3
+    newModel: {fileID: 6705875027461599104, guid: 8724795c5af44d17180aa767e963db89,
+      type: 3}
+    newSprite: {fileID: 21300000, guid: 57524d072c3d05545862cb19f30aea9f, type: 3}

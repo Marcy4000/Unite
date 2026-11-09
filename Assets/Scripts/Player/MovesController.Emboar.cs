@@ -209,7 +209,7 @@ public partial class MovesController
             bool empowered = emboarReckless.Consume(kind, EmboarNow); SyncEmboarState();
             request.Started = true; request.Effect = effect;
             emboarActionUntil = EmboarNow + EmboarMoveRules.Recovery(kind);
-            emboarNextCast[slot] = EmboarNow + (slot == 2 ? 1 : EmboarMoveRules.Cooldown(kind, upgraded) * Math.Max(0.01, 1 - pokemon.GetCDR() / 100f));
+            emboarNextCast[slot] = EmboarNow + (slot == 2 ? 1 : PatchedMoveCooldown(EmboarMoveRules.Move(kind), EmboarMoveRules.Cooldown(kind, upgraded)) * Math.Max(0.01, 1 - pokemon.GetCDR() / 100f));
             effect.HoldAsset(handle); go.GetComponent<NetworkObject>().Spawn(true);
             playerManager.HeldItemManager?.OnMove((MoveType)slot);
             effect.Initialize(this, playerManager, kind, cast, aim, point, target, upgraded, empowered);

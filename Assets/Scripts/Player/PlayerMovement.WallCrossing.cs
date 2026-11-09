@@ -64,6 +64,7 @@ public partial class PlayerMovement
     {
         Vector3 start = transform.position, safe = start;
         if (!WallCrossingFinite(requested)) return safe;
+        if (pokemon != null) requested = pokemon.ConstrainMovement(requested);
         requested.y = start.y;
         int steps = Mathf.Clamp(Mathf.CeilToInt(Vector3.Distance(start, requested) / 0.1f), 1, 512);
         for (int i = 1; i <= steps; i++)
@@ -88,7 +89,7 @@ public partial class PlayerMovement
             // Like Marshadow's dashes, bypass physical colliders too. The cast
             // already owns a movement restriction; no shared dash/flight flags
             // or CharacterController state need to be changed.
-            transform.position = point;
+            transform.position = pokemon != null ? pokemon.ConstrainMovement(point) : point;
             if (IsWallCrossingLandingValid(point)) safe = point;
         }
         return transform.position - start;

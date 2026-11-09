@@ -357,6 +357,7 @@ public partial class PlayerMovement : NetworkBehaviour
         // Validate and apply accumulated movement
         Vector3 intendedPosition = transform.position + currentMovement * Time.deltaTime;
         Vector3 validatedPosition = ClampMovementToWalkmesh(transform.position, intendedPosition);
+        if (pokemon != null) validatedPosition = pokemon.ConstrainMovement(validatedPosition);
         
         // Calculate the actual movement after validation
         Vector3 validatedMovement = (validatedPosition - transform.position) / Time.deltaTime;
@@ -431,7 +432,7 @@ public partial class PlayerMovement : NetworkBehaviour
         knockupTween = null;
         isKnockedUp = isDashing = isMoving = false;
         currentMovement = inputMovement = Vector3.zero;
-        transform.SetPositionAndRotation(position, rotation);
+        transform.SetPositionAndRotation(pokemon != null ? pokemon.ConstrainMovement(position) : position, rotation);
         Physics.SyncTransforms();
         GetComponent<Vision>()?.RefreshBushOverlaps();
         if (recordSafePosition) lastValidPosition = position;
@@ -456,6 +457,7 @@ public partial class PlayerMovement : NetworkBehaviour
         {
             Vector3 before = transform.position;
             Vector3 destination = ClampMovementToWalkmesh(before, before + step);
+            if (pokemon != null) destination = pokemon.ConstrainMovement(destination);
             characterController.Move(destination - before);
             if ((transform.position - before).sqrMagnitude < step.sqrMagnitude * 0.01f) break;
         }

@@ -33,6 +33,7 @@ public partial class Pokemon
 
     public override void OnNetworkDespawn()
     {
+        movementAreas.Clear();
         ClearBushCombatReveal();
         shieldChangePending = false;
         if (burnStatusView != null) Destroy(burnStatusView);

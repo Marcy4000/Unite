@@ -1,4 +1,5 @@
 using JSAM;
+using Unite.Updates;
 using System.Collections;
 using TMPro;
 using Unity.Netcode;
@@ -24,96 +25,67 @@ public class BootSceneController : MonoBehaviour
         message = "Please wait while we download the game assets."
     };
 
-    [SerializeField] private string preloadLabel = "preload";
-
-    private AsyncOperationHandle downloadHandle;
+    private bool updating;
+    private bool ready;
 
     private void Start()
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        NetworkManager.Singleton.LogLevel = LogLevel.Developer;
+        if (NetworkManager.Singleton != null) NetworkManager.Singleton.LogLevel = LogLevel.Developer;
 #else
-        NetworkManager.Singleton.LogLevel = LogLevel.Error;
+        if (NetworkManager.Singleton != null) NetworkManager.Singleton.LogLevel = LogLevel.Error;
 #endif
+        startButton.interactable = false;
         startButton.onClick.AddListener(OnStartButtonClicked);
         RestorePlayerName();
-        versionText.text = $"v.{Application.version}";
-
         StartCoroutine(PlayAudioAfterLoading());
-
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_WEBGL
         StartCoroutine(DownloadAssets());
-#else
-        Addressables.InitializeAsync();
-        hintIcon.SetActive(false);
-        downloadWindow.Hide();
-#endif
     }
 
     private IEnumerator PlayAudioAfterLoading()
     {
         yield return new WaitUntil(() => audioLibrary.IsLoaded());
-
         AudioManager.PlayMusic(DefaultAudioMusic.MainTheme, true);
     }
 
     private IEnumerator DownloadAssets()
     {
+        if (updating || ready) yield break;
+        updating = true;
         startButton.interactable = false;
         clearCacheButton.interactable = false;
-        downloadWindow.Hide();
-
         hintIcon.SetActive(true);
-
-        yield return Addressables.InitializeAsync();
-
-        downloadHandle = Addressables.DownloadDependenciesAsync(preloadLabel, false);
-        float progress = 0;
-
-        while (downloadHandle.Status == AsyncOperationStatus.None)
+        downloadWindow.Show();
+        versionText.text = "v." + Application.version + " — checking updates";
+        var downloader = new UpdateDownloader(message =>
         {
-            float percentageComplete = downloadHandle.GetDownloadStatus().Percent;
-            if (percentageComplete > progress * 1.1) // Report at most every 10% or so
-            {
-                progress = percentageComplete; // More accurate %
-                downloadAnnouncement.message = $"Downloading map assets... {string.Format("{0:0.00}", progress*100)}%\nPlease wait until the process is complete before playing\n" +
-                $"Currently downloading: {downloadHandle.GetDownloadStatus().DownloadedBytes / (1024 * 1024)} MB / {downloadHandle.GetDownloadStatus().TotalBytes / (1024 * 1024)} MB";
-                downloadWindow.SetAnnouncement(downloadAnnouncement);
-            }
-            yield return null;
-        }
-
-        clearCacheButton.interactable = true;
-
-        if (downloadHandle.Status != AsyncOperationStatus.Succeeded)
-        {
-            downloadAnnouncement.message = $"Download failed!\nPlease try clearing the cache and restarting the game\nError: {downloadHandle.OperationException.Message}";
+            downloadAnnouncement.message = message;
             downloadWindow.SetAnnouncement(downloadAnnouncement);
-            yield break;
+        });
+        yield return downloader.Run(UpdateDeliverySettings.Load());
+        updating = false;
+        ready = downloader.Succeeded;
+        startButton.interactable = ready;
+        clearCacheButton.interactable = !ready;
+        hintIcon.SetActive(!ready);
+        versionText.text = "v." + GameRelease.Display;
+        if (ready) downloadWindow.Hide();
+        else
+        {
+            downloadAnnouncement.message = downloader.Error + "\nUse Retry update to try again. Previously downloaded content is kept.";
+            downloadWindow.SetAnnouncement(downloadAnnouncement);
         }
-
-        startButton.interactable = true;
-        downloadAnnouncement.message = "Download complete!";
-        downloadWindow.SetAnnouncement(downloadAnnouncement);
-        Addressables.Release(downloadHandle); //Release the operation handle
-
-        hintIcon.SetActive(false);
     }
 
+    // Retain the serialized legacy button binding. It now retries without deleting valid cached maps.
     public void ClearCache()
     {
-        Addressables.ClearDependencyCacheAsync(preloadLabel);
-        downloadWindow.SetAnnouncement(new Announcement
-        {
-            title = "Download Manager",
-            message = "Cache cleared!\nPlease restart the game to download the assets again"
-        });
-        startButton.interactable = false;
+        if (!updating && !ready) StartCoroutine(DownloadAssets());
     }
 
     private void OnStartButtonClicked()
     {
-        if (!SavePlayerName(playerNameInputField.text))
+        if (!ready || !GameRelease.Ready || !SavePlayerName(playerNameInputField.text))
         {
             return;
         }

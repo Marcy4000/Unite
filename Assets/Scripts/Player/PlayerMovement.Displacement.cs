@@ -4,8 +4,14 @@ using UnityEngine;
 
 public partial class PlayerMovement
 {
-    [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
     public void DisplaceRPC(Vector3 direction, float distance, float duration)
+    {
+        if (!IsServer || pokemon.RejectDisplacement()) return;
+        ApplyDisplacementRPC(direction, distance, duration);
+    }
+
+    [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
+    private void ApplyDisplacementRPC(Vector3 direction, float distance, float duration)
     {
         if ((!IsOwner && !IsServer) || !CombatTargeting.Finite(direction) || !float.IsFinite(distance) || !float.IsFinite(duration)
             || distance <= 0 || duration <= 0 || pokemon.CurrentHp <= 0 || !CanBeKnockedBack

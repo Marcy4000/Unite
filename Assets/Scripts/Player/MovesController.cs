@@ -133,6 +133,7 @@ public partial class MovesController : NetworkBehaviour
         UpdateNinetalesRuntime();
         UpdateZoroarkRuntime();
         UpdateEspeonRuntime();
+        UpdateUmbreonRuntime();
         UpdateGlaceonRuntime();
         UpdateBattleItemRuntime();
         if (!IsOwner)
@@ -506,7 +507,7 @@ public partial class MovesController : NetworkBehaviour
 
     private float GetMoveCooldown(MoveBase move)
     {
-        float duration = move is PrefabMove prefab ? prefab.EffectiveCooldown(move.IsUpgraded) : move.Cooldown;
+        float duration = move.ResolveCooldown(move is PrefabMove prefab ? prefab.EffectiveCooldown(move.IsUpgraded) : move.Cooldown);
         return duration * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
     }
 
@@ -694,7 +695,7 @@ public partial class MovesController : NetworkBehaviour
                 moves[1].playerManager = playerManager;
                 break;
             case MoveType.UniteMove:
-                uniteMoveMaxCharge = move.uniteEnergyCost;
+                uniteMoveMaxCharge = move.EffectiveUniteEnergyCost;
                 uniteMove = MoveDatabase.GetMove(move.move);
                 uniteMove.onMoveOver += OnMoveOver;
                 uniteMove.IsUpgraded = move.isUpgraded;
@@ -706,7 +707,7 @@ public partial class MovesController : NetworkBehaviour
                     moves[i] = MoveDatabase.GetMove(move.move);
                 }
                 uniteMove = MoveDatabase.GetMove(move.move);
-                uniteMoveMaxCharge = move.uniteEnergyCost;
+                uniteMoveMaxCharge = move.EffectiveUniteEnergyCost;
                 break;
             default:
                 break;
@@ -717,7 +718,14 @@ public partial class MovesController : NetworkBehaviour
             AudioManager.PlaySound(DefaultAudioSounds.Play_UI_LearnSkill);
         }
 
+        // Assign the patch identity before stored-use recharge and UI initialize.
         MoveBase learnedMove = GetMove(move.moveType);
+        if (learnedMove != null) learnedMove.BalanceId = move.BalanceId;
+        if (move.moveType == MoveType.All)
+        {
+            foreach (var entry in moves) if (entry != null) entry.BalanceId = move.BalanceId;
+            if (uniteMove != null) uniteMove.BalanceId = move.BalanceId;
+        }
         learnedMove?.UpdateStoredUses(Time.time, pokemon.GetCDR());
         if (playerManager.IsLocalHuman) BattleUIManager.instance.InitializeMoveUI(move, learnedMove);
         int slot = move.moveType == MoveType.MoveA ? 0 : move.moveType == MoveType.MoveB ? 1 : -1;
@@ -1002,6 +1010,7 @@ public partial class MovesController : NetworkBehaviour
         DisposeNinetalesRuntime();
         DisposeZoroarkRuntime();
         DisposeEspeonRuntime();
+        DisposeUmbreonRuntime();
         DisposeGlaceonRuntime();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();

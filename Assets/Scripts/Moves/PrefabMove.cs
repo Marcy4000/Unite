@@ -11,6 +11,8 @@ public abstract class PrefabMove : MoveBase
     public virtual float Range => 0;
     public virtual float IndicatorRange => Range;
     public virtual float TargetRangeTolerance => 0.5f;
+    public virtual AimTarget TargetTeam => AimTarget.NonAlly;
+    public virtual bool AllowSelfTarget => false;
     public virtual float CameraReturnDelay => 0; // Opt-in directional aim camera.
     public virtual float AreaRadius => 1;
     public virtual float EffectiveCooldown(bool upgraded) => Cooldown;
@@ -38,7 +40,7 @@ public abstract class PrefabMove : MoveBase
         direction = controller.transform.forward;
         switch (AimStyle)
         {
-            case MoveAimStyle.Target: playerManager.Aim.InitializeAutoAim(IndicatorRange, 90, AimTarget.NonAlly); break;
+            case MoveAimStyle.Target: playerManager.Aim.InitializeAutoAim(IndicatorRange, 90, TargetTeam); break;
             case MoveAimStyle.Direction: playerManager.Aim.InitializeSkillshotAim(IndicatorRange); break;
             case MoveAimStyle.Dash: playerManager.Aim.InitializeDashAim(IndicatorRange); break;
             case MoveAimStyle.Circle: playerManager.Aim.InitializeSimpleCircle(Range); break;
@@ -50,7 +52,7 @@ public abstract class PrefabMove : MoveBase
 
     private void UpdateAim()
     {
-        if (AimStyle == MoveAimStyle.Target) target = playerManager.Aim.SureHitAim()?.GetComponent<Pokemon>();
+        if (AimStyle == MoveAimStyle.Target) target = playerManager.Aim.SureHitAim()?.GetComponent<Pokemon>() ?? (AllowSelfTarget ? playerManager.Pokemon : null);
         else if (AimStyle == MoveAimStyle.Direction) direction = playerManager.Aim.SkillshotAim();
         else if (AimStyle == MoveAimStyle.Dash) direction = playerManager.Aim.DashAim();
         else if (AimStyle == MoveAimStyle.Ground) direction = playerManager.Aim.CircleAreaAim() - playerManager.transform.position;

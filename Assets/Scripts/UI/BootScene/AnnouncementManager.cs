@@ -55,7 +55,8 @@ public class AnnouncementManager : MonoBehaviour
             yield break;
         }
 
-        UnityWebRequest request = UnityWebRequest.Get(jsonFileUrl);
+        using UnityWebRequest request = UnityWebRequest.Get(jsonFileUrl);
+        request.timeout = 20;
         yield return request.SendWebRequest();
 
         if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
@@ -80,14 +81,7 @@ public class AnnouncementManager : MonoBehaviour
                 Announcement notification = JsonUtility.FromJson<Announcement>(jsonContent);
                 messageBox.SetAnnouncement(notification);
 
-                if (!notification.appVersion.Equals(Application.version))
-                {
-                    string message = $"It appears you are using an outdated version of the game." +
-                        $"\nYou're running version {Application.version}, but {notification.appVersion} is the latest version.\n" +
-                        $"You won't be able to play with players using a differnt version, please download the latest version of the game from either itch.io or gamejolt";
-                    wrongVersionPopup.Show();
-                    wrongVersionPopup.SetMessage("Attention!", message);
-                }
+
             }
             catch (System.Exception e) {
                 Debug.LogError("Error parsing JSON content: " + e.Message);

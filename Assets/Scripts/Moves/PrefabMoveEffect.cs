@@ -20,6 +20,7 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
     private bool holdsAsset;
     public int CastSequence { get; set; }
     public AvailableMoves MoveId { get; set; }
+    public virtual bool PersistsAfterCasterDeath => false;
     public event Action<PrefabMoveEffect> Completed;
     public event Action RecastReady;
     public virtual bool TryRecast(Vector3 direction) => false;
@@ -73,14 +74,14 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
             yield return null;
         }
     }
-    protected void LockActions(bool movement = true) { SetActionLockRPC(true, movement); }
-    protected void UnlockActions() { SetActionLockRPC(false, false); }
+    protected void LockActions(bool movement = true, bool battleItems = true) { SetActionLockRPC(true, movement, battleItems); }
+    protected void UnlockActions() { SetActionLockRPC(false, false, false); }
 
     [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
-    private void SetActionLockRPC(bool active, bool movement)
+    private void SetActionLockRPC(bool active, bool movement, bool battleItems)
     {
         actionLock?.Dispose(); actionLock = null;
-        if (active && Actor != null) actionLock = new CombatActionLock(Actor, movement);
+        if (active && Actor != null) actionLock = new CombatActionLock(Actor, movement, lockBattleItems: battleItems);
     }
 
     protected void PlayAnimation(string state, float duration = 0, float blendDuration = 0)
@@ -145,13 +146,14 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
     private IEnumerator Watchdog() { yield return new WaitForSeconds(maximumLifetime); Despawn(); }
     private void OnDeath(DamageInfo damage)
     {
+        if (PersistsAfterCasterDeath) return;
         if (!IsSpawned) return;
         CancelDrivenMovementRPC();
         Despawn();
     }
     protected virtual void Update()
     {
-        if (IsServer && initialized && (Actor == null || !Actor.IsSpawned || Actor.Pokemon.CurrentHp <= 0)) Despawn();
+        if (IsServer && initialized && (Actor == null || !Actor.IsSpawned || (!PersistsAfterCasterDeath && Actor.Pokemon.CurrentHp <= 0))) Despawn();
     }
 
     protected bool CanHit(Pokemon pokemon, bool acquire = false)

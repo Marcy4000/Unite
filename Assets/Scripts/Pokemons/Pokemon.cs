@@ -207,6 +207,7 @@ public partial class Pokemon : NetworkBehaviour
 
     private void LateUpdate()
     {
+        EnforceMovementAreas();
         // Inactive recipients retain the dirty flag until they resume. No
         // coroutine can get stranded by disable/despawn or an obsolete count.
         if (!IsSpawned || !shieldChangePending) return;
@@ -703,7 +704,8 @@ public partial class Pokemon : NetworkBehaviour
     {
         if (!float.IsFinite(change.FractionalAmount) || Mathf.Abs(change.FractionalAmount) >= 1) return;
         if (!change.IsBuff && (HasStatusEffect(StatusType.BattleItemStasis) || HasStatusEffect(StatusType.Invincible)
-            || (BattleItemRules.IsSlow(change) && HasStatusEffect(StatusType.Unstoppable)))) return;
+            || (BattleItemRules.IsSlow(change) && HasStatusEffect(StatusType.Unstoppable)
+                && !(change.HasSource && change.SourceId == NetworkObjectId && baseStats != null && baseStats.Passive == AvailablePassives.UmbreonPassive)))) return;
         if (!change.HasSource && EffectSender(context) is ulong source) change = change.WithSource(source);
         if (!InterceptMeowsticStat(ref change)) return;
         // NetworkList invokes callbacks synchronously. Publish only after the
@@ -817,11 +819,12 @@ public partial class Pokemon : NetworkBehaviour
         }
         if (effect.IsNegativeStatus())
         {
-            if (HasStatusEffect(StatusType.Unstoppable) || HasStatusEffect(StatusType.Invincible))
+            bool innerFocusBound = effect.Type == StatusType.Bound && baseStats != null && baseStats.Passive == AvailablePassives.UmbreonPassive;
+            if (HasStatusEffect(StatusType.Invincible) || (!innerFocusBound && HasStatusEffect(StatusType.Unstoppable)))
             {
                 return;
             }
-            else if (HasStatusEffect(StatusType.HindranceResistance))
+            else if (!innerFocusBound && HasStatusEffect(StatusType.HindranceResistance))
             {
                 var slow = new StatChange(20, Stat.Speed, 3, true, false, true, 0);
                 AddStatChange(effect.HasSource ? slow.WithSource(effect.SourceId) : slow);
@@ -831,7 +834,8 @@ public partial class Pokemon : NetworkBehaviour
         else if (effect.Type == StatusType.Unstoppable)
         {
             foreach (var negative in statusEffects.AsNativeArray().ToArray())
-                if (negative.IsNegativeStatus()) RemoveStatusEffectRPC(negative);
+                if (negative.IsNegativeStatus() && !(negative.Type == StatusType.Bound && baseStats != null
+                    && baseStats.Passive == AvailablePassives.UmbreonPassive)) RemoveStatusEffectRPC(negative);
         }
 
         if (HasStatusEffect(effect))
@@ -1440,6 +1444,8 @@ public partial class Pokemon : NetworkBehaviour
             && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(info.SourceId, out var sourceObject)
             && sourceObject.TryGetComponent(out Pokemon source) && source.TeamMember.IsOnSameTeam(TeamMember)
             && source.HasHeldItem(AvailableHeldItems.RescueHood)) info.Amount = Mathf.FloorToInt(info.Amount * 1.23f);
+        info = InterceptShieldGrant(info);
+        if (info.Amount <= 0) return;
         if (HasShieldWithID(info.ID))
         {
             for (int i = 0; i < shields.Count; i++)
@@ -1766,14 +1772,34 @@ public partial class Pokemon : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.Owner)]
     public void ApplyKnockbackRPC(Vector3 direction, float force)
+        => RequestKnockbackRPC(direction, force);
+
+    [Rpc(SendTo.Server)]
+    private void RequestKnockbackRPC(Vector3 direction, float force)
+    {
+        if (!CombatTargeting.Finite(direction) || !float.IsFinite(force) || force <= 0 || RejectDisplacement()) return;
+        PresentKnockbackRPC(direction, force);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void PresentKnockbackRPC(Vector3 direction, float force)
     {
         OnKnockback?.Invoke(direction, force);
     }
 
-    [Rpc(SendTo.Owner)]
     public void ApplyKnockupRPC(float force, float duration)
+        => RequestKnockupRPC(force, duration);
+
+    [Rpc(SendTo.Server)]
+    private void RequestKnockupRPC(float force, float duration)
+    {
+        if (!float.IsFinite(force) || !float.IsFinite(duration) || force <= 0 || duration <= 0 || RejectDisplacement()) return;
+        PresentKnockupRPC(force, duration);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void PresentKnockupRPC(float force, float duration)
     {
         OnKnockup?.Invoke(force, duration);
     }

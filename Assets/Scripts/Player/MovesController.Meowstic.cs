@@ -87,7 +87,7 @@ public partial class MovesController
             && obj.TryGetComponent(out Pokemon ally) && MeowsticMoveRules.Ally(playerManager, ally)
             && (ally.transform.position - transform.position).sqrMagnitude <= 7.5f * 7.5f) recipient = ally;
         meowsticActionUntil = MeowsticNow + MeowsticMoveRules.Commitment(kind);
-        meowsticNextCast[slot] = MeowsticNow + (slot == 2 ? 6.35f : MeowsticMoveRules.Cooldown(kind) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
+        meowsticNextCast[slot] = MeowsticNow + (slot == 2 ? 6.35f : PatchedMoveCooldown(MeowsticMoveRules.Move(kind), MeowsticMoveRules.Cooldown(kind)) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
         bool upgraded = MeowsticMoveRules.Upgraded(kind, pokemon.CurrentLevel);
         playerManager.HeldItemManager?.OnMove((MoveType)slot);
         var scope = new MeowsticScope(this);

@@ -19,8 +19,8 @@ MonoBehaviour:
   m_DisableWriteTypeTree: 0
   m_OptimizeCatalogSize: 0
   m_BuildRemoteCatalog: 1
-  m_CatalogRequestsTimeout: 0
-  m_DisableCatalogUpdateOnStart: 0
+  m_CatalogRequestsTimeout: 30
+  m_DisableCatalogUpdateOnStart: 1
   m_InternalIdNamingMode: 0
   m_InternalBundleIdMode: 1
   m_AssetLoadMode: 0
@@ -35,7 +35,7 @@ MonoBehaviour:
   m_EnableJsonCatalog: 0
   m_NonRecursiveBuilding: 1
   m_AllowNestedBundleFolders: 0
-  m_CCDEnabled: 1
+  m_CCDEnabled: 0
   m_CcdLogRequests: 0
   m_CcdLogRequestHeaders: 0
   m_maxConcurrentWebRequests: 3
@@ -56,14 +56,14 @@ MonoBehaviour:
   m_BuildAndReleaseBinFileOption: 0
   m_MonoScriptBundleCustomNaming: 
   m_RemoteCatalogBuildPath:
-    m_Id: 47d7dada740dbd740bbdaea6a489a78a
+    m_Id: 9f2bc706ba8d4201ea738e612a90e24b
   m_RemoteCatalogLoadPath:
-    m_Id: 663baf0edce0add4298023212791c775
+    m_Id: 4ae804137a9e7970cb9f790555980349
   m_ContentStateBuildPathProfileVariableName: <default settings path>
-  m_CustomContentStateBuildPath: 
-  m_ContentStateBuildPath: 
-  m_BuildAddressablesWithPlayerBuild: 0
-  m_overridePlayerVersion: '[UnityEditor.PlayerSettings.bundleVersion]'
+  m_CustomContentStateBuildPath: /home/marcy/Documenti/UnityProjects/Unite/Build/Updates/WorkingState/1/Android
+  m_ContentStateBuildPath: /home/marcy/Documenti/UnityProjects/Unite/Build/Updates/WorkingState/1/Android
+  m_BuildAddressablesWithPlayerBuild: 2
+  m_overridePlayerVersion: 1
   m_GroupAssets:
   - {fileID: 11400000, guid: 2c4009cb7245fbb7aaa12e6b51dc8184, type: 2}
   - {fileID: 11400000, guid: a907123c948f28c7d99379e349231650, type: 2}
@@ -89,7 +89,9 @@ MonoBehaviour:
       m_ProfileName: Default
       m_Values:
       - m_Id: 47d7dada740dbd740bbdaea6a489a78a
-        m_Value: CCDBuildData/ManagedEnvironment/ManagedBucket/ManagedBadge
+        m_Value: /home/marcy/Documenti/UnityProjects/Unite/Build/Updates/Upload/1/Android/bundles
+      - m_Id: 4ae804137a9e7970cb9f790555980349
+        m_Value: https://unite-content.justmarcy.com/1/Android/catalog-working
       - m_Id: 4dbdec1355b05054fbd00376f1c1df9c
         m_Value: production
       - m_Id: 5afeccb594e8c3f458d23f110a4e316c
@@ -97,12 +99,17 @@ MonoBehaviour:
       - m_Id: 61c50155e05374145800789ee4124888
         m_Value: '[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]'
       - m_Id: 663baf0edce0add4298023212791c775
-        m_Value: https://a4b64a26-a3a6-4a4f-851e-4afd12baf3e8.client-api.unity3dusercontent.com/client_api/v1/environments/{CcdManager.EnvironmentName}/buckets/{CcdManager.BucketId}/release_by_badge/{CcdManager.Badge}/entry_by_path/content/?path=
+        m_Value: https://unite-content.justmarcy.com/1/Android/bundles
+      - m_Id: 9f2bc706ba8d4201ea738e612a90e24b
+        m_Value: /home/marcy/Documenti/UnityProjects/Unite/Build/Updates/Staging/1/Android
       - m_Id: a4def9978633f094bb1fec751efd60a4
         m_Value: '{UnityEngine.AddressableAssets.Addressables.RuntimePath}/[BuildTarget]'
     m_ProfileEntryNames:
     - m_Id: 47d7dada740dbd740bbdaea6a489a78a
       m_Name: Remote.BuildPath
+      m_InlineUsage: 0
+    - m_Id: 4ae804137a9e7970cb9f790555980349
+      m_Name: Update.CatalogLoadPath
       m_InlineUsage: 0
     - m_Id: 4dbdec1355b05054fbd00376f1c1df9c
       m_Name: EnvironmentName
@@ -115,6 +122,9 @@ MonoBehaviour:
       m_InlineUsage: 0
     - m_Id: 663baf0edce0add4298023212791c775
       m_Name: Remote.LoadPath
+      m_InlineUsage: 0
+    - m_Id: 9f2bc706ba8d4201ea738e612a90e24b
+      m_Name: Update.CatalogBuildPath
       m_InlineUsage: 0
     - m_Id: a4def9978633f094bb1fec751efd60a4
       m_Name: Local.LoadPath
@@ -166,6 +176,7 @@ MonoBehaviour:
     - clothing-shared-08304bde57dec6ea5f73ee65b5837c05
     - clothing-shared-3e9769dc3b0c14ccaa72e012fcede953
     - clothing-shared-eb79415972db56f86505231d1386811b
+    - download-required
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: 3dcedbfeefc4a6e41aa563ac085bdabe, type: 2}
@@ -180,8 +191,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c6b89d0f788427344b9854525d4ae7d3, type: 2}
   m_ActiveProfileId: c9dc246fae56b9447b1b4d5276a20d8f
   m_CcdManagedData:
-    EnvironmentId: 1038048c-08ba-4fd4-bafd-0400f32d5bec
-    EnvironmentName: production
-    BucketId: deda0549-5ea9-4b27-bdf8-42e8802759e3
-    Badge: latest
+    EnvironmentId: 
+    EnvironmentName: 
+    BucketId: 
+    Badge: 
     State: 0

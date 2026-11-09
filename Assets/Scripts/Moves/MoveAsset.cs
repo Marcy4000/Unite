@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Serialization;
+using Unite.Updates;
 using UnityEngine.AddressableAssets;
 
 [CreateAssetMenu(fileName = "Move", menuName = "Create New Move", order = 1)]
@@ -7,8 +9,13 @@ public class MoveAsset : ScriptableObject
     public AvailableMoves move;
     public MoveType moveType;
     public MoveLabels moveLabel;
-    public float cooldown;
-    public int uniteEnergyCost;
+    [SerializeField, HideInInspector] private string balanceId;
+    public string BalanceId => balanceId;
+    [FormerlySerializedAs("authoredCooldown")] public float cooldown;
+    [FormerlySerializedAs("authoredUniteEnergyCost")] public int uniteEnergyCost;
+    public float EffectiveCooldown => BalanceRuntime.Move(balanceId) is MoveBalance patch && patch.overrideCooldown
+        ? (isUpgraded ? patch.upgradedCooldown : patch.cooldown) : cooldown;
+    public int EffectiveUniteEnergyCost => BalanceRuntime.Move(balanceId)?.uniteEnergyCost ?? uniteEnergyCost;
 
     [Space]
 

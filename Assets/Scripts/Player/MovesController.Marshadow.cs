@@ -144,7 +144,7 @@ public partial class MovesController
                 if (prefabLearnedMoves[1] != AvailableMoves.LockedMove)
                 {
                     MoveBase followup = MoveDatabase.GetMove(prefabLearnedMoves[1]);
-                    if (followup != null) ReduceLegacyItemCooldown(MoveType.MoveB, followup.Cooldown * 0.3f);
+                    if (followup != null) ReduceLegacyItemCooldown(MoveType.MoveB, followup.PatchedCooldown * 0.3f);
                 }
                 MarshadowAuraRewardRPC(id);
             }
@@ -174,7 +174,7 @@ public partial class MovesController
     private void MarshadowAuraRewardRPC(int id)
     {
         if (moves[0] is MarshadowAuraSphere aura && aura.LastCast == id)
-            ReduceMoveCooldown(MoveType.MoveB, moves[1].Cooldown * 0.3f);
+            ReduceMoveCooldown(MoveType.MoveB, moves[1].PatchedCooldown * 0.3f);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]

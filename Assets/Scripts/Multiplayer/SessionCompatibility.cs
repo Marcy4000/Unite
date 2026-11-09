@@ -1,4 +1,5 @@
 using System;
+using Unite.Updates;
 using System.Collections.Generic;
 using Unity.Services.Multiplayer;
 using Unity.Services.Matchmaker.Models;
@@ -9,7 +10,7 @@ namespace Unite.Multiplayer
     public sealed class SessionVersionMismatchException : InvalidOperationException
     {
         public SessionVersionMismatchException() : base(
-            $"This session uses a different game version. You are running {Application.version}. " +
+            $"This session uses a different game version. You are running {GameRelease.Display}. " +
             "All players must update to the same version and create a new lobby.") { }
     }
 
@@ -17,7 +18,10 @@ namespace Unite.Multiplayer
     {
         public const string PropertyName = "GameVersion";
         public static string Current => ForVersion(Application.version);
-        public static string ForVersion(string version) => "unite-app:" + version;
+        public static string ForVersion(string version) => ForVersions(version, GameRelease.AddressablesVersion, GameRelease.PatchVersion);
+        public static string ForVersions(string player, string content, string patch) =>
+            // A fixed-size key also fits Lobby/Matchmaker indexed string limits for long version names.
+            "unite-v2:" + UpdateManifest.Sha256(player + "\n" + content + "\n" + patch);
 
         public static void Validate(IReadOnlyDictionary<string, SessionProperty> properties)
         {

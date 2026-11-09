@@ -66,7 +66,7 @@ public partial class MovesController
             else if (kind == VaporCast.HelpingHand) return;
         }
         bool upgraded = VaporMoveRules.Upgraded(kind, pokemon.CurrentLevel);
-        vaporNextCast[slot] = VaporNow + (slot == 2 ? 1 : VaporMoveRules.Cooldown(kind) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
+        vaporNextCast[slot] = VaporNow + (slot == 2 ? 1 : PatchedMoveCooldown(VaporMoveRules.Move(kind), VaporMoveRules.Cooldown(kind)) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f));
         playerManager.HeldItemManager?.OnMove((MoveType)slot);
         destination = VaporMoveRules.ClampDestination(transform.position, destination, VaporMoveRules.Range(kind));
         var scope = new VaporScope(this);
@@ -364,7 +364,7 @@ public partial class MovesController
             movement.EndVaporeonDiveTraversal(false);
             movement.VaporeonDiveExitRPC(center);
             scope.Visual(VaporEffect.DiveWarning, center, VaporMoveRules.DiveWarning, size: VaporMoveRules.DiveRadius);
-            vaporNextCast[1] = VaporNow + VaporMoveRules.DiveCooldown(pokemon.CurrentLevel >= 11) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
+            vaporNextCast[1] = VaporNow + PatchedMoveCooldown(AvailableMoves.VaporDive, VaporMoveRules.DiveCooldown(pokemon.CurrentLevel >= 11)) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
             yield return VaporeonWait(scope, VaporMoveRules.DiveWarning);
             if (scope.Live)
             {

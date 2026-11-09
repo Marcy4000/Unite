@@ -23,7 +23,7 @@ public class MoveInfoUI : MonoBehaviour
         this.move = move;
         moveNameText.text = move.moveName;
         moveTypeText.text = AddSpacesToCamelCase(move.moveType.ToString());
-        moveCooldownText.text = $"{move.cooldown} s";
+        moveCooldownText.text = $"{move.EffectiveCooldown} s";
         moveIcon.sprite = move.icon;
 
         normalFrame.SetActive(move.moveType != MoveType.UniteMove);
