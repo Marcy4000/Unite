@@ -31,6 +31,12 @@ public AssetReferenceSprite mapResultsBlue;
     public AssetReferenceSprite mapResultsOrange;
 
     [Space]
+    [Header("Bots")]
+    [Tooltip("Allow bots on this map in custom lobbies. Lane brains also require a lane picker layout.")]
+    public bool supportsBots;
+    [Tooltip("Brain used by bots on this map.")]
+    public Unite.Multiplayer.BotGameMode botBrain = Unite.Multiplayer.BotGameMode.Lanes;
+
     [Header("Game Rules")]
     [Tooltip("Game mode for this map.")]
     public GameMode gameMode;

@@ -93,8 +93,15 @@ No match is started by a city host and no city visitor is placed in a match team
 
 ## Trainer and scene
 
-`ChineseLobby` references the existing city model with its generated colliders.
-The scene owns a small HUD and spawn center. `OpenWorldTrainerAvatar` uses the
+`ChineseLobby` is bundled with the player and owns the HUD, spawn center, camera,
+NPCs and network objects. `ChineseLobbyMap` contains the city model, generated
+colliders, invisible boundaries, NavMesh, light probes and environment volume.
+It references the existing bake assets in `Assets/Scenes/ChineseLobby` and is
+addressable in the `Maps` group with the `download-required` and `preload` labels;
+it must stay out of build settings. The lobby loads it additively before joining
+the city and releases it when the lobby view is destroyed. Map loading failures
+return to the static main menu through the same fallback as connection failures.
+`OpenWorldTrainerAvatar` uses the
 existing `TrainerModel`, clothing serialization, locomotion animations,
 `ClientNetworkTransform`, InputManager movement action, and Cinemachine.
 Movement is owner-controlled; the host creates one avatar per admitted member.

@@ -12,6 +12,24 @@ public class OpenWorldLobbyUiTests
     private const string HudPath = "Assets/Prefabs/Lobby/OpenWorldLobbyHUD.prefab";
     private const string HomePath = "Assets/Prefabs/Lobby/OpenWorldHomeButton.prefab";
 
+    [Test]
+    public void CityEnvironmentAndBakeBelongOnlyToAddressableMapScene()
+    {
+        const string home = "Assets/Scenes/ChineseLobby.unity";
+        const string map = "Assets/Scenes/ChineseLobbyMap.unity";
+        const string lighting = "Assets/Scenes/ChineseLobby/LightingData.asset";
+        var homeDependencies = AssetDatabase.GetDependencies(home, true);
+        var mapDependencies = AssetDatabase.GetDependencies(map, true);
+        Assert.That(homeDependencies.Any(path => path.StartsWith("Assets/Scenes/ChineseLobby/") ||
+            path.Contains("pref_sce_lobby_newcity_online_lv3")), Is.False);
+        Assert.That(mapDependencies, Does.Contain(lighting));
+        Assert.That(mapDependencies.Any(path => path.Contains("NavMesh-sce_lobby")), Is.True);
+        var bake = new SerializedObject(AssetDatabase.LoadMainAssetAtPath(lighting));
+        Assert.That(AssetDatabase.GetAssetPath(bake.FindProperty("m_Scene").objectReferenceValue), Is.EqualTo(map));
+        Assert.That(EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == home), Is.True);
+        Assert.That(EditorBuildSettings.scenes.Any(scene => scene.enabled && scene.path == map), Is.False);
+    }
+
     private static Type GameType(string name) => AppDomain.CurrentDomain.GetAssemblies()
         .Select(assembly => assembly.GetType(name)).First(type => type != null);
 

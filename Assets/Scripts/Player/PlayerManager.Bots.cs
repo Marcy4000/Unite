@@ -70,12 +70,12 @@ public partial class PlayerManager
             pokemon.OnDamageDealt += RecordBotDamageDealt;
             movesController.OnMoveLearned += RecordBotMove;
             onGoalScored += RecordBotScore;
-            switch (Unite.Multiplayer.BotModeRules.ForScene(GameManager.Instance.CurrentMap.sceneName))
+            switch (GameManager.Instance.CurrentMap.botBrain)
             {
                 case Unite.Multiplayer.BotGameMode.Volleyball: gameObject.AddComponent<BotVolleyballBrain>(); break;
                 case Unite.Multiplayer.BotGameMode.Racing: gameObject.AddComponent<BotRacingBrain>(); break;
                 case Unite.Multiplayer.BotGameMode.Royale: gameObject.AddComponent<BotRoyaleBrain>(); break;
-                default: gameObject.AddComponent<BotBrain>(); break;
+                case Unite.Multiplayer.BotGameMode.Lanes: gameObject.AddComponent<BotBrain>(); break;
             }
         }
         botReady = true;

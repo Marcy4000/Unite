@@ -77,6 +77,7 @@ public partial class LobbyController
         {
             var view = FindFirstObjectByType<OpenWorldLobbyView>();
             if (view == null) throw new InvalidOperationException("ChineseLobby is missing its open world lobby view.");
+            await view.LoadMapAsync();
             await OpenWorldLobby.EnterAsync(localPlayer, view);
         }
         catch (Exception exception)

@@ -10,16 +10,23 @@ using UnityEngine.SceneManagement;
 public class SpecialModeBotTests
 {
     private static Type T(string name) => AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(name)).First(t => t != null);
-    [TestCase("ElectrodeVolleyball", 2, 3, true)]
-    [TestCase("PsyduckRacing", 1, 6, true)]
-    [TestCase("UniteRoyale", 4, 1, true)]
-    [TestCase("TheiaSkyRuins", 2, 5, true)]
-    [TestCase("RemoatStadium", 2, 5, true)]
-    [TestCase("MerStadium", 2, 4, false)]
-    [TestCase("UniteRoyale", 2, 5, false)]
-    [TestCase("PsyduckRacing", 2, 3, false)]
-    public void OnlyAuditedModesAndTheirActualFormatsAreSupported(string scene, int teams, int slots, bool expected) =>
-        Assert.That(BotModeRules.Supports(scene, teams, slots), Is.EqualTo(expected));
+    [TestCase("ElectrodeVolleyball", true, BotGameMode.Volleyball)]
+    [TestCase("PsyduckRacing", true, BotGameMode.Racing)]
+    [TestCase("UniteRoyale", true, BotGameMode.Royale)]
+    [TestCase("TheiaSkyRuins", true, BotGameMode.Lanes)]
+    [TestCase("TheiaSkyRuinsDraft", true, BotGameMode.Lanes)]
+    [TestCase("RemoatStadium", true, BotGameMode.Lanes)]
+    [TestCase("RemoatStadium500Points", false, BotGameMode.Lanes)]
+    [TestCase("MerStadium", false, BotGameMode.Lanes)]
+    [TestCase("MerStadiumDraft", false, BotGameMode.Lanes)]
+    public void MapAssetsDeclareBotSupportAndBrain(string asset, bool supported, BotGameMode brain)
+    {
+        var map = AssetDatabase.LoadAssetAtPath<ScriptableObject>("Assets/Maps/" + asset + ".asset");
+        Assert.That(map, Is.Not.Null);
+        var settings = new SerializedObject(map);
+        Assert.That(settings.FindProperty("supportsBots").boolValue, Is.EqualTo(supported));
+        Assert.That(settings.FindProperty("botBrain").intValue, Is.EqualTo((int)brain));
+    }
 
     [TestCase(false, true, true, 0, 2, 5, true)]
     [TestCase(true, false, true, 0, 2, 5, false)]

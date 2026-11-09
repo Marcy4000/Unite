@@ -117,7 +117,7 @@ public partial class PlayerMovement : NetworkBehaviour
         // Initialize walkmesh references
         // Racing uses its dedicated CharacterController passive and physical
         // track, not the lane maps' tagged walkmesh boundaries.
-        if (Unite.Multiplayer.BotModeRules.ForScene(GameManager.Instance?.CurrentMap?.sceneName) != Unite.Multiplayer.BotGameMode.Racing)
+        if (GameManager.Instance?.CurrentMap?.characterSelectType != CharacterSelectType.PsyduckRacing)
             InitializeWalkmeshes();
         
         // Initialize last valid position to current position

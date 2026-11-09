@@ -37,8 +37,8 @@ public partial class PlayerNetworkManager
             var lobby = LobbyController.Instance;
             if (lobby?.Lobby == null || CharactersList.Instance == null) return false;
             var map = CharactersList.Instance.GetCurrentLobbyMap();
-            return lobby.IsCustomLobby() && map != null && BotModeRules.Supports(map.sceneName, map.availableTeams.Count, map.maxTeamSize) &&
-                (BotModeRules.ForScene(map.sceneName) != BotGameMode.Lanes || map.SupportsLaneSelection) &&
+            return lobby.IsCustomLobby() && map != null && map.supportsBots && map.botBrain != BotGameMode.Unsupported &&
+                (map.botBrain != BotGameMode.Lanes || map.SupportsLaneSelection) &&
                 (map.characterSelectType == CharacterSelectType.PsyduckRacing || SupportedBotCharacters().Length >= map.maxTeamSize);
         }
     }
@@ -117,7 +117,7 @@ public partial class PlayerNetworkManager
                 player.Data["PlayerPos"] = new PlayerProperty(NumberEncoder.ToBase64(bot.Position));
                 player.Data["SelectedCharacter"] = new PlayerProperty(NumberEncoder.ToBase64(bot.Character));
                 var build = BotRosterConfig.Instance != null ? BotRosterConfig.Instance.GetBuild(bot.Loadout) : null;
-                bool racing = BotModeRules.ForScene(CharactersList.Instance.GetCurrentLobbyMap().sceneName) == BotGameMode.Racing;
+                bool racing = CharactersList.Instance.GetCurrentLobbyMap().botBrain == BotGameMode.Racing;
                 player.Data["BattleItem"] = new PlayerProperty(racing ? "0" : build != null ? System.Array.IndexOf(CharactersList.Instance.BattleItems, build.battleItem).ToString() : "1");
                 player.Data["HeldItems"] = new PlayerProperty(HeldItemDatabase.SerializeHeldItems(build != null ? build.heldItems : new byte[] { 0, 0, 0 }));
                 player.Data["ClothingInfo"] = new PlayerProperty(bot.Outfit.Length > 0 ? bot.Outfit.ToString() : "AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA=");
