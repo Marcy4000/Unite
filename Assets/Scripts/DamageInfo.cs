@@ -4,7 +4,7 @@ using Unity.Netcode;
 public enum DamageType : byte { Physical, Special, True }
 
 // Orthogonal to the legacy flags: secondary damage must not recursively proc itself.
-public enum DamageSource : byte { Direct, Item, Secondary }
+public enum DamageSource : byte { Direct, Item, Secondary, Redirected }
 
 [Flags]
 public enum DamageProprieties : byte

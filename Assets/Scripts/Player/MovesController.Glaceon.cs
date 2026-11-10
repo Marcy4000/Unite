@@ -24,6 +24,7 @@ public partial class MovesController
     }
     private void SyncGlaceUniteEnergy()
     {
+        SyncTrevenantEnergy();
         if (IsServer && IsSpawned && IsGlaceon) glaceUniteEnergy.Value = Mathf.FloorToInt(legacyItemEnergy);
     }
     private void UpdateGlaceonPresentation()

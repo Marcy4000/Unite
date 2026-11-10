@@ -51,7 +51,7 @@ public partial class MovesController
         if (ZoroarkNight != null && ZoroarkNight.Finishing && slot != 0) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         double now = NetworkManager.ServerTime.Time;
         if (prefabLearnedMoves[slot] != move) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
-        if ((definition is GlaceonMove || definition is UmbreonMove) && slot == 2)
+        if ((definition is GlaceonMove || definition is UmbreonMove || definition is TrevenantMove) && slot == 2)
         {
             TickLegacyItemResources();
             if (learned.EffectiveUniteEnergyCost <= 0 || legacyItemEnergy < learned.EffectiveUniteEnergyCost) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
@@ -61,13 +61,14 @@ public partial class MovesController
             : direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
         if (definition.CooldownOnEffectEnd && activePrefabMoves[slot] != null)
         {
-            if ((definition is GlaceonMove || definition is UmbreonMove) && ownerRequest != prefabOwnerRequests[slot])
+            if ((definition is GlaceonMove || definition is UmbreonMove || definition is TrevenantMove) && ownerRequest != prefabOwnerRequests[slot])
             { RejectPrefabExecutionRPC(move, ownerRequest); return; }
             if (ServerActionLocks == 0 && activePrefabMoves[slot].TryRecast(direction, targetId))
             {
                 if (definition.IsOffensive) pokemon.NotifyOffensiveAction();
                 PrefabLoadFinishedRPC(move, ownerRequest);
                 if (definition is UmbreonMove) UmbreonAcceptedRPC(move, true, ownerRequest);
+                if (definition is TrevenantMove) TrevenantAcceptedRPC(move, true, ownerRequest);
                 if (definition is GlaceIcicleSpear) PrefabExecutionStateRPC(move, false, ownerRequest);
             }
             else RejectPrefabExecutionRPC(move, ownerRequest);
@@ -120,7 +121,7 @@ public partial class MovesController
             if (target != null) target.OnDeath -= onDeath;
             if (asset.Status != AsyncOperationStatus.Succeeded || cancelled || this == null || !IsSpawned || generation != prefabGenerations[slot]
                 || pokemon == null || pokemon.CurrentHp <= 0
-                || (definition is UmbreonMove && (ServerActionLocks > 0 || prefabLearnedMoves[slot] != move
+                || ((definition is UmbreonMove || definition is TrevenantMove) && (ServerActionLocks > 0 || prefabLearnedMoves[slot] != move
                     || pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)
                     || (target != null && (!UmbreonMoveRules.Living(target) || !definition.IsTargetInCastRange(transform.position, target.transform.position)))))
                 || (definition is GlaceonMove && (prefabLearnedMoves[slot] != move || pokemon.HasAnyStatusEffect(GlaceonMoveRules.Interrupts)
@@ -133,7 +134,7 @@ public partial class MovesController
                 if (!cancelled && this != null && IsSpawned && espeon != null) espeon.Refund(move, espeonBonus, espeonBlastCount, espeonBonusExpiry);
                 if (this != null && IsSpawned && generation == prefabGenerations[slot])
                 {
-                    if (definition is GlaceonMove || definition is UmbreonMove)
+                    if (definition is GlaceonMove || definition is UmbreonMove || definition is TrevenantMove)
                     {
                         prefabNextCast[slot] = previousNextCast;
                         if (definition is GlaceIcicleSpear) glaceonRuntime?.EndSpear();
@@ -161,7 +162,7 @@ public partial class MovesController
             if (effect == null)
             {
                 Destroy(instance); Addressables.Release(asset);
-                if (definition is GlaceonMove || definition is UmbreonMove)
+                if (definition is GlaceonMove || definition is UmbreonMove || definition is TrevenantMove)
                 {
                     prefabNextCast[slot] = previousNextCast;
                     if (definition is GlaceIcicleSpear) glaceonRuntime?.EndSpear();
@@ -199,6 +200,11 @@ public partial class MovesController
                 if (slot == 2) legacyItemEnergy = 0;
                 UmbreonAcceptedRPC(move, false, ownerRequest);
             }
+            if (definition is TrevenantMove)
+            {
+                if (slot == 2) { legacyItemEnergy = 0; SyncTrevenantEnergy(); }
+                TrevenantAcceptedRPC(move, false, ownerRequest);
+            }
             PrefabLoadFinishedRPC(move, ownerRequest);
         };
     }
@@ -214,6 +220,13 @@ public partial class MovesController
                 foreach (var asset in row.moves) if (asset != null && asset.move == move) upgraded = true;
         definition.IsUpgraded = upgraded;
         prefabNextCast[slot] = NetworkManager.ServerTime.Time + definition.ResolveCooldown(definition.EffectiveCooldown(upgraded)) * Mathf.Max(0.01f, 1 - pokemon.GetCDR() / 100f);
+        if (definition is TrevenantMove)
+        {
+            if (slot == 1 && trevenantResetAfterEffect) { trevenantResetAfterEffect = false; prefabNextCast[slot] = NetworkManager.ServerTime.Time; }
+            if (slot < 2) TrevenantCooldownRPC(slot, (float)(prefabNextCast[slot] - NetworkManager.ServerTime.Time), true);
+            else TrevenantUniteFinishedRPC();
+            return;
+        }
         PrefabExecutionStateRPC(move, true, ownerRequest);
     }
 
@@ -246,7 +259,7 @@ public partial class MovesController
         definition.BalanceId = CharactersList.Instance?.GetMoveAsset(move)?.BalanceId;
         for (int slot = 0; slot < prefabLearnedMoves.Length; slot++)
         {
-            if (prefabLearnedMoves[slot] != move || ((definition is GlaceonMove || definition is UmbreonMove) && ownerRequest != prefabOwnerRequests[slot])) continue;
+            if (prefabLearnedMoves[slot] != move || ((definition is GlaceonMove || definition is UmbreonMove || definition is TrevenantMove) && ownerRequest != prefabOwnerRequests[slot])) continue;
             foreach (var effect in new System.Collections.Generic.List<PrefabMoveEffect>(prefabEffects))
                 if (effect != null && effect.MoveId == move && !(effect.PersistsAfterCasterDeath && pokemon.CurrentHp <= 0)) effect.Despawn();
             if (double.IsPositiveInfinity(prefabNextCast[slot]))

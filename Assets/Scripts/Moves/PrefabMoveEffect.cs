@@ -99,13 +99,13 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
 
     // One time-based path on server and owner, using the existing bounded,
     // cast-owned traversal. Other clients continue using NetworkTransform.
-    protected void Drive(Vector3 destination, float duration, float bow = 0)
+    protected void Drive(Vector3 destination, float duration, float bow = 0, bool crossWalls = true)
     {
-        DriveRPC(Actor.transform.position, destination, duration, bow, NetworkManager.ServerTime.Time);
+        DriveRPC(Actor.transform.position, destination, duration, bow, NetworkManager.ServerTime.Time, crossWalls);
     }
 
     [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
-    private void DriveRPC(Vector3 origin, Vector3 destination, float duration, float bow, double began)
+    private void DriveRPC(Vector3 origin, Vector3 destination, float duration, float bow, double began, bool crossWalls)
     {
         if (Actor == null || (!IsServer && !Actor.IsOwner)) return;
         // Consecutive phases can start in the same frame that the previous
@@ -113,12 +113,13 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
         if (driveRoutine != null) StopCoroutine(driveRoutine);
         driveRoutine = null;
         traversal?.End(); traversal = null;
-        driveRoutine = StartCoroutine(DrivePath(origin, destination, duration, bow, began));
+        driveRoutine = StartCoroutine(DrivePath(origin, destination, duration, bow, began, crossWalls));
     }
 
-    private IEnumerator DrivePath(Vector3 origin, Vector3 destination, float duration, float bow, double began)
+    private IEnumerator DrivePath(Vector3 origin, Vector3 destination, float duration, float bow, double began, bool crossWalls)
     {
-        traversal?.End(); traversal = new WallCrossingTraversal(); traversal.Begin(Actor.PlayerMovement);
+        traversal?.End(); traversal = null;
+        if (crossWalls) { traversal = new WallCrossingTraversal(); traversal.Begin(Actor.PlayerMovement); }
         Vector3 forward = destination - origin; forward.y = 0;
         Vector3 right = forward.sqrMagnitude > 0.001f ? Vector3.Cross(Vector3.up, forward.normalized) : Vector3.right;
         float t = 0;
@@ -126,12 +127,17 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
         {
             t = Mathf.Clamp01((float)(NetworkManager.ServerTime.Time - began) / Mathf.Max(0.01f, duration));
             Vector3 point = Vector3.Lerp(origin, destination, t) + right * (Mathf.Sin(t * Mathf.PI) * bow);
-            traversal.Move(point - Actor.transform.position);
+            if (crossWalls) traversal.Move(point - Actor.transform.position);
+            else Actor.PlayerMovement.MoveWithWalls(point - Actor.transform.position);
             if (t < 1) yield return null;
         }
         if (Actor != null && Actor.IsSpawned && Actor.Pokemon.CurrentHp > 0
-            && !Actor.Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)) traversal.Move(destination - Actor.transform.position);
-        if (Actor != null && Actor.IsSpawned && Actor.Pokemon.CurrentHp > 0) traversal.End(); else traversal.Cancel();
+            && !Actor.Pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions))
+        {
+            if (crossWalls) traversal.Move(destination - Actor.transform.position);
+            else Actor.PlayerMovement.MoveWithWalls(destination - Actor.transform.position);
+        }
+        if (Actor != null && Actor.IsSpawned && Actor.Pokemon.CurrentHp > 0) traversal?.End(); else traversal?.Cancel();
         traversal = null; driveRoutine = null;
     }
 

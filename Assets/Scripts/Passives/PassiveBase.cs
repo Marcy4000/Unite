@@ -18,6 +18,7 @@ public static class PassiveDatabase
     {
         switch (passive)
         {
+            case AvailablePassives.TrevenantPassive: return new TrevenantPassive();
             case AvailablePassives.UmbreonPassive: return new UmbreonPassive();
             case AvailablePassives.EspeonPassive: return new EspeonPassive();
             case AvailablePassives.EmptyPassive:
@@ -81,4 +82,5 @@ public enum AvailablePassives
     ZoroarkPassive,
     EspeonPassive,
     UmbreonPassive,
+    TrevenantPassive,
 }

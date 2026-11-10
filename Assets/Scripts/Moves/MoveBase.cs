@@ -94,6 +94,13 @@ public static class MoveDatabase
     {
         switch (move)
         {
+            case AvailableMoves.TrevenantWillOWisp: return new TrevenantWillOWisp();
+            case AvailableMoves.TrevenantBranchPoke: return new TrevenantBranchPoke();
+            case AvailableMoves.TrevenantWoodHammer: return new TrevenantWoodHammer();
+            case AvailableMoves.TrevenantCurse: return new TrevenantCurse();
+            case AvailableMoves.TrevenantHornLeech: return new TrevenantHornLeech();
+            case AvailableMoves.TrevenantPainSplit: return new TrevenantPainSplit();
+            case AvailableMoves.TrevenantPhantomForest: return new TrevenantPhantomForest();
             case AvailableMoves.UmbreonSwift: return new UmbreonSwift();
             case AvailableMoves.UmbreonFakeTears: return new UmbreonFakeTears();
             case AvailableMoves.UmbreonMeanLook: return new UmbreonMeanLook();
@@ -488,5 +495,12 @@ public enum AvailableMoves : uint
     UmbreonFoulPlay,
     UmbreonWish,
     UmbreonSnarl,
-    UmbreonMoonlightPrance
+    UmbreonMoonlightPrance,
+    TrevenantWillOWisp,
+    TrevenantBranchPoke,
+    TrevenantWoodHammer,
+    TrevenantCurse,
+    TrevenantHornLeech,
+    TrevenantPainSplit,
+    TrevenantPhantomForest
 }

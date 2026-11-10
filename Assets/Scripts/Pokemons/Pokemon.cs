@@ -1156,7 +1156,7 @@ public partial class Pokemon : NetworkBehaviour
             }
         }
 
-        int actualDamage = CalculateDamage(damage, attacker);
+        int actualDamage = FilterIncomingDamage(damage, CalculateDamage(damage, attacker));
 
         int damageRemainder;
 
@@ -1191,6 +1191,7 @@ public partial class Pokemon : NetworkBehaviour
         OnResolvedDamage?.Invoke(damage, resolved);
         if (knockout != null) PublishKnockout(knockout);
         currentHp.Value = localHp;
+        OnDamageReceived?.Invoke(damage, resolved);
 
         bool scoringProtected = RayquazaBuff.ProtectsScoring(HasRayquazaShield, damage.type)
             || (damage.type != DamageType.True && HasShieldWithID(HeldItemRules.ScoreShieldId));
@@ -1218,6 +1219,7 @@ public partial class Pokemon : NetworkBehaviour
 
     public int CalculateDamage(DamageInfo damage, Pokemon attacker)
     {
+        if (damage.source == DamageSource.Redirected) return Mathf.Max(0, damage.baseDmg);
         int atkStat;
 
         switch (damage.type)
@@ -1264,7 +1266,8 @@ public partial class Pokemon : NetworkBehaviour
 
         float physicalReduction = damage.type == DamageType.Physical ? GetMeowsticPhysicalReduction() : 0;
         return Mathf.FloorToInt(finalDamage * (1f-GetDamageReduction()) * (1f-physicalReduction) * (damage.multiplier > 0 ? damage.multiplier : 1f)
-            * GetRayquazaDamageMultiplier(attacker) * attacker.OutgoingMultiplier(this, damage) * (attacker.HeldItems != null ? attacker.HeldItems.DamageMultiplier : 1));
+            * GetRayquazaDamageMultiplier(attacker) * attacker.OutgoingMultiplier(this, damage) * (attacker.HeldItems != null ? attacker.HeldItems.DamageMultiplier : 1)
+            * Mathf.Clamp01(1 + attacker.GetPreciseStatChange(Stat.DamageDealtReduction) / 100f));
     }
 
     public List<ShieldInfo> TakeDamageFromShields(ShieldInfo[] shields, int damage, out int remainder)
@@ -1371,7 +1374,7 @@ public partial class Pokemon : NetworkBehaviour
     {
         int oldHp = currentHp.Value;
         if (oldHp <= 0 || amount <= 0 || baseStats == null) return;
-        amount = HeldItemHealing(amount, healer);
+        amount = FilterHealingReceived(HeldItemHealing(amount, healer));
         int healAmount = Mathf.Min(amount, Mathf.Max(0, GetMaxHp() - oldHp));
         if (healAmount == 0) return;
         currentHp.Value = oldHp + healAmount;

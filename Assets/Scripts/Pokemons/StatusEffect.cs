@@ -1,7 +1,7 @@
 using System;
 using Unity.Netcode;
 
-public enum StatusType : byte { Immobilized, Incapacitated, Asleep, Frozen, Bound, Unstoppable, Invincible, Untargetable, HindranceResistance, Invisible, VisionObscuring, Scriptable, Burned, Poisoned, RedBuff, BlueBuff, SnowMarked, FutureSightMarked, SpeedReductionImmunity, BattleItemStasis, UmbreonSwiftMarked, UmbreonMeanLookPending }
+public enum StatusType : byte { Immobilized, Incapacitated, Asleep, Frozen, Bound, Unstoppable, Invincible, Untargetable, HindranceResistance, Invisible, VisionObscuring, Scriptable, Burned, Poisoned, RedBuff, BlueBuff, SnowMarked, FutureSightMarked, SpeedReductionImmunity, BattleItemStasis, UmbreonSwiftMarked, UmbreonMeanLookPending, TrevenantForestMarked }
 
 public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
 {
@@ -53,7 +53,7 @@ public struct StatusEffect : INetworkSerializable, IEquatable<StatusEffect>
 
     public bool IsNegativeStatus()
     {
-        return Type == StatusType.Immobilized || Type == StatusType.Incapacitated || Type == StatusType.Asleep || Type == StatusType.Frozen || Type == StatusType.Bound || Type == StatusType.VisionObscuring || Type == StatusType.SnowMarked || Type == StatusType.FutureSightMarked || Type == StatusType.UmbreonSwiftMarked || Type == StatusType.UmbreonMeanLookPending;
+        return Type == StatusType.Immobilized || Type == StatusType.Incapacitated || Type == StatusType.Asleep || Type == StatusType.Frozen || Type == StatusType.Bound || Type == StatusType.VisionObscuring || Type == StatusType.SnowMarked || Type == StatusType.FutureSightMarked || Type == StatusType.UmbreonSwiftMarked || Type == StatusType.UmbreonMeanLookPending || Type == StatusType.TrevenantForestMarked;
     }
 
     public bool Equals(StatusEffect other)

@@ -135,6 +135,7 @@ public partial class MovesController : NetworkBehaviour
         UpdateEspeonRuntime();
         UpdateUmbreonRuntime();
         UpdateGlaceonRuntime();
+        UpdateTrevenantRuntime();
         UpdateBattleItemRuntime();
         if (!IsOwner)
         {
@@ -977,7 +978,7 @@ public partial class MovesController : NetworkBehaviour
     {
         // Glaceon displays the same authoritative pool used to accept its Unite.
         // Passive, KO and scoring energy are already awarded on the server.
-        if (IsGlaceon && IsSpawned) return;
+        if ((IsGlaceon || IsTrevenant) && IsSpawned) return;
         if (amount > 0) amount = Mathf.FloorToInt(amount * (1 + pokemon.GetPreciseStatChange(Stat.EnergyRate) / 100f));
         uniteMoveCharge = Mathf.Clamp(uniteMoveCharge + amount, 0, uniteMoveMaxCharge);
         if (uniteMoveCharge == uniteMoveMaxCharge && uniteMoveStatus.HasStatus(ActionStatusType.Cooldown))
@@ -1012,6 +1013,7 @@ public partial class MovesController : NetworkBehaviour
         DisposeEspeonRuntime();
         DisposeUmbreonRuntime();
         DisposeGlaceonRuntime();
+        DisposeTrevenantRuntime();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();

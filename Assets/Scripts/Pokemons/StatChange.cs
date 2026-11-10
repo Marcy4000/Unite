@@ -19,7 +19,8 @@ public enum Stat : byte
     SpellVamp,
     PhysicalDamageReduction,
     HpRecovery,
-    EnergyRate
+    EnergyRate,
+    DamageDealtReduction
 }
 
 [Serializable]

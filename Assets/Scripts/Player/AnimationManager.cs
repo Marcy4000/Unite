@@ -8,6 +8,7 @@ public class AnimationManager : NetworkBehaviour
     private bool timedPlayback;
     private int timedState;
     private float previousPlaybackSpeed;
+    private float timedClipLength;
     private readonly Dictionary<int, bool> bools = new();
     private readonly Dictionary<int, float> floats = new();
     private readonly Dictionary<int, int> ints = new();
@@ -16,6 +17,8 @@ public class AnimationManager : NetworkBehaviour
     private bool hasPendingState;
     private int pendingState;
     private float pendingStateAt, pendingDuration;
+    private bool contactPlayback;
+    private float contactPoint, contactWindup;
     private bool hasPendingTrigger;
     private int pendingTrigger;
     private bool CanAnimate => animator != null && animator.isActiveAndEnabled && animator.runtimeAnimatorController != null;
@@ -183,6 +186,34 @@ public class AnimationManager : NetworkBehaviour
         PlayLocalAnimation(state, duration, blendDuration);
     }
 
+    [Rpc(SendTo.ClientsAndHost, InvokePermission = RpcInvokePermission.Server)]
+    public void PlayContactAnimationRPC(string state, float windup, float recovery, float contact)
+    {
+        PlayLocalContactAnimation(state, windup, recovery, contact);
+    }
+
+    // Match the strike, not just the whole clip: different authored contact
+    // poses land at the same windup, then finish in the same recovery.
+    public void PlayLocalContactAnimation(string state, float windup, float recovery, float contact)
+    {
+        PlayLocalAnimation(state, windup + recovery);
+        if (!float.IsFinite(windup) || !float.IsFinite(recovery) || !float.IsFinite(contact)
+            || windup <= 0 || recovery <= 0 || contact <= 0 || contact >= 1) return;
+        contactPlayback = true; contactPoint = contact; contactWindup = windup;
+        ApplyContactPlayback(0);
+    }
+
+    private float ContactNormalizedTime(float elapsed)
+        => elapsed < contactWindup ? elapsed / contactWindup * contactPoint
+            : contactPoint + (elapsed - contactWindup) / (pendingDuration - contactWindup) * (1 - contactPoint);
+
+    private void ApplyContactPlayback(float elapsed)
+    {
+        if (!contactPlayback || !timedPlayback || !CanAnimate) return;
+        animator.speed = timedClipLength * (elapsed < contactWindup ? contactPoint / contactWindup
+            : (1 - contactPoint) / (pendingDuration - contactWindup));
+    }
+
     // Opt-in duration matching for authored casts. Legacy playback is unchanged.
     // Restore the old speed on recovery, replacement or a controller transition.
     public void PlayLocalAnimation(string state, float duration = 0, float blendDuration = 0)
@@ -206,6 +237,7 @@ public class AnimationManager : NetworkBehaviour
             if (Animator.StringToHash(clip.name) == hash && clip.length > 0)
             {
                 previousPlaybackSpeed = animator.speed;
+                timedClipLength = clip.length;
                 timedState = hash;
                 timedPlayback = true;
                 animator.speed = clip.length / Mathf.Max(0.01f, duration);
@@ -241,7 +273,9 @@ public class AnimationManager : NetworkBehaviour
                     foreach (var clip in animator.runtimeAnimatorController.animationClips)
                         if (Animator.StringToHash(clip.name) == pendingState) { length = clip.length; break; }
                 SetPlaybackDuration(pendingState, pendingDuration);
-                animator.Play(pendingState, 0, length > 0 ? (Time.time - pendingStateAt) / length : 0);
+                float elapsed = Time.time - pendingStateAt;
+                ApplyContactPlayback(elapsed);
+                animator.Play(pendingState, 0, contactPlayback ? ContactNormalizedTime(elapsed) : length > 0 ? elapsed / length : 0);
                 hasPendingState = false;
                 resumedState = true;
             }
@@ -251,6 +285,7 @@ public class AnimationManager : NetworkBehaviour
         if (animator == null) { RestorePlaybackSpeed(); return; }
         var state = animator.IsInTransition(0) ? animator.GetNextAnimatorStateInfo(0) : animator.GetCurrentAnimatorStateInfo(0);
         if (state.shortNameHash != timedState) RestorePlaybackSpeed();
+        else ApplyContactPlayback(Time.time - pendingStateAt);
     }
 
     private void RestorePlaybackSpeed()
@@ -261,6 +296,7 @@ public class AnimationManager : NetworkBehaviour
 
     private void QueueState(int hash, float duration)
     {
+        contactPlayback = false;
         if (!CanAnimate) presentationWasActive = false;
         hasPendingTrigger = false;
         hasPendingState = true;
