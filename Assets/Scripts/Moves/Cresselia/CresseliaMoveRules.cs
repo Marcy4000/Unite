@@ -58,10 +58,10 @@ public static class CresseliaMoveRules
         && !float.IsInfinity(value.x) && !float.IsInfinity(value.y) && !float.IsInfinity(value.z);
     public static DamageInfo Damage(CresseliaCast move, ulong actor)
     {
-        if (move == CresseliaCast.Psybeam) return new DamageInfo(actor, 0.95f, 8, 480, DamageType.Special);
-        if (move == CresseliaCast.Moonblast) return new DamageInfo(actor, 1.27f, 7, 475, DamageType.Special);
-        return new DamageInfo(actor, 0.75f, 5, 370, DamageType.Special);
+        if (move == CresseliaCast.Psybeam) return DamageInfo.Tuned("cresselia.damage", new DamageInfo(actor, 0.95f, 8, 480, DamageType.Special));
+        if (move == CresseliaCast.Moonblast) return DamageInfo.Tuned("cresselia.damage.2", new DamageInfo(actor, 1.27f, 7, 475, DamageType.Special));
+        return DamageInfo.Tuned("cresselia.damage.3", new DamageInfo(actor, 0.75f, 5, 370, DamageType.Special));
     }
-    public static DamageInfo BasicDamage(ulong actor, bool boosted) => new DamageInfo(actor, boosted ? 0.5f : 0.44f,
-        (short)(boosted ? 18 : 10), (short)(boosted ? 280 : 100), DamageType.Special, DamageProprieties.IsBasicAttack);
+    public static DamageInfo BasicDamage(ulong actor, bool boosted) => DamageInfo.Tuned("cresselia.basicdamage", new DamageInfo(actor, boosted ? 0.5f : 0.44f,
+        (short)(boosted ? 18 : 10), (short)(boosted ? 280 : 100), DamageType.Special, DamageProprieties.IsBasicAttack));
 }

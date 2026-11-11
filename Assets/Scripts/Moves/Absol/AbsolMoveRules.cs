@@ -71,12 +71,12 @@ public static class AbsolMoveRules
         => new DamageInfo(source, ratio, slider, baseDamage, DamageType.Physical, DamageProprieties.CanCrit) { bonusCritRate = bonusCrit };
     public static DamageInfo BasicDamage(ulong source, bool boosted, bool isolated)
     {
-        var damage = boosted ? Damage(source, isolated ? 0.885f : 0.51f, (short)(isolated ? 6 : 5), (short)(isolated ? 120 : 100)) : Damage(source, 1, 0, 0);
+        var damage = boosted ? DamageInfo.Tuned("absol.basicdamage", Damage(source, isolated ? 0.885f : 0.51f, (short)(isolated ? 6 : 5), (short)(isolated ? 120 : 100))) : DamageInfo.Tuned("absol.basicdamage.2", Damage(source, 1, 0, 0));
         damage.proprieties |= DamageProprieties.IsBasicAttack; return damage;
     }
     public static DamageInfo BoostedBonusDamage(ulong source)
     {
-        var damage = Damage(source, 0.375f, 1, 20);
+        var damage = DamageInfo.Tuned("absol.boostedbonusdamage", Damage(source, 0.375f, 1, 20));
         damage.suppressOnHitEffects = true;
         damage.proprieties |= DamageProprieties.IsBasicAttack; return damage;
     }
@@ -87,27 +87,27 @@ public static class AbsolMoveRules
         => boosted || pursuit ? 1 : BasicTimingScale(attackCooldown);
     public static DamageInfo DashDamage(ulong source, bool feint, bool second, float missingHp)
     {
-        var damage = feint ? Damage(source, 0.66f, 7, 130) : second ? Damage(source, 1.035f, 9, 210, NightCrit(missingHp)) : Damage(source, 0.69f, 6, 140, NightCrit(missingHp));
+        var damage = feint ? DamageInfo.Tuned("absol.dashdamage", Damage(source, 0.66f, 7, 130)) : second ? DamageInfo.Tuned("absol.dashdamage.2", Damage(source, 1.035f, 9, 210, NightCrit(missingHp))) : DamageInfo.Tuned("absol.dashdamage.3", Damage(source, 0.69f, 6, 140, NightCrit(missingHp)));
         if (feint) damage.type = DamageType.True;
         return damage;
     }
     public static float NightCrit(float missingHpFraction) => Mathf.Min(30, Mathf.Clamp01(missingHpFraction) * 80);
     public static DamageInfo PursuitDamage(ulong source, bool backstab)
     {
-        var damage = backstab ? Damage(source, 2.14f, 21, 259) : Damage(source, 1.43f, 14, 173);
+        var damage = backstab ? DamageInfo.Tuned("absol.pursuitdamage", Damage(source, 2.14f, 21, 259)) : DamageInfo.Tuned("absol.pursuitdamage.2", Damage(source, 1.43f, 14, 173));
         damage.proprieties |= DamageProprieties.IsBasicAttack; return damage;
     }
     public static DamageInfo MarkDamage(ulong source, int remaining)
     {
-        var damage = remaining == 1 ? Damage(source, 1.08f, 7, 72, 15) : Damage(source, 0.72f, 5, 48, 15);
+        var damage = remaining == 1 ? DamageInfo.Tuned("absol.markdamage", Damage(source, 1.08f, 7, 72, 15)) : DamageInfo.Tuned("absol.markdamage.2", Damage(source, 0.72f, 5, 48, 15));
         damage.source = DamageSource.Secondary; return damage;
     }
-    public static DamageInfo SlashDamage(ulong source) => Damage(source, 0.89f, 6, 200, 15);
-    public static DamageInfo PsychoDamage(ulong source) => Damage(source, 0.5f, 1, 65, 15);
-    public static DamageInfo SuckerDamage(ulong source, bool counter) => counter ? Damage(source, 1.56f, 10, 250) : Damage(source, 1.05f, 6, 165);
+    public static DamageInfo SlashDamage(ulong source) => DamageInfo.Tuned("absol.slashdamage", Damage(source, 0.89f, 6, 200, 15));
+    public static DamageInfo PsychoDamage(ulong source) => DamageInfo.Tuned("absol.psychodamage", Damage(source, 0.5f, 1, 65, 15));
+    public static DamageInfo SuckerDamage(ulong source, bool counter) => counter ? DamageInfo.Tuned("absol.suckerdamage", Damage(source, 1.56f, 10, 250)) : DamageInfo.Tuned("absol.suckerdamage.2", Damage(source, 1.05f, 6, 165));
     public static DamageInfo UniteDamage(ulong source)
     {
-        var damage = Damage(source, 0.83f, 4, 184);
+        var damage = DamageInfo.Tuned("absol.unitedamage", Damage(source, 0.83f, 4, 184));
         damage.proprieties |= DamageProprieties.IsUniteMove; return damage;
     }
     public static float FinalPulseRadius(int pulse) => UniteFourHitRange * (Mathf.Clamp(pulse, 0, 3) + 1);

@@ -75,13 +75,14 @@ public abstract class PrefabMoveEffect : NetworkBehaviour
         }
     }
     protected void LockActions(bool movement = true, bool battleItems = true) { SetActionLockRPC(true, movement, battleItems); }
+    protected virtual int UnlockedMoveSlot => -1;
     protected void UnlockActions() { SetActionLockRPC(false, false, false); }
 
     [Rpc(SendTo.Everyone, InvokePermission = RpcInvokePermission.Server)]
     private void SetActionLockRPC(bool active, bool movement, bool battleItems)
     {
         actionLock?.Dispose(); actionLock = null;
-        if (active && Actor != null) actionLock = new CombatActionLock(Actor, movement, lockBattleItems: battleItems);
+        if (active && Actor != null) actionLock = new CombatActionLock(Actor, movement, lockBattleItems: battleItems, unlockedMoveSlot: UnlockedMoveSlot);
     }
 
     protected void PlayAnimation(string state, float duration = 0, float blendDuration = 0)

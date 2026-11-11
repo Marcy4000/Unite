@@ -72,7 +72,7 @@ public class JolteonUnite : MoveBase
         {
             if (nextHit.TryGetValue(target.NetworkObjectId, out float until) && Time.time < until) continue;
             nextHit[target.NetworkObjectId] = Time.time + 0.7f;
-            target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 1.8f, 6, 300, DamageType.Physical, DamageProprieties.IsUniteMove));
+            target.TakeDamageRPC(DamageInfo.Tuned("jolteon.jolteonunite.moveandhit", new DamageInfo(playerManager.NetworkObjectId, 1.8f, 6, 300, DamageType.Physical, DamageProprieties.IsUniteMove)));
             JoltMoveRuntime.RefreshStat(target, new StatChange(20, Stat.Speed, 2f, true, false, true, JoltMoveRules.BlitzSlow));
         }
         return moved;

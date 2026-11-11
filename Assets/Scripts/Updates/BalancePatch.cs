@@ -23,6 +23,19 @@ namespace Unite.Updates
         public int uniteEnergyCost;
     }
     [Serializable]
+    public sealed class DamageBalance
+    {
+        public string id;
+        [Tooltip("Authored Attack/Sp. Attack, per-level, and flat expressions, for reference.")]
+        public string authoredFormula;
+        public bool overrideAttack;
+        public float attackCoefficient;
+        public bool overrideLevel;
+        public int levelDamage;
+        public bool overrideBase;
+        public int baseDamage;
+    }
+    [Serializable]
     public sealed class BalanceNumber
     {
         public string id;
@@ -37,12 +50,13 @@ namespace Unite.Updates
         public PokemonBalance[] pokemon = Array.Empty<PokemonBalance>();
         public MoveBalance[] moves = Array.Empty<MoveBalance>();
         public BalanceNumber[] numbers = Array.Empty<BalanceNumber>();
+        public DamageBalance[] damage = Array.Empty<DamageBalance>();
 
         public void Validate(string line, string version)
         {
             if (schemaVersion != 1 || compatibilityLine != line || patchVersion != version)
                 throw new InvalidOperationException("Incompatible balance data.");
-            if (pokemon == null || moves == null || numbers == null) throw new InvalidOperationException("Incomplete balance data.");
+            if (pokemon == null || moves == null || numbers == null || damage == null) throw new InvalidOperationException("Incomplete balance data.");
             var ids = new HashSet<string>(StringComparer.Ordinal);
             foreach (var p in pokemon)
             {
@@ -66,6 +80,14 @@ namespace Unite.Updates
                 Number(m.uniteEnergyCost, 0, 10000000);
             }
             ids.Clear();
+            foreach (var d in damage)
+            {
+                if (d == null) throw new InvalidOperationException("Null damage balance entry.");
+                Id(d.id, ids);
+                Number(d.attackCoefficient, 0, 1000);
+                Number(d.levelDamage, 0, short.MaxValue); Number(d.baseDamage, 0, short.MaxValue);
+            }
+            ids.Clear();
             foreach (var n in numbers)
             {
                 if (n == null) throw new InvalidOperationException("Null numeric balance entry.");
@@ -76,14 +98,19 @@ namespace Unite.Updates
         {
             var knownPokemon = new Dictionary<string, PokemonBalance>(StringComparer.Ordinal);
             var knownMoves = new HashSet<string>(StringComparer.Ordinal);
+            var knownDamage = new HashSet<string>(StringComparer.Ordinal);
             foreach (var entry in baseline.pokemon) knownPokemon.Add(entry.id, entry);
             foreach (var entry in baseline.moves) knownMoves.Add(entry.id);
+            foreach (var entry in baseline.damage) knownDamage.Add(entry.id);
             foreach (var entry in pokemon)
                 if (!knownPokemon.TryGetValue(entry.id, out var authored) || entry.maxHp.Length != authored.maxHp.Length)
                     throw new InvalidOperationException("Balance stat ID/table differs from this player baseline: " + entry.id);
             foreach (var entry in moves)
                 if (!knownMoves.Contains(entry.id))
                     throw new InvalidOperationException("Balance move ID is not supported by this player: " + entry.id);
+            foreach (var entry in damage)
+                if (!knownDamage.Contains(entry.id))
+                    throw new InvalidOperationException("Balance damage ID is not supported by this player: " + entry.id);
         }
 
         private static void Id(string id, HashSet<string> ids)
@@ -113,6 +140,8 @@ namespace Unite.Updates
         private static Dictionary<string, PokemonBalance> pokemon = new Dictionary<string, PokemonBalance>(StringComparer.Ordinal);
         private static Dictionary<string, MoveBalance> moves = new Dictionary<string, MoveBalance>(StringComparer.Ordinal);
         private static Dictionary<string, float> numbers = new Dictionary<string, float>(StringComparer.Ordinal);
+        private static Dictionary<string, DamageBalance> damage = new Dictionary<string, DamageBalance>(StringComparer.Ordinal);
+        public static DamageBalance Damage(string id) => id != null && damage.TryGetValue(id, out var value) ? value : null;
         public static PokemonBalance Pokemon(string id) => id != null && pokemon.TryGetValue(id, out var value) ? value : null;
         public static MoveBalance Move(string id) => id != null && moves.TryGetValue(id, out var value) ? value : null;
         public static float Number(string id, float fallback) => numbers.TryGetValue(id, out var value) ? value : fallback;
@@ -125,11 +154,13 @@ namespace Unite.Updates
             var p = new Dictionary<string, PokemonBalance>(StringComparer.Ordinal);
             var m = new Dictionary<string, MoveBalance>(StringComparer.Ordinal);
             var n = new Dictionary<string, float>(StringComparer.Ordinal);
+            var d = new Dictionary<string, DamageBalance>(StringComparer.Ordinal);
+            foreach (var entry in copy.damage) d.Add(entry.id, entry);
             foreach (var entry in copy.pokemon) p.Add(entry.id, entry);
             foreach (var entry in copy.moves) m.Add(entry.id, entry);
             foreach (var entry in copy.numbers) n.Add(entry.id, entry.value);
-            pokemon = p; moves = m; numbers = n;
+            pokemon = p; moves = m; numbers = n; damage = d;
         }
-        public static void Reset() { pokemon.Clear(); moves.Clear(); numbers.Clear(); }
+        public static void Reset() { pokemon.Clear(); moves.Clear(); numbers.Clear(); damage.Clear(); }
     }
 }

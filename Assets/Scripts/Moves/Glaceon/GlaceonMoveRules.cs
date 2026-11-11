@@ -42,20 +42,20 @@ public static class GlaceonMoveRules
             default: return 5;
         }
     }
-    public static DamageInfo Basic(ulong source, bool boosted, bool evolved) => new DamageInfo(source,
+    public static DamageInfo Basic(ulong source, bool boosted, bool evolved) => DamageInfo.Tuned("glaceon.basic", new DamageInfo(source,
         boosted ? evolved ? 0.47f : 0.4485f : 0.39f, (short)(boosted ? 5 : 4), (short)(boosted ? evolved ? 90 : 81 : 70),
-        DamageType.Special, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
+        DamageType.Special, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit));
     public static DamageInfo Damage(ulong source, AvailableMoves move)
     {
         switch (move)
         {
-            case AvailableMoves.GlaceSwift: return new DamageInfo(source, 0.16f, 6, 110, DamageType.Special);
-            case AvailableMoves.GlaceTailWhip: return new DamageInfo(source, 0.61f, 6, 190, DamageType.Special);
-            case AvailableMoves.GlaceIceShard: return new DamageInfo(source, 0.52f, 6, 100, DamageType.Special, DamageProprieties.CanCrit | DamageProprieties.IsBasicAttack);
-            case AvailableMoves.GlaceIcyWind: return new DamageInfo(source, 0.20f, 2, 35, DamageType.Special, DamageProprieties.CanCrit);
-            case AvailableMoves.GlaceFreezeDry: return new DamageInfo(source, 0.71f, 5, 226, DamageType.Special);
-            case AvailableMoves.GlaceonUnite: return new DamageInfo(source, 1.21f, 8, 384, DamageType.Special, DamageProprieties.IsUniteMove);
-            default: return new DamageInfo(source, 0.64f, 6, 130, DamageType.Special);
+            case AvailableMoves.GlaceSwift: return DamageInfo.Tuned("glaceon.glaceswift", new DamageInfo(source, 0.16f, 6, 110, DamageType.Special));
+            case AvailableMoves.GlaceTailWhip: return DamageInfo.Tuned("glaceon.glacetailwhip", new DamageInfo(source, 0.61f, 6, 190, DamageType.Special));
+            case AvailableMoves.GlaceIceShard: return DamageInfo.Tuned("glaceon.glaceiceshard", new DamageInfo(source, 0.52f, 6, 100, DamageType.Special, DamageProprieties.CanCrit | DamageProprieties.IsBasicAttack));
+            case AvailableMoves.GlaceIcyWind: return DamageInfo.Tuned("glaceon.glaceicywind", new DamageInfo(source, 0.20f, 2, 35, DamageType.Special, DamageProprieties.CanCrit));
+            case AvailableMoves.GlaceFreezeDry: return DamageInfo.Tuned("glaceon.glacefreezedry", new DamageInfo(source, 0.71f, 5, 226, DamageType.Special));
+            case AvailableMoves.GlaceonUnite: return DamageInfo.Tuned("glaceon.glaceonunite", new DamageInfo(source, 1.21f, 8, 384, DamageType.Special, DamageProprieties.IsUniteMove));
+            default: return DamageInfo.Tuned("glaceon.damage", new DamageInfo(source, 0.64f, 6, 130, DamageType.Special));
         }
     }
     public static int WindSlow(int hits) => hits < 4 ? 0 : Mathf.Min(hits, 6) * 8;

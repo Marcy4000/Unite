@@ -55,13 +55,13 @@ public static class TrevenantMoveRules
         && !p.TeamMember.IsOnSameTeam(actor.CurrentTeam) && !p.HasStatusEffect(StatusType.Invincible) && !p.HasStatusEffect(StatusType.Untargetable);
     public static string Animation(PlayerManager actor, string clip) => "ani_" + clip + "_bat_" + (actor.Pokemon.CurrentLevel >= 4 ? "0709" : "0708");
     public static DamageInfo Damage(ulong source, float ratio, short slider, short value) => new DamageInfo(source, ratio, slider, value, DamageType.Physical);
-    public static DamageInfo Wisp(ulong source, bool first) { var d = Damage(source, 0.58f, 10, 190); d.multiplier = first ? 1 : 0.5f; return d; }
-    public static DamageInfo Burn(ulong source) => Damage(source, 0.145f, 3, 48);
-    public static DamageInfo Hammer(ulong source) => Damage(source, 1.1f, 22, 242);
-    public static DamageInfo Curse(ulong source, bool detonate) => detonate ? Damage(source, 1.6f, 12, 120) : Damage(source, 0.4f, 3, 30);
-    public static DamageInfo Branch(ulong source) => Damage(source, 0.75f, 9, 280);
-    public static DamageInfo Horn(ulong source) => Damage(source, 0.43f, 4, 200);
-    public static DamageInfo HornBonus(ulong source) { var d = Damage(source, 0.215f, 2, 100); d.source = DamageSource.Secondary; d.suppressOnHitEffects = true; return d; }
-    public static DamageInfo Pain(ulong source) => Damage(source, 0.29f, 2, 80);
-    public static DamageInfo Unite(ulong source) { var d = Damage(source, 1.6f, 15, 700); d.proprieties = DamageProprieties.IsUniteMove; return d; }
+    public static DamageInfo Wisp(ulong source, bool first) { var d = DamageInfo.Tuned("trevenant.wisp", Damage(source, 0.58f, 10, 190)); d.multiplier = first ? 1 : 0.5f; return d; }
+    public static DamageInfo Burn(ulong source) => DamageInfo.Tuned("trevenant.burn", Damage(source, 0.145f, 3, 48));
+    public static DamageInfo Hammer(ulong source) => DamageInfo.Tuned("trevenant.hammer", Damage(source, 1.1f, 22, 242));
+    public static DamageInfo Curse(ulong source, bool detonate) => detonate ? DamageInfo.Tuned("trevenant.curse", Damage(source, 1.6f, 12, 120)) : DamageInfo.Tuned("trevenant.curse.2", Damage(source, 0.4f, 3, 30));
+    public static DamageInfo Branch(ulong source) => DamageInfo.Tuned("trevenant.branch", Damage(source, 0.75f, 9, 280));
+    public static DamageInfo Horn(ulong source) => DamageInfo.Tuned("trevenant.horn", Damage(source, 0.43f, 4, 200));
+    public static DamageInfo HornBonus(ulong source) { var d = DamageInfo.Tuned("trevenant.hornbonus", Damage(source, 0.215f, 2, 100)); d.source = DamageSource.Secondary; d.suppressOnHitEffects = true; return d; }
+    public static DamageInfo Pain(ulong source) => DamageInfo.Tuned("trevenant.pain", Damage(source, 0.29f, 2, 80));
+    public static DamageInfo Unite(ulong source) { var d = DamageInfo.Tuned("trevenant.unite", Damage(source, 1.6f, 15, 700)); d.proprieties = DamageProprieties.IsUniteMove; return d; }
 }

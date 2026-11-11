@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class SerperiorCut : MoveBase
 {
-    private DamageInfo damage = new DamageInfo(0, 1.15f, 6, 400, DamageType.Physical);
+    private DamageInfo damage = DamageInfo.Tuned("serperior.serperiorcut.damage", new DamageInfo(0, 1.15f, 6, 400, DamageType.Physical));
     private StatChange defDebuff = new StatChange(10, Stat.Defense, 2f, true, false, true, 0);
     private float range = 2.5f;
 

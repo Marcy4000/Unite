@@ -139,7 +139,7 @@ public class JoltEffectObject : NetworkBehaviour
                 if (tickRemaining <= 0)
                 {
                     tickRemaining += JoltMoveRules.WebTick;
-                    target.TakeDamageRPC(new DamageInfo(actor.NetworkObjectId, 0.6f, 4, 60, DamageType.Physical, JoltMoveRules.PeriodicDamage));
+                    target.TakeDamageRPC(DamageInfo.Tuned("jolteon.jolteffectobject.update", new DamageInfo(actor.NetworkObjectId, 0.6f, 4, 60, DamageType.Physical, JoltMoveRules.PeriodicDamage)));
                 }
             }
         }

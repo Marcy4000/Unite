@@ -20,8 +20,8 @@ public class SylvHyperVoice : MoveBase
     {
         Name = "Hyper Voice";
         Cooldown = 7.0f;
-        closeDamage = new DamageInfo(0, 0.32f, 6, 110, DamageType.Special);
-        farDamage = new DamageInfo(0, 0.54f, 8, 184, DamageType.Special);
+        closeDamage = DamageInfo.Tuned("sylveon.sylvhypervoice.closedamage", new DamageInfo(0, 0.32f, 6, 110, DamageType.Special));
+        farDamage = DamageInfo.Tuned("sylveon.sylvhypervoice.fardamage", new DamageInfo(0, 0.54f, 8, 184, DamageType.Special));
     }
 
     public override void Start(PlayerManager controller)

@@ -91,7 +91,7 @@ public partial class MovesController
         if (flare)
         {
             int amount = CinderMoveRules.FlareDamage(pokemon.GetAttack(), pokemon.CurrentLevel, target.GetMaxHp(), target.Type != PokemonType.Player);
-            target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0, 0, (short)Mathf.Min(short.MaxValue, amount), DamageType.Physical, DamageProprieties.Unused_2));
+            target.TakeDamageRPC(DamageInfo.Tuned("cinderace.movescontroller.cinderace.oncinderacedamage", new DamageInfo(NetworkObjectId, 0, 0, (short)Mathf.Min(short.MaxValue, amount), DamageType.Physical, DamageProprieties.Unused_2)));
         }
         else
         {
@@ -114,7 +114,7 @@ public partial class MovesController
         var state = CinderTarget(target);
         state.ReleaseAfter = Time.time + 5.1f;
         target.AddStatusEffect(StatusEffect.DamageOverTime(StatusType.Burned,
-            new DamageInfo(NetworkObjectId, 0.2f, 0, 0, DamageType.Physical), 3f, 1f, state.BurnId));
+            DamageInfo.Tuned("cinderace.movescontroller.cinderace.applycinderaceburn", new DamageInfo(NetworkObjectId, 0.2f, 0, 0, DamageType.Physical)), 3f, 1f, state.BurnId));
         target.RemoveAllStatChangeWithIDRPC(state.BurnId);
         target.AddStatChange(new StatChange(5, Stat.Attack, 2, true, false, true, state.BurnId));
         target.AddStatChange(new StatChange(5, Stat.SpAttack, 2, true, false, true, state.BurnId));

@@ -19,6 +19,98 @@ public sealed class UpdateDeliveryTests
         moves = new[] { new MoveBalance { id = "move", cooldown = 7, upgradedCooldown = 5, overrideCooldown = true, uniteEnergyCost = 90000 } },
         numbers = new[] { new BalanceNumber { id = "held.focus.ratio", value = 0.2f } }
     };
+    private static object DamageRule(string type, string method, params object[] args) => GameType(type).GetMethod(method).Invoke(null, args);
+    private static T DamageField<T>(object value, string name) => (T)value.GetType().GetField(name).GetValue(value);
+
+    [Test] public void DamagePatchTunesCoefficientsAndPreservesCriticalAndBasicAttackFlags()
+    {
+        var patch = Patch();
+        patch.damage = new[] { new DamageBalance { id = "absol.pursuitdamage", overrideAttack = true, attackCoefficient = 1.07f, overrideLevel = true, levelDamage = 42, overrideBase = true, baseDamage = 518 } };
+        BalanceRuntime.Install(patch, "test", "2");
+        var hit = DamageRule("AbsolMoveRules", "PursuitDamage", 42UL, true);
+        Assert.That(DamageField<float>(hit, "ratio"), Is.EqualTo(1.07f).Within(0.0001));
+        Assert.That(DamageField<short>(hit, "slider"), Is.EqualTo(42));
+        Assert.That(DamageField<short>(hit, "baseDmg"), Is.EqualTo(518));
+        Assert.That(DamageField<ulong>(hit, "attackerId"), Is.EqualTo(42UL));
+        Assert.That(Convert.ToInt32(hit.GetType().GetField("proprieties").GetValue(hit)), Is.EqualTo(3));
+        var ordinary = DamageRule("AbsolMoveRules", "PursuitDamage", 42UL, false);
+        Assert.That(DamageField<float>(ordinary, "ratio"), Is.EqualTo(1.43f));
+    }
+
+    [Test] public void AbsoluteDamageOverridesPreserveOtherConditionalCoefficientsAndSnapshotIsolation()
+    {
+        var patch = Patch();
+        patch.damage = new[] { new DamageBalance { id = "flygon.earthquake", overrideBase = true, baseDamage = 70 } };
+        BalanceRuntime.Install(patch, "test", "2");
+        patch.damage[0].baseDamage = 99;
+        var kind = Enum.Parse(GameType("FlygonCast"), "Earthquake");
+        var first = DamageRule("FlygonMoveRules", "Damage", 1UL, kind, 0);
+        var charged = DamageRule("FlygonMoveRules", "Damage", 1UL, kind, 2);
+        Assert.That(DamageField<float>(first, "ratio"), Is.EqualTo(1.1f).Within(0.0001));
+        Assert.That(DamageField<float>(charged, "ratio"), Is.EqualTo(1.4f).Within(0.0001));
+        Assert.That(DamageField<short>(charged, "baseDmg"), Is.EqualTo(70));
+        BalanceRuntime.Reset();
+        Assert.That(DamageField<float>(DamageRule("FlygonMoveRules", "Damage", 1UL, kind, 2), "ratio"), Is.EqualTo(1.4f).Within(0.0001));
+    }
+
+    [Test] public void AbsoluteDamageSupportsZeroAndTheMaximumShortValue()
+    {
+        var patch = Patch();
+        patch.damage = new[] { new DamageBalance { id = "absol.slashdamage", overrideAttack = true, overrideLevel = true, overrideBase = true },
+            new DamageBalance { id = "absol.psychodamage", overrideBase = true, baseDamage = short.MaxValue } };
+        BalanceRuntime.Install(patch, "test", "2");
+        var disabled = DamageRule("AbsolMoveRules", "SlashDamage", 1UL);
+        Assert.That(DamageField<float>(disabled, "ratio"), Is.Zero);
+        Assert.That(DamageField<short>(disabled, "slider"), Is.Zero);
+        Assert.That(DamageField<short>(disabled, "baseDmg"), Is.Zero);
+        Assert.That(DamageField<short>(DamageRule("AbsolMoveRules", "PsychoDamage", 1UL), "baseDmg"), Is.EqualTo(short.MaxValue));
+    }
+
+    [Test] public void OlderPatchesWithoutDamageEntriesKeepAuthoredDamage()
+    {
+        var patch = JsonUtility.FromJson<BalancePatch>("{\"schemaVersion\":1,\"compatibilityLine\":\"test\",\"patchVersion\":\"2\",\"pokemon\":[],\"moves\":[],\"numbers\":[]}");
+        BalanceRuntime.Install(patch, "test", "2");
+        Assert.That(DamageField<short>(DamageRule("AbsolMoveRules", "SlashDamage", 1UL), "baseDmg"), Is.EqualTo(200));
+    }
+
+    [Test] public void DamagePatchRejectsInvalidValuesDuplicateAndUnknownIds()
+    {
+        var patch = Patch();
+        foreach (float invalid in new[] { -1f, 1001f, float.NaN, float.PositiveInfinity })
+        {
+            patch.damage = new[] { new DamageBalance { id = "test", overrideAttack = true, attackCoefficient = invalid } };
+            Assert.Throws<InvalidOperationException>(() => patch.Validate("test", "2"));
+        }
+        foreach (int invalid in new[] { -1, 32768 })
+        {
+            patch.damage = new[] { new DamageBalance { id = "test", overrideBase = true, baseDamage = invalid } };
+            Assert.Throws<InvalidOperationException>(() => patch.Validate("test", "2"));
+            patch.damage = new[] { new DamageBalance { id = "test", overrideLevel = true, levelDamage = invalid } };
+            Assert.Throws<InvalidOperationException>(() => patch.Validate("test", "2"));
+        }
+        patch.damage = new[] { new DamageBalance { id = "test" }, new DamageBalance { id = "test" } };
+        Assert.Throws<InvalidOperationException>(() => patch.Validate("test", "2"));
+        patch.damage = new[] { new DamageBalance { id = "unsupported" } };
+        Assert.Throws<InvalidOperationException>(() => patch.ValidateAgainst(Patch()));
+    }
+
+    [Test] public void BundledDamageDefaultsMatchEveryRuntimeHook()
+    {
+        var patch = JsonUtility.FromJson<BalancePatch>(Resources.Load<TextAsset>("BalanceDefaults").text);
+        var ids = new System.Collections.Generic.HashSet<string>(patch.damage.Select(d => d.id));
+        var hooks = new System.Collections.Generic.HashSet<string>();
+        foreach (string path in System.IO.Directory.GetFiles("Assets/Scripts", "*.cs", System.IO.SearchOption.AllDirectories))
+            foreach (System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(
+                System.IO.File.ReadAllText(path), "DamageInfo\\.Tuned\\(\"([^\"]+)\""))
+                hooks.Add(match.Groups[1].Value);
+        var slash = patch.damage.Single(d => d.id == "absol.slashdamage");
+        Assert.That(slash.attackCoefficient, Is.EqualTo(0.89f));
+        Assert.That(slash.levelDamage, Is.EqualTo(6));
+        Assert.That(slash.baseDamage, Is.EqualTo(200));
+        Assert.That(ids, Is.EquivalentTo(hooks));
+        Assert.That(patch.damage.All(d => !d.overrideAttack && !d.overrideLevel && !d.overrideBase), Is.True);
+    }
+
     private static UpdateManifest Manifest() => new UpdateManifest
     {
         playerVersion = "0.8", compatibilityLine = "test", platform = "Android", addressablesVersion = "4", patchVersion = "2",

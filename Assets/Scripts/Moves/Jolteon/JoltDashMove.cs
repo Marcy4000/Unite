@@ -113,8 +113,8 @@ public abstract class JoltDashMove : MoveBase
             if (!directHits.Add(target.NetworkObjectId)) continue;
             hitAnything = true;
             DamageInfo damage = IsFang
-                ? new DamageInfo(playerManager.NetworkObjectId, Combo.Empowered ? 1.9f : 1.72f, (short)(Combo.Empowered ? 10 : 9), (short)(Combo.Empowered ? 400 : 350), DamageType.Physical, JoltMoveRules.DirectMoveDamage)
-                : new DamageInfo(playerManager.NetworkObjectId, 1.6f, 6, 300, DamageType.Physical, JoltMoveRules.DirectMoveDamage);
+                ? DamageInfo.Tuned("jolteon.joltdashmove.advancepass", new DamageInfo(playerManager.NetworkObjectId, Combo.Empowered ? 1.9f : 1.72f, (short)(Combo.Empowered ? 10 : 9), (short)(Combo.Empowered ? 400 : 350), DamageType.Physical, JoltMoveRules.DirectMoveDamage))
+                : DamageInfo.Tuned("jolteon.joltdashmove.advancepass.2", new DamageInfo(playerManager.NetworkObjectId, 1.6f, 6, 300, DamageType.Physical, JoltMoveRules.DirectMoveDamage));
             target.TakeDamageRPC(damage);
             target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, IsFang ? 0.5f : 0.35f, true, 0).WithSource(playerManager.NetworkObjectId));
             if (!IsFang && Combo.IsSecondPass) Slow(target);
@@ -131,7 +131,7 @@ public abstract class JoltDashMove : MoveBase
                 tickRemaining += JoltMoveRules.DischargeTick;
                 foreach (Pokemon target in JoltMoveRuntime.Sweep(playerManager, playerManager.transform.position, playerManager.transform.position, radius))
                 {
-                    target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 1.3f, 3, 150, DamageType.Physical, JoltMoveRules.PeriodicDamage));
+                    target.TakeDamageRPC(DamageInfo.Tuned("jolteon.joltdashmove.advancepass.3", new DamageInfo(playerManager.NetworkObjectId, 1.3f, 3, 150, DamageType.Physical, JoltMoveRules.PeriodicDamage)));
                     if (Combo.IsSecondPass) Slow(target);
                 }
             }

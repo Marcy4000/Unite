@@ -63,7 +63,7 @@ public partial class MovesController
         {
             if ((definition is GlaceonMove || definition is UmbreonMove || definition is TrevenantMove) && ownerRequest != prefabOwnerRequests[slot])
             { RejectPrefabExecutionRPC(move, ownerRequest); return; }
-            if (ServerActionLocks == 0 && activePrefabMoves[slot].TryRecast(direction, targetId))
+            if (!PrefabActionsLocked(move) && activePrefabMoves[slot].TryRecast(direction, targetId))
             {
                 if (definition.IsOffensive) pokemon.NotifyOffensiveAction();
                 PrefabLoadFinishedRPC(move, ownerRequest);
@@ -78,7 +78,7 @@ public partial class MovesController
         var espeon = definition is EspeonMove ? EspeonCombat : null;
         bool espeonBonus = espeon != null && EspeonMoveRules.MoveOne(move) && espeon.BonusReady;
         if (definition is EspeonMove && (espeon == null || !espeon.CanCast(move))) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
-        if (ServerActionLocks > 0 || (!aerial && !espeonBonus && now + 0.15 < prefabNextCast[slot])) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
+        if (PrefabActionsLocked(move) || (!aerial && !espeonBonus && now + 0.15 < prefabNextCast[slot])) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         if (aerial && !ZoroarkNight.TrySpendAerialReposition()) { RejectPrefabExecutionRPC(move, ownerRequest); return; }
         Pokemon target = null;
         if (definition.AimStyle == MoveAimStyle.Target)
@@ -121,7 +121,7 @@ public partial class MovesController
             if (target != null) target.OnDeath -= onDeath;
             if (asset.Status != AsyncOperationStatus.Succeeded || cancelled || this == null || !IsSpawned || generation != prefabGenerations[slot]
                 || pokemon == null || pokemon.CurrentHp <= 0
-                || ((definition is UmbreonMove || definition is TrevenantMove) && (ServerActionLocks > 0 || prefabLearnedMoves[slot] != move
+                || ((definition is UmbreonMove || definition is TrevenantMove) && (PrefabActionsLocked(move) || prefabLearnedMoves[slot] != move
                     || pokemon.HasAnyStatusEffect(CombatActionLock.Interruptions)
                     || (target != null && (!UmbreonMoveRules.Living(target) || !definition.IsTargetInCastRange(transform.position, target.transform.position)))))
                 || (definition is GlaceonMove && (prefabLearnedMoves[slot] != move || pokemon.HasAnyStatusEffect(GlaceonMoveRules.Interrupts)

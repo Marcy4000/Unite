@@ -131,7 +131,7 @@ public class FlareonMoveObject : NetworkBehaviour
                     {
                         if (!FlareonMoveRules.CanHit(actor, victim)) continue;
                         if (combat.HitFlareonTarget(victim, FlareonMoveRules.Damage(actorId.Value, kind.Value), 3))
-                            combat.HitFlareonTarget(victim, new DamageInfo(actorId.Value, 0, 0, (short)Mathf.Min(short.MaxValue, Mathf.RoundToInt(victim.GetMissingHp() * 0.05f)), DamageType.Physical, DamageProprieties.IsUniteMove));
+                            combat.HitFlareonTarget(victim, DamageInfo.Tuned("flareon.flareonmoveobject.run", new DamageInfo(actorId.Value, 0, 0, (short)Mathf.Min(short.MaxValue, Mathf.RoundToInt(victim.GetMissingHp() * 0.05f)), DamageType.Physical, DamageProprieties.IsUniteMove)));
                     }
                     Shield(FlareonMoveRules.UniteShield, 0.12f, 3);
                 }

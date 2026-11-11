@@ -67,15 +67,15 @@ public partial class DuraBoostedObj : NetworkBehaviour
                 if (hit.TryGetComponent(out Pokemon pokemon) && CanHit(pokemon) && targets.Add(pokemon))
                 {
                     DamageInfo hitDamage = cannonMode
-                        ? new DamageInfo(duraludon.NetworkObjectId, 0.58f, 2, 66, DamageType.Physical, damageInfo.proprieties)
+                        ? DamageInfo.Tuned("duraludon.duraboostedobj.castrpc", new DamageInfo(duraludon.NetworkObjectId, 0.58f, 2, 66, DamageType.Physical, damageInfo.proprieties))
                         : damageInfo;
                     if (i > 0) hitDamage.proprieties = DamageProprieties.CanCrit | SecondaryDamage;
                     pokemon.TakeDamageRPC(hitDamage);
                     if (cannonMode) RefreshSlow(pokemon, 60, 1f, 8847);
                     int extra = Mathf.RoundToInt(pokemon.GetMaxHp() * (cannonMode ? 0.005f : 0.015f));
                     if (pokemon.Type == PokemonType.Wild || pokemon.Type == PokemonType.Objective) extra = Mathf.Min(extra, 500);
-                    pokemon.TakeDamageRPC(new DamageInfo(duraludon.NetworkObjectId, 0f, 0, (short)Mathf.Min(extra, short.MaxValue),
-                        DamageType.True, DamageProprieties.CanCrit | SecondaryDamage));
+                    pokemon.TakeDamageRPC(DamageInfo.Tuned("duraludon.duraboostedobj.castrpc.2", new DamageInfo(duraludon.NetworkObjectId, 0f, 0, (short)Mathf.Min(extra, short.MaxValue),
+                        DamageType.True, DamageProprieties.CanCrit | SecondaryDamage)));
                 }
             }
             if (cannonMode) yield return new WaitForSeconds(0.08f);

@@ -90,7 +90,7 @@ public class DuraludonUniteObject : DuraMoveObject
             {
                 float targetAngle = Mathf.Repeat(Vector3.SignedAngle(Direction, target.transform.position - Origin, Vector3.up), 360f);
                 if (targetAngle <= previousAngle || targetAngle > angle || !hit.Add(target.NetworkObjectId)) continue;
-                target.TakeDamageRPC(new DamageInfo(Actor.NetworkObjectId, 1.63f, 6, 350, DamageType.Physical, DamageProprieties.IsUniteMove));
+                target.TakeDamageRPC(DamageInfo.Tuned("duraludon.duraludonuniteobject.animateexplosion", new DamageInfo(Actor.NetworkObjectId, 1.63f, 6, 350, DamageType.Physical, DamageProprieties.IsUniteMove)));
                 if (stacks < 5)
                 {
                     stacks++;
@@ -106,7 +106,7 @@ public class DuraludonUniteObject : DuraMoveObject
         }
         foreach (Pokemon target in TargetsIn(sweepArea))
         {
-            target.TakeDamageRPC(new DamageInfo(Actor.NetworkObjectId, 1.63f, 6, 350, DamageType.Physical, DamageProprieties.IsUniteMove));
+            target.TakeDamageRPC(DamageInfo.Tuned("duraludon.duraludonuniteobject.animateexplosion.2", new DamageInfo(Actor.NetworkObjectId, 1.63f, 6, 350, DamageType.Physical, DamageProprieties.IsUniteMove)));
             target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0).WithSource(Actor.NetworkObjectId));
             target.ApplyKnockbackRPC((target.transform.position - Origin).normalized, 10f);
         }
@@ -121,7 +121,7 @@ public class DuraludonUniteObject : DuraMoveObject
                 Vector3 offset = target.transform.position - Origin;
                 offset.y = 0;
                 if (offset.magnitude < sweepArea.radius - ringHalfWidth) continue;
-                target.TakeDamageRPC(new DamageInfo(Actor.NetworkObjectId, 0.35f, 0, 63, DamageType.Physical, DamageProprieties.IsUniteMove));
+                target.TakeDamageRPC(DamageInfo.Tuned("duraludon.duraludonuniteobject.animateexplosion.3", new DamageInfo(Actor.NetworkObjectId, 0.35f, 0, 63, DamageType.Physical, DamageProprieties.IsUniteMove)));
                 Slow(target, 50, 1f, 8846);
             }
             yield return new WaitForSeconds(tickInterval);

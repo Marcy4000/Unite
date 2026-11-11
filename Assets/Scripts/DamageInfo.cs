@@ -51,6 +51,17 @@ public struct DamageInfo : INetworkSerializable
         suppressOnHitEffects = false;
     }
 
+    // Apply once when constructing a hit. Conditional formulas and combat flags stay authored.
+    public static DamageInfo Tuned(string id, DamageInfo authored)
+    {
+        var tuning = Unite.Updates.BalanceRuntime.Damage(id);
+        if (tuning == null || (authored.proprieties & DamageProprieties.IsHeal) != 0) return authored;
+        if (tuning.overrideAttack) authored.ratio = tuning.attackCoefficient;
+        if (tuning.overrideLevel) authored.slider = (short)tuning.levelDamage;
+        if (tuning.overrideBase) authored.baseDmg = (short)tuning.baseDamage;
+        return authored;
+    }
+
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
         serializer.SerializeValue(ref attackerId);

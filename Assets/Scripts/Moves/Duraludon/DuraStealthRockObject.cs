@@ -79,7 +79,7 @@ public class DuraStealthRockObject : DuraMoveObject
             {
                 hits.TryGetValue(target.NetworkObjectId, out int count);
                 hits[target.NetworkObjectId] = ++count;
-                target.TakeDamageRPC(new DamageInfo(Actor.NetworkObjectId, 0.28f, 2, 80, DamageType.Physical));
+                target.TakeDamageRPC(DamageInfo.Tuned("duraludon.durastealthrockobject.setphaserpc", new DamageInfo(Actor.NetworkObjectId, 0.28f, 2, 80, DamageType.Physical)));
                 Slow(target, (short)Mathf.Min(100, count * 25), 2f, 8843);
                 if (count == 2) target.AddStatusEffect(new StatusEffect(StatusType.Immobilized, 1f, true, 0).WithSource(Actor.NetworkObjectId));
             }

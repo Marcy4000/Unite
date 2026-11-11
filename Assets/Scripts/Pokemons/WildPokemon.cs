@@ -69,6 +69,11 @@ public class WildPokemon : NetworkBehaviour
 
     private void AssignVisionObjects()
     {
+        if (pokemon.ActiveModel == null) return;
+        if (!TryGetComponent<FakeMeshShadow>(out var fakeShadow))
+            fakeShadow = gameObject.AddComponent<FakeMeshShadow>();
+        fakeShadow.SetSource(pokemon.ActiveModel.transform);
+
         animationManager.AssignAnimator(pokemon.ActiveModel.GetComponentInChildren<Animator>());
 
         vision.ResetObjects();
@@ -486,7 +491,8 @@ public class WildPokemon : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsServer)
+        // Objective type is assigned before Addressables finishes loading its stats.
+        if (!IsServer || !IsSpawned || pokemon == null || pokemon.BaseStats == null)
         {
             return;
         }

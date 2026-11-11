@@ -17,8 +17,8 @@ public class SylvBasicAtk : ChargedBasicAttackBase
         base.Initialize(manager);
         range = 5f;
         attackPrefab = SylvMoveRules.Folder + "SylvBasicAttack.prefab";
-        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.35f, 10, 180, DamageType.Special, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
+        normalDmg = DamageInfo.Tuned("sylveon.sylvbasicatk.normaldmg", new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit));
+        boostedDmg = DamageInfo.Tuned("sylveon.sylvbasicatk.boosteddmg", new DamageInfo(playerManager.Pokemon.NetworkObjectId, 0.35f, 10, 180, DamageType.Special, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit));
     }
 
     public override void Perform(bool wildPriority)

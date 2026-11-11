@@ -32,7 +32,7 @@ public class FlygonPassive : PassiveBase
         yield return new WaitForSeconds(0.5f);
         extraDamage = null;
         if (Evolved || target == null || !target.IsSpawned || target.CurrentHp <= 0 || playerManager.Pokemon.CurrentHp <= 0) yield break;
-        target.TakeDamageRPC(new DamageInfo(playerManager.NetworkObjectId, 0, 0, (short)Mathf.Clamp(amount, 0, short.MaxValue), DamageType.True, DamageProprieties.Unused_2));
+        target.TakeDamageRPC(DamageInfo.Tuned("flygon.passive", new DamageInfo(playerManager.NetworkObjectId, 0, 0, (short)Mathf.Clamp(amount, 0, short.MaxValue), DamageType.True, DamageProprieties.Unused_2)));
     }
     private void OnStatusChange(StatusEffect effect, bool added)
     {

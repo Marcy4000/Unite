@@ -61,14 +61,14 @@ public static class FlygonMoveRules
     {
         switch (kind)
         {
-            case FlygonCast.Bite: return new DamageInfo(actor, 0.8f, 6, 180, DamageType.Physical);
-            case FlygonCast.Dig: return new DamageInfo(actor, 0.6f, 6, 140, DamageType.Physical);
-            case FlygonCast.Boomburst: return stage == 0 ? new DamageInfo(actor, 1.2f, 8, 200, DamageType.Physical) : new DamageInfo(actor, 1, 7, 150, DamageType.Physical);
-            case FlygonCast.Earthquake: return new DamageInfo(actor, 1.1f + stage * 0.15f, (short)(6 + stage), (short)(110 + stage * 15), DamageType.Physical);
-            case FlygonCast.Sandstorm: return new DamageInfo(actor, 0.55f, 4, 50, DamageType.Physical);
-            default: return stage == 0 ? new DamageInfo(actor, 1.55f, 8, 200, DamageType.Physical)
-                : stage == 1 ? new DamageInfo(actor, 1.4f, 7, 185, DamageType.Physical)
-                : stage == 2 ? new DamageInfo(actor, 1.3f, 6, 170, DamageType.Physical) : new DamageInfo(actor, 1.1f, 4, 145, DamageType.Physical);
+            case FlygonCast.Bite: return DamageInfo.Tuned("flygon.bite", new DamageInfo(actor, 0.8f, 6, 180, DamageType.Physical));
+            case FlygonCast.Dig: return DamageInfo.Tuned("flygon.dig", new DamageInfo(actor, 0.6f, 6, 140, DamageType.Physical));
+            case FlygonCast.Boomburst: return stage == 0 ? DamageInfo.Tuned("flygon.boomburst", new DamageInfo(actor, 1.2f, 8, 200, DamageType.Physical)) : DamageInfo.Tuned("flygon.boomburst.2", new DamageInfo(actor, 1, 7, 150, DamageType.Physical));
+            case FlygonCast.Earthquake: return DamageInfo.Tuned("flygon.earthquake", new DamageInfo(actor, 1.1f + stage * 0.15f, (short)(6 + stage), (short)(110 + stage * 15), DamageType.Physical));
+            case FlygonCast.Sandstorm: return DamageInfo.Tuned("flygon.sandstorm", new DamageInfo(actor, 0.55f, 4, 50, DamageType.Physical));
+            default: return stage == 0 ? DamageInfo.Tuned("flygon.damage", new DamageInfo(actor, 1.55f, 8, 200, DamageType.Physical))
+                : stage == 1 ? DamageInfo.Tuned("flygon.damage.2", new DamageInfo(actor, 1.4f, 7, 185, DamageType.Physical))
+                : stage == 2 ? DamageInfo.Tuned("flygon.damage.3", new DamageInfo(actor, 1.3f, 6, 170, DamageType.Physical)) : DamageInfo.Tuned("flygon.damage.4", new DamageInfo(actor, 1.1f, 4, 145, DamageType.Physical));
         }
     }
 }

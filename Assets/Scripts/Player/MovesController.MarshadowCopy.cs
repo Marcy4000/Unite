@@ -58,17 +58,17 @@ public partial class MovesController
         {
             if (NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetId, out var obj) && obj.TryGetComponent(out Pokemon target)
                 && MarshadowMoveRuntime.CanHit(playerManager, target) && (target.transform.position - origin).sqrMagnitude <= 81f)
-                LaunchHomingProjectileRpc(targetId, new DamageInfo(NetworkObjectId, 2.47f, 14, 670, DamageType.Physical, DamageProprieties.IsUniteMove));
+                LaunchHomingProjectileRpc(targetId, DamageInfo.Tuned("marshadowcopy.movescontroller.marshadowcopy.castmarshadowcopyrpc", new DamageInfo(NetworkObjectId, 2.47f, 14, 670, DamageType.Physical, DamageProprieties.IsUniteMove)));
             return;
         }
         float radius = source == AvailableMoves.FlareonUnite ? 2f : MarshadowCopyRules.Radius(source);
         foreach (Pokemon target in MarshadowMoveRuntime.Sweep(playerManager, origin, origin, radius))
         {
             DamageInfo damage = source == AvailableMoves.FlareonUnite
-                ? new DamageInfo(NetworkObjectId, 2.5f, 7, (short)(510 + Mathf.Min(1500, target.GetMissingHp() * 0.05f)), DamageType.Physical, DamageProprieties.IsUniteMove)
-                : source == AvailableMoves.VaporeonUnite ? new DamageInfo(NetworkObjectId, 0.92f, 9, 640, DamageType.Physical, DamageProprieties.IsUniteMove)
-                : source == AvailableMoves.GlaceonUnite ? new DamageInfo(NetworkObjectId, 1f, 7, 320, DamageType.Physical, DamageProprieties.IsUniteMove)
-                : new DamageInfo(NetworkObjectId, 1.3f, 13, 750, DamageType.Physical, DamageProprieties.IsUniteMove);
+                ? DamageInfo.Tuned("marshadowcopy.movescontroller.marshadowcopy.castmarshadowcopyrpc.2", new DamageInfo(NetworkObjectId, 2.5f, 7, (short)(510 + Mathf.Min(1500, target.GetMissingHp() * 0.05f)), DamageType.Physical, DamageProprieties.IsUniteMove))
+                : source == AvailableMoves.VaporeonUnite ? DamageInfo.Tuned("marshadowcopy.movescontroller.marshadowcopy.castmarshadowcopyrpc.3", new DamageInfo(NetworkObjectId, 0.92f, 9, 640, DamageType.Physical, DamageProprieties.IsUniteMove))
+                : source == AvailableMoves.GlaceonUnite ? DamageInfo.Tuned("marshadowcopy.movescontroller.marshadowcopy.castmarshadowcopyrpc.4", new DamageInfo(NetworkObjectId, 1f, 7, 320, DamageType.Physical, DamageProprieties.IsUniteMove))
+                : DamageInfo.Tuned("marshadowcopy.movescontroller.marshadowcopy.castmarshadowcopyrpc.5", new DamageInfo(NetworkObjectId, 1.3f, 13, 750, DamageType.Physical, DamageProprieties.IsUniteMove));
             target.TakeDamageRPC(damage);
             if (source == AvailableMoves.FlareonUnite) FlareonMoveRules.Burn(target, NetworkObjectId, 3);
             if (source == AvailableMoves.VaporeonUnite)

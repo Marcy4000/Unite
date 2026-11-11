@@ -179,6 +179,7 @@ public static class UpdateBuildPipeline
             moves[index] = entry;
         }
         patch.pokemon = pokemon.ToArray(); patch.moves = moves.ToArray();
+        patch.damage = Tuning.damageOverrides.OrderBy(d => d.id, StringComparer.Ordinal).ToArray();
         var numbers = new List<BalanceNumber>(Tuning.numbers);
         int[] experience = { 100, 100, 400, 500, 650, 650, 750, 870, 1080, 1290, 1550, 1860, 2230, 2670, 3000 };
         for (int i = 0; i < experience.Length; i++)

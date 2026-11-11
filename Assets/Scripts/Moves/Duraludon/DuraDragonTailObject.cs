@@ -28,7 +28,7 @@ public class DuraDragonTailObject : DuraMoveObject
     {
         foreach (Pokemon target in TargetsIn(tailArea))
         {
-            target.TakeDamageRPC(new DamageInfo(Actor.NetworkObjectId, 0.79f, 5, 220, DamageType.Physical));
+            target.TakeDamageRPC(DamageInfo.Tuned("duraludon.duradragontailobject.animatesweep", new DamageInfo(Actor.NetworkObjectId, 0.79f, 5, 220, DamageType.Physical)));
             target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.5f, true, 0).WithSource(Actor.NetworkObjectId));
             target.ApplyKnockbackRPC(Direction, 12f);
             if (Upgraded && target.CurrentHp > 0 && Combat != null) Combat.ApplyTailMark(target);

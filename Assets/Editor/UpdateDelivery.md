@@ -126,13 +126,17 @@ It must return the JSON document, not an HTML download/error page. Also check th
 
 1. Edit Pokémon stats in their PokemonBase assets. Edit supported item/XP coefficients in `Assets/Resources/BalanceTuning.asset`.
 2. For move cooldown changes, add a `moveOverrides` entry to BalanceTuning using the stable asset ID in the exported JSON. Specify base cooldown, upgraded cooldown and Unite energy cost. The exporter enables cooldown overrides for these entries.
+
+   For damage changes, select `Assets/Resources/BalanceTuning.asset` and use **Character Damage → Find damage** to filter by character or hit ID. Enter actual values for **Attack / Sp. Attack coefficient**, **Damage per level**, or **Base damage**. Constants are prefilled with their authored values; the reference box shows the original expressions, including conditional formulas. Editing a value enables its override. Uncheck a coefficient to restore its authored formula. For example, change `absol.slashdamage` Base damage from `200` to `250` directly. Enter `0` to remove a coefficient. Level and flat damage must be integers from 0 to 32767; the attack coefficient must be from 0 to 1000. An override replaces the selected expression for every conditional/charged/upgraded variant sharing that hit ID; other coefficients retain their formulas. Suffixes `.2`, `.3`, etc. identify separate constructor branches in source order. Healing is excluded. Damage entries export in the patch's `damage` array and are pinned at boot. Missing entries and disabled overrides preserve authored damage. A player build containing these hooks must ship before remote patches can tune damage.
+
+
 3. Increment **Patch Version**. Keep player and Addressables versions unchanged.
 4. Select Windows and click **Export manifest using existing Addressables**. Repeat for Android and any other supported player/platform release.
 5. Run the content sync, then publish those platforms' latest.json files as above. No player or Addressables rebuild is required.
 
-**Export balance JSON** alone writes the data/defaults but does not update the release manifest. The complete snapshot currently contains 49 Pokémon, 123 moves and 22 numerical settings (about 268 KiB). Players need only the latest snapshot, not a chain of earlier patches.
+**Export balance JSON** alone writes the data/defaults but does not update the release manifest. The complete snapshot currently contains 49 Pokémon, 123 moves, 190 damage entries and 22 numerical settings. Players need only the latest snapshot, not a chain of earlier patches.
 
-Balance support currently covers stat arrays, Unite costs, optional cooldown overrides, XP thresholds, and selected Muscle Band/Focus Band/Shell Bell/Score Shield coefficients. Other damage formulas, durations and ranges that remain in C# still require a player rebuild. Default cooldown behavior is preserved until an override is explicitly enabled.
+Balance support currently covers stat arrays, Unite costs, optional cooldown overrides, absolute per-hit damage coefficient overrides, XP thresholds, and selected Muscle Band/Focus Band/Shell Bell/Score Shield coefficients. Adding new damage formulas or changing durations and ranges that remain in C# still requires a player rebuild. Default cooldown behavior is preserved until an override is explicitly enabled.
 
 Stable IDs come from Unity asset GUIDs: preserve `.meta` files. Exported data is range-checked, checked against the player's baseline, and verified with SHA-256 at boot. Author balance changes through assets/tuning rather than manually modifying published JSON and invalidating its checksum.
 

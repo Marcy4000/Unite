@@ -13,11 +13,11 @@ public static class SylvMoveRules
     public static int FlameCount(bool upgraded) => upgraded ? 5 : 4;
     public static DamageInfo FireDamage(ulong actor, bool repeat)
     {
-        var damage = new DamageInfo(actor, 0.8f, 13, 482, DamageType.Special);
+        var damage = DamageInfo.Tuned("sylveon.firedamage", new DamageInfo(actor, 0.8f, 13, 482, DamageType.Special));
         damage.multiplier = repeat ? 0.28f : 1f;
         return damage;
     }
-    public static DamageInfo KissDamage(ulong actor) => new DamageInfo(actor, 0.26f, 4, 160, DamageType.Special);
+    public static DamageInfo KissDamage(ulong actor) => DamageInfo.Tuned("sylveon.kissdamage", new DamageInfo(actor, 0.26f, 4, 160, DamageType.Special));
     public static DamageInfo KissHeal(ulong actor, bool upgraded) => new DamageInfo(actor, upgraded ? 0.345f : 0.23f,
         0, (short)(upgraded ? 285 : 190), DamageType.Special, DamageProprieties.IsHeal);
     public static int CalmShieldAmount(int spAttack) => Mathf.FloorToInt(0.9f * spAttack + 100);

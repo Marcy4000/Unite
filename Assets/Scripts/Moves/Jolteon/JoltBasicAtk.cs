@@ -3,8 +3,8 @@ using UnityEngine;
 public class JoltBasicAtk : ChargedBasicAttackBase
 {
     protected override int AttackCharge => charge;
-    private DamageInfo normalDamage = new DamageInfo(0, 0.4f, 5, 120, DamageType.Physical, DamageProprieties.IsBasicAttack);
-    private DamageInfo boostedDamage = new DamageInfo(0, 0.6f, 7, 160, DamageType.Physical, DamageProprieties.IsBasicAttack);
+    private DamageInfo normalDamage = DamageInfo.Tuned("jolteon.joltbasicatk.normaldamage", new DamageInfo(0, 0.4f, 5, 120, DamageType.Physical, DamageProprieties.IsBasicAttack));
+    private DamageInfo boostedDamage = DamageInfo.Tuned("jolteon.joltbasicatk.boosteddamage", new DamageInfo(0, 0.6f, 7, 160, DamageType.Physical, DamageProprieties.IsBasicAttack));
 
     private int charge;
 

@@ -4,6 +4,9 @@ using UnityEngine;
 public partial class MovesController
 {
     private UmbreonRuntime umbreonRuntime;
+    internal int UmbreonSnarlLocks { get; set; }
+    private bool PrefabActionsLocked(AvailableMoves move) => ServerActionLocks >
+        (move == AvailableMoves.UmbreonFoulPlay ? UmbreonSnarlLocks : 0);
     private readonly NetworkVariable<bool> umbreonMeanBoosted = new NetworkVariable<bool>();
     private double umbreonFoulUntil;
     public float UmbreonFoulRemaining => NetworkManager == null ? 0 : Mathf.Max(0, (float)(umbreonFoulUntil - NetworkManager.ServerTime.Time));

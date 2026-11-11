@@ -22,7 +22,7 @@ public class BootSceneController : MonoBehaviour
     private Announcement downloadAnnouncement = new Announcement
     {
         title = "Download Manager",
-        message = "Please wait while we download the game assets."
+        message = "Please wait while game assets are downloaded and updated. This may take a few minutes depending on your internet connection.",
     };
 
     private bool updating;
@@ -72,7 +72,7 @@ public class BootSceneController : MonoBehaviour
         if (ready) downloadWindow.Hide();
         else
         {
-            downloadAnnouncement.message = downloader.Error + "\nUse Retry update to try again. Previously downloaded content is kept.";
+            downloadAnnouncement.message = downloader.Error + "\nUse Retry update to try again.";
             downloadWindow.SetAnnouncement(downloadAnnouncement);
         }
     }

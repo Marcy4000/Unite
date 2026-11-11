@@ -3,7 +3,7 @@ using UnityEngine;
 public class DuraFlashCannon : MoveBase
 {
     private float range = 11.5f;
-    private DamageInfo damageInfo = new DamageInfo(0, 0.58f, 2, 66, DamageType.Physical);
+    private DamageInfo damageInfo = DamageInfo.Tuned("duraludon.duraflashcannon.damageinfo", new DamageInfo(0, 0.58f, 2, 66, DamageType.Physical));
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Duraludon/DuraFlashCannonObject.prefab";
 

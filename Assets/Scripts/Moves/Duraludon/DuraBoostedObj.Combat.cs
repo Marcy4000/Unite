@@ -106,14 +106,15 @@ public partial class DuraBoostedObj
             if (expires > Time.time && target.HasStatusEffect(TailMarkId))
             {
                 target.RemoveStatusEffectWithID(TailMarkId);
-                target.TakeDamageRPC(new DamageInfo(duraludon.NetworkObjectId, 0.5f, 0, 0, DamageType.Physical, SecondaryDamage));
+                target.TakeDamageRPC(DamageInfo.Tuned("duraludon.duraboostedobj.combat.oncombatdamage", new DamageInfo(duraludon.NetworkObjectId, 0.5f, 0, 0, DamageType.Physical, SecondaryDamage)));
             }
         }
 
         // A normal Cannon attack splashes once around its impact, whereas its
         // boosted beam already hits every target along the line.
+        var cannon = DamageInfo.Tuned("duraludon.durabasicatk.cannondmg", new DamageInfo(0, 1.16f, 3, 132, DamageType.Physical));
         if ((info.proprieties & DamageProprieties.IsBasicAttack) != 0
-            && Mathf.Approximately(info.ratio, 1.16f) && info.slider == 3 && info.baseDmg == 132)
+            && Mathf.Approximately(info.ratio, cannon.ratio) && info.slider == cannon.slider && info.baseDmg == cannon.baseDmg)
         {
             DamageInfo splash = info;
             splash.proprieties |= SecondaryDamage;
@@ -131,7 +132,7 @@ public partial class DuraBoostedObj
             ReducePulseCooldownRPC(1.5f);
         }
         if (bonusTargets.Add(targetId))
-            target.TakeDamageRPC(new DamageInfo(duraludon.NetworkObjectId, 0.15f, 1, 27, DamageType.Physical, SecondaryDamage));
+            target.TakeDamageRPC(DamageInfo.Tuned("duraludon.duraboostedobj.combat.oncombatdamage.2", new DamageInfo(duraludon.NetworkObjectId, 0.15f, 1, 27, DamageType.Physical, SecondaryDamage)));
     }
 
     private int GetMarkCount(Pokemon target)

@@ -48,7 +48,7 @@ public class SylvFairyFrolicEffect : PrefabMoveEffect
         landingDamage = true;
         foreach (Pokemon target in targets)
         {
-            var damage = new DamageInfo(Actor.Pokemon.NetworkObjectId, 1.3f, 13, 750, DamageType.Special, DamageProprieties.IsUniteMove);
+            var damage = DamageInfo.Tuned("sylveon.sylvfairyfroliceffect.damage", new DamageInfo(Actor.Pokemon.NetworkObjectId, 1.3f, 13, 750, DamageType.Special, DamageProprieties.IsUniteMove));
             int calculated = target.CalculateDamage(damage, Actor.Pokemon);
             if (target.Type != PokemonType.Player && calculated > 2000) damage.multiplier = 2000f / calculated;
             target.TakeDamageRPC(damage);

@@ -35,14 +35,14 @@ public static class UmbreonMoveRules
     public static int FoulFollowup(int recordedAttack, int ownAttackAtFirstHit, int currentAttack)
         => Mathf.FloorToInt(2.376f * (recordedAttack > ownAttackAtFirstHit ? recordedAttack : currentAttack));
     public static DamageInfo Damage(ulong source, float ratio, short slider, short value) => new DamageInfo(source, ratio, slider, value, DamageType.Physical);
-    public static DamageInfo Basic(ulong source, bool boosted, bool mean) => new DamageInfo(source,
+    public static DamageInfo Basic(ulong source, bool boosted, bool mean) => DamageInfo.Tuned("umbreon.basic", new DamageInfo(source,
         mean ? 1.96f : boosted ? 1.4f : 1, (short)(mean ? 5 : 0), (short)(mean ? 180 : 0), DamageType.Physical,
-        DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
-    public static DamageInfo Swift(ulong source, bool first) => Damage(source, first ? 0.4f : 0.12f, (short)(first ? 10 : 2), (short)(first ? 100 : 30));
-    public static DamageInfo Tears(ulong source) => Damage(source, 0.86f, 8, 240);
-    public static DamageInfo Foul(ulong source) => Damage(source, 0.58f, 6, 145);
-    public static DamageInfo Snarl(ulong source, bool final) => Damage(source, final ? 0.3f : 0.15f, (short)(final ? 2 : 1), (short)(final ? 80 : 40));
-    public static DamageInfo Unite(ulong source) => new DamageInfo(source, 2.24f, 13, 630, DamageType.Physical, DamageProprieties.IsUniteMove);
+        DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit));
+    public static DamageInfo Swift(ulong source, bool first) => DamageInfo.Tuned("umbreon.swift", Damage(source, first ? 0.4f : 0.12f, (short)(first ? 10 : 2), (short)(first ? 100 : 30)));
+    public static DamageInfo Tears(ulong source) => DamageInfo.Tuned("umbreon.tears", Damage(source, 0.86f, 8, 240));
+    public static DamageInfo Foul(ulong source) => DamageInfo.Tuned("umbreon.foul", Damage(source, 0.58f, 6, 145));
+    public static DamageInfo Snarl(ulong source, bool final) => DamageInfo.Tuned("umbreon.snarl", Damage(source, final ? 0.3f : 0.15f, (short)(final ? 2 : 1), (short)(final ? 80 : 40)));
+    public static DamageInfo Unite(ulong source) => DamageInfo.Tuned("umbreon.unite", new DamageInfo(source, 2.24f, 13, 630, DamageType.Physical, DamageProprieties.IsUniteMove));
     public static Pokemon LowestAlly(IEnumerable<Pokemon> candidates, Pokemon previous, Vector3 center, float radius)
     {
         Pokemon best = null; float hp = float.MaxValue;

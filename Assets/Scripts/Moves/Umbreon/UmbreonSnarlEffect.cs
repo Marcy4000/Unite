@@ -5,11 +5,15 @@ using UnityEngine;
 public class UmbreonSnarlEffect : UmbreonMoveEffect
 {
     private ushort self, final;
+    private bool registeredLock;
+    protected override int UnlockedMoveSlot => Actor != null && Actor.MovesController.HasUmbreonMove(AvailableMoves.UmbreonFoulPlay) ? 0 : -1;
     private readonly Dictionary<Pokemon, List<ushort>> stacks = new Dictionary<Pokemon, List<ushort>>();
     protected override IEnumerator Execute()
     {
         self = UmbreonEffectIds.Acquire(); final = UmbreonEffectIds.Acquire();
         LockActions(false, false);
+        Actor.MovesController.UmbreonSnarlLocks++;
+        registeredLock = true;
         Actor.Pokemon.AddStatusEffect(new StatusEffect(StatusType.HindranceResistance, UmbreonMoveRules.SnarlDuration, true, self));
         Actor.Pokemon.AddStatChange(new StatChange(30, Stat.Speed, UmbreonMoveRules.SnarlDuration, true, false, true, self).WithSource(Actor.NetworkObjectId));
         Actor.Pokemon.AddShieldRPC(new ShieldInfo(Mathf.FloorToInt(Actor.Pokemon.GetMaxHp() * 0.2f), self, 0, 3, true).WithSource(Actor.NetworkObjectId));
@@ -45,6 +49,13 @@ public class UmbreonSnarlEffect : UmbreonMoveEffect
         }
         Visual("SnarlBurst", Actor.transform.position, UmbreonMoveRules.SnarlRadius, 0.4f);
         UnlockActions();
+        ReleaseSnarlLock();
+    }
+    private void ReleaseSnarlLock()
+    {
+        if (!registeredLock) return;
+        if (Actor != null) Actor.MovesController.UmbreonSnarlLocks--;
+        registeredLock = false;
     }
     protected override void Update()
     {
@@ -55,6 +66,7 @@ public class UmbreonSnarlEffect : UmbreonMoveEffect
     {
         if (IsServer)
         {
+            ReleaseSnarlLock();
             if (Actor != null && Actor.IsSpawned)
             { Actor.Pokemon.RemoveStatusEffectWithID(self); Actor.Pokemon.RemoveAllStatChangeWithIDRPC(self); }
             foreach (var list in stacks.Values) foreach (var id in list) UmbreonEffectIds.Release(id, 1.5f);

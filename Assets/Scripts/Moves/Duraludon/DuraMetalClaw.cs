@@ -3,7 +3,7 @@ using UnityEngine;
 public class DuraMetalClaw : MoveBase
 {
     private float range = 7f;
-    private DamageInfo damageInfo = new DamageInfo(0, 0.94f, 8, 260, DamageType.Physical);
+    private DamageInfo damageInfo = DamageInfo.Tuned("duraludon.durametalclaw.damageinfo", new DamageInfo(0, 0.94f, 8, 260, DamageType.Physical));
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Duraludon/DuraMetalClawProjectile.prefab";
 

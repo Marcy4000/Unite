@@ -35,9 +35,9 @@ public class DuraBasicAtk : ChargedBasicAttackBase
         range = 7f;
         DamageProprieties proprieties = DamageProprieties.IsBasicAttack;
         proprieties |= DamageProprieties.CanCrit;
-        normalDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical, proprieties);
-        boostedDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.35f, 0, 0, DamageType.Physical, proprieties);
-        cannonDmg = new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.16f, 3, 132, DamageType.Physical, proprieties);
+        normalDmg = DamageInfo.Tuned("duraludon.durabasicatk.normaldmg", new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1, 0, 0, DamageType.Physical, proprieties));
+        boostedDmg = DamageInfo.Tuned("duraludon.durabasicatk.boosteddmg", new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.35f, 0, 0, DamageType.Physical, proprieties));
+        cannonDmg = DamageInfo.Tuned("duraludon.durabasicatk.cannondmg", new DamageInfo(playerManager.Pokemon.NetworkObjectId, 1.16f, 3, 132, DamageType.Physical, proprieties));
 
         playerManager.MovesController.onObjectSpawned += OnBoostedObjectSpawned;
 

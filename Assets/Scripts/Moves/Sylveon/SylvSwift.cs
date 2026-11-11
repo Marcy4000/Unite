@@ -16,7 +16,7 @@ public class SylvSwift : MoveBase
         Name = "Swift";
         Cooldown = 7.0f;
         distance = 5f;
-        damageInfo = new DamageInfo(0, 0.32f, 6, 190, DamageType.Special);
+        damageInfo = DamageInfo.Tuned("sylveon.sylvswift.damageinfo", new DamageInfo(0, 0.32f, 6, 190, DamageType.Special));
     }
 
     public override void Start(PlayerManager controller)

@@ -29,6 +29,9 @@ public class UniteRoyaleTrainer : NetworkBehaviour
 
     private void Awake()
     {
+        if (trainerModel != null)
+            trainerModel.onClothesInitialized += RefreshFakeShadow;
+
         if (navMeshAgent == null)
         {
             navMeshAgent = GetComponent<NavMeshAgent>();
@@ -39,6 +42,7 @@ public class UniteRoyaleTrainer : NetworkBehaviour
     {
         base.OnNetworkSpawn();
         spawnPosition = transform.position;
+        RefreshFakeShadow();
         
         if (navMeshAgent != null)
         {
@@ -51,6 +55,15 @@ public class UniteRoyaleTrainer : NetworkBehaviour
         {
             FindAndAssignPlayer(assignedPlayerID.Value);
         }
+    }
+
+    private void RefreshFakeShadow()
+    {
+        if (trainerModel == null || !trainerModel.IsInitialized) return;
+        if (!TryGetComponent<FakeMeshShadow>(out var fakeShadow))
+            fakeShadow = gameObject.AddComponent<FakeMeshShadow>();
+        // Clothing can replace meshes while keeping the same model root.
+        fakeShadow.SetSource(trainerModel.transform, forceRebuild: true);
     }
 
     private void OnAssignedPlayerChanged(ulong previousValue, ulong newValue)
@@ -325,6 +338,8 @@ public class UniteRoyaleTrainer : NetworkBehaviour
 
     public override void OnDestroy()
     {
+        if (trainerModel != null)
+            trainerModel.onClothesInitialized -= RefreshFakeShadow;
         assignedPlayerID.OnValueChanged -= OnAssignedPlayerChanged;
         if (assignedPlayer != null)
         {

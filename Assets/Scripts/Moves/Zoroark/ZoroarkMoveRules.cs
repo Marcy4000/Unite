@@ -35,17 +35,17 @@ public static class ZoroarkMoveRules
         && !target.TeamMember.IsOnSameTeam(actor.CurrentTeam) && !target.HasStatusEffect(StatusType.Invincible)
         && !target.HasStatusEffect(StatusType.Untargetable);
     public static DamageInfo Basic(ulong source, bool boosted)
-        => new DamageInfo(source, boosted ? 1.3f : 1, 0, 0, DamageType.Physical, DamageProprieties.CanCrit | DamageProprieties.IsBasicAttack);
+        => DamageInfo.Tuned("zoroark.basic", new DamageInfo(source, boosted ? 1.3f : 1, 0, 0, DamageType.Physical, DamageProprieties.CanCrit | DamageProprieties.IsBasicAttack));
     public static DamageInfo Dash(ulong source, AvailableMoves move)
     {
         switch (move)
         {
-            case AvailableMoves.ZoroarkSlash: return new DamageInfo(source, 0.78f, 12, 230, DamageType.Physical);
-            case AvailableMoves.ZoroarkFurySwipes: return new DamageInfo(source, 0.94f, 8, 310, DamageType.Physical);
-            case AvailableMoves.ZoroarkShadowClaw: return new DamageInfo(source, 1, 12, 297, DamageType.Physical);
-            case AvailableMoves.ZoroarkCut: return new DamageInfo(source, 0.9775f, 13, 287, DamageType.Physical);
-            case AvailableMoves.ZoroarkNightSlash: return new DamageInfo(source, 0.65f, 10, 225, DamageType.Physical);
-            default: return new DamageInfo(source, 1, 10, 300, DamageType.Physical);
+            case AvailableMoves.ZoroarkSlash: return DamageInfo.Tuned("zoroark.zoroarkslash", new DamageInfo(source, 0.78f, 12, 230, DamageType.Physical));
+            case AvailableMoves.ZoroarkFurySwipes: return DamageInfo.Tuned("zoroark.zoroarkfuryswipes", new DamageInfo(source, 0.94f, 8, 310, DamageType.Physical));
+            case AvailableMoves.ZoroarkShadowClaw: return DamageInfo.Tuned("zoroark.zoroarkshadowclaw", new DamageInfo(source, 1, 12, 297, DamageType.Physical));
+            case AvailableMoves.ZoroarkCut: return DamageInfo.Tuned("zoroark.zoroarkcut", new DamageInfo(source, 0.9775f, 13, 287, DamageType.Physical));
+            case AvailableMoves.ZoroarkNightSlash: return DamageInfo.Tuned("zoroark.zoroarknightslash", new DamageInfo(source, 0.65f, 10, 225, DamageType.Physical));
+            default: return DamageInfo.Tuned("zoroark.dash", new DamageInfo(source, 1, 10, 300, DamageType.Physical));
         }
     }
     public static int CutHeal(int attack, int level, bool plus) => Mathf.FloorToInt(attack * (plus ? 0.62f : 0.53f) + level * (plus ? 8 : 7) + (plus ? 185 : 158));
@@ -58,8 +58,8 @@ public static class ZoroarkMoveRules
     public static DamageInfo Finisher(PlayerManager actor, Pokemon target, bool feint, bool basic)
     {
         int total = FinisherDamage(actor.Pokemon.GetAttack(), actor.Pokemon.CurrentLevel, target.GetMissingHp(), feint, target.Type != PokemonType.Player);
-        return new DamageInfo(actor.NetworkObjectId, 0, 0, (short)Mathf.Min(short.MaxValue, total), DamageType.Physical,
-            basic ? DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit : DamageProprieties.None);
+        return DamageInfo.Tuned("zoroark.finisher", new DamageInfo(actor.NetworkObjectId, 0, 0, (short)Mathf.Min(short.MaxValue, total), DamageType.Physical,
+            basic ? DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit : DamageProprieties.None));
     }
     public static float Range(AvailableMoves move) => move == AvailableMoves.ZoroarkSlash ? SlashRange : move == AvailableMoves.ZoroarkFurySwipes ? FuryRange
         : move == AvailableMoves.ZoroarkCut ? CutRange : move == AvailableMoves.ZoroarkShadowClaw ? ClawRange

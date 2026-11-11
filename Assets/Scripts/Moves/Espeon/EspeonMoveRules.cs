@@ -42,19 +42,19 @@ public static class EspeonMoveRules
         else target.ApplyKnockbackRPC(direction, UniteShove / Mathf.Max(0.01f, UniteShoveDuration));
     }
     public static DamageInfo Basic(ulong source, bool boosted, bool evolved) => !boosted
-        ? new DamageInfo(source, 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit)
-        : new DamageInfo(source, evolved ? 0.54f : 0.35f, (short)(evolved ? 12 : 10), (short)(evolved ? 230 : 180),
-            DamageType.Special, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
+        ? DamageInfo.Tuned("espeon.basic", new DamageInfo(source, 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit))
+        : DamageInfo.Tuned("espeon.basic.2", new DamageInfo(source, evolved ? 0.54f : 0.35f, (short)(evolved ? 12 : 10), (short)(evolved ? 230 : 180),
+            DamageType.Special, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit));
     public static DamageInfo Volley(ulong source, bool psyshock, bool repeat) => psyshock
-        ? new DamageInfo(source, repeat ? 0.22f : 0.726f, (short)(repeat ? 4 : 14), (short)(repeat ? 112 : 374), DamageType.Special)
-        : new DamageInfo(source, repeat ? 0.21f : 0.7f, (short)(repeat ? 6 : 19), (short)(repeat ? 108 : 360), DamageType.Special);
-    public static DamageInfo Stored(ulong source, bool repeat) => new DamageInfo(source, repeat ? 0.196f : 0.6f,
-        (short)(repeat ? 2 : 9), (short)(repeat ? 90 : 300), DamageType.Special);
-    public static DamageInfo Growl(ulong source) => new DamageInfo(source, 0.55f, 15, 290, DamageType.Special);
-    public static DamageInfo Counter(ulong source) => new DamageInfo(source, 0.34f, 8, 140, DamageType.Special) { source = DamageSource.Secondary };
-    public static DamageInfo Psybeam(ulong source) => new DamageInfo(source, 1, 14, 591, DamageType.Special);
-    public static DamageInfo Future(ulong source) => new DamageInfo(source, 0.576f, 9, 338, DamageType.Special);
-    public static DamageInfo Unite(ulong source) => new DamageInfo(source, 0.91f, 12, 546, DamageType.Special, DamageProprieties.IsUniteMove);
+        ? DamageInfo.Tuned("espeon.volley", new DamageInfo(source, repeat ? 0.22f : 0.726f, (short)(repeat ? 4 : 14), (short)(repeat ? 112 : 374), DamageType.Special))
+        : DamageInfo.Tuned("espeon.volley.2", new DamageInfo(source, repeat ? 0.21f : 0.7f, (short)(repeat ? 6 : 19), (short)(repeat ? 108 : 360), DamageType.Special));
+    public static DamageInfo Stored(ulong source, bool repeat) => DamageInfo.Tuned("espeon.stored", new DamageInfo(source, repeat ? 0.196f : 0.6f,
+        (short)(repeat ? 2 : 9), (short)(repeat ? 90 : 300), DamageType.Special));
+    public static DamageInfo Growl(ulong source) => DamageInfo.Tuned("espeon.growl", new DamageInfo(source, 0.55f, 15, 290, DamageType.Special));
+    public static DamageInfo Counter(ulong source) => DamageInfo.Tuned("espeon.counter", new DamageInfo(source, 0.34f, 8, 140, DamageType.Special) { source = DamageSource.Secondary });
+    public static DamageInfo Psybeam(ulong source) => DamageInfo.Tuned("espeon.psybeam", new DamageInfo(source, 1, 14, 591, DamageType.Special));
+    public static DamageInfo Future(ulong source) => DamageInfo.Tuned("espeon.future", new DamageInfo(source, 0.576f, 9, 338, DamageType.Special));
+    public static DamageInfo Unite(ulong source) => DamageInfo.Tuned("espeon.unite", new DamageInfo(source, 0.91f, 12, 546, DamageType.Special, DamageProprieties.IsUniteMove));
     public static bool TriggersPassive(StatusEffect effect) => effect.IsNegativeStatus()
         || effect.Type == StatusType.Burned || effect.Type == StatusType.Poisoned;
     public static bool TriggersPassive(StatChange change) => !change.IsBuff && change.AffectedStat == Stat.Speed;

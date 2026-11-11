@@ -33,11 +33,11 @@ public static class DuraMoveRules
         marks = Mathf.Clamp(marks, 0, MaxMarks);
         int orbs = Mathf.Min(marks, 5);
         int ring = marks == MaxMarks ? 1 : 0;
-        return new DamageInfo(attacker,
+        return DamageInfo.Tuned("duraludon.pulsedamage", new DamageInfo(attacker,
             baseRatios[stage] + orbs * markRatios[stage] + ring * ringRatios[stage],
             (short)(1 + orbs + ring),
             (short)Mathf.Min(short.MaxValue, bases[stage] + orbs * markBases[stage] + ring * ringBases[stage]
                 + Mathf.RoundToInt(Mathf.Max(0, missingHp) * (orbs * 0.008f + ring * 0.016f))),
-            DamageType.Physical, DamageProprieties.Unused_1);
+            DamageType.Physical, DamageProprieties.Unused_1));
     }
 }

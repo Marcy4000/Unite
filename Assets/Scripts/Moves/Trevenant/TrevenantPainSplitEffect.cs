@@ -12,8 +12,8 @@ public class TrevenantPainSplitEffect : TrevenantMoveEffect
     {
         if (!LinkValid || Target.HasStatusEffect(StatusType.Invincible) || amount <= 0) return amount;
         int redirected = TrevenantMoveRules.RedirectAmount(amount, TrevenantMoveRules.HpFraction(Actor.Pokemon));
-        var damage = new DamageInfo(Actor.NetworkObjectId, 0, 0, (short)Mathf.Min(short.MaxValue, redirected), DamageType.True)
-            { source = DamageSource.Redirected, suppressOnHitEffects = true };
+        var damage = DamageInfo.Tuned("trevenant.trevenantpainspliteffect.damage", new DamageInfo(Actor.NetworkObjectId, 0, 0, (short)Mathf.Min(short.MaxValue, redirected), DamageType.True)
+            { source = DamageSource.Redirected, suppressOnHitEffects = true });
         // This source bypasses redirection hooks and damage modifiers, so two
         // opposing tethers cannot recurse or mitigate the same hit twice.
         int applied = Target.ResolveDamage(damage);

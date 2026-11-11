@@ -64,7 +64,7 @@ public class UmbreonFoulPlayEffect : UmbreonMoveEffect
         else
         {
             int amount = UmbreonMoveRules.FoulFollowup(enemyAttack, ownAttack, Actor.Pokemon.GetAttack());
-            target.ResolveDamage(new DamageInfo(Actor.NetworkObjectId, 0, 0, (short)Mathf.Min(short.MaxValue, amount), DamageType.Physical));
+            target.ResolveDamage(DamageInfo.Tuned("umbreon.umbreonfoulplayeffect.hitvictim", new DamageInfo(Actor.NetworkObjectId, 0, 0, (short)Mathf.Min(short.MaxValue, amount), DamageType.Physical)));
             Slow(target, 30, 2.5f);
             if (Stun(target, UmbreonMoveRules.ShoveDuration))
             {

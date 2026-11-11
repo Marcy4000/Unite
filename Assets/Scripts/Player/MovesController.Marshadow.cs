@@ -97,11 +97,11 @@ public partial class MovesController
             DamageInfo damage;
             switch (hit)
             {
-                case MarshadowHit.DrainPunch: damage = new DamageInfo(NetworkObjectId, 1.15f, 6, 265, DamageType.Physical); break;
-                case MarshadowHit.Rush: damage = new DamageInfo(NetworkObjectId, stage == 2 ? (upgraded ? 1.9f : 1.75f) : 1.15f, 5, (short)(stage == 2 ? 400 : 260), DamageType.Physical); break;
-                case MarshadowHit.SpectralThief: damage = new DamageInfo(NetworkObjectId, 1.65f, 6, 510, DamageType.Physical); break;
-                case MarshadowHit.Kick: damage = new DamageInfo(NetworkObjectId, 1.76f, 9, 520, DamageType.Physical); break;
-                default: damage = new DamageInfo(NetworkObjectId, 0, 0, (short)MarshadowMoveRules.AuraExecute(target.GetMissingHp(), upgraded, target.TeamMember.Team == Team.Neutral), DamageType.Physical); break;
+                case MarshadowHit.DrainPunch: damage = DamageInfo.Tuned("marshadow.movescontroller.marshadow.drainpunch", new DamageInfo(NetworkObjectId, 1.15f, 6, 265, DamageType.Physical)); break;
+                case MarshadowHit.Rush: damage = DamageInfo.Tuned("marshadow.movescontroller.marshadow.rush", new DamageInfo(NetworkObjectId, stage == 2 ? (upgraded ? 1.9f : 1.75f) : 1.15f, 5, (short)(stage == 2 ? 400 : 260), DamageType.Physical)); break;
+                case MarshadowHit.SpectralThief: damage = DamageInfo.Tuned("marshadow.movescontroller.marshadow.spectralthief", new DamageInfo(NetworkObjectId, 1.65f, 6, 510, DamageType.Physical)); break;
+                case MarshadowHit.Kick: damage = DamageInfo.Tuned("marshadow.movescontroller.marshadow.kick", new DamageInfo(NetworkObjectId, 1.76f, 9, 520, DamageType.Physical)); break;
+                default: damage = DamageInfo.Tuned("marshadow.movescontroller.marshadow.damage", new DamageInfo(NetworkObjectId, 0, 0, (short)MarshadowMoveRules.AuraExecute(target.GetMissingHp(), upgraded, target.TeamMember.Team == Team.Neutral), DamageType.Physical)); break;
             }
             int before = target.CurrentHp;
             target.TakeDamageRPC(damage);
@@ -211,7 +211,7 @@ public partial class MovesController
                 }
                 if (nearest != null)
                 {
-                    nearest.TakeDamageRPC(new DamageInfo(NetworkObjectId, 1.12f, 7, 210, DamageType.Physical));
+                    nearest.TakeDamageRPC(DamageInfo.Tuned("marshadow.movescontroller.marshadow.travelmarshadowaura", new DamageInfo(NetworkObjectId, 1.12f, 7, 210, DamageType.Physical)));
                     MarshadowAuraResultRPC(id, nearest.CurrentHp > 0, nearest.NetworkObjectId);
                     yield break;
                 }

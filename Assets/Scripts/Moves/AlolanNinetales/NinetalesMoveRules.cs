@@ -41,22 +41,22 @@ public static class NinetalesMoveRules
         => new DamageInfo(actor, ratio, slider, flat, DamageType.Special);
     public static DamageInfo BasicDamage(ulong actor, bool boosted)
     {
-        var damage = boosted ? Special(actor, 0.5746f, 14, 270) : new DamageInfo(actor, 1, 0, 0, DamageType.Physical);
+        var damage = boosted ? DamageInfo.Tuned("alolanninetales.basicdamage", Special(actor, 0.5746f, 14, 270)) : DamageInfo.Tuned("alolanninetales.basicdamage.2", new DamageInfo(actor, 1, 0, 0, DamageType.Physical));
         damage.proprieties = DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit;
         return damage;
     }
-    public static DamageInfo PassiveDamage(ulong actor) => Special(actor, 0.6f, 0, 100);
-    public static DamageInfo PowderDamage(ulong actor) => Special(actor, 0.78f, 13, 240);
-    public static DamageInfo AvalancheDamage(ulong actor) => Special(actor, 0.44f, 10, 229);
-    public static DamageInfo GleamDamage(ulong actor, bool plus) => plus ? Special(actor, 0.67f, 11, 418) : Special(actor, 0.66f, 11, 352);
-    public static DamageInfo IcyDamage(ulong actor) => Special(actor, 0.61f, 7, 240);
+    public static DamageInfo PassiveDamage(ulong actor) => DamageInfo.Tuned("alolanninetales.passivedamage", Special(actor, 0.6f, 0, 100));
+    public static DamageInfo PowderDamage(ulong actor) => DamageInfo.Tuned("alolanninetales.powderdamage", Special(actor, 0.78f, 13, 240));
+    public static DamageInfo AvalancheDamage(ulong actor) => DamageInfo.Tuned("alolanninetales.avalanchedamage", Special(actor, 0.44f, 10, 229));
+    public static DamageInfo GleamDamage(ulong actor, bool plus) => plus ? DamageInfo.Tuned("alolanninetales.gleamdamage", Special(actor, 0.67f, 11, 418)) : DamageInfo.Tuned("alolanninetales.gleamdamage.2", Special(actor, 0.66f, 11, 352));
+    public static DamageInfo IcyDamage(ulong actor) => DamageInfo.Tuned("alolanninetales.icydamage", Special(actor, 0.61f, 7, 240));
     public static DamageInfo BlizzardDamage(ulong actor, bool plus, int phase)
-        => phase == 2 ? (plus ? Special(actor, 0.18f, 3, 115) : Special(actor, 0.17f, 2, 110))
-            : phase == 1 ? (plus ? Special(actor, 0.82f, 12, 540) : Special(actor, 0.78f, 8, 500))
-            : plus ? Special(actor, 0.41f, 6, 270) : Special(actor, 0.39f, 4, 250);
+        => phase == 2 ? (plus ? DamageInfo.Tuned("alolanninetales.blizzarddamage", Special(actor, 0.18f, 3, 115)) : DamageInfo.Tuned("alolanninetales.blizzarddamage.2", Special(actor, 0.17f, 2, 110)))
+            : phase == 1 ? (plus ? DamageInfo.Tuned("alolanninetales.blizzarddamage.3", Special(actor, 0.82f, 12, 540)) : DamageInfo.Tuned("alolanninetales.blizzarddamage.4", Special(actor, 0.78f, 8, 500)))
+            : plus ? DamageInfo.Tuned("alolanninetales.blizzarddamage.5", Special(actor, 0.41f, 6, 270)) : DamageInfo.Tuned("alolanninetales.blizzarddamage.6", Special(actor, 0.39f, 4, 250));
     public static DamageInfo UniteDamage(ulong actor, bool frozen)
     {
-        var damage = frozen ? Special(actor, 2.42f, 35, 1640) : Special(actor, 1.59f, 32, 1150);
+        var damage = frozen ? DamageInfo.Tuned("alolanninetales.unitedamage", Special(actor, 2.42f, 35, 1640)) : DamageInfo.Tuned("alolanninetales.unitedamage.2", Special(actor, 1.59f, 32, 1150));
         damage.proprieties = DamageProprieties.IsUniteMove; return damage;
     }
     public static int VeilHeal(float specialAttack, int level) => Mathf.FloorToInt(specialAttack * 0.1f + level * 2 + 40);

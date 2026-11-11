@@ -64,7 +64,7 @@ public class IcicleSpearHitbox : PrefabMoveEffect
                         if (Upgraded && GlaceonMoveRules.Living(target))
                         {
                             short damage = (short)Mathf.Clamp(Mathf.FloorToInt(target.GetMissingHp() * 0.05f), 0, target.Type == PokemonType.Wild ? 300 : short.MaxValue);
-                            target.ResolveDamage(new DamageInfo(Actor.NetworkObjectId, 0, 0, damage, DamageType.Special));
+                            target.ResolveDamage(DamageInfo.Tuned("glaceon.iciclespearhitbox.releasechannel", new DamageInfo(Actor.NetworkObjectId, 0, 0, damage, DamageType.Special)));
                         }
                     }
                     nextHit = now + 0.75;

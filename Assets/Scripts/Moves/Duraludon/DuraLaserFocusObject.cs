@@ -60,7 +60,7 @@ public class DuraLaserFocusObject : DuraMoveObject
         }
         if (hitTargets.Add(targetId) && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetId, out var target)
             && target.TryGetComponent(out Pokemon pokemon))
-            pokemon.TakeDamageRPC(new DamageInfo(Actor.NetworkObjectId, 0.27f, 3, 60, DamageType.Physical, DamageProprieties.Unused_2));
+            pokemon.TakeDamageRPC(DamageInfo.Tuned("duraludon.duralaserfocusobject.ondamagedealt", new DamageInfo(Actor.NetworkObjectId, 0.27f, 3, 60, DamageType.Physical, DamageProprieties.Unused_2)));
     }
 
     public override void OnNetworkDespawn()

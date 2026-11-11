@@ -46,6 +46,9 @@ public sealed class OpenWorldPokemonFollower : MonoBehaviour
                 }
         }
         animators = compatibleAnimators.ToArray();
+        if (!TryGetComponent<FakeMeshShadow>(out var fakeShadow))
+            fakeShadow = gameObject.AddComponent<FakeMeshShadow>();
+        fakeShadow.SetSource(visual.transform);
         visual.SetActive(false);
         TryPlaceNearTrainer();
     }

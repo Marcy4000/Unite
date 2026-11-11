@@ -214,6 +214,12 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
         appliedIdleVariation = 0;
         safeSpawnPosition = transform.position;
         CreateVisual();
+        if (trainerModel != null)
+        {
+            trainerModel.onClothesInitialized -= RefreshFakeShadow;
+            trainerModel.onClothesInitialized += RefreshFakeShadow;
+            RefreshFakeShadow();
+        }
         RefreshNameplate();
         ApplyClothing();
         RefreshOwnership();
@@ -239,6 +245,7 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
         playerId.OnValueChanged -= OnIdentityChanged;
         playerName.OnValueChanged -= OnIdentityChanged;
         clothing.OnValueChanged -= OnClothingChanged;
+        if (trainerModel != null) trainerModel.onClothesInitialized -= RefreshFakeShadow;
         base.OnNetworkDespawn();
     }
 
@@ -282,6 +289,14 @@ public sealed partial class OpenWorldTrainerAvatar : NetworkBehaviour
         foreach (var canvas in visual.GetComponentsInChildren<Canvas>(true)) canvas.enabled = false;
         foreach (var collider in visual.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
         foreach (var animator in visual.GetComponentsInChildren<Animator>(true)) animator.applyRootMotion = false;
+    }
+
+    private void RefreshFakeShadow()
+    {
+        if (trainerModel == null || !trainerModel.IsInitialized) return;
+        if (!TryGetComponent<FakeMeshShadow>(out var fakeShadow))
+            fakeShadow = gameObject.AddComponent<FakeMeshShadow>();
+        fakeShadow.SetSource(trainerModel.transform, forceRebuild: true);
     }
 
     private void OnIdentityChanged(FixedString128Bytes previous, FixedString128Bytes current)

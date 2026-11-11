@@ -5,7 +5,7 @@ using UnityEngine;
 public class SerperiorWringOut : MoveBase
 {
     private GameObject target;
-    private DamageInfo damageInfo = new DamageInfo(0, 0.8f, 3, 300, DamageType.Physical, DamageProprieties.CanCrit);
+    private DamageInfo damageInfo = DamageInfo.Tuned("serperior.serperiorwringout.damageinfo", new DamageInfo(0, 0.8f, 3, 300, DamageType.Physical, DamageProprieties.CanCrit));
     private StatusEffect holdState = new StatusEffect(StatusType.Bound, 3.5f, true, 60);
 
     private Pokemon targetPokemon;

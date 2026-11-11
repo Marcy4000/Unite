@@ -63,12 +63,12 @@ public static class EmboarMoveRules
     {
         switch (kind)
         {
-            case EmboarCast.Ember: return new DamageInfo(actor, 1.2f, 7, 155, DamageType.Physical, DamageProprieties.CanCrit);
-            case EmboarCast.Flamethrower: return new DamageInfo(actor, 1.86f, 9, 480, DamageType.Physical);
-            case EmboarCast.HeatCrash: return new DamageInfo(actor, 1.2f + stage * 0.3f, (short)(6 + stage), (short)(210 + stage * 65), DamageType.Physical);
-            case EmboarCast.FlameCharge: return new DamageInfo(actor, 1.8f, 6, 300, DamageType.Physical);
-            case EmboarCast.Unite: return new DamageInfo(actor, stage == 0 ? 0.85f : 2.55f, 0, (short)(stage == 0 ? 160 : 490), DamageType.Physical, DamageProprieties.IsUniteMove);
-            default: return new DamageInfo(actor, stage == 0 ? 0.4f : 0.6f, (short)(stage == 0 ? 5 : 7), (short)(stage == 0 ? 120 : 160), DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
+            case EmboarCast.Ember: return DamageInfo.Tuned("emboar.ember", new DamageInfo(actor, 1.2f, 7, 155, DamageType.Physical, DamageProprieties.CanCrit));
+            case EmboarCast.Flamethrower: return DamageInfo.Tuned("emboar.flamethrower", new DamageInfo(actor, 1.86f, 9, 480, DamageType.Physical));
+            case EmboarCast.HeatCrash: return DamageInfo.Tuned("emboar.heatcrash", new DamageInfo(actor, 1.2f + stage * 0.3f, (short)(6 + stage), (short)(210 + stage * 65), DamageType.Physical));
+            case EmboarCast.FlameCharge: return DamageInfo.Tuned("emboar.flamecharge", new DamageInfo(actor, 1.8f, 6, 300, DamageType.Physical));
+            case EmboarCast.Unite: return DamageInfo.Tuned("emboar.unite", new DamageInfo(actor, stage == 0 ? 0.85f : 2.55f, 0, (short)(stage == 0 ? 160 : 490), DamageType.Physical, DamageProprieties.IsUniteMove));
+            default: return DamageInfo.Tuned("emboar.damage", new DamageInfo(actor, stage == 0 ? 0.4f : 0.6f, (short)(stage == 0 ? 5 : 7), (short)(stage == 0 ? 120 : 160), DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit));
         }
     }
 }

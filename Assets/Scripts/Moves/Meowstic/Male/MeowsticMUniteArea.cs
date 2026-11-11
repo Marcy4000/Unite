@@ -11,7 +11,7 @@ public class MeowsticMUniteArea : NetworkBehaviour
 
     private float activeTime = 6f;
 
-    private DamageInfo damage = new DamageInfo(0, 0.5f, 4, 75, DamageType.Special);
+    private DamageInfo damage = DamageInfo.Tuned("meowstic.meowsticmunitearea.damage", new DamageInfo(0, 0.5f, 4, 75, DamageType.Special));
 
     private StatChange speedBoost = new StatChange(20, Stat.Speed, 0f, false, true, true, 17);
     private StatChange cdrBoost = new StatChange(10, Stat.Cdr, 0f, false, true, true, 18);

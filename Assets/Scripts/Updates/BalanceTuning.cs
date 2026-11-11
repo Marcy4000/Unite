@@ -8,6 +8,9 @@ namespace Unite.Updates
         [Tooltip("Optional overrides keyed by the stable asset ID in the exported JSON. Both cooldown variants must be specified.")]
         public MoveBalance[] moveOverrides = System.Array.Empty<MoveBalance>();
 
+        [Tooltip("Absolute damage values keyed by the stable damage ID in the exported JSON. Enable an override to replace that coefficient; disabled overrides preserve authored formulas.")]
+        public DamageBalance[] damageOverrides = System.Array.Empty<DamageBalance>();
+
         public BalanceNumber[] numbers =
         {
             new BalanceNumber { id = "held.muscle.cap", value = 360 },

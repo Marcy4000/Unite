@@ -52,14 +52,14 @@ public static class CinderMoveRules
         var flags = DamageProprieties.Unused_1; // Direct move or boosted basic: two cinders.
         switch (kind)
         {
-            case CinderCast.Ember: return new DamageInfo(actor, 1.15f, 8, 155, DamageType.Physical, flags);
-            case CinderCast.LowSweep: return new DamageInfo(actor, 0.36f, 3, 100, DamageType.Physical, flags);
-            case CinderCast.PyroBall: return new DamageInfo(actor, 3.45f, 32, 820, DamageType.Physical, flags);
-            case CinderCast.BlazeKick: return new DamageInfo(actor, 0.48f, 4, 120, DamageType.Physical, flags | DamageProprieties.WasCriticalHit);
-            case CinderCast.FlameCharge: return new DamageInfo(actor, 0.47f, 3, 130, DamageType.Physical, flags);
-            case CinderCast.Unite: return new DamageInfo(actor, 2.47f, 14, 670, DamageType.Physical, flags | DamageProprieties.IsUniteMove);
-            default: return new DamageInfo(actor, boosted ? 1.4f : 1f, 0, 0, DamageType.Physical,
-                DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit | (boosted ? flags : DamageProprieties.None));
+            case CinderCast.Ember: return DamageInfo.Tuned("cinderace.ember", new DamageInfo(actor, 1.15f, 8, 155, DamageType.Physical, flags));
+            case CinderCast.LowSweep: return DamageInfo.Tuned("cinderace.lowsweep", new DamageInfo(actor, 0.36f, 3, 100, DamageType.Physical, flags));
+            case CinderCast.PyroBall: return DamageInfo.Tuned("cinderace.pyroball", new DamageInfo(actor, 3.45f, 32, 820, DamageType.Physical, flags));
+            case CinderCast.BlazeKick: return DamageInfo.Tuned("cinderace.blazekick", new DamageInfo(actor, 0.48f, 4, 120, DamageType.Physical, flags | DamageProprieties.WasCriticalHit));
+            case CinderCast.FlameCharge: return DamageInfo.Tuned("cinderace.flamecharge", new DamageInfo(actor, 0.47f, 3, 130, DamageType.Physical, flags));
+            case CinderCast.Unite: return DamageInfo.Tuned("cinderace.unite", new DamageInfo(actor, 2.47f, 14, 670, DamageType.Physical, flags | DamageProprieties.IsUniteMove));
+            default: return DamageInfo.Tuned("cinderace.damage", new DamageInfo(actor, boosted ? 1.4f : 1f, 0, 0, DamageType.Physical,
+                DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit | (boosted ? flags : DamageProprieties.None)));
         }
     }
     public static int FlareDamage(int attack, int level, int maxHp, bool wild)

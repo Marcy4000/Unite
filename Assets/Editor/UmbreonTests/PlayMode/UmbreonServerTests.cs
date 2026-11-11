@@ -197,6 +197,26 @@ public class UmbreonServerTests
         Assert.That(Has(actor, "Poisoned"), Is.False); Assert.That(Has(actor, "Unstoppable"), Is.True);
     }
     [UnityTest]
+    public IEnumerator FoulPlayCanDashAndRecastDuringSnarl()
+    {
+        var ids = (Array)moves.GetType().GetField("prefabLearnedMoves", Private).GetValue(moves);
+        ids.SetValue(E("AvailableMoves", "UmbreonFoulPlay"), 0);
+        var enemy = Pokemon(Vector3.forward * 2); Physics.SyncTransforms();
+        var snarl = Effect("UmbreonSnarl");
+        var locked = moves.GetType().GetMethod("PrefabActionsLocked", Private);
+        Assert.That(locked.Invoke(moves, new[] { E("AvailableMoves", "UmbreonFoulPlay") }), Is.False);
+        Assert.That(locked.Invoke(moves, new[] { E("AvailableMoves", "UmbreonWish") }), Is.True);
+        var foul = Effect("UmbreonFoulPlay");
+        Assert.That(locked.Invoke(moves, new[] { E("AvailableMoves", "UmbreonFoulPlay") }), Is.True, "The dash still locks actions.");
+        yield return new WaitForSeconds(0.35f);
+        Assert.That(actor.transform.position.z, Is.GreaterThan(3));
+        Assert.That(snarl != null, Is.True);
+        Assert.That(locked.Invoke(moves, new[] { E("AvailableMoves", "UmbreonFoulPlay") }), Is.False);
+        Assert.That(Call(foul, "TryRecast", Vector3.back), Is.True);
+        yield return new WaitForSeconds(1.5f);
+        Assert.That((int)Get(moves, "ServerActionLocks"), Is.Zero);
+    }
+    [UnityTest]
     public IEnumerator SnarlDealsEightPulsesAndFinalShoutAndUnlocksActions()
     {
         var enemy = Pokemon(Vector3.forward * 2); Physics.SyncTransforms(); Effect("UmbreonSnarl");

@@ -385,7 +385,7 @@ public class ZoroarkMoveEffect : PrefabMoveEffect
             Actor.MovesController.ShowCombatVisualRPC(ZoroarkMoveRules.Visuals + "DarkShockwave", origin, Vector3.forward,
                 Vector3.one * ZoroarkMoveRules.UniteRadii[i], 0.3f);
             foreach (var target in CombatTargeting.SphereTargets(origin + Vector3.up * 0.8f, ZoroarkMoveRules.UniteRadii[i]))
-                if (CanHit(target)) target.ResolveDamage(new DamageInfo(Actor.NetworkObjectId, 1.58f, 9, 430, DamageType.Physical, DamageProprieties.IsUniteMove));
+                if (CanHit(target)) target.ResolveDamage(DamageInfo.Tuned("zoroark.zoroarkmoveeffect.unite", new DamageInfo(Actor.NetworkObjectId, 1.58f, 9, 430, DamageType.Physical, DamageProprieties.IsUniteMove)));
         }
         yield return new WaitForSeconds(ZoroarkMoveRules.UniteDuration - 1);
         RefreshStat(Actor.Pokemon, new StatChange(80, Stat.Speed, 6, true, true, true, ZoroarkMoveRules.UniteSpeed));

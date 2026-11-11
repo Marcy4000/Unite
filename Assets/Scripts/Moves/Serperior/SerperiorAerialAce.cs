@@ -4,7 +4,7 @@ using UnityEngine;
 public class SerperiorAerialAce : MoveBase
 {
     private GameObject target;
-    private DamageInfo damageInfo = new DamageInfo(0, 1.2f, 4, 290, DamageType.Physical, DamageProprieties.CanCrit);
+    private DamageInfo damageInfo = DamageInfo.Tuned("serperior.serperioraerialace.damageinfo", new DamageInfo(0, 1.2f, 4, 290, DamageType.Physical, DamageProprieties.CanCrit));
     private StatChange speedBuff = new StatChange(10, Stat.Speed, 2f, true, true, true, 0);
 
     private float range = 3f;

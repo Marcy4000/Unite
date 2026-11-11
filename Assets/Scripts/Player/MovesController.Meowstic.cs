@@ -147,8 +147,8 @@ public partial class MovesController
             position = flight.Step(goal, Time.time);
             if ((goal - position).sqrMagnitude < 0.04f)
             {
-                target.TakeDamageRPC(boosted ? new DamageInfo(NetworkObjectId, 1.1f, 3, 70, DamageType.Special, DamageProprieties.IsBasicAttack)
-                    : new DamageInfo(NetworkObjectId, 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack));
+                target.TakeDamageRPC(boosted ? DamageInfo.Tuned("meowstic.movescontroller.meowstic.meowstichoming", new DamageInfo(NetworkObjectId, 1.1f, 3, 70, DamageType.Special, DamageProprieties.IsBasicAttack))
+                    : DamageInfo.Tuned("meowstic.movescontroller.meowstic.meowstichoming.2", new DamageInfo(NetworkObjectId, 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack)));
                 if (boosted && MeowsticMoveRules.Living(target) && !target.HasStatusEffect(StatusType.Unstoppable))
                 {
                     target.RemoveAllStatChangeWithIDRPC(7340);
@@ -169,7 +169,7 @@ public partial class MovesController
         var victims = new List<Pokemon>();
         foreach (Pokemon target in MeowsticMoveRules.Targets(transform.position, 2.5f))
             if (MeowsticMoveRules.Enemy(playerManager, target) && MeowsticMoveRules.InCone(transform.position, direction, target.transform.position, 2.5f, 55)) victims.Add(target);
-        var damage = new DamageInfo(NetworkObjectId, 0.45f, 5, 160, DamageType.Special);
+        var damage = DamageInfo.Tuned("meowstic.movescontroller.meowstic.damage", new DamageInfo(NetworkObjectId, 0.45f, 5, 160, DamageType.Special));
         foreach (Pokemon target in victims) target.TakeDamageRPC(damage);
         yield return MeowsticWait(scope, 0.16);
         if (scope.Live && !pokemon.HasAnyStatusEffect(MeowsticMoveRules.Interrupts))
@@ -216,7 +216,7 @@ public partial class MovesController
             Vector3 center = MeowsticMoveRules.Living(recipient) ? recipient.transform.position : lastPosition;
             ShowMeowsticEffect(MeowsticEffect.Detonation, center, transform.forward, 0.4f, size: 4);
             foreach (Pokemon target in MeowsticMoveRules.Targets(center, 4))
-                if (MeowsticMoveRules.Enemy(playerManager, target) && stored > 0) target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0, 0, (short)stored, DamageType.True));
+                if (MeowsticMoveRules.Enemy(playerManager, target) && stored > 0) target.TakeDamageRPC(DamageInfo.Tuned("meowstic.movescontroller.meowstic.meowsticreflectroutine", new DamageInfo(NetworkObjectId, 0, 0, (short)stored, DamageType.True)));
         }
         void OnTargetDeath(DamageInfo info) { Explode(); scope.Dispose(); }
         recipient.OnDeath += OnTargetDeath;
@@ -255,12 +255,12 @@ public partial class MovesController
                 foreach (Pokemon target in MeowsticMoveRules.Targets(recipient.transform.position, MeowsticMoveRules.PsychicRadius))
                     if (MeowsticMoveRules.Enemy(playerManager, target))
                     {
-                        target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0.45f, 3, 55, DamageType.Special));
+                        target.TakeDamageRPC(DamageInfo.Tuned("meowstic.movescontroller.meowstic.meowsticpsychic", new DamageInfo(NetworkObjectId, 0.45f, 3, 55, DamageType.Special)));
                         if (!MeowsticMoveRules.Living(target)) continue;
                         if (!debuffs.TryGetValue(target, out var debuff)) { debuff = new MeowsticPsychicDebuff(target, NetworkObjectId); debuffs.Add(target, debuff); scope.Own(debuff); }
                         debuff.Pulse(MeowsticNow);
                     }
-                recipient.HealDamageRPC(new DamageInfo(NetworkObjectId, MeowsticMoveRules.PsychicHealingRatio(upgraded), 2, 45, DamageType.Special));
+                recipient.HealDamageRPC(DamageInfo.Tuned("meowstic.movescontroller.meowstic.meowsticpsychic.2", new DamageInfo(NetworkObjectId, MeowsticMoveRules.PsychicHealingRatio(upgraded), 2, 45, DamageType.Special)));
                 ShowMeowsticEffect(MeowsticEffect.Pulse, recipient.transform.position, transform.forward, 0.3f, recipient.NetworkObjectId, MeowsticMoveRules.PsychicRadius);
             }
             foreach (var debuff in debuffs.Values) debuff.Tick(MeowsticNow);
@@ -406,7 +406,7 @@ public partial class MovesController
             {
                 nextDamage += 1;
                 foreach (Pokemon target in targets)
-                    if (MeowsticMoveRules.Enemy(playerManager, target)) target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0.5f, 4, 75, DamageType.Special, DamageProprieties.IsUniteMove));
+                    if (MeowsticMoveRules.Enemy(playerManager, target)) target.TakeDamageRPC(DamageInfo.Tuned("meowstic.movescontroller.meowstic.meowsticharmony", new DamageInfo(NetworkObjectId, 0.5f, 4, 75, DamageType.Special, DamageProprieties.IsUniteMove)));
             }
             yield return MeowsticWait(scope, 0.1);
         }

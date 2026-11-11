@@ -114,7 +114,7 @@ public sealed class TrevenantRuntime : IDisposable
         if (!actor.NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(damage.attackerId, out var obj)
             || !obj.TryGetComponent(out Pokemon attacker) || !attacker.TeamMember.IsOnSameTeam(actor.CurrentTeam)) return;
         markTriggers[damage.attackerId] = Now + TrevenantMoveRules.UniteMarkInterval;
-        var bonus = TrevenantMoveRules.Damage(damage.attackerId, 0, 0, (short)(190 + 8 * actor.Pokemon.CurrentLevel));
+        var bonus = DamageInfo.Tuned("trevenant.runtime.naturalcure", TrevenantMoveRules.Damage(damage.attackerId, 0, 0, (short)(190 + 8 * actor.Pokemon.CurrentLevel)));
         bonus.source = DamageSource.Secondary; bonus.suppressOnHitEffects = true;
         target.ResolveDamage(bonus);
     }

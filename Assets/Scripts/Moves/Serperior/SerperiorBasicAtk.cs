@@ -23,8 +23,8 @@ public class SerperiorBasicAtk : BasicAttackBase
         playerManager.Pokemon.OnDeath += OnDeath; subscribed = true;
         OnEvolution();
         DamageProprieties flags = DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit;
-        normalDamage = new DamageInfo(manager.NetworkObjectId, 0.45f, 4, 130, DamageType.Physical, flags);
-        boostedDamage = new DamageInfo(manager.NetworkObjectId, 0.65f, 6, 175, DamageType.Physical, flags);
+        normalDamage = DamageInfo.Tuned("serperior.serperiorbasicatk.normaldamage", new DamageInfo(manager.NetworkObjectId, 0.45f, 4, 130, DamageType.Physical, flags));
+        boostedDamage = DamageInfo.Tuned("serperior.serperiorbasicatk.boosteddamage", new DamageInfo(manager.NetworkObjectId, 0.65f, 6, 175, DamageType.Physical, flags));
         if (manager.HPBar != null) { manager.HPBar.ShowGenericGuage(true); manager.HPBar.UpdateGenericGuageValue(0); }
     }
     private void OnEvolution() { range = playerManager.Pokemon.CurrentLevel >= 6 ? 3.25f : playerManager.Pokemon.CurrentLevel >= 4 ? 2.75f : 2.25f; }

@@ -61,21 +61,21 @@ public static class FlareonMoveRules
     {
         switch (kind)
         {
-            case FlareonCast.Swift: return new DamageInfo(source, 0.7f, 4, 100, DamageType.Physical, DamageProprieties.CanCrit);
-            case FlareonCast.Tackle: return new DamageInfo(source, 0.8f, 3, 300, DamageType.Physical);
-            case FlareonCast.HeatWave: return new DamageInfo(source, burned ? 1.05f : 1f, (short)(burned ? 7 : 6), (short)(burned ? 200 : 160), DamageType.Physical);
-            case FlareonCast.Takedown: return new DamageInfo(source, burned ? 2.1f : 1.7f, (short)(burned ? 7 : 6), (short)(burned ? 450 : 400), DamageType.Physical, DamageProprieties.CanCrit);
-            case FlareonCast.Slam: return new DamageInfo(source, 1.7f, 6, 400, DamageType.Physical, DamageProprieties.CanCrit);
-            case FlareonCast.Flamethrower: return new DamageInfo(source, upgraded ? 2f : 1.86f, 9, (short)(upgraded ? 500 : 480), DamageType.Physical, DamageProprieties.CanCrit);
-            case FlareonCast.FlareBlitz: return new DamageInfo(source, 1.8f, 7, 410, DamageType.Physical);
-            case FlareonCast.Unite: return new DamageInfo(source, 2.5f, 7, 510, DamageType.Physical, DamageProprieties.CanCrit | DamageProprieties.IsUniteMove);
-            default: return new DamageInfo(source, boosted ? 1.3f : 1f, (short)(boosted ? 3 : 2), (short)(boosted ? 120 : 100), DamageType.Physical, DamageProprieties.CanCrit | DamageProprieties.IsBasicAttack);
+            case FlareonCast.Swift: return DamageInfo.Tuned("flareon.swift", new DamageInfo(source, 0.7f, 4, 100, DamageType.Physical, DamageProprieties.CanCrit));
+            case FlareonCast.Tackle: return DamageInfo.Tuned("flareon.tackle", new DamageInfo(source, 0.8f, 3, 300, DamageType.Physical));
+            case FlareonCast.HeatWave: return DamageInfo.Tuned("flareon.heatwave", new DamageInfo(source, burned ? 1.05f : 1f, (short)(burned ? 7 : 6), (short)(burned ? 200 : 160), DamageType.Physical));
+            case FlareonCast.Takedown: return DamageInfo.Tuned("flareon.takedown", new DamageInfo(source, burned ? 2.1f : 1.7f, (short)(burned ? 7 : 6), (short)(burned ? 450 : 400), DamageType.Physical, DamageProprieties.CanCrit));
+            case FlareonCast.Slam: return DamageInfo.Tuned("flareon.slam", new DamageInfo(source, 1.7f, 6, 400, DamageType.Physical, DamageProprieties.CanCrit));
+            case FlareonCast.Flamethrower: return DamageInfo.Tuned("flareon.flamethrower", new DamageInfo(source, upgraded ? 2f : 1.86f, 9, (short)(upgraded ? 500 : 480), DamageType.Physical, DamageProprieties.CanCrit));
+            case FlareonCast.FlareBlitz: return DamageInfo.Tuned("flareon.flareblitz", new DamageInfo(source, 1.8f, 7, 410, DamageType.Physical));
+            case FlareonCast.Unite: return DamageInfo.Tuned("flareon.unite", new DamageInfo(source, 2.5f, 7, 510, DamageType.Physical, DamageProprieties.CanCrit | DamageProprieties.IsUniteMove));
+            default: return DamageInfo.Tuned("flareon.damage", new DamageInfo(source, boosted ? 1.3f : 1f, (short)(boosted ? 3 : 2), (short)(boosted ? 120 : 100), DamageType.Physical, DamageProprieties.CanCrit | DamageProprieties.IsBasicAttack));
         }
     }
     public static void Burn(Pokemon target, ulong source, float duration)
     {
         target.AddStatusEffect(StatusEffect.DamageOverTime(StatusType.Burned,
-            new DamageInfo(source, 0.2f, 0, 0, DamageType.Physical), duration, 1, BurnId, 0.01f, 200));
+            DamageInfo.Tuned("flareon.burn", new DamageInfo(source, 0.2f, 0, 0, DamageType.Physical)), duration, 1, BurnId, 0.01f, 200));
     }
     public static bool CanHit(PlayerManager actor, Pokemon target) => actor != null && target != null && target.IsSpawned && target.CurrentHp > 0
         && !target.TeamMember.IsOnSameTeam(actor.CurrentTeam) && !target.HasStatusEffect(StatusType.Invincible) && !target.HasStatusEffect(StatusType.Untargetable);

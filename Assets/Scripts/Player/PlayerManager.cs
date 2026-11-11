@@ -343,6 +343,9 @@ public partial class PlayerManager : NetworkBehaviour
     private void HandleEvolution()
     {
         if (pokemon.ActiveModel == null) return;
+        if (!TryGetComponent<FakeMeshShadow>(out var fakeShadow))
+            fakeShadow = gameObject.AddComponent<FakeMeshShadow>();
+        fakeShadow.SetSource(pokemon.ActiveModel.transform);
         pokemon.ActiveModel.GetComponentInChildren<Animator>().keepAnimatorStateOnDisable = true;
         animationManager.AssignAnimator(pokemon.ActiveModel.GetComponentInChildren<Animator>());
         AssignVisionObjects();

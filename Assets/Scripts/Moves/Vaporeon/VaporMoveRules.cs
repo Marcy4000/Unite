@@ -43,11 +43,11 @@ public static class VaporMoveRules
     public static short RainDefense(bool upgraded) => (short)(upgraded ? 65 : 55);
     public static float DiveCooldown(bool upgraded) => upgraded ? 9f : 10f;
     public static int Heal(Pokemon actor, float ratio, int slider, int flat) => Mathf.FloorToInt(actor.GetSpAttack() * ratio + actor.CurrentLevel * slider + flat);
-    public static DamageInfo BasicDamage(ulong actor, bool boosted) => new DamageInfo(actor, boosted ? 0.36f : 0.25f,
-        (short)(boosted ? 11 : 8), (short)(boosted ? 180 : 170), DamageType.Special, DamageProprieties.IsBasicAttack);
+    public static DamageInfo BasicDamage(ulong actor, bool boosted) => DamageInfo.Tuned("vaporeon.basicdamage", new DamageInfo(actor, boosted ? 0.36f : 0.25f,
+        (short)(boosted ? 11 : 8), (short)(boosted ? 180 : 170), DamageType.Special, DamageProprieties.IsBasicAttack));
     // Six ticks total 0.6 SpA + 6/level + 198, NOT that amount on every tick.
-    public static DamageInfo WhirlpoolTick(ulong actor) => new DamageInfo(actor, 0.10f, 1, 33, DamageType.Special);
-    public static DamageInfo TempestDamage(ulong actor) => new DamageInfo(actor, 0.92f, 9, 640, DamageType.Special, DamageProprieties.IsUniteMove);
+    public static DamageInfo WhirlpoolTick(ulong actor) => DamageInfo.Tuned("vaporeon.whirlpooltick", new DamageInfo(actor, 0.10f, 1, 33, DamageType.Special));
+    public static DamageInfo TempestDamage(ulong actor) => DamageInfo.Tuned("vaporeon.tempestdamage", new DamageInfo(actor, 0.92f, 9, 640, DamageType.Special, DamageProprieties.IsUniteMove));
     public static bool Finite(Vector3 p) => !float.IsNaN(p.x) && !float.IsNaN(p.y) && !float.IsNaN(p.z)
         && !float.IsInfinity(p.x) && !float.IsInfinity(p.y) && !float.IsInfinity(p.z);
     public static Vector3 Direction(Vector3 value, Vector3 fallback)

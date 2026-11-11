@@ -12,7 +12,7 @@ public class MeowsticMPsychicArea : NetworkBehaviour
 
     private float activeTime = 3.5f;
 
-    private DamageInfo damage = new DamageInfo(0, 0.45f, 3, 55, DamageType.Special);
+    private DamageInfo damage = DamageInfo.Tuned("meowstic.meowsticmpsychicarea.damage", new DamageInfo(0, 0.45f, 3, 55, DamageType.Special));
     private DamageInfo heal = new DamageInfo(0, 0.35f, 2, 45, DamageType.Special);
 
     private StatChange defBoost = new StatChange(15, Stat.Defense, 3.5f, true, true, true, 0);

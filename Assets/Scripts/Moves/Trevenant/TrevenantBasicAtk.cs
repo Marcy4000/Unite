@@ -39,7 +39,7 @@ public class TrevenantBasicAtk : ChargedBasicAttackBase
         {
             yield return Pause(windup); if (Interrupted) yield break;
             combat.SpendAttack(); bool empowered = combat.HornAttacks > 0; bool hit = false;
-            var damage = new DamageInfo(actor.NetworkObjectId, boosted ? 1.3f : 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit);
+            var damage = DamageInfo.Tuned("trevenant.trevenantbasicatk.damage", new DamageInfo(actor.NetworkObjectId, boosted ? 1.3f : 1, 0, 0, DamageType.Physical, DamageProprieties.IsBasicAttack | DamageProprieties.CanCrit));
             Vector3 center = actor.transform.position + direction * TrevenantMoveRules.BasicOffset + Vector3.up * 0.8f;
             Physics.SyncTransforms();
             foreach (var enemy in CombatTargeting.SphereTargets(center, TrevenantMoveRules.BasicRadius))

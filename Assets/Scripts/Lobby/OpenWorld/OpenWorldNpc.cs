@@ -101,7 +101,8 @@ public sealed class OpenWorldNpc : MonoBehaviour
         ActiveNpcs.Add(this);
         selectionFrame = -1;
         animatorCacheDirty = true;
-        if (trainer != null) trainer.onClothesInitialized += RefreshAnimationRenderers;
+        if (trainer != null) trainer.onClothesInitialized += OnTrainerClothesInitialized;
+        if (initialized) RefreshFakeShadow();
         if (interactButton != null) interactButton.onClick.AddListener(Interact);
         SetPrompt(false);
     }
@@ -118,7 +119,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
         foreach (var modelAnimator in visual.GetComponentsInChildren<Animator>(true)) modelAnimator.applyRootMotion = false;
         foreach (var canvas in visual.GetComponentsInChildren<Canvas>(true)) canvas.enabled = false;
         trainer = kind == OpenWorldNpcKind.Trainer ? visual.GetComponent<TrainerModel>() : null;
-        if (trainer != null) trainer.onClothesInitialized += RefreshAnimationRenderers;
+        if (trainer != null) trainer.onClothesInitialized += OnTrainerClothesInitialized;
         if (kind == OpenWorldNpcKind.Trainer)
         {
             if (trainer == null)
@@ -140,6 +141,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
             }
         }
         initialized = true;
+        RefreshFakeShadow();
     }
 
     private void Update()
@@ -349,6 +351,21 @@ public sealed class OpenWorldNpc : MonoBehaviour
         RefreshAnimationRenderers();
     }
 
+    private void OnTrainerClothesInitialized()
+    {
+        RefreshFakeShadow();
+        RefreshAnimationRenderers();
+    }
+
+    private void RefreshFakeShadow()
+    {
+        if (visual == null || kind == OpenWorldNpcKind.Generic) return;
+        if (kind == OpenWorldNpcKind.Trainer && (trainer == null || !trainer.IsInitialized)) return;
+        if (!TryGetComponent<FakeMeshShadow>(out var fakeShadow))
+            fakeShadow = gameObject.AddComponent<FakeMeshShadow>();
+        fakeShadow.SetSource(visual.transform, forceRebuild: true);
+    }
+
     private void RefreshAnimationRenderers()
     {
         animationRenderers = animator != null
@@ -473,7 +490,7 @@ public sealed class OpenWorldNpc : MonoBehaviour
         if (interactButton != null) interactButton.onClick.RemoveListener(Interact);
         SetPrompt(false);
         StopAnimation();
-        if (trainer != null) trainer.onClothesInitialized -= RefreshAnimationRenderers;
+        if (trainer != null) trainer.onClothesInitialized -= OnTrainerClothesInitialized;
     }
 
     private void OnValidate()

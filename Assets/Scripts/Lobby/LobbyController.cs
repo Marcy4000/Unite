@@ -199,11 +199,11 @@ public partial class LobbyController : MonoBehaviour
             PlayerClothesInfo clothes;
             try
             {
-                clothes = PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo", "AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA="));
+                clothes = PlayerClothesInfo.Deserialize(PlayerPrefs.GetString("ClothingInfo", "PgBkAbgA4EMNHAsAORwAAAAAAP+lAFjKWQA="));
             }
             catch (Exception)
             {
-                clothes = PlayerClothesInfo.Deserialize("AAAAAAAAAAAASjMJcj8FAAAAAAJqASkBZwA=");
+                clothes = PlayerClothesInfo.Deserialize("PgBkAbgA4EMNHAsAORwAAAAAAP+lAFjKWQA=");
             }
 
             localPlayer = new GameSessionPlayer(AuthenticationService.Instance.PlayerId);

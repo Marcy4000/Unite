@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class JoltSwift : MoveBase
 {
-    private DamageInfo bigStar = new DamageInfo(0, 1.2f, 8, 220, DamageType.Physical);
-    private DamageInfo smallStar = new DamageInfo(0, 1f, 6, 180, DamageType.Physical);
+    private DamageInfo bigStar = DamageInfo.Tuned("jolteon.joltswift.bigstar", new DamageInfo(0, 1.2f, 8, 220, DamageType.Physical));
+    private DamageInfo smallStar = DamageInfo.Tuned("jolteon.joltswift.smallstar", new DamageInfo(0, 1f, 6, 180, DamageType.Physical));
 
     private string assetPath = "Assets/Prefabs/Objects/Moves/Jolteon/JoltSwift.prefab";
     private float range = 5f;

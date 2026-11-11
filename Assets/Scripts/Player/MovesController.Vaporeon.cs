@@ -161,7 +161,7 @@ public partial class MovesController
             yield return VaporeonWait(scope, 0.7);
             if (!scope.Live) yield break;
             foreach (Pokemon target in VaporMoveRuntime.Targets(center, 1))
-                if (VaporMoveRuntime.CanHit(playerManager, target)) target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0.41f, 5, 170, DamageType.Special));
+                if (VaporMoveRuntime.CanHit(playerManager, target)) target.TakeDamageRPC(DamageInfo.Tuned("vaporeon.movescontroller.vaporeon.vaporeonswift", new DamageInfo(NetworkObjectId, 0.41f, 5, 170, DamageType.Special)));
         }
     }
     private IEnumerator VaporeonHelpingHand(VaporScope scope, Pokemon target)
@@ -372,7 +372,7 @@ public partial class MovesController
                 foreach (Pokemon target in VaporMoveRuntime.Targets(center, VaporMoveRules.DiveRadius))
                 {
                     if (!VaporMoveRuntime.CanHit(playerManager, target)) continue;
-                    target.TakeDamageRPC(new DamageInfo(NetworkObjectId, 0.7f, 6, 200, DamageType.Special));
+                    target.TakeDamageRPC(DamageInfo.Tuned("vaporeon.movescontroller.vaporeon.vaporeonsubmerge", new DamageInfo(NetworkObjectId, 0.7f, 6, 200, DamageType.Special)));
                     if (!VaporMoveRuntime.Living(target) || target.Type == PokemonType.Objective) continue;
                     target.AddStatusEffect(new StatusEffect(StatusType.Incapacitated, 0.25f, true, 0).WithSource(NetworkObjectId));
                     if (target.TryGetComponent(out PlayerMovement enemyMovement)) enemyMovement.VaporeonDisplaceRPC(center, 0.6f, false);
