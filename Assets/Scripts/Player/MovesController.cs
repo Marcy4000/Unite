@@ -136,6 +136,7 @@ public partial class MovesController : NetworkBehaviour
         UpdateUmbreonRuntime();
         UpdateGlaceonRuntime();
         UpdateTrevenantRuntime();
+        UpdateLucarioRuntime();
         UpdateBattleItemRuntime();
         if (!IsOwner)
         {
@@ -440,6 +441,7 @@ public partial class MovesController : NetworkBehaviour
     {
         // A held Spear must accept release while its load or channel locks are held.
         if (index == 0 && moves[0] is GlaceIcicleSpear spear && spear.IsChannelAiming) { spear.Finish(); return; }
+        if (index == 0 && moves[0] is LucarioPowerUpPunch punch && punch.IsChargingAim) { punch.Finish(); return; }
         if (index < 0 || index >= moves.Length)
         {
             return;
@@ -567,9 +569,11 @@ public partial class MovesController : NetworkBehaviour
         {
             BattleUIManager.instance.ShowMoveCooldown(index, 0, GetMoveCooldown(moves[index]));
         }
-        else if (!moves[index].IsStoredMove && moveStatuses[index].HasStatus(ActionStatusType.Cooldown))
+        else if (!moves[index].IsStoredMove)
         {
-            BattleUIManager.instance.ShowMoveCooldown(index, moveStatuses[index].Cooldown, GetMoveCooldown(moves[index]));
+            // Resets must also stop the independent cooldown timer on the move icon.
+            float remaining = moveStatuses[index].HasStatus(ActionStatusType.Cooldown) ? moveStatuses[index].Cooldown : 0;
+            BattleUIManager.instance.ShowMoveCooldown(index, remaining, GetMoveCooldown(moves[index]));
         }
     }
 
@@ -978,7 +982,7 @@ public partial class MovesController : NetworkBehaviour
     {
         // Glaceon displays the same authoritative pool used to accept its Unite.
         // Passive, KO and scoring energy are already awarded on the server.
-        if ((IsGlaceon || IsTrevenant) && IsSpawned) return;
+        if ((IsGlaceon || IsTrevenant || IsLucario) && IsSpawned) return;
         if (amount > 0) amount = Mathf.FloorToInt(amount * (1 + pokemon.GetPreciseStatChange(Stat.EnergyRate) / 100f));
         uniteMoveCharge = Mathf.Clamp(uniteMoveCharge + amount, 0, uniteMoveMaxCharge);
         if (uniteMoveCharge == uniteMoveMaxCharge && uniteMoveStatus.HasStatus(ActionStatusType.Cooldown))
@@ -1014,6 +1018,7 @@ public partial class MovesController : NetworkBehaviour
         DisposeUmbreonRuntime();
         DisposeGlaceonRuntime();
         DisposeTrevenantRuntime();
+        DisposeLucarioRuntime();
         DisposeMeowsticRuntime();
         DisposeFlareonRuntime();
         DisposeEmboarRuntime();

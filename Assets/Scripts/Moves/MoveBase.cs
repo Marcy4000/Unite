@@ -94,6 +94,13 @@ public static class MoveDatabase
     {
         switch (move)
         {
+            case AvailableMoves.LucarioQuickAttack: return new LucarioQuickAttack();
+            case AvailableMoves.LucarioMeteorMash: return new LucarioMeteorMash();
+            case AvailableMoves.LucarioExtremeSpeed: return new LucarioExtremeSpeed();
+            case AvailableMoves.LucarioPowerUpPunch: return new LucarioPowerUpPunch();
+            case AvailableMoves.LucarioBoneRush: return new LucarioBoneRush();
+            case AvailableMoves.LucarioCloseCombat: return new LucarioCloseCombat();
+            case AvailableMoves.LucarioAuraCannon: return new LucarioAuraCannon();
             case AvailableMoves.TrevenantWillOWisp: return new TrevenantWillOWisp();
             case AvailableMoves.TrevenantBranchPoke: return new TrevenantBranchPoke();
             case AvailableMoves.TrevenantWoodHammer: return new TrevenantWoodHammer();
@@ -502,5 +509,12 @@ public enum AvailableMoves : uint
     TrevenantCurse,
     TrevenantHornLeech,
     TrevenantPainSplit,
-    TrevenantPhantomForest
+    TrevenantPhantomForest,
+    LucarioQuickAttack,
+    LucarioMeteorMash,
+    LucarioExtremeSpeed,
+    LucarioPowerUpPunch,
+    LucarioBoneRush,
+    LucarioCloseCombat,
+    LucarioAuraCannon
 }

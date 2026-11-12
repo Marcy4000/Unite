@@ -21,7 +21,7 @@ public partial class BotBrain
         pendingMove = move; pendingSlot = slot;
         // Let ordinary Update capture aim/load effects before releasing. Charged
         // and held moves keep their normal timed auto-finish behavior.
-        releaseAt = Time.time + (move is GlaceIcicleSpear ? 10 : move is DuraDragonPulse ? 1.2f : .15f);
+        releaseAt = Time.time + (move is GlaceIcicleSpear ? 10 : move is LucarioPowerUpPunch ? LucarioMoveRules.PunchFullCharge : move is DuraDragonPulse ? 1.2f : .15f);
     }
 
     private void TickMoveRelease()

@@ -52,6 +52,7 @@ public static class BasicAttacksDatabase
        pokemonName = pokemonName.ToLower();
         switch (pokemonName)
         {
+            case "lucario": return new LucarioBasicAtk();
             case "trevenant": return new TrevenantBasicAtk();
             case "umbreon": return new UmbreonBasicAtk();
             case "espeon": return new EspeonBasicAtk();
